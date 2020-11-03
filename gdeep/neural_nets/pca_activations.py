@@ -6,6 +6,14 @@ import utility
 
 
 def plot_PCA_activations(model, X_tensor, y_tensor, n_components=2):
+    """Plot PCA of the activations of all layers of the neural network
+
+    Args:
+        model ([type]): [description]
+        X_tensor ([type]): [description]
+        y_tensor ([type]): [description]
+        n_components (int, optional): [description]. Defaults to 2.
+    """
     activations_layers = utility.get_activations(model,X_tensor)
 
     for i, activations_layer in enumerate(activations_layers.get_outputs()):
