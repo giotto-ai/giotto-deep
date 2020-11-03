@@ -1,0 +1,5 @@
+torch
+giotto-tda
+numpy
+pandas
+plotly
