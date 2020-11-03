@@ -40,6 +40,7 @@ jobs:
     - name: Build and install wheels
       run: |
         set -e
+        python -m pip install wheel
         python setup.py bdist_wheel
         python -m pip install dist/*.whl
     - name: Upload artifacts
