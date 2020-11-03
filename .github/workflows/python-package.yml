@@ -37,3 +37,13 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+    - name: Build and install wheels
+      run: |
+        set -e
+        python setup.py bdist_wheel
+        python -m pip install dist/*.whl
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: pip_wheel_${{ matrix.python-version }}
+        path: dist
