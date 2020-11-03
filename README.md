@@ -1,4 +1,4 @@
-![image](./doc/giotto-deep.svg =800x)
+![image](./doc/giotto-deep.svg)
 
 # giotto-deep
 
