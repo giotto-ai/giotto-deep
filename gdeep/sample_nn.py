@@ -25,7 +25,7 @@ class SimpleNN(nn.Module):
 class DeeperNN(nn.Module):
 
     def __init__(self, dropout_p=0.0):
-        super(SimpleNN, self).__init__()
+        super(DeeperNN, self).__init__()
         self.fc1 = nn.Linear(2, 16, bias=True)
         self.drop_layer = nn.Dropout(p=dropout_p)
         self.fc2 = nn.Linear(16, 32, bias=True)
