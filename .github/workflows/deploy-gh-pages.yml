@@ -23,7 +23,7 @@ jobs:
         make html
     - name: push to gh-pages
       run: |
-        echo ls
+        ls
         git config --global user.name "github-pages[bot]"
         git config --global user.email "41898281+github-pages[bot]@users.noreply.github.com"
 
