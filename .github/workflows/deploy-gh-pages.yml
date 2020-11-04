@@ -27,6 +27,6 @@ jobs:
         git config --global user.email "41898281+github-actions[bot]@users.noreply.github.com"
 
         git add --all
-        git add docs/build/
+        git add -f docs/build/
         git commit -m "get sphinx build"
         git push origin gh-pages
