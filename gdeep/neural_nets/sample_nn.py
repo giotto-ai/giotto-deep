@@ -4,7 +4,11 @@ import torch.nn.functional as F
 
 
 class SimpleNN(nn.Module):
-
+    """This functions creates a simple neural network with
+    three fully connected layers of dimensions 2 - 10 - 2.
+        
+    """
+    
     def __init__(self, nodes_layer_1 = 8, dropout_p=0.0):
         super(SimpleNN, self).__init__()
         self.fc1 = nn.Linear(2, nodes_layer_1, bias=True)
@@ -23,7 +27,12 @@ class SimpleNN(nn.Module):
 
 
 class DeeperNN(nn.Module):
-
+    """This functions creates a deeper neural network with
+        four fully connected layers of dimensions 2 - 16 - 32
+        -64 - 2.
+        
+        """
+    
     def __init__(self, dropout_p=0.0):
         super(DeeperNN, self).__init__()
         self.fc1 = nn.Linear(2, 16, bias=True)
