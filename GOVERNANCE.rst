@@ -1,4 +1,4 @@
-This file describe the governance of the `giotto-deep` project.
+This file describe the governance of the ``giotto-deep`` project.
 
 Project owner:
 --------------
