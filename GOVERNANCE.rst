@@ -8,7 +8,7 @@ Project owner:
 Authors:
 --------
 
-- Please refer to the `authors <https://github.com/giotto-ai/giotto-deep/blob/master/CODE_AUTHORS>`_ file
+- Please refer to the `authors <https://github.com/giotto-ai/giotto-deep/blob/master/CODE_AUTHORS.rst>`_ file
 
 Giotto-deep Project Team:
 ------------------------
