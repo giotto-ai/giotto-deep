@@ -15,8 +15,11 @@ Welcome to giotto-deep's documentation!
 Indices and tables
 ==================
 
-.. automodule:: gdeep.sample_nn
+.. automodule:: gdeep.neural_nets
    :members:
+
+References
+----------
 
 * :ref:`genindex`
 * :ref:`modindex`
