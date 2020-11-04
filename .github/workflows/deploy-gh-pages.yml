@@ -3,7 +3,7 @@
 
 name: Deploy to gh-pages
 
-on:
+on: [workflow_dispatch]
   push:
     branches: [ master ]
   pull_request:
@@ -33,7 +33,6 @@ jobs:
         make html
     - name: push to gh-pages
       run: |
-        cd ..
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898281+github-actions[bot]@users.noreply.github.com"
 
