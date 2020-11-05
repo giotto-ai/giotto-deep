@@ -67,6 +67,27 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt id="gdeep.neural_nets.SaveLayerOutput">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SaveLayerOutput</code><a class="headerlink" href="#gdeep.neural_nets.SaveLayerOutput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.neural_nets.SaveNodeOutput">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SaveNodeOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">entry</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.SaveNodeOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>[summary]</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>SaveOutput ([type]): [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.neural_nets.SaveOutput">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SaveOutput</code><a class="headerlink" href="#gdeep.neural_nets.SaveOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>[summary]</p>
+</dd></dl>
+
+<dl class="py class">
 <dt id="gdeep.neural_nets.SimpleNN">
 <em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SimpleNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes_layer_1</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dropout_p</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.SimpleNN" title="Permalink to this definition">¶</a></dt>
 <dd><p>This functions creates a simple neural network with
@@ -85,6 +106,36 @@ registered hooks while the latter silently ignores them.</p>
 </div>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.neural_nets.get_activations">
+<code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">get_activations</code><span class="sig-paren">(</span><em class="sig-param">model, X_tensor, layer_types=[&lt;class 'torch.nn.modules.linear.Linear'&gt;]</em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.get_activations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns activation of layers</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>model ([type]): [description]
+X_tensor ([type]): [description]
+layer_types (list, optional): [description]. Defaults to [torch.nn.Linear].</p>
+</dd>
+<dt>Returns:</dt><dd><p>[type]: [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.neural_nets.train_classification_nn">
+<code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">train_classification_nn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nn</span></em>, <em class="sig-param"><span class="n">X_tensor</span></em>, <em class="sig-param"><span class="n">y_tensor</span></em>, <em class="sig-param"><span class="n">lr</span><span class="o">=</span><span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">weight_decay</span><span class="o">=</span><span class="default_value">1e-05</span></em>, <em class="sig-param"><span class="n">n_epochs</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">with_l2_reg</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.train_classification_nn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train a neural network on a classifiction task</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>nn (nn.Module): [description]
+X_tensor ([type]): [description]
+y_tensor ([type]): [description]
+lr (float, optional): [description]. Defaults to 0.001.
+weight_decay ([type], optional): [description]. Defaults to 1e-5.
+epochs (int, optional): [description]. Defaults to 1000.
+with_l2_reg (bool, optional): [description]. Defaults to False.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <div class="section" id="references">

@@ -8,3 +8,5 @@ WIP
 ## Documentation
 
 You can find the documentation of this repository here: https://giotto-ai.github.io/giotto-deep/
+
+Still WIP
