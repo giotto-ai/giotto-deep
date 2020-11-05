@@ -33,4 +33,4 @@ jobs:
         git checkout -b gh-pages
         git add -f docs/build/
         git commit -m "push sphinx build"
-        git push
+        git push --set-upstream origin gh-pages
