@@ -25,6 +25,7 @@ jobs:
       run: |
         git config --global user.name "github-pages[bot]"
         git config --global user.email "41898281+github-pages[bot]@users.noreply.github.com"
+        git fetch
         git checkout gh-pages
         git merge --no-edit master
     - name: Build sphinx docs
