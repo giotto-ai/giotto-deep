@@ -29,8 +29,8 @@ jobs:
       run: |
         git config --global user.name "github-pages[bot]"
         git config --global user.email "41898281+github-pages[bot]@users.noreply.github.com"
-        git fetch
-        git checkout -b gh-pages
-        git add -f docs/build/
+        git add -f docs/build
         git commit -m "push sphinx build"
-        git push --set-upstream origin gh-pages
+        git checkout gh-pages
+        git push origin gh-pages
+
