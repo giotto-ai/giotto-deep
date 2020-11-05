@@ -21,7 +21,7 @@ jobs:
     - name: Install sphinx
       run: |
         pip install sphinx
-    - name: Build sphinx docs
+    - name: Git checkout and build sphinx docs
       run: |
         git config --global user.name "github-pages[bot]"
         git config --global user.email "41898281+github-pages[bot]@users.noreply.github.com"
@@ -32,12 +32,10 @@ jobs:
         make html
     - name: push to gh-pages
       run: |
-
         git symbolic-ref HEAD refs/heads/gh-pages
         git reset --mixed gh-pages
         git add --all
         git add -f docs/build
         git commit -m "push sphinx build"
-        git checkout gh-pages
         git push origin gh-pages
 
