@@ -29,6 +29,6 @@ jobs:
         git fetch
         git add --all        
         git add -f docs/build/
-        git checkout gh-pages
         git commit -m "push sphinx build"
+        git checkout gh-pages
         git push
