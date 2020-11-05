@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA
 
-import .utility
+import utility
 
 
 def plot_PCA_activations(model, X_tensor, y_tensor, n_components=2):
