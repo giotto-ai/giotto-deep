@@ -21,20 +21,16 @@ jobs:
     - name: Install sphinx
       run: |
         pip install sphinx
-    - name: Git checkout to gh-pages
-      run: |
-        git config --global user.name "github-pages[bot]"
-        git config --global user.email "41898281+github-pages[bot]@users.noreply.github.com"
-        git fetch
-        git checkout gh-pages
-        git merge --no-edit master
     - name: Build sphinx docs
       run: |
         cd docs
         make html
     - name: push to gh-pages
       run: |
+        git config --global user.name "github-pages[bot]"
+        git config --global user.email "41898281+github-pages[bot]@users.noreply.github.com"
+        git fetch
+        git checkout -b gh-pages
         git add -f docs/build/
-        git add --all 
         git commit -m "push sphinx build"
         git push
