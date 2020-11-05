@@ -1,4 +1,4 @@
-This file describe the governance of the giotto-tda project.
+This file describe the governance of the ``giotto-deep`` project.
 
 Project owner:
 --------------
@@ -8,16 +8,14 @@ Project owner:
 Authors:
 --------
 
-- Please refer to the `authors <https://github.com/giotto-ai/giotto-tda/blob/master/CODE_AUTHORS>`_ file
+- Please refer to the `authors <https://github.com/giotto-ai/giotto-deep/blob/master/CODE_AUTHORS.rst>`_ file
 
-Giotto-tda Project Team:
+Giotto-deep Project Team:
 ------------------------
 
-- Umberto Lupo umberto.lupo@epfl.ch (Maintainer)
-- Lewis Tunstall lewis.c.tunstall@gmail.com (Maintainer)
+- Raphael Reinhauer raphael.reinauer@epfl.ch (Developer)
 - Matteo Caorsi m.caorsi@l2f.ch (Project Leader)
 
 Former Project Team Members:
 ----------------------------
 
-- Philippe Nguyen p.nguyen@l2f.ch (Developer)

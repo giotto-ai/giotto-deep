@@ -2,11 +2,11 @@ import torch
 from gtda.homology import VietorisRipsPersistence
 from gtda.plotting import plot_diagram
 
-import utility
+from gdeep.neural_nets.utility import get_activations, Layers_list
 
 def persistence_diagrams_of_activations(model, X_tensor,
                 layer_types=[torch.nn.Linear],
-                homology_dimensions=[0, 1], layers=utility.Layers_list('All')):
+                homology_dimensions=[0, 1], layers=Layers_list('All')):
     """Returns list of persistence diagrams of the activations of all
     layers of type layer_types
 
@@ -22,7 +22,7 @@ def persistence_diagrams_of_activations(model, X_tensor,
     """
     
     
-    activations_layers = utility.get_activations(model, X_tensor)
+    activations_layers = get_activations(model, X_tensor)
 
     choosen_activations_layers = []
 
@@ -37,3 +37,9 @@ def persistence_diagrams_of_activations(model, X_tensor,
     persistence_diagrams = VR.fit_transform(choosen_activations_layers)
 
     return persistence_diagrams
+
+def plot_persistence_diagrams(persistence_diagrams, save = False):
+    for i, persistence_diagram in enumerate(persistence_diagrams):
+        plot_persistence_diagram = plot_diagram(persistence_diagram)
+
+        plot_persistence_diagram.show()

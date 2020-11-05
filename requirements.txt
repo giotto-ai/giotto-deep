@@ -3,3 +3,5 @@ giotto-tda
 numpy
 pandas
 plotly
+matplotlib
+scikit-learn
