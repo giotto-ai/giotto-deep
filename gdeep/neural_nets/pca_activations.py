@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA
 
-from .utility import get_activations
+from gdeep.neural_nets.utility import get_activations
 
 
 def plot_PCA_activations(model, X_tensor, colors, n_components=2):
