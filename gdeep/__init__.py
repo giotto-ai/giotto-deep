@@ -3,5 +3,6 @@
 from ._version import __version__
 
 __all__ = [
-    'neural_nets'
+    'neural_nets',
+    'heatmaps'
     ] 

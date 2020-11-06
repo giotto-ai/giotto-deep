@@ -1,7 +1,9 @@
-torch
+torch == 1.4.0
 giotto-tda
 numpy
 pandas
 plotly
 matplotlib
 scikit-learn
+scipy
+fastai
