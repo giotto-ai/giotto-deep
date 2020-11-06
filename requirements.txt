@@ -6,4 +6,4 @@ plotly
 matplotlib
 scikit-learn
 scipy
-fastai
+fastai == 1.0.60
