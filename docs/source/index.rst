@@ -17,6 +17,9 @@ Indices and tables
 
 .. automodule:: gdeep.neural_nets
    :members:
+   
+.. automodule:: gdeep.heatmaps
+   :members:
 
 References
 ----------
