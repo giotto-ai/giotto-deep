@@ -6,5 +6,5 @@ pandas
 plotly
 matplotlib
 scikit-learn
-scipy == 1.5.2
+scipy
 fastai == 1.0.60
