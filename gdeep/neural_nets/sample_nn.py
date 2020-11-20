@@ -54,3 +54,16 @@ class DeeperNN(nn.Module):
         x = self.drop_layer(x)
         x = F.leaky_relu(self.fc2(x))
         return x
+
+
+class LogisticRegressionNN(nn.Module):
+    """This functions creates a logistic regression neural network
+    """
+    
+    def __init__(self, dim_input=2):
+        super(LogisticRegressionNN, self).__init__()
+        self.fc1 = nn.Linear(dim_input, 1, bias=True)
+
+    def forward(self, x):
+        x = F.sigmoid(self.fc1(x))
+        return x
