@@ -118,6 +118,72 @@ class ConstructorNN(ListModule):
         return F.sigmoid(self.layers[-1](x))
 
 
+
+# build a custom network class to easily do experiments
+class Net(nn.Module):
+    '''This is the custom network that is easily built from an array,
+    in which the number and dimensions of the layers is specified.
+    '''
+    def __init__(self,verbose = 0, arch=[2,3,3]):
+        '''
+        Parameters
+        ----------
+        
+         - verbose: bool, default = 0;
+             set this to 1 for debugging
+         - arch: list of int or 1d array, default=[2,3,3];
+             this is the list containing the dimension of the layers
+             inside your network. all laysers have ``relu`` except for
+             the last one which has ``sigmoid`` as activation function.
+             The fsrt number is the dimension of the input! No need to
+             specify the output dimension of 1
+        '''
+        super(Net, self).__init__()
+        self.verbose = verbose
+        self.arch = arch
+        for i,in_f in enumerate(arch):
+            try:
+                val = "self.layer"+str(i)+"="+\
+                "nn.Linear("+str(in_f) +","+str(arch[i+1])+")"
+                exec(val)
+                val2 = "self.layer"+str(i)+".weight.data.uniform_(-1, 1)"
+                eval(val2)
+                val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
+                eval(val3)
+            except:
+                val = "self.layer"+str(i)+"="+\
+                "nn.Linear("+str(in_f) +",1)"
+                exec(val)
+                val2 = "self.layer"+str(i)+".weight.data.uniform_(-1, 1)"
+                eval(val2)
+                val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
+                eval(val3)
+
+    def forward(self, x_cat, x_cont):
+        output_vars = []
+        for i,in_f in enumerate(self.arch):
+            if i == 0:
+                val = "x"+str(i)+"=F.relu("+\
+                "self.layer"+str(i)+"(x_cont)"+")"
+            # put sigmoid in last layer
+            elif i == len(self.arch)-1:
+                val = "x"+str(i)+"=torch.sigmoid("+\
+                "self.layer"+str(i)+"(x"+str(i-1)+")"+")"
+            else:
+                val = "x"+str(i)+"=F.relu("+\
+                "self.layer"+str(i)+"(x"+str(i-1)+")"+")"
+            if self.verbose:
+                print(val)
+            try:
+                exec(val)
+            except:
+                raise ValueError("The dimensions of x"+str(i)+" are not correct!")
+            if self.verbose:
+                print("x"+str(i)+" size: ",eval("x"+str(i)+".shape"))
+        return eval("x"+str(i))
+
+
+
 def train_classification_nn(nn, X_tensor, y_tensor, lr=0.001, weight_decay=1e-5, n_epochs=1000, with_l2_reg=False):
     """Train a neural network on a classifiction task
 
@@ -161,7 +227,7 @@ def train_classification_nn(nn, X_tensor, y_tensor, lr=0.001, weight_decay=1e-5,
 
 log_reg = LogisticRegressionNN(2)
 
-circle_detect = ConstructorNN([2,3])
+circle_detect = Net(1, [2,3])
 
 X_train = torch.from_numpy(np.concatenate((A, B))).float()
 y_train = torch.from_numpy(np.concatenate((np.ones(A.shape[0]),\
@@ -227,4 +293,3 @@ Z_tensor = Z_tensor.reshape((X_tensor.shape[0],X_tensor.shape[1]))
 #torch.div(torch.exp(XY_tensor)[:,:,0],torch.sum(torch.exp(XY_tensor), axis=2))
 Z = Z_tensor.detach().numpy()
 plt.contourf(X, Y, Z)
-# %%
