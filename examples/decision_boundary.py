@@ -29,10 +29,10 @@ B = data[label==1] #+ [2,0]
 # %%
 plot_point_cloud(np.concatenate((A, B)))
 # %%
-n_samples = 100
+n_samples = 1000
 sample_points = np.random.rand(n_samples, 2)
 
-sample_points = sample_points.dot(np.diag([4,2])) + np.array([-1,-1])
+sample_points = sample_points.dot(np.diag([2,2])) + np.array([-1,-1])
 # %%
 plot_point_cloud(np.concatenate((A, B,sample_points)))
 # %%
@@ -44,17 +44,17 @@ plt.show()
 # %%
 # Train a simple logistic regression model for the binary classification task
 
-# class LogisticRegressionNN(nn.Module):
-#     """This functions creates a logistic regression neural network
-#     """
+class LogisticRegressionNN(nn.Module):
+    """This functions creates a logistic regression neural network
+    """
     
-#     def __init__(self, dim_input=2):
-#         super(LogisticRegressionNN, self).__init__()
-#         self.fc1 = nn.Linear(dim_input, 1, bias=True)
+    def __init__(self, dim_input=2):
+        super(LogisticRegressionNN, self).__init__()
+        self.fc1 = nn.Linear(dim_input, 1, bias=True)
 
-#     def forward(self, x):
-#         x = F.sigmoid(self.fc1(x))
-#         return x
+    def forward(self, x):
+        x = F.sigmoid(self.fc1(x))
+        return x
 
 
 class ListModule(nn.Module):
@@ -159,7 +159,7 @@ class Net(nn.Module):
                 val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
                 eval(val3)
 
-    def forward(self, x_cat, x_cont):
+    def forward(self, x_cont):
         output_vars = []
         for i,in_f in enumerate(self.arch):
             if i == 0:
@@ -227,7 +227,7 @@ def train_classification_nn(nn, X_tensor, y_tensor, lr=0.001, weight_decay=1e-5,
 
 log_reg = LogisticRegressionNN(2)
 
-circle_detect = Net(1, [2,3])
+circle_detect = Net(0, [2,10,10])
 
 X_train = torch.from_numpy(np.concatenate((A, B))).float()
 y_train = torch.from_numpy(np.concatenate((np.ones(A.shape[0]),\
@@ -236,11 +236,11 @@ y_train = torch.from_numpy(np.concatenate((np.ones(A.shape[0]),\
 print(log_reg)
 print(circle_detect)
 
-train_classification_nn(circle_detect, X_train, y_train, n_epochs=5000)
+train_classification_nn(circle_detect, X_train, y_train, n_epochs=20000)
 # %%
 
-epsilon = 0.5
-n_epochs = 50
+epsilon = 0.01
+n_epochs = 1000
 
 sample_points_tensor = torch.from_numpy(sample_points).float()
 
@@ -248,11 +248,7 @@ for _ in range(0,n_epochs):
 
     delta = torch.zeros_like(sample_points_tensor, requires_grad=True)
 
-    predict = log_reg.forward(sample_points_tensor + delta)
-
-    #loss = torch.sum(nn.Softmax(dim=0)(loss), axis=1)
-    #loss = torch.div(torch.exp(loss),torch.sum(torch.exp(loss), axis=1))
-    #print(loss)
+    predict = circle_detect.forward(sample_points_tensor + delta)
 
     loss = torch.sum((predict-0.5)**2)
 
@@ -260,7 +256,24 @@ for _ in range(0,n_epochs):
 
     sample_points_tensor -= epsilon * delta.grad.detach()
 
+delta = torch.zeros_like(sample_points_tensor, requires_grad=True)
+
+predict = circle_detect.forward(sample_points_tensor+delta)
+loss = torch.sum((predict-0.5)**2)
+
+loss.backward()
+
+
+sample_points_tensor = sample_points_tensor[\
+    torch.stack((
+    #torch.norm(delta.grad.detach(), dim=1)> 1.e-05,\
+    (1.-predict>1e-2)[:,0],\
+    (predict>1e-2)[:,0]\
+    ),dim=1).all(dim=1)\
+    ]
+
 sample_points_new = sample_points_tensor.numpy()
+
 
 # plt.scatter(A[:,0],A[:,1])
 # plt.scatter(B[:,0],B[:,1])
@@ -269,16 +282,16 @@ sample_points_new = sample_points_tensor.numpy()
 
 plt.scatter(A[:,0],A[:,1])
 plt.scatter(B[:,0],B[:,1])
-plt.scatter(sample_points[:,0],sample_points[:,1])
+#plt.scatter(sample_points[:,0],sample_points[:,1])
 plt.scatter(sample_points_new[:,0],sample_points_new[:,1])
 
 plt.show()
 # %%
 # Plot log_reg
 
-delta = 1
-x = np.arange(-9.0, 9.0, delta)
-y = np.arange(-9.0, 9.0, delta)
+delta = 0.1
+x = np.arange(-1.5, 1.5, delta)
+y = np.arange(-1.5, 1.5, delta)
 X, Y = np.meshgrid(x, y)
 
 X_tensor, Y_tensor = torch.from_numpy(X).float(), torch.from_numpy(Y).float()
@@ -288,8 +301,10 @@ XY_tensor = torch.cat((X_tensor,Y_tensor), 2)
 
 XY_tensor = XY_tensor.reshape((-1,2))
 
-Z_tensor = log_reg.forward(XY_tensor)#nn.Softmax(dim=0)(XY_tensor)[:,0]
+Z_tensor = circle_detect.forward(XY_tensor)#nn.Softmax(dim=0)(XY_tensor)[:,0]
 Z_tensor = Z_tensor.reshape((X_tensor.shape[0],X_tensor.shape[1]))
 #torch.div(torch.exp(XY_tensor)[:,:,0],torch.sum(torch.exp(XY_tensor), axis=2))
 Z = Z_tensor.detach().numpy()
 plt.contourf(X, Y, Z)
+
+# %%
