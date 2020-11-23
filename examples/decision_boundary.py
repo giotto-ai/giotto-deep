@@ -1,9 +1,8 @@
 #%%
 # Create binary data cloud
 
-%reload_ext autoreload
-%autoreload 2
-%matplotlib inline
+
+import math
 
 seed=42
 
@@ -307,4 +306,95 @@ Z_tensor = Z_tensor.reshape((X_tensor.shape[0],X_tensor.shape[1]))
 Z = Z_tensor.detach().numpy()
 plt.contourf(X, Y, Z)
 
+# %%
+def make_torus_point_cloud(label: int, n_points: int, noise: float,\
+    rotation: Rotation, base_point: np.array, radius: float=1.):
+    """Generate point cloud of a torus
+
+    Args:
+        label (int): label of the data points
+        n_points (int): number of sample points for each direction
+        noise (float): noise
+        rotation: Rotation
+        base_point (np.array): center of the torus
+        radius: float
+
+    Returns:
+        (np.array, np.array): data_points, labels
+    """
+    torus_point_clouds = np.asarray(
+            [
+                [
+                    (2 + np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
+                    (2 + np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
+                    np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
+                ]
+                for t in range(n_points)
+                for s in range(n_points)
+            ]
+        )
+    
+    # print(
+    # torus_point_clouds.shape,
+    # rotation.rotation_matrix().shape
+    # )
+    torus_point_clouds = np.einsum("ij,kj->ki",  rotation.rotation_matrix(), torus_point_clouds)
+
+    torus_point_clouds += base_point
+
+    # label tori with 2
+    torus_labels = label * np.ones(n_points)
+
+    return torus_point_clouds, torus_labels
+
+
+
+torus_point_clouds, torus_labels = make_torus_point_cloud(0, 20, 0.0,\
+    Rotation(1,2,math.pi/2), np.array([[1,0,0]]))
+torus_point_clouds_2, torus_labels_2 = make_torus_point_cloud(1, 20, 0.0,\
+    Rotation(1,2,0), np.array([[2,0,0]]))
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+data_points = np.concatenate((torus_point_clouds,torus_point_clouds_2), axis=0)
+labels = np.concatenate((torus_labels,torus_labels_2), axis=0)
+ms = ['o' if lab==1. else '^' for lab in list(labels)]
+
+#ax.scatter(data_points[:,0], data_points[:,1], data_points[:,2], marker=ms)
+ax.scatter(torus_point_clouds[:,0], torus_point_clouds[:,1], torus_point_clouds[:,2])
+ax.scatter(torus_point_clouds_2[:,0], torus_point_clouds_2[:,1], torus_point_clouds_2[:,2])
+
+plt.show()
+
+# plot_point_cloud(data_points,\
+#     np.concatenate((torus_labels, torus_labels_2), axis=0))
+# %%
+
+class Rotation():
+    def __init__(self, axis_0, axis_1, angle):
+        self._axis_0 = axis_0
+        self._axis_1 = axis_1
+        self._angle = angle
+
+    def return_axis(self, idx):
+        return eval('self._axis_'+str(idx))
+    
+    def return_angle(self):
+        return self._angle
+
+    def rotation_matrix(self):
+        rotation_matrix = np.identity(3)
+        rotation_matrix[self._axis_0,self._axis_0]\
+            = math.cos(self._angle)
+        rotation_matrix[self._axis_1,self._axis_1]\
+            = math.cos(self._angle)
+        rotation_matrix[self._axis_1,self._axis_0]\
+            = math.sin(self._angle)
+        rotation_matrix[self._axis_0,self._axis_1]\
+            = -math.sin(self._angle)
+        return rotation_matrix
 # %%
