@@ -183,44 +183,7 @@ class Net(nn.Module):
 
 
 
-def train_classification_nn(nn, X_tensor, y_tensor, lr=0.001, weight_decay=1e-5, n_epochs=1000, with_l2_reg=False):
-    """Train a neural network on a classifiction task
 
-    Args:
-        nn (nn.Module): [description]
-        X_tensor ([type]): [description]
-        y_tensor ([type]): [description]
-        lr (float, optional): [description]. Defaults to 0.001.
-        weight_decay ([type], optional): [description]. Defaults to 1e-5.
-        epochs (int, optional): [description]. Defaults to 1000.
-        with_l2_reg (bool, optional): [description]. Defaults to False.
-    """
-    loss_function = torch.nn.BCELoss()
-    optimizer = torch.optim.Adam(nn.parameters(),
-                    lr=lr, weight_decay=1e-5)
-
-
-    for epoch in range(n_epochs):
-        y_pred = nn(X_tensor)
-
-        loss = loss_function(y_pred, y_tensor)
-
-        # L2-regularization
-        if with_l2_reg:
-            lamb = 0.01
-            l2_reg = torch.tensor(0.)
-            for param in nn.parameters():
-                l2_reg += torch.norm(param)
-            loss += lamb*l2_reg
-
-        if epoch%100 == 99:
-            print(epoch, loss.item())
-
-        optimizer.zero_grad()
-
-        loss.backward()
-
-        optimizer.step()
 
 # %%
 
