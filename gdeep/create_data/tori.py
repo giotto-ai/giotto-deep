@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 class Rotation():
     def __init__(self, axis_0, axis_1, angle):
@@ -29,10 +30,6 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
     rotation: Rotation, base_point: np.array, radius: float=1.):
     """Generate point cloud of a torus
 
-    Example:
-    torus_point_clouds, torus_labels = make_torus_point_cloud(0, 20, 0.0,\
-    Rotation(1,2,math.pi/2), np.array([[1,0,0]]))
-
     Args:
         label (int): label of the data points
         n_points (int): number of sample points for each direction
@@ -47,9 +44,9 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
     torus_point_clouds = np.asarray(
             [
                 [
-                    (2 + np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
-                    (2 + np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
-                    np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
+                    (2 + radius*np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
+                    (2 + radius*np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
+                    radius*np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
                 ]
                 for t in range(n_points)
                 for s in range(n_points)
@@ -60,7 +57,7 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
 
     torus_point_clouds += base_point
 
-    # label tori
-    torus_labels = label * np.ones(n_points)
+    # label tori with 2
+    torus_labels = label * np.ones(n_points**2)
 
     return torus_point_clouds, torus_labels
