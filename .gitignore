@@ -16,6 +16,7 @@ build
 examples/dask-worker-space
 examples/.ipynb_checkpoints
 examples/*/
+examples/*.nbconvert.ipynb
 
 # Data files
 *.pkl
