@@ -14,5 +14,5 @@ pytest
 set -e
 for n in examples/*.ipynb
 do
-  jupyter nbconvert --to notebook --execute $n
+  jupyter nbconvert --ExecutePreprocessor.timeout 500 --to notebook --execute $n
 done
