@@ -5,7 +5,7 @@ numpy
 pandas
 plotly
 matplotlib
-scikit-learn
+#scikit-learn
 sklearn
 torchsummary
 scipy
