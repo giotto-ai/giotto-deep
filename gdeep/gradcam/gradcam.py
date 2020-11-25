@@ -1,3 +1,6 @@
+# This code is taken from the fastai2_extension package.
+# acknowlegment to rsomani95
+
 import PIL
 import torchvision
 from fastai.vision.all import *
