@@ -17,14 +17,15 @@ def plot_PCA_activations(model, X_tensor, colors, n_components=2):
     activations_layers = get_activations(model,X_tensor)
 
     for i, activations_layer in enumerate(activations_layers.get_outputs()):
-        pca = PCA(n_components=n_components)
+        if activations_layer.shape[1]>=n_components:
+            pca = PCA(n_components=n_components)
 
-        X_pca = pca.fit_transform(activations_layer)
+            X_pca = pca.fit_transform(activations_layer)
 
-        #TODO: fix this manual defintion
-        color_scheme = colors
+            #TODO: fix this manual defintion
+            color_scheme = colors
 
-        plt.scatter(X_pca[:,0], X_pca[:,1],c=color_scheme)
-        plt.title("hidden layer: " +str(i))
-        plt.axis('equal')
-        plt.show()
+            plt.scatter(X_pca[:,0], X_pca[:,1],c=color_scheme)
+            plt.title("hidden layer: " +str(i))
+            plt.axis('equal')
+            plt.show()

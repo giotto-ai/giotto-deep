@@ -13,7 +13,7 @@ class SimpleNN(nn.Module):
         super(SimpleNN, self).__init__()
         self.fc1 = nn.Linear(2, nodes_layer_1, bias=True)
         self.drop_layer = nn.Dropout(p=dropout_p)
-        self.fc2 = nn.Linear(nodes_layer_1, 2, bias=True)
+        self.fc2 = nn.Linear(nodes_layer_1, 1, bias=True)
 
         # Initialize weights to zero
         self.fc1.weight.data.fill_(0.)
@@ -22,7 +22,7 @@ class SimpleNN(nn.Module):
     def forward(self, x):
         x = F.leaky_relu(self.fc1(x))
         x = self.drop_layer(x)
-        x = F.leaky_relu(self.fc2(x))
+        x = torch.sigmoid(self.fc2(x))
         return x
 
 
