@@ -12,4 +12,4 @@ def test_SimpleNN():
     sn = SimpleNN()
     out = sn.forward(X)
     print(out.shape)
-    assert out.shape[0] == 10 and out.shape[1] == 2
+    assert out.shape[0] == 10 and out.shape[1] == 1

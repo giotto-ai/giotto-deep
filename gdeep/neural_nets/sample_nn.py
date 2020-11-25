@@ -111,7 +111,7 @@ class Net(nn.Module):
                 eval(val3)
 
     def forward(self, x_cont):
-        output_vars = []
+        #output_vars = []
         for i,in_f in enumerate(self.arch):
             if i == 0:
                 val = "x"+str(i)+"=F.relu("+\
