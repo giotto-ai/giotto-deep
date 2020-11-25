@@ -5,8 +5,8 @@ numpy
 pandas
 plotly
 matplotlib
-#scikit-learn
-sklearn
+scikit-learn
+#sklearn
 torchsummary
 scipy
 fastai == 1.0.60
