@@ -39,7 +39,7 @@ def persistence_diagrams_of_activations(model, X_tensor,
     return persistence_diagrams
 
 def plot_persistence_diagrams(persistence_diagrams, save = False):
-    for i, persistence_diagram in enumerate(persistence_diagrams):
+    for _, persistence_diagram in enumerate(persistence_diagrams):
         plot_persistence_diagram = plot_diagram(persistence_diagram)
 
         plot_persistence_diagram.show()

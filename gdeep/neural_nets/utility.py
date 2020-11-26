@@ -2,8 +2,6 @@ import torch
 import numpy as np
 
 
-
-
 def train_classification_nn(nn, X_tensor, y_tensor, lr=0.001, weight_decay=1e-5, n_epochs=1000, with_l2_reg=False):
     """Train a neural network on a classifiction task
 
@@ -16,7 +14,7 @@ def train_classification_nn(nn, X_tensor, y_tensor, lr=0.001, weight_decay=1e-5,
         epochs (int, optional): [description]. Defaults to 1000.
         with_l2_reg (bool, optional): [description]. Defaults to False.
     """
-    loss_function = torch.nn.CrossEntropyLoss()
+    loss_function = torch.nn.BCELoss()
     optimizer = torch.optim.Adam(nn.parameters(),
                     lr=lr, weight_decay=1e-5)
 
