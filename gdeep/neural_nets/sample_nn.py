@@ -78,7 +78,7 @@ class Net(nn.Module):
     '''This is the custom network that is easily built from an array,
     in which the number and dimensions of the layers is specified.
     '''
-    def __init__(self,verbose = 0, arch=[2,3,3]):
+    def __init__(self,verbose = 1, arch=[2,3,3]):
         '''
         Parameters
         ----------
@@ -121,8 +121,8 @@ class Net(nn.Module):
                 "self.layer"+str(i)+"(x_cont)"+")"
             # put sigmoid in last layer
             elif i == len(self.arch)-1:
-                val = "x"+str(i)+"=torch.sigmoid("+\
-                "self.layer"+str(i)+"(x"+str(i-1)+")"+")"
+                val = "x"+str(i)+"=F.softmax("+\
+                "self.layer"+str(i)+"(x"+str(i-1)+")"+", dim=-1)"
             else:
                 val = "x"+str(i)+"=F.relu("+\
                 "self.layer"+str(i)+"(x"+str(i-1)+")"+")"
