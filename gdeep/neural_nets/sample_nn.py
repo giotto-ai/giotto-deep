@@ -58,6 +58,10 @@ class DeeperNN(nn.Module):
 
 class LogisticRegressionNN(nn.Module):
     """This functions creates a logistic regression neural network
+
+    Args:
+            dim_input (int, optional): This is the number of features of the input data.
+            Defaults to 2.
     """
     
     def __init__(self, dim_input=2):
