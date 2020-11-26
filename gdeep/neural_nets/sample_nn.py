@@ -77,7 +77,6 @@ class LogisticRegressionNN(nn.Module):
 class Net(nn.Module):
     '''This is the custom network that is easily built from an array,
     in which the number and dimensions of the layers is specified.
-    (from Matteo)
     '''
     def __init__(self,verbose = 0, arch=[2,3,3]):
         '''
@@ -91,7 +90,7 @@ class Net(nn.Module):
              inside your network. all laysers have ``relu`` except for
              the last one which has ``sigmoid`` as activation function.
              The fsrt number is the dimension of the input! No need to
-             specify the output dimension of 1
+             specify the output dimension of 2 (=n_classes)
         '''
         super(Net, self).__init__()
         self.verbose = verbose
@@ -107,15 +106,15 @@ class Net(nn.Module):
                 eval(val3)
             except:
                 val = "self.layer"+str(i)+"="+\
-                "nn.Linear("+str(in_f) +",1)"
+                "nn.Linear("+str(in_f) +",2)"
                 exec(val)
                 val2 = "self.layer"+str(i)+".weight.data.uniform_(-1, 1)"
                 eval(val2)
-                val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
+                val3 = "self.layer"+str(i)+".bias.data.uniform_(-0.01, 0.01)"
                 eval(val3)
 
-    def forward(self, x_cont):
-        #output_vars = []
+    def forward(self, x_cat, x_cont):
+        output_vars = []
         for i,in_f in enumerate(self.arch):
             if i == 0:
                 val = "x"+str(i)+"=F.relu("+\
