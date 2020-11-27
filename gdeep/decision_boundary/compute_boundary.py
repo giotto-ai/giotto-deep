@@ -28,11 +28,12 @@ class GradientFlow():
         self.sample_points_tensor = torch.from_numpy(self.sample_points()).float()
 
     def gradient(self):
+
         delta = torch.zeros_like(self.sample_points_tensor, requires_grad=True)
 
-        predict = self.neural_net.forward(None, self.sample_points_tensor + delta)
+        prediction = self.neural_net.forward(None, self.sample_points_tensor + delta)
 
-        loss = torch.sum((predict-0.5)**2)
+        loss = torch.sum((prediction-0.5)**2)
 
         loss.backward()
 
@@ -58,21 +59,22 @@ class GradientFlow():
 
         sample_points_db_tensor = self.sample_points_tensor[\
             torch.stack((
-            (1.-predict>4e-1)[:,0],\
-            (predict>4e-1)[:,0]\
+            (predict>4e-1)[:,0],\
+            (predict>4e-1)[:,1]\
             ),dim=1).all(dim=1)\
             ]
-
+        
         sample_points_db = sample_points_db_tensor.numpy()
-
-        return sample_points_db
+        # in case the nn prediction was poor
+        if len(sample_points_db) > 0:
+            return sample_points_db
+        return torch.zeros_like(self.sample_points_tensor).numpy()
 
     def __call__(self):
         return self.compute_boundary()
 
 
     def return_sample_points(self):
-
         return self.sample_points
 
 
