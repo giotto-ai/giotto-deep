@@ -1,10 +1,11 @@
-torch == 1.4.0
-torchvision == 0.5.0
+torch
+torchvision
 giotto-tda
 numpy
 pandas
 plotly
 matplotlib
+matplotlib_venn
 scikit-learn
 scipy
-fastai == 1.0.60
+fastai

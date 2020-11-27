@@ -24,9 +24,6 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">giotto-deep 0.0.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to giotto-deep’s documentation!</a></li> 
       </ul>
@@ -42,108 +39,8 @@
 <div class="toctree-wrapper compound">
 </div>
 </div>
-<div class="section" id="module-gdeep.neural_nets">
-<span id="indices-and-tables"></span><h1>Indices and tables<a class="headerlink" href="#module-gdeep.neural_nets" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="gdeep.neural_nets.DeeperNN">
-<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">DeeperNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dropout_p</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.DeeperNN" title="Permalink to this definition">¶</a></dt>
-<dd><p>This functions creates a deeper neural network with
-four fully connected layers of dimensions 2 - 16 - 32
--64 - 2.</p>
-<dl class="py method">
-<dt id="gdeep.neural_nets.DeeperNN.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.DeeperNN.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt id="gdeep.neural_nets.SaveLayerOutput">
-<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SaveLayerOutput</code><a class="headerlink" href="#gdeep.neural_nets.SaveLayerOutput" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="gdeep.neural_nets.SaveNodeOutput">
-<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SaveNodeOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">entry</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.SaveNodeOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>[summary]</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>SaveOutput ([type]): [description]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt id="gdeep.neural_nets.SaveOutput">
-<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SaveOutput</code><a class="headerlink" href="#gdeep.neural_nets.SaveOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>[summary]</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="gdeep.neural_nets.SimpleNN">
-<em class="property">class </em><code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">SimpleNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes_layer_1</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dropout_p</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.SimpleNN" title="Permalink to this definition">¶</a></dt>
-<dd><p>This functions creates a simple neural network with
-three fully connected layers of dimensions 2 - 10 - 2.</p>
-<dl class="py method">
-<dt id="gdeep.neural_nets.SimpleNN.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.SimpleNN.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt id="gdeep.neural_nets.get_activations">
-<code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">get_activations</code><span class="sig-paren">(</span><em class="sig-param">model, X_tensor, layer_types=[&lt;class 'torch.nn.modules.linear.Linear'&gt;]</em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.get_activations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns activation of layers</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>model ([type]): [description]
-X_tensor ([type]): [description]
-layer_types (list, optional): [description]. Defaults to [torch.nn.Linear].</p>
-</dd>
-<dt>Returns:</dt><dd><p>[type]: [description]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="gdeep.neural_nets.train_classification_nn">
-<code class="sig-prename descclassname">gdeep.neural_nets.</code><code class="sig-name descname">train_classification_nn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nn</span></em>, <em class="sig-param"><span class="n">X_tensor</span></em>, <em class="sig-param"><span class="n">y_tensor</span></em>, <em class="sig-param"><span class="n">lr</span><span class="o">=</span><span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">weight_decay</span><span class="o">=</span><span class="default_value">1e-05</span></em>, <em class="sig-param"><span class="n">n_epochs</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">with_l2_reg</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.neural_nets.train_classification_nn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Train a neural network on a classifiction task</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>nn (nn.Module): [description]
-X_tensor ([type]): [description]
-y_tensor ([type]): [description]
-lr (float, optional): [description]. Defaults to 0.001.
-weight_decay ([type], optional): [description]. Defaults to 1e-5.
-epochs (int, optional): [description]. Defaults to 1000.
-with_l2_reg (bool, optional): [description]. Defaults to False.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<span class="target" id="module-gdeep.heatmaps"></span><dl class="py function">
-<dt id="gdeep.heatmaps.get_grad_heatmap">
-<code class="sig-prename descclassname">gdeep.heatmaps.</code><code class="sig-name descname">get_grad_heatmap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">learn</span></em>, <em class="sig-param"><span class="n">xb</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">size</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.heatmaps.get_grad_heatmap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Main function to get hmap for heatmap and xb_grad for guided backprop</p>
-</dd></dl>
-
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -164,7 +61,7 @@ with_l2_reg (bool, optional): [description]. Defaults to False.</p>
   <h3><a href="#">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Welcome to giotto-deep’s documentation!</a></li>
-<li><a class="reference internal" href="#module-gdeep.neural_nets">Indices and tables</a><ul>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a><ul>
 <li><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
@@ -197,16 +94,13 @@ with_l2_reg (bool, optional): [description]. Defaults to False.</p>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">giotto-deep 0.0.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to giotto-deep’s documentation!</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2020, L2F SA.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
     </div>
   </body>
 </html>

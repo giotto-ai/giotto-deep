@@ -26,3 +26,8 @@ Make sure you have upgraded to the last version of `pip` with
 python -m pip install --upgrade pip
 ```
 
+## Run local tests
+To run both unit and integration tests on *macOS* or *Linux*, simply run the following command from the root folder:
+```
+bash local_test.bh
+```
