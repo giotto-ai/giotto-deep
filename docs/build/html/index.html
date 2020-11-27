@@ -24,6 +24,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">giotto-deep 0.0.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to giotto-deep’s documentation!</a></li> 
       </ul>
@@ -39,9 +42,254 @@
 <div class="toctree-wrapper compound">
 </div>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="references">
+<div class="section" id="module-gdeep.create_nets">
+<span id="indices-and-tables"></span><h1>Indices and tables<a class="headerlink" href="#module-gdeep.create_nets" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="gdeep.create_nets.DeeperNN">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">DeeperNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dropout_p</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.DeeperNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>This functions creates a deeper neural network with
+four fully connected layers of dimensions 2 - 16 - 32
+-64 - 2.</p>
+<dl class="py method">
+<dt id="gdeep.create_nets.DeeperNN.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.DeeperNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.create_nets.LogisticRegressionNN">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">LogisticRegressionNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dim_input</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.LogisticRegressionNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>This functions creates a logistic regression neural network</p>
+<dl class="py method">
+<dt id="gdeep.create_nets.LogisticRegressionNN.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.LogisticRegressionNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.create_nets.Net">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">Net</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">arch</span><span class="o">=</span><span class="default_value">[2, 3, 3]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.Net" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the custom network that is easily built from an array,
+in which the number and dimensions of the layers is specified.
+(from Matteo)</p>
+<dl class="py method">
+<dt id="gdeep.create_nets.Net.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x_cat</span></em>, <em class="sig-param"><span class="n">x_cont</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.Net.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.create_nets.SaveLayerOutput">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">SaveLayerOutput</code><a class="headerlink" href="#gdeep.create_nets.SaveLayerOutput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.create_nets.SaveNodeOutput">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">SaveNodeOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">entry</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.SaveNodeOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>[summary]</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>SaveOutput ([type]): [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.create_nets.SaveOutput">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">SaveOutput</code><a class="headerlink" href="#gdeep.create_nets.SaveOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>[summary]</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="gdeep.create_nets.SimpleNN">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">SimpleNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes_layer_1</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dropout_p</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.SimpleNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>This functions creates a simple neural network with
+three fully connected layers of dimensions 2 - 10 - 2.</p>
+<dl class="py method">
+<dt id="gdeep.create_nets.SimpleNN.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.SimpleNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.create_nets.get_activations">
+<code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">get_activations</code><span class="sig-paren">(</span><em class="sig-param">model, X_tensor, layer_types=[&lt;class 'torch.nn.modules.linear.Linear'&gt;]</em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.get_activations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns activation of layers</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>model ([type]): [description]
+X_tensor ([type]): [description]
+layer_types (list, optional): [description]. Defaults to [torch.nn.Linear].</p>
+</dd>
+<dt>Returns:</dt><dd><p>[type]: [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.create_nets.train_classification_nn">
+<code class="sig-prename descclassname">gdeep.create_nets.</code><code class="sig-name descname">train_classification_nn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nn</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">lr</span><span class="o">=</span><span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">n_epochs</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">bs</span><span class="o">=</span><span class="default_value">32</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_nets.train_classification_nn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train a neural network on a classifiction task</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>nn (nn.Module): [description]</p></li>
+<li><p>X 2darray: [description]</p></li>
+<li><p>y 1darray: [description]</p></li>
+<li><p>lr (float, optional): [description]. Defaults to 0.001.</p></li>
+<li><p>epochs (int, optional): [description]. Defaults to 100.</p></li>
+<li><p>bs (int): batch size</p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>fastai tabular learner</p></li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<span class="target" id="module-gdeep.create_data"></span><dl class="py function">
+<dt id="gdeep.create_data.make_torus_point_cloud">
+<code class="sig-prename descclassname">gdeep.create_data.</code><code class="sig-name descname">make_torus_point_cloud</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">n_points</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">noise</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">rotation</span><span class="p">:</span> <span class="n">gdeep.create_data.tori.Rotation</span></em>, <em class="sig-param"><span class="n">base_point</span><span class="p">:</span> <span class="n">numpy.array</span></em>, <em class="sig-param"><span class="n">radius</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_data.make_torus_point_cloud" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate point cloud of a torus</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>label (int): label of the data points
+n_points (int): number of sample points for each direction
+noise (float): noise
+rotation: Rotation
+base_point (np.array): center of the torus
+radius: float</p>
+</dd>
+<dt>Returns:</dt><dd><p>(np.array, np.array): data_points, labels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-gdeep.decision_boundary"></span><dl class="py function">
+<dt id="gdeep.decision_boundary.gradient_flow">
+<code class="sig-prename descclassname">gdeep.decision_boundary.</code><code class="sig-name descname">gradient_flow</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">neural_net</span><span class="p">:</span> <span class="n">torch.nn.modules.module.Module</span></em>, <em class="sig-param"><span class="n">boundary_tuple</span><span class="p">:</span> <span class="n">list</span></em>, <em class="sig-param"><span class="n">n_samples</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">epsilon</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.01</span></em>, <em class="sig-param"><span class="n">n_epochs</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.decision_boundary.gradient_flow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes a the decision boundary of a neural network using
+gradient flow</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>neural_net (nn.Module): neural network trained on a binary</dt><dd><p>classification task</p>
+</dd>
+</dl>
+<p>boundary_tuple (list): [description]
+n_samples (int, optional): [description]. Defaults to 1000.
+n_epochs (int, optional): [description]. Defaults to 1000.</p>
+</dd>
+<dt>Returns:</dt><dd><p>numpy.ndarray: row wise sample of points on the decision boundary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.decision_boundary.sample_points_uniformly">
+<code class="sig-prename descclassname">gdeep.decision_boundary.</code><code class="sig-name descname">sample_points_uniformly</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tuple_list</span><span class="p">:</span> <span class="n">list</span></em>, <em class="sig-param"><span class="n">n_samples</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.decision_boundary.sample_points_uniformly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample uniformaly random in a box</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>tuple_list (list): list of intervals
+n_samples (int): number of sample points</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-gdeep.plotting"></span><dl class="py function">
+<dt id="gdeep.plotting.persistence_diagrams_of_activations">
+<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">persistence_diagrams_of_activations</code><span class="sig-paren">(</span><em class="sig-param">model, X, layer_types=[&lt;class 'torch.nn.modules.linear.Linear'&gt;], homology_dimensions=[0, 1], layers=&lt;gdeep.create_nets.utility.Layers_list object&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.persistence_diagrams_of_activations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of persistence diagrams of the activations of all
+layers of type layer_types</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>model (nn.Module): Neural Network
+X 2darray: [description]
+layer_types (list, optional): [description]. Defaults to [torch.nn.Linear].
+homology_dimensions (list, optional): list of homology dimensions. Defaults to [0, 1].
+layers ([type], optional): list of layer types to consider. Defaults to Layers_list(‘All’).</p>
+</dd>
+<dt>Returns:</dt><dd><p>list: list of persistence diagrams of activations of the different layers</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.plotting.plot_PCA_activations">
+<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">plot_PCA_activations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">labels</span></em>, <em class="sig-param"><span class="n">n_components</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.plot_PCA_activations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot PCA of the activations of all layers of the neural network</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>model ([type]): [description]</p></li>
+<li><p>X 2darray: [description]</p></li>
+<li><p>labels list or 1darray: [description]</p></li>
+<li><p>n_components (int, optional): [description]. Defaults to 2.</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.plotting.plot_activation_contours">
+<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">plot_activation_contours</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">delta</span><span class="o">=</span><span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">boundary_tuple</span><span class="o">=</span><span class="default_value">((- 1.5, 1.5), (- 1.5, 1.5))</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.plot_activation_contours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the contours of the last layer softmax</p>
+<ul class="simple">
+<li><p>data 2darray: arraa of the dataset</p></li>
+<li><p>boundary_points 2darray: output of gradient_flow</p></li>
+<li><p>labels list or 1darray: [description]</p></li>
+<li><p>n_components (int, optional): [description]. Defaults to 2.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="gdeep.plotting.plot_decision_boundary">
+<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">plot_decision_boundary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">labels</span></em>, <em class="sig-param"><span class="n">boundary_points</span></em>, <em class="sig-param"><span class="n">n_components</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.plot_decision_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot decision boundaries with the data</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>data 2darray: arraa of the dataset</p></li>
+<li><p>boundary_points 2darray: output of gradient_flow</p></li>
+<li><p>labels list or 1darray: [description]</p></li>
+<li><p>n_components (int, optional): [description]. Defaults to 2.</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<span class="target" id="module-gdeep.gradcam"></span><div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
@@ -61,7 +309,7 @@
   <h3><a href="#">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Welcome to giotto-deep’s documentation!</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a><ul>
+<li><a class="reference internal" href="#module-gdeep.create_nets">Indices and tables</a><ul>
 <li><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
@@ -94,6 +342,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="#">giotto-deep 0.0.1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to giotto-deep’s documentation!</a></li> 
       </ul>
