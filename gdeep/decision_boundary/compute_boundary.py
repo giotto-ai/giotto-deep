@@ -12,13 +12,13 @@ class GradientFlow():
         neural_net (nn.Module): neural network trained on a binary
                                 classification task
         boundary_tuple (list): [description]
-        n_samples (int, optional): [description]. Defaults to 1000.
-        n_epochs (int, optional): [description]. Defaults to 1000.
+        n_samples (int, optional): Number of sample points. Defaults to 1000.
+        n_epochs (int, optional): Number of epochs for the gradient flow. Defaults to 30.
     """
 
     def __init__(self, neural_net: nn.Module,  boundary_tuple: list,\
         n_samples: int = 1000,\
-        epsilon: float = 0.01, n_epochs: int = 1000):
+        epsilon: float = 0.01, n_epochs: int = 30):
 
         self.neural_net = neural_net
         self.n_samples = n_samples
@@ -59,8 +59,8 @@ class GradientFlow():
 
         sample_points_db_tensor = self.sample_points_tensor[\
             torch.stack((
-            (1.-predict>1e-1)[:,0],\
-            (predict>1e-1)[:,0]\
+            (1.-predict>4e-1)[:,0],\
+            (predict>4e-1)[:,0]\
             ),dim=1).all(dim=1)\
             ]
 
@@ -77,7 +77,10 @@ class GradientFlow():
         return self.sample_points
 
 
+class PrintGradientFlow():
 
+    def __init__(self, show_gradient: bool = True):
+        pass
 
 class UniformalySampledPoint():
     """ Sample uniformaly random in a box
@@ -108,4 +111,4 @@ class UniformalySampledPoint():
         Returns:
             int: dimension of point cloud
         """
-        return dim
+        return self._dim
