@@ -17,14 +17,14 @@ class GradientFlow():
     """
 
     def __init__(self, neural_net: nn.Module,  boundary_tuple: list,\
-        n_samples: int = 1000,\
+        n_samples: int = 10000,\
         epsilon: float = 0.01, n_epochs: int = 30):
 
         self.neural_net = neural_net
         self.n_samples = n_samples
         self.epsilon = epsilon
         self.n_epochs = n_epochs
-        self.sample_points = UniformalySampledPoint(boundary_tuple, n_samples=self.n_samples)
+        self.sample_points = UniformlySampledPoint(boundary_tuple, n_samples=self.n_samples)
         self.sample_points_tensor = torch.from_numpy(self.sample_points()).float()
 
     def gradient(self):
@@ -43,13 +43,12 @@ class GradientFlow():
 
     
     def gradient_step(self):
-
         self.sample_points_tensor -= self.epsilon * self.gradient()
 
     
 
     def gradient_flow(self):
-        for _ in range(0,self.n_epochs):
+        for _ in range(self.n_epochs):
             self.gradient_step()
 
 
@@ -82,8 +81,8 @@ class PrintGradientFlow():
     def __init__(self, show_gradient: bool = True):
         pass
 
-class UniformalySampledPoint():
-    """ Sample uniformaly random in a box
+class UniformlySampledPoint():
+    """ Sample uniformly random in a box
 
     Args:
         tuple_list (list): list of intervals

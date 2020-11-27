@@ -5,10 +5,10 @@ import numpy as np
 import pytest
 import torch
 
-from gdeep.decision_boundary import UniformalySampledPoint, PrintGradientFlow, GradientFlow
+from gdeep.decision_boundary import UniformlySampledPoint, PrintGradientFlow, GradientFlow
 
 def test_sample_points_uniformly():
-    sample_points = UniformalySampledPoint([(2,3), (1,2)], n_samples=1000)
+    sample_points = UniformlySampledPoint([(2,3), (1,2)], n_samples=1000)
 
     print(sample_points().shape)
     assert sample_points().shape == (1000,2)
