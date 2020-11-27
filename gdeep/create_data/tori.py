@@ -2,6 +2,15 @@ import math
 import numpy as np
 
 class Rotation():
+    """ Rotation in 3 dimensions
+    axis_0 and axis_1 are the standard basis vectors that
+    span the plane the rotation takes place and angle is
+    the angle of the rotation.
+    Args:
+            axis_0 (int): first basis vector of plane
+            axis_1 (int): second basis vector of plane
+            angle (float): rotation arrow
+    """
     def __init__(self, axis_0, axis_1, angle):
         self._axis_0 = axis_0
         self._axis_1 = axis_1
@@ -14,6 +23,12 @@ class Rotation():
         return self._angle
 
     def rotation_matrix(self):
+        """ Returns the rotation matrix corresponding
+        to the rotation
+
+        Returns:
+            ndarray: ratation matrix of shape (3, 3)
+        """
         rotation_matrix = np.identity(3)
         rotation_matrix[self._axis_0,self._axis_0]\
             = math.cos(self._angle)

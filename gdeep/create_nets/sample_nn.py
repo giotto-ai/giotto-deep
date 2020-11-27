@@ -58,6 +58,10 @@ class DeeperNN(nn.Module):
 
 class LogisticRegressionNN(nn.Module):
     """This functions creates a logistic regression neural network
+
+    Args:
+            dim_input (int, optional): This is the number of features of the input data.
+            Defaults to 2.
     """
     
     def __init__(self, dim_input=2):
@@ -73,9 +77,8 @@ class LogisticRegressionNN(nn.Module):
 class Net(nn.Module):
     '''This is the custom network that is easily built from an array,
     in which the number and dimensions of the layers is specified.
-    (from Matteo)
     '''
-    def __init__(self,verbose = 0, arch=[2,3,3]):
+    def __init__(self,verbose = 1, arch=[2,3,3]):
         '''
         Parameters
         ----------
@@ -87,7 +90,7 @@ class Net(nn.Module):
              inside your network. all laysers have ``relu`` except for
              the last one which has ``sigmoid`` as activation function.
              The fsrt number is the dimension of the input! No need to
-             specify the output dimension of 1
+             specify the output dimension of 2 (=n_classes)
         '''
         super(Net, self).__init__()
         self.verbose = verbose
@@ -107,11 +110,15 @@ class Net(nn.Module):
                 exec(val)
                 val2 = "self.layer"+str(i)+".weight.data.uniform_(-1, 1)"
                 eval(val2)
-                val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
+                val3 = "self.layer"+str(i)+".bias.data.uniform_(-0.01, 0.01)"
                 eval(val3)
 
     def forward(self, x_cat, x_cont):
+<<<<<<< HEAD:gdeep/create_nets/sample_nn.py
         #output_vars = []
+=======
+        output_vars = []
+>>>>>>> raphael_dev:gdeep/neural_nets/sample_nn.py
         for i,in_f in enumerate(self.arch):
             if i == 0:
                 val = "x"+str(i)+"=F.relu("+\
@@ -119,7 +126,11 @@ class Net(nn.Module):
             # put sigmoid in last layer
             elif i == len(self.arch)-1:
                 val = "x"+str(i)+"=F.softmax("+\
+<<<<<<< HEAD:gdeep/create_nets/sample_nn.py
                 "self.layer"+str(i)+"(x"+str(i-1)+")"+",dim=-1)"
+=======
+                "self.layer"+str(i)+"(x"+str(i-1)+")"+", dim=-1)"
+>>>>>>> raphael_dev:gdeep/neural_nets/sample_nn.py
             else:
                 val = "x"+str(i)+"=F.relu("+\
                 "self.layer"+str(i)+"(x"+str(i-1)+")"+")"
