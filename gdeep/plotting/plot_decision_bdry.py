@@ -61,7 +61,7 @@ def plot_activation_contours(model,delta=0.1, boundary_tuple=((-1.5, 1.5),(-1.5,
         - n_components (int, optional): [description]. Defaults to 2.
         """
     
-    delta = 0.1
+    delta = delta
     x = np.arange(*boundary_tuple[0], delta)
     y = np.arange(*boundary_tuple[1], delta)
     X, Y = np.meshgrid(x, y)
@@ -76,5 +76,5 @@ def plot_activation_contours(model,delta=0.1, boundary_tuple=((-1.5, 1.5),(-1.5,
     Z_tensor = model.forward(None, XY_tensor)
     Z_tensor = Z_tensor[:,0].reshape((X_tensor.shape[0],X_tensor.shape[1]))
     Z = Z_tensor.detach().numpy()
-    fig = go.Figure(data =go.Contour(z=Z))
+    fig = go.Figure(data =go.Contour(z=Z,x=x,y=y))
     fig.show()
