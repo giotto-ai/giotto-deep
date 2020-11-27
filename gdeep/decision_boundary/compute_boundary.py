@@ -38,7 +38,7 @@ def gradient_flow(neural_net: nn.Module,  boundary_tuple: list,\
 
         delta = torch.zeros_like(sample_points_tensor, requires_grad=True)
 
-        predict = neural_net.forward(sample_points_tensor + delta)
+        predict = neural_net.forward(None, sample_points_tensor + delta)
 
         loss = torch.sum((predict-0.5)**2)
 
@@ -48,7 +48,7 @@ def gradient_flow(neural_net: nn.Module,  boundary_tuple: list,\
 
     delta = torch.zeros_like(sample_points_tensor, requires_grad=True)
 
-    predict = neural_net.forward(sample_points_tensor+delta)
+    predict = neural_net.forward(None,sample_points_tensor+delta)
     loss = torch.sum((predict-0.5)**2)
 
     loss.backward()

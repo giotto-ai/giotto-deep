@@ -1,11 +1,11 @@
 
-
 from ._version import __version__
 
 __all__ = [
-    'neural_nets',
-    'gradcam'
+    'create_nets',
+    'gradcam',
     'heatmaps',
     'utility',
-    'decision_boundary'
+    'decision_boundary',
+    'plotting'
     ] 
