@@ -59,8 +59,8 @@ class GradientFlow():
 
         sample_points_db_tensor = self.sample_points_tensor[\
             torch.stack((
-            (predict>4e-1)[:,0],\
-            (predict>4e-1)[:,1]\
+            (predict>1e-1)[:,0],\
+            (predict>1e-1)[:,1]\
             ),dim=1).all(dim=1)\
             ]
         

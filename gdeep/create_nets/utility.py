@@ -51,7 +51,8 @@ def train_classification_nn(nn, X, y, lr=0.001, n_epochs=100, bs=32):
 
 
 class SaveOutput:
-    """[summary]
+    """ General class for saving outputs
+    outputs will be stored in a list 'outputs'
     """
     def __init__(self):
         self.outputs = []
@@ -66,10 +67,8 @@ class SaveOutput:
         return self.outputs
 
 class SaveNodeOutput(SaveOutput):
-    """[summary]
-
-    Args:
-        SaveOutput ([type]): [description]
+    """ Class for saving activations of a node in
+    a neural network.
     """
     def __init__(self, entry=0):
         super().__init__()
@@ -79,7 +78,14 @@ class SaveNodeOutput(SaveOutput):
         self.outputs.append(module_out[:,self.entry].detach())
 
 class SaveLayerOutput(SaveOutput):
-    def __call__(self, module, module_in, module_out):
+    def __call__(self, module: nn.Module, module_in, module_out):
+        """ Add activation 
+
+        Args:
+            module ([type]): [description]
+            module_in ([type]): [description]
+            module_out ([type]): [description]
+        """
         self.outputs.append(module_out.detach())
 
 class Layers_list:
