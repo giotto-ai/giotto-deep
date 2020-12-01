@@ -1,7 +1,7 @@
 
 from .categorical_data import CategoricalDataCloud
 from .compute_boundary import GradientFlow, UniformlySampledPoint, PrintGradientFlow
-from .hyperbolic_unfolding import Geodesics
+from .hyperbolic_unfolding import Geodesics, FlatEuclidean, TwoSphere, UpperHalfPlane, CircleNN, ConformTrafoNN, HyperbolicUnfoldingGeoEq
 #from .compute_topology import
 
 __all__ = [
@@ -9,5 +9,11 @@ __all__ = [
     'GradientFlow',
     'UniformlySampledPoint',
     'PrintGradientFlow',
-    'Geodesics'
+    'Geodesics',
+    'FlatEuclidean',
+    'TwoSphere',
+    'UpperHalfPlane',
+    'CircleNN',
+    'ConformTrafoNN',
+    'HyperbolicUnfoldingGeoEq'
     ]
