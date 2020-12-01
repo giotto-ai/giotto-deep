@@ -11,7 +11,7 @@ class GradientFlow():
     Args:
         neural_net (nn.Module): neural network trained on a binary
                                 classification task
-        boundary_tuple (list): [description]
+        boundary_tuple (list): List of boundary of interval where points are sampled from
         n_samples (int, optional): Number of sample points. Defaults to 1000.
         n_epochs (int, optional): Number of epochs for the gradient flow. Defaults to 30.
     """
@@ -39,6 +39,14 @@ class GradientFlow():
 
         return delta.grad.detach()
 
+    def get_sample_points(self):
+        return self.sample_points_tensor
+
+
+    def get_gradient_field(self):
+        return torch.cat((self.get_sample_points(),self.gradient()), -1)
+
+
     def predict(self):
         return self.neural_net.forward(None, self.sample_points_tensor)
 
@@ -53,14 +61,14 @@ class GradientFlow():
             self.gradient_step()
 
 
-    def compute_boundary(self):
+    def compute_boundary(self, precision=1e-1):
         self.gradient_flow()
         predict = self.predict()
 
         sample_points_db_tensor = self.sample_points_tensor[\
             torch.stack((
-            (predict>1e-1)[:,0],\
-            (predict>1e-1)[:,1]\
+            (predict > precision)[:,0],\
+            (predict > precision)[:,1]\
             ),dim=1).all(dim=1)\
             ]
         
@@ -70,8 +78,8 @@ class GradientFlow():
             return sample_points_db
         return torch.zeros_like(self.sample_points_tensor).numpy()
 
-    def __call__(self):
-        return self.compute_boundary()
+    def __call__(self, precision=1e-1):
+        return self.compute_boundary(precision)
 
 
     def return_sample_points(self):
