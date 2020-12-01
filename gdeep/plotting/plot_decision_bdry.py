@@ -8,7 +8,7 @@ import torch
 from sklearn.decomposition import PCA
 
 
-def plot_decision_boundary(data, labels, boundary_points, n_components=2):
+def plot_decision_boundary(data, labels, boundary_points, n_components=2, show=True):
     """Plot decision boundaries with the data
 
     Args:
@@ -42,7 +42,10 @@ def plot_decision_boundary(data, labels, boundary_points, n_components=2):
         fig = px.scatter(df_data,x="x0",y="x1",color=labels)
         fig2 = px.scatter(df_bdry, x="z0",y="z1",color="labels")
         fig.add_trace(fig2.data[0])
-        fig.show()
+        if show:
+            fig.show()
+        else:
+            return fig
     elif n_comp == 3:
         fig = px.scatter_3d(df_data,x="x0",y="x1",z="x2",color=labels)
         fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
