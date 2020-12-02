@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -55,8 +57,8 @@ class Geodesics():
             else:
                 return fig
         elif self.dim==3:
-            length_trajectories = geodesics.trajectories().shape[0]
-            df_trajectories = pd.DataFrame(np.einsum('ijk->jik',geodesics.trajectories()).reshape(-1,3), columns=["x"+str(i) for i in range(3)])
+            length_trajectories = self.trajectories().shape[0]
+            df_trajectories = pd.DataFrame(np.einsum('ijk->jik',self.trajectories()).reshape(-1,3), columns=["x"+str(i) for i in range(3)])
             df_trajectories['index'] = [int(i/length_trajectories) for i in range(df_trajectories.shape[0])]
             
             fig = px.line_3d(df_trajectories, x="x0", y="x1", z="x2", color='index')
@@ -78,7 +80,7 @@ class Geodesics():
             if plot_file:
                 fig.write_html('plots/' + plot_file)
                 
-    def plot_endpoints_with_dataset(self, df_dataset, plot_file: bool=None, filter_fkt=None, verbose=False):
+    def plot_endpoints_with_dataset(self, df_dataset, plot_file: bool=None, filter_fkt=None, verbose=False, show=True):
         try:
             assert(self.dim==2 or self.dim==3)
         except:
@@ -96,13 +98,16 @@ class Geodesics():
             df_endpoints["label"] = [0.5 for i in range(endpoints_filtered.shape[0])]
             df_dataset = df_dataset.rename(columns={"x": "x0", "y": "x1"})
             fig = px.scatter(pd.concat([df_endpoints, df_dataset]), x="x0", y="x1", color="label")
-            fig.show()
+            if show:
+                fig.show()
+            else:
+                return fig
             if plot_file:
                 try:
-                    fig.write_html(os.ṕath.join('plots', plot_file))
+                    fig.write_html(os.path.join('plots', plot_file))
                 except:
                     os.mkdir('plots')
-                    fig.write_html(os.ṕath.join('plots', plot_file))
+                    fig.write_html(os.path.join('plots', plot_file))
 
         elif self.dim==3:
             endpoint = self.endpoints()
@@ -119,10 +124,10 @@ class Geodesics():
             fig.show()
             if plot_file:
                 try:
-                    fig.write_html(os.ṕath.join('plots', plot_file))
+                    fig.write_html(os.path.join('plots', plot_file))
                 except:
                     os.mkdir('plots')
-                    fig.write_html(os.ṕath.join('plots', plot_file))
+                    fig.write_html(os.path.join('plots', plot_file))
         #TODO
         #def plot_histogram_function_values(self,(a,b)):
         #    pass
