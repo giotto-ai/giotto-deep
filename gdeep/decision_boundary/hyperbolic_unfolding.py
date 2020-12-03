@@ -135,7 +135,7 @@ class Geodesics():
 
 class FlatEuclidean(nn.Module):
     def __init__(self, dim: int = 2):
-        super(FlatEuclidean, self).__init__()
+        super().__init__()
         
         self.dim = dim
 
@@ -155,7 +155,7 @@ class FlatEuclidean(nn.Module):
     
 class TwoSphere(nn.Module):
     def __init__(self):
-        super(TwoSphere, self).__init__()
+        super().__init__()
         
         self.dim = 2
 
@@ -180,7 +180,7 @@ class TwoSphere(nn.Module):
     
 class UpperHalfPlane(nn.Module):
     def __init__(self):
-        super(UpperHalfPlane, self).__init__()
+        super().__init__()
         
         self.dim = 2
 
@@ -274,11 +274,6 @@ class HyperbolicUnfoldingGeoEq(nn.Module):
         y = y[:, :self.input_dim]
         
         gradient_log_delta = self.nn.gradient(y)
-        
-        
-        
-        
-        #print(f'shape gradient_log_delta: {gradient_log_delta.shape}')
         
         # quasi-hyperbolic geodesic equation see markdown comment
         ddy = 2*torch.einsum('bi,bi,bj->bj', gradient_log_delta, dy, dy)\

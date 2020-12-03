@@ -18,6 +18,9 @@ examples/.ipynb_checkpoints
 examples/*/
 examples/*.nbconvert.ipynb
 
+# Html files
+examples/*.html
+
 # Data files
 *.pkl
 *.csv
