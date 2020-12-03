@@ -6,6 +6,8 @@ class Rotation():
         self._axis_0 = axis_0
         self._axis_1 = axis_1
         self._angle = angle
+# axis are of type int, of value 0,1,2 for the axis x y z
+
 
     def return_axis(self, idx):
         return eval('self._axis_'+str(idx))
@@ -27,7 +29,7 @@ class Rotation():
 
 
 def make_torus_point_cloud(label: int, n_points: int, noise: float,\
-    rotation: Rotation, base_point: np.array, radius: float=1.):
+    rotation: Rotation, base_point: np.array, radius1: float=1., radius2: float=1.):
     """Generate point cloud of a torus
 
     Args:
@@ -44,9 +46,9 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
     torus_point_clouds = np.asarray(
             [
                 [
-                    (2 + radius*np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
-                    (2 + radius*np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
-                    radius*np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
+                    (radius1 + radius2*np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
+                    (radius1 + radius2*np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
+                    radius2*np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
                 ]
                 for t in range(n_points)
                 for s in range(n_points)

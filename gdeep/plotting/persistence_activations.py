@@ -1,12 +1,28 @@
 import torch
-from gtda.homology import VietorisRipsPersistence
-from gtda.plotting import plot_diagram
-
+from gtda.homology import VietorisRipsPersistence, WeakAlphaPersistence
+from gtda.plotting import plot_diagram, plot_betti_surfaces
+from gtda.graphs import KNeighborsGraph, GraphGeodesicDistance
 from gdeep.create_nets.utility import get_activations, Layers_list
+from gtda.diagrams import BettiCurve
+
+def knn_distance_matrix(X,k=3):
+
+    """Returns list of distance matrices according to the k-NN graph distance of the datasets X
+
+    Args:
+        X 3D array
+        k integer : the numbers of neighbors for the k-NN graph"""
+
+
+    kng = KNeighborsGraph(n_neighbors=k)
+    adj = kng.fit_transform(X)
+    return GraphGeodesicDistance(directed=False).fit_transform(adj)
+
+
 
 def persistence_diagrams_of_activations(model, X,
-                layer_types=[torch.nn.Linear],
-                homology_dimensions=[0, 1], layers=Layers_list('All')):
+                                        layer_types=[torch.nn.Linear],
+                                        homology_dimensions=[0, 1], layers=Layers_list('All'), k=-1, mode = 'VR'):
     """Returns list of persistence diagrams of the activations of all
     layers of type layer_types
 
@@ -15,26 +31,36 @@ def persistence_diagrams_of_activations(model, X,
         X 2darray: [description]
         layer_types (list, optional): [description]. Defaults to [torch.nn.Linear].
         homology_dimensions (list, optional): list of homology dimensions. Defaults to [0, 1].
-        layers ([type], optional): list of layer types to consider. Defaults to Layers_list('All').
+        layers ([type], optional): list of layer types to consider. Defaults to Layers_list('All')
+        k (optional) : number of neighbors parameter of the k-NN distance .
+        mode (optional) : choose the filtration ('VR' or 'alpha') to compute persistence default to 'VR'.
 
     Returns:
         list: list of persistence diagrams of activations of the different layers
     """
-    
+
     X_tensor = torch.from_numpy(X).float()
     activations_layers = get_activations(model, X_tensor)
 
     choosen_activations_layers = []
-
-    VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions)
+    if k > 0 and mode = 'VR':
+        VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions, metric='precomputed', reduced_homology=False, infinity_values = 50)
+        # infinity_values set to avoid troubles with multiple topological features living indefinitely
+    if k == -1 and mode = 'alpha':
+        VR = WeakAlphaPersistence(homology_dimensions=homology_dimensions, reduced_homology=False)
+    else:
+        VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions, reduced_homology=False)
 
     for i, activations_layer in enumerate(activations_layers.get_outputs()):
         if layers.in_list(i):
-
             choosen_activations_layer = activations_layer.numpy()
             choosen_activations_layers.append(choosen_activations_layer)
 
-    persistence_diagrams = VR.fit_transform(choosen_activations_layers)
+    if k > 0 and mode = 'VR':
+        dist_matrix = knn_distance_matrix(choosen_activations_layers, k=k)
+        persistence_diagrams = VR.fit_transform(dist_matrix)
+    else:
+        persistence_diagrams = VR.fit_transform(choosen_activations_layers)
 
     return persistence_diagrams
 
@@ -43,3 +69,14 @@ def plot_persistence_diagrams(persistence_diagrams, save = False):
         plot_persistence_diagram = plot_diagram(persistence_diagram)
 
         plot_persistence_diagram.show()
+
+
+def  betti_plot_layers(persistence_diagrams, homology_dimension = [0,1]):
+    """Given persistence_diagrams of activation accross layers, returns the plots of the Betti Surfaces where x-axis is
+    the filter parameter, y-axis is the layer, and z-axis is the betti number associated at x and y"""
+
+
+    BC = BettiCurve()
+    plots = plot_betti_surfaces(BC.fit_transform(persistence_diagrams), BC.fit(persistence_diagrams).samplings_)
+    for i in homology_dimension:
+        plots[i].show()
