@@ -10,6 +10,7 @@ import torch
 from sklearn.decomposition import PCA
 
 
+
 def plot_decision_boundary(data, labels, boundary_points, n_components=2, show=True):
     """Plot decision boundaries with the data
 
