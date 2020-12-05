@@ -25,22 +25,23 @@ class Geodesics():
     
     def get_dim(self):
         return self.dim
-    
-    def plot_trajectories(self, plot_file=None, show=True):
-        try:
-            assert(self.dim==2 or self.dim==3)
-        except:
-            raise ValueError(f'Only works in 2 and 3 dimension up to now!')
-        elif self.dim==3:
-            length_trajectories = self.trajectories().shape[0]
-            df_trajectories = pd.DataFrame(np.einsum('ijk->jik',self.trajectories()).reshape(-1,3), columns=["x"+str(i) for i in range(3)])
-            df_trajectories['index'] = [int(i/length_trajectories) for i in range(df_trajectories.shape[0])]
+ 
+    # def plot_trajectories(self, plot_file=None, show=True):
+    #     try:
+    #         assert(self.dim==2 or self.dim==3)
+    #     except:
+    #         raise ValueError(f'Only works in 2 and 3 dimension up to now!')
+    #     elif self.dim==3:
+    #         length_trajectories = self.trajectories().shape[0]
+    #         df_trajectories = pd.DataFrame(np.einsum('ijk->jik',self.trajectories()).reshape(-1,3), columns=["x"+str(i) for i in range(3)])
+    #         df_trajectories['index'] = [int(i/length_trajectories) for i in range(df_trajectories.shape[0])]
             
-            fig = px.line_3d(df_trajectories, x="x0", y="x1", z="x2", color='index')
-            if show:
-                fig.show()
-            else:
-                return fig
+    #         fig = px.line_3d(df_trajectories, x="x0", y="x1", z="x2", color='index')
+    #         if show:
+    #             fig.show()
+    #         else:
+    #             return fig
+
             
 
                 
