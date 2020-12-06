@@ -64,15 +64,14 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
                 return (y[:,0] - 0.5)**2
             self.model = new_model
         else:
-            # TODO: Implement default multiclass distance to decision boundary
-            # function
-            raise NotImplementedError
-        #TODO: move to pytest
+            def new_model(x):
+                y = torch.topk(x, 2).values
+                return (y[:,0] - y[:,1])**2
+            self.model = new_model
+        #Check if self.model has the right output shape
         assert len(self.model(self.sample_points).size())==1, f'Output shape is {self.model(self.sample_points).size()}'
 
         self.optimizer = optimizer([self.sample_points])
-
-
 
     def step(self):
         """Performs a single step towards the decision boundary
