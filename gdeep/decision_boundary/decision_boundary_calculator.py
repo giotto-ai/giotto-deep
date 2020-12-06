@@ -35,39 +35,48 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     def __init__(self, model: Callable[[torch.Tensor], torch.Tensor],
                        initial_points: torch.Tensor,
                        optimizer: Callable[[torch.Tensor], torch.optim.Optimizer]):
-        """[summary]
-
+        """
         Args:
-            model (nn.Module): [description]
-            initial_points (torch.tensor): [description]
-            optimizer (Callable): Function returning an optimizer for the params given as an argument
-
-        Raises:
-            NotImplementedError: [description]
-
-        Returns:
-            [type]: [description]
+            model (Callable[[torch.Tensor], torch.Tensor]): Function that maps a `torch.Tensor` of shape 
+                (N, D_in) to a tensor either of shape (N) and with values in [0,1] or of shape (N, D_out)
+                with values in [0,1] such that the last axis sums to 1.
+            initial_points (torch.tensor): `torch.Tensor` of shape (N, D_in)
+            optimizer (Callable[[torch.Tensor], torch.optim.Optimizer]): Function returning an optimizer
+                for the params given as an argument
         """
         self.sample_points = initial_points
         self.sample_points.requires_grad = True
         
-        
-        output_shape = model.forward(self.sample_points).shape
-        assert(len(output_shape)==2)
+        # TODO: Remove references to nn.Module
+        output = model(self.sample_points)
+        output_shape = output.shape
+        output_dtype = output.dtype
 
-        if output_shape[-1]==1:
-            self.model = model
-        elif output_shape[-1]==2:
-            class AbsoluteDifference(nn.Module):
-                def forward(self, x):
-                    #x.shape = (*,2)
-                    x = x.reshape((x.shape[0],1,x.shape[-1]))
-                    return torch.abs(F.conv1d(x, weight=torch.tensor([[[1.,-1.]]])).reshape((-1)))
-            self.model = nn.Sequential(model, absolute_difference)
+        
+        if not len(output_shape) in [1, 2]:
+            raise RuntimeError('Output of model has wrong size!')
+
+        if len(output_shape) == 1:
+            self.model = lambda x: (model(x) - 0.5)**2
+        elif output_shape[-1] == 1:
+            self.model = lambda x: (model(x).reshape((-1)) - 0.5)**2
+        elif output_shape[-1] == 2:
+            # class AbsoluteDifference(nn.Module):
+            #     def forward(self, x):
+            #         #x.shape = (*,2)
+            #         x = x.reshape((x.shape[0],1,x.shape[-1]))
+            #         return torch.abs(F.conv1d(x, weight=torch.tensor([[[1.,-1.]]])).reshape((-1)))
+            def new_model(x):
+                y = model(x)
+                return (y[:,1] - y[:,0])**2
+            self.model = new_model
         else:
             # TODO: Implement default multiclass distance to decision boundary
             # function
             raise NotImplementedError
+        #TODO: move to pytest
+        assert len(self.model(self.sample_points).size())==1, f'Output shape is {len(self.model(self.sample_points))}'
+
         self.optimizer = optimizer([self.sample_points])
 
 
