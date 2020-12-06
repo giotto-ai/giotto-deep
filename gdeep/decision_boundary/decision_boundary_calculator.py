@@ -35,7 +35,7 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     def __init__(self, model: Callable[[torch.Tensor], torch.Tensor],
                        initial_points: torch.Tensor,
                        optimizer: Callable[[torch.Tensor], torch.optim.Optimizer]):
-        """
+        """Transforms `model` to `self.model` of output shape (N) and initizalizes `self.optimizer`.
         Args:
             model (Callable[[torch.Tensor], torch.Tensor]): Function that maps a `torch.Tensor` of shape 
                 (N, D_in) to a tensor either of shape (N) and with values in [0,1] or of shape (N, D_out)
@@ -47,10 +47,8 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         self.sample_points = initial_points
         self.sample_points.requires_grad = True
         
-        # TODO: Remove references to nn.Module
         output = model(self.sample_points)
-        output_shape = output.shape
-        output_dtype = output.dtype
+        output_shape = output.size()
 
         
         if not len(output_shape) in [1, 2]:
@@ -61,21 +59,16 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         elif output_shape[-1] == 1:
             self.model = lambda x: (model(x).reshape((-1)) - 0.5)**2
         elif output_shape[-1] == 2:
-            # class AbsoluteDifference(nn.Module):
-            #     def forward(self, x):
-            #         #x.shape = (*,2)
-            #         x = x.reshape((x.shape[0],1,x.shape[-1]))
-            #         return torch.abs(F.conv1d(x, weight=torch.tensor([[[1.,-1.]]])).reshape((-1)))
             def new_model(x):
                 y = model(x)
-                return (y[:,1] - y[:,0])**2
+                return (y[:,0] - 0.5)**2
             self.model = new_model
         else:
             # TODO: Implement default multiclass distance to decision boundary
             # function
             raise NotImplementedError
         #TODO: move to pytest
-        assert len(self.model(self.sample_points).size())==1, f'Output shape is {len(self.model(self.sample_points))}'
+        assert len(self.model(self.sample_points).size())==1, f'Output shape is {self.model(self.sample_points).size()}'
 
         self.optimizer = optimizer([self.sample_points])
 
