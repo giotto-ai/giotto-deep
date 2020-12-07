@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pandas as pd
 
 class Rotation():
     def __init__(self, axis_0, axis_1, angle):
@@ -61,3 +62,37 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
     torus_labels = label * np.ones(n_points**2)
 
     return torus_point_clouds, torus_labels
+
+
+def make_torus_dataset(entangled: bool=True)->pd.core.frame.DataFrame:
+    """Generates pandas Dataframe of two tori in 3D. The labels correspond to
+    the different Tori.
+
+    Args:
+        entangled (bool, optional): Either entangled or unentangled tori. Defaults to True.
+
+    Returns:
+        pd.core.frame.DataFrame: pandas dataframe with columns `x1, x2, x3, label`.
+    """
+    torus_point_cloud = {}
+    torus_labels = {}
+    if entangled:
+        torus_point_cloud[0], torus_labels[0] = make_torus_point_cloud(0, 50, 0.0,\
+            Rotation(1,2,math.pi/2), np.array([[0,0,0]]), radius=.3)
+        torus_point_cloud[1], torus_labels[1]  = make_torus_point_cloud(1, 50, 0.0,\
+            Rotation(1,2,0), np.array([[2,0,0]]), radius=.3)
+    else:
+        torus_point_cloud[0], torus_labels[0] = make_torus_point_cloud(0, 50, 0.0,\
+            Rotation(1,2,math.pi/2), np.array([[0,0,0]]), radius=.3)
+        torus_point_cloud[1], torus_labels[1]  = make_torus_point_cloud(1, 50, 0.0,\
+            Rotation(1,2,0), np.array([[6,0,0]]), radius=.3)
+
+    tori_point_cloud = np.concatenate((torus_point_cloud[0],\
+                                torus_point_cloud[1]), axis=0)
+    tori_labels = np.concatenate((torus_labels[0],\
+                                torus_labels[1]), axis=0)
+    #print(f'tori_point_cloud: {tori_point_cloud.shape}, tori_labels: {tori_labels.shape}')
+    return pd.DataFrame(np.concatenate(
+        (tori_point_cloud, tori_labels.reshape((-1,1))),
+         axis=-1),
+         columns = ["x1", "x2", "x3", "label"])

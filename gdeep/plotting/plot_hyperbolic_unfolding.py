@@ -1,5 +1,7 @@
 import os
 
+from abc import ABC, abstractmethod
+
 import pandas as pd
 
 from sklearn.decomposition import PCA
@@ -8,6 +10,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from giotto.decision_boundary.hyperbolic_unfolding import Geodesics
+
+#TODO: implement as bridge
 
 class DimensionReducer():
     def __init__(n_components=2):
@@ -22,7 +26,7 @@ class DimensionReducer():
             self.pca.fit(data)
 
     def transform(dataset: numpy.ndarray):
-        if self.need_pca = True:
+        if self.need_pca == True:
             return self.pca.transform(data)
         else:
             return data
@@ -34,10 +38,10 @@ class DimensionReducer():
 
 
 class DatasetToDataFrameConverter():
-    __init__(self, data):
+    def __init__(self, data):
         return pd.DataFrame(data, columns = ["x"+str(i) for i in range(data.shape[-1])])
 
-class GeodesicPlotter():
+class GeodesicPlotter(ABC):
     """Plotter template that is able to plot a family of Geodesics
     in different ways
 
@@ -47,6 +51,7 @@ class GeodesicPlotter():
     def __init__(self, geodesic: Geodesics):
         self.geodesic = geodesic
         self.dim = self.geodesic.dim
+    @abstractmethod
     def plot_to_fig(self):
         pass
     def plot_to_file(self, filename: str):

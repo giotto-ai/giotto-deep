@@ -45,45 +45,45 @@ class Geodesics():
             
 
                 
-    def plot_endpoints_with_dataset(self, df_dataset, plot_file: bool=None, filter_fkt=None, verbose=False, show=True):
-        try:
-            assert(self.dim==2 or self.dim==3)
-        except:
-            raise ValueError('Only works in dimension 2 and 3 up to now!')
+    # def plot_endpoints_with_dataset(self, df_dataset, plot_file: bool=None, filter_fkt=None, verbose=False, show=True):
+    #     try:
+    #         assert(self.dim==2 or self.dim==3)
+    #     except:
+    #         raise NotImplemented('Only works in dimension 2 and 3 up to now!')
 
-        if self.dim==2:
-            endpoint = self.endpoints()
-            if filter_fkt:
-                endpoints_filtered = filter_fkt(endpoint)
-            else:
-                endpoints_filtered = endpoint
-            if verbose:
-                print(f"Shape of endpoints_filtered: {endpoints_filtered.shape}")
-            df_endpoints = pd.DataFrame(endpoints_filtered, columns=["x"+str(i) for i in range(2)])
-            df_endpoints["label"] = [0.5 for i in range(endpoints_filtered.shape[0])]
-            df_dataset = df_dataset.rename(columns={"x": "x0", "y": "x1"})
-            fig = px.scatter(pd.concat([df_endpoints, df_dataset]), x="x0", y="x1", color="label")
+    #     if self.dim==2:
+    #         endpoint = self.endpoints()
+    #         if filter_fkt:
+    #             endpoints_filtered = filter_fkt(endpoint)
+    #         else:
+    #             endpoints_filtered = endpoint
+    #         if verbose:
+    #             print(f"Shape of endpoints_filtered: {endpoints_filtered.shape}")
+    #         df_endpoints = pd.DataFrame(endpoints_filtered, columns=["x"+str(i) for i in range(2)])
+    #         df_endpoints["label"] = [0.5 for i in range(endpoints_filtered.shape[0])]
+    #         df_dataset = df_dataset.rename(columns={"x": "x0", "y": "x1"})
+    #         fig = px.scatter(pd.concat([df_endpoints, df_dataset]), x="x0", y="x1", color="label")
 
 
-        elif self.dim==3:
-            endpoint = self.endpoints()
-            if filter_fkt:
-                endpoints_filtered = filter_fkt(endpoint)
-            else:
-                endpoints_filtered = endpoint
-            if verbose:
-                print(f"Shape of endpoints_filtered: {endpoints_filtered.shape}")
-            df_endpoints = pd.DataFrame(endpoints_filtered, columns=["x"+str(i) for i in range(3)])
-            df_endpoints["label"] = [3 for i in range(endpoints_filtered.shape[0])]
-            df_dataset = df_dataset.rename(columns={"x": "x0", "y": "x1", "z": "x2"})
-            fig = px.scatter_3d(pd.concat([df_endpoints, df_dataset]), x="x0", y="x1", z="x2", color="label")
-            fig.show()
-            if plot_file:
-                try:
-                    fig.write_html(os.path.join('plots', plot_file))
-                except:
-                    os.mkdir('plots')
-                    fig.write_html(os.path.join('plots', plot_file))
+    #     elif self.dim==3:
+    #         endpoint = self.endpoints()
+    #         if filter_fkt:
+    #             endpoints_filtered = filter_fkt(endpoint)
+    #         else:
+    #             endpoints_filtered = endpoint
+    #         if verbose:
+    #             print(f"Shape of endpoints_filtered: {endpoints_filtered.shape}")
+    #         df_endpoints = pd.DataFrame(endpoints_filtered, columns=["x"+str(i) for i in range(3)])
+    #         df_endpoints["label"] = [3 for i in range(endpoints_filtered.shape[0])]
+    #         df_dataset = df_dataset.rename(columns={"x": "x0", "y": "x1", "z": "x2"})
+    #         fig = px.scatter_3d(pd.concat([df_endpoints, df_dataset]), x="x0", y="x1", z="x2", color="label")
+    #         fig.show()
+    #         if plot_file:
+    #             try:
+    #                 fig.write_html(os.path.join('plots', plot_file))
+    #             except:
+    #                 os.mkdir('plots')
+    #                 fig.write_html(os.path.join('plots', plot_file))
 
 
 
