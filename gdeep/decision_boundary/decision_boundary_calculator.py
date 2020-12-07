@@ -95,6 +95,3 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     def get_filtered_decision_boundary(self, delta = 0.25) -> torch.Tensor:
         q_dist = self.model(self.sample_points)
         return self.sample_points[q_dist<=delta]
-
-
-    #sample_points_boundary_filter = g.get_filtered_decision_boundary().detach()
