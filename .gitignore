@@ -53,3 +53,6 @@ test-output.xml
 *.pdf
 *.synctex.gz
 *.toc
+
+# JavaScript for plots display
+examples/*.js

@@ -8,23 +8,23 @@ import numpy as np
 import pandas as pd
 
 
-class Geodesics():
-    """
-    Standard Data type of geodesics
-    """
-    def __init__(self, geodesics_tensor):
-        self.geodesics_tensor = geodesics_tensor
-        self.dim = int(geodesics_tensor.shape[-1]/2)
-        self.n_geodesics = geodesics_tensor.shape[1]
+# class Geodesics():
+#     """
+#     Standard Data type of geodesics
+#     """
+#     def __init__(self, geodesics_tensor):
+#         self.geodesics_tensor = geodesics_tensor
+#         self.dim = int(geodesics_tensor.shape[-1]/2)
+#         self.n_geodesics = geodesics_tensor.shape[1]
         
-    def get_trajectories(self):
-        return self.geodesics_tensor[:,:,:self.dim]
+#     def get_trajectories(self):
+#         return self.geodesics_tensor[:,:,:self.dim]
     
-    def get_endpoints(self):
-        return self.geodesics_tensor[-1,:,:self.dim]
+#     def get_endpoints(self):
+#         return self.geodesics_tensor[-1,:,:self.dim]
     
-    def get_dim(self):
-        return self.dim
+#     def get_dim(self):
+#         return self.dim
  
     # def plot_trajectories(self, plot_file=None, show=True):
     #     try:
@@ -87,139 +87,139 @@ class Geodesics():
 
 
 
-class FlatEuclidean(nn.Module):
-    def __init__(self, dim: int = 2):
-        super().__init__()
+# class FlatEuclidean(nn.Module):
+#     def __init__(self, dim: int = 2):
+#         super().__init__()
 
-        self.dim = dim
+#         self.dim = dim
 
-    def forward(self, t, y):
-        try:
-            assert(y.shape[-1]==2*self.dim)
-        except:
-            raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
+#     def forward(self, t, y):
+#         try:
+#             assert(y.shape[-1]==2*self.dim)
+#         except:
+#             raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
 
-        dy = y[:,-self.dim:]
-        ddy = torch.zeros_like(y[:,-self.dim:])
+#         dy = y[:,-self.dim:]
+#         ddy = torch.zeros_like(y[:,-self.dim:])
 
         
-        return torch.cat((dy,ddy),-1)
+#         return torch.cat((dy,ddy),-1)
     
     
-class TwoSphere(nn.Module):
-    def __init__(self):
-        super().__init__()
+# class TwoSphere(nn.Module):
+#     def __init__(self):
+#         super().__init__()
         
-        self.dim = 2
+#         self.dim = 2
 
 
-    def forward(self, t, y):
-        try:
-            assert(y.shape[-1]==2*self.dim)
-        except:
-            raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
+#     def forward(self, t, y):
+#         try:
+#             assert(y.shape[-1]==2*self.dim)
+#         except:
+#             raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
         
-        # y = [\theta, \phi, d\theta, d\phi]
-        # dy = [d\theta, d\phi]
+#         # y = [\theta, \phi, d\theta, d\phi]
+#         # dy = [d\theta, d\phi]
         
-        dy = y[:,-self.dim:]
-        ddy = torch.zeros_like(y[:,-self.dim:])
+#         dy = y[:,-self.dim:]
+#         ddy = torch.zeros_like(y[:,-self.dim:])
 
-        ddy[:,0] = torch.sin(y[:,0]) * torch.cos(y[:,0]) * y[:,3]**2
-        ddy[:,1] = -2*torch.cos(y[:,0])/torch.sin(y[:,0]) * y[:,2] * y[:,3]
+#         ddy[:,0] = torch.sin(y[:,0]) * torch.cos(y[:,0]) * y[:,3]**2
+#         ddy[:,1] = -2*torch.cos(y[:,0])/torch.sin(y[:,0]) * y[:,2] * y[:,3]
 
         
-        return torch.cat((dy,ddy),-1)
+#         return torch.cat((dy,ddy),-1)
     
-class UpperHalfPlane(nn.Module):
-    def __init__(self):
-        super().__init__()
+# class UpperHalfPlane(nn.Module):
+#     def __init__(self):
+#         super().__init__()
         
-        self.dim = 2
+#         self.dim = 2
 
                 
-    def forward(self, t, y):
-        try:
-            assert(y.shape[-1]==2*self.dim)
-        except:
-            raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
+#     def forward(self, t, y):
+#         try:
+#             assert(y.shape[-1]==2*self.dim)
+#         except:
+#             raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
         
-        dy = y[:,-self.dim:]
-        ddy = torch.zeros_like(y[:,-self.dim:])
+#         dy = y[:,-self.dim:]
+#         ddy = torch.zeros_like(y[:,-self.dim:])
         
-        ddy[:,0] = 2/y[:,1]*y[:,2]*y[:,3]
-        ddy[:,1] = -1/y[:,1]*(y[:,2]**2-y[:,3]**2)
+#         ddy[:,0] = 2/y[:,1]*y[:,2]*y[:,3]
+#         ddy[:,1] = -1/y[:,1]*(y[:,2]**2-y[:,3]**2)
         
         
-        return torch.cat((dy,ddy),-1)
+#         return torch.cat((dy,ddy),-1)
 
 
 
 
-class CircleNN(nn.Module):
-    def __init__(self):
-        super().__init__()
+# class CircleNN(nn.Module):
+#     def __init__(self):
+#         super().__init__()
         
-        self.dim = 2
-
-                
-    def forward(self, x_cat, x_cont):
-        try:
-            assert(x_cont.shape[-1]==2)
-        except:
-            raise ValueError(f'input has to be a {2}-dimensional vector')
-        activation = 0.5*torch.exp(-torch.sum(x_cont**2, axis=-1)+1)
-        return activation.reshape((-1,1))
-    
-    def return_input_dim(self):
-        return 2
-
-class ConformTrafoNN(nn.Module):
-    def __init__(self, nn: nn.Module, input_dim: int):
-        super().__init__()
-        
-        self.nn = nn
-        self.input_dim = input_dim
-
-    def forward(self, x_cat, x_cont):
-        return self.nn.forward(x_cat, x_cont)
-    
-    def conform_factor(self, x):
-        return torch.sum(torch.abs(self.forward(None, x)-0.5), axis=-1)
-    
-    def gradient(self, x):
-        delta = torch.zeros_like(x, requires_grad=True)
-        conform_trans = torch.log(torch.abs(self.forward(None, x+delta)-0.5))
-        torch.sum(conform_trans).backward()
-        return delta.grad.detach()
-
-    def return_input_dim(self):
-        return self.input_dim
-    
-
-class HyperbolicUnfoldingGeoEq(nn.Module):
-    def __init__(self, nn: ConformTrafoNN):
-        super().__init__()
-        
-        self.nn = nn
-        self.input_dim = self.nn.return_input_dim()
-        self.dim = self.input_dim
+#         self.dim = 2
 
                 
-    def forward(self, t, y):
-        try:
-            assert(y.shape[-1]==2*self.input_dim)
-        except:
-            raise ValueError(f'input has to be a {2*self.input_dim}-dimensional vector not {y.shape[-1]}')
+#     def forward(self, x_cat, x_cont):
+#         try:
+#             assert(x_cont.shape[-1]==2)
+#         except:
+#             raise ValueError(f'input has to be a {2}-dimensional vector')
+#         activation = 0.5*torch.exp(-torch.sum(x_cont**2, axis=-1)+1)
+#         return activation.reshape((-1,1))
+    
+#     def return_input_dim(self):
+#         return 2
+
+# class ConformTrafoNN(nn.Module):
+#     def __init__(self, nn: nn.Module, input_dim: int):
+#         super().__init__()
         
-        # y = [y,dy]
+#         self.nn = nn
+#         self.input_dim = input_dim
+
+#     def forward(self, x_cat, x_cont):
+#         return self.nn.forward(x_cat, x_cont)
+    
+#     def conform_factor(self, x):
+#         return torch.sum(torch.abs(self.forward(None, x)-0.5), axis=-1)
+    
+#     def gradient(self, x):
+#         delta = torch.zeros_like(x, requires_grad=True)
+#         conform_trans = torch.log(torch.abs(self.forward(None, x+delta)-0.5))
+#         torch.sum(conform_trans).backward()
+#         return delta.grad.detach()
+
+#     def return_input_dim(self):
+#         return self.input_dim
+    
+
+# class HyperbolicUnfoldingGeoEq(nn.Module):
+#     def __init__(self, nn: ConformTrafoNN):
+#         super().__init__()
         
-        dy = y[:,-self.input_dim:]
-        y = y[:, :self.input_dim]
+#         self.nn = nn
+#         self.input_dim = self.nn.return_input_dim()
+#         self.dim = self.input_dim
+
+                
+#     def forward(self, t, y):
+#         try:
+#             assert(y.shape[-1]==2*self.input_dim)
+#         except:
+#             raise ValueError(f'input has to be a {2*self.input_dim}-dimensional vector not {y.shape[-1]}')
         
-        gradient_log_delta = self.nn.gradient(y)
+#         # y = [y,dy]
         
-        # quasi-hyperbolic geodesic equation see markdown comment
-        ddy = 2*torch.einsum('bi,bi,bj->bj', gradient_log_delta, dy, dy)\
-              - torch.einsum('bi,bj,bj->bi', gradient_log_delta, dy, dy)
-        return torch.cat((dy,ddy),-1)
+#         dy = y[:,-self.input_dim:]
+#         y = y[:, :self.input_dim]
+        
+#         gradient_log_delta = self.nn.gradient(y)
+        
+#         # quasi-hyperbolic geodesic equation see markdown comment
+#         ddy = 2*torch.einsum('bi,bi,bj->bj', gradient_log_delta, dy, dy)\
+#               - torch.einsum('bi,bj,bj->bi', gradient_log_delta, dy, dy)
+#         return torch.cat((dy,ddy),-1)
