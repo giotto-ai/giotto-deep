@@ -90,19 +90,18 @@ class Geodesics():
 class FlatEuclidean(nn.Module):
     def __init__(self, dim: int = 2):
         super().__init__()
-        
+
         self.dim = dim
 
-                
     def forward(self, t, y):
         try:
             assert(y.shape[-1]==2*self.dim)
         except:
             raise ValueError(f'input has to be a {2*self.dim}-dimensional vector')
-        
+
         dy = y[:,-self.dim:]
         ddy = torch.zeros_like(y[:,-self.dim:])
-        
+
         
         return torch.cat((dy,ddy),-1)
     

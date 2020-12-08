@@ -51,6 +51,7 @@ class DecisionBoundaryCalculator(ABC):
 
         return new_model
 
+
 class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     """
     Computes Decision Boundary using the gradient flow method
@@ -124,7 +125,7 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
 
             initial_points (torch.Tensor): `torch.Tensor` of shape (N, D_in)
                 containing the starting points.
-                
+
             initial_vectors(torch.Tensor): `torch.Tensor` of shape (N, D_in)
                 containing the starting tangent vectors (directions).
                 Prefarably normalized.
@@ -182,7 +183,7 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         ode_initial_conditions = torch.stack((self.points, self.vectors))
 
         step_size = 1e-1
-        #t = torch.arange(0, 3e0, 2e-3)
+        # t = torch.arange(0, 3e0, 2e-3)
 
         ode_solver_output = odeint(odes, ode_initial_conditions, 
                                    torch.tensor([0, number_of_steps * step_size],
