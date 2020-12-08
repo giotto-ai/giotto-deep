@@ -51,7 +51,6 @@ class DecisionBoundaryCalculator(ABC):
 
         return new_model
 
-
 class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     """
     Computes Decision Boundary using the gradient flow method
