@@ -51,7 +51,8 @@ def train_classification_nn(nn, X, y, lr=0.001, n_epochs=100, bs=32):
 
 
 class SaveOutput:
-    """[summary]
+    """ General class for saving outputs
+    outputs will be stored in a list 'outputs'
     """
     def __init__(self):
         self.outputs = []
@@ -66,10 +67,8 @@ class SaveOutput:
         return self.outputs
 
 class SaveNodeOutput(SaveOutput):
-    """[summary]
-
-    Args:
-        SaveOutput ([type]): [description]
+    """ Class for saving activations of a node in
+    a neural network.
     """
     def __init__(self, entry=0):
         super().__init__()
@@ -79,7 +78,14 @@ class SaveNodeOutput(SaveOutput):
         self.outputs.append(module_out[:,self.entry].detach())
 
 class SaveLayerOutput(SaveOutput):
-    def __call__(self, module, module_in, module_out):
+    def __call__(self, module: nn.Module, module_in, module_out):
+        """ Add activation 
+
+        Args:
+            module ([type]): [description]
+            module_in ([type]): [description]
+            module_out ([type]): [description]
+        """
         self.outputs.append(module_out.detach())
 
 class Layers_list:
@@ -136,3 +142,59 @@ def get_activations(model, X_tensor, layer_types=[torch.nn.Linear]):
         handle.remove()
 
     return saved_output_layers
+
+
+class ToFastaiNN(nn.Module):
+    """Adapter for Fastai `nn.Module`. The syntax of the
+    forward methode of the input is `(x_cat: torch.tensor)->torch.tensor`
+    and the syntax of the forward function for the output is
+    `(x_cat: torch.tensor, x_cont: torch.tensor)->torch.tensor`.
+    """
+
+    def __init__(self, nn: nn.Module):
+        super().__init__()
+        self.nn = nn
+        
+        
+    def forward(self, x_cat, x_cont):
+        return self.nn.forward(x_cont)
+    
+class ToPyTorchNN(nn.Module):
+    """Adapter for Fastai `nn.Module`. The syntax of the
+    forward methode of the input is `(x_cat: torch.tensor, x_cont: torch.tensor)->torch.tensor`
+    and the syntax of the forward function for the output is
+    `(x_cat: torch.tensor)->torch.tensor`.
+    """
+
+    def __init__(self, nn: nn.Module):
+        super().__init__()
+        self.nn = nn
+        
+        
+    def forward(self, x_cont):
+        return self.nn.forward(x_cat=None, x_cont=x_cont)
+
+
+class PeriodicNeuralNetworkMaker(nn.Module):
+    """Makes a periodic `nn.Module` of `nn`. `boundary_list` specifies the elementary
+    region the periodic neural network is supported on. This creates neural networks
+    factorized by the orbits of a group effect, which is given by reflection at the
+    edges of the elementary domain.
+    This class can be interpreted as an adapter for periodic neural networks.
+    """
+
+    def __init__(self, nn: nn.Module, boundary_list):
+        super().__init__()
+        self.nn = nn
+        self.interval_length = torch.tensor([[b-a for a, b in boundary_list]])
+        self.left_interval_bound = torch.tensor([[a for a, b in boundary_list]])
+        
+        
+    def forward(self, x_cont):
+        x_cont = torch.abs(
+                    torch.remainder(
+                        x_cont-self.left_interval_bound, 2.*self.interval_length
+                    )-self.interval_length
+                    )+ self.left_interval_bound
+        x_cont = self.nn.forward(x_cont)
+        return x_cont

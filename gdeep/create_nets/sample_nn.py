@@ -134,6 +134,39 @@ class Net(nn.Module):
         return eval("x"+str(i))
 
 
+class CircleNN(nn.Module):
+    """ Generates a neural network that is proportional to a Gaussian Kernel in 2D
+    """
+    def __init__(self):
+        super().__init__()
+        
+        self.dim = 2
+
+                
+    def forward(self, x_cont):
+        try:
+            assert(x_cont.shape[-1]==2)
+        except:
+            raise ValueError(f'input has to be a {2}-dimensional vector')
+        activation = 0.5*torch.exp(-torch.sum(x_cont**2, axis=-1)+1)-0.5
+        return activation.reshape((-1,1))
+    
+    def return_input_dim(self):
+        return 2
+
+
+class CircleNN3D(nn.Module):
+    """ Generates a neural network that is proportional to a Gaussian Kernel in 3D
+    """
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x_cont):
+        activation = torch.exp(x_cont**2)
+        return activation
+
+
+
 
 # class ListModule(nn.Module):
 #     """
