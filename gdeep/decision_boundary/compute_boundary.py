@@ -4,86 +4,122 @@ import torch.nn.functional as F
 
 import numpy as np
 
-def gradient_flow(neural_net: nn.Module,  boundary_tuple: list,\
-    n_samples: int = 1000,\
-    epsilon: float = 0.01, n_epochs: int = 1000):
+# Old function
+class GradientFlow():
     """ Computes a the decision boundary of a neural network using
     gradient flow
 
     Args:
         neural_net (nn.Module): neural network trained on a binary
                                 classification task
-        boundary_tuple (list): [description]
-        n_samples (int, optional): [description]. Defaults to 1000.
-        n_epochs (int, optional): [description]. Defaults to 1000.
-
-    Returns:
-        numpy.ndarray: row wise sample of points on the decision boundary
+        boundary_tuple (list): List of boundary of interval where points are sampled from
+        n_samples (int, optional): Number of sample points. Defaults to 1000.
+        n_epochs (int, optional): Number of epochs for the gradient flow. Defaults to 30.
     """
 
-    
+    def __init__(self, neural_net: nn.Module,  boundary_tuple: list,\
+        n_samples: int = 10000,\
+        epsilon: float = 0.01, n_epochs: int = 30):
 
-    # sample_points = np.random.rand(n_samples, 2)
+        self.neural_net = neural_net
+        self.n_samples = n_samples
+        self.epsilon = epsilon
+        self.n_epochs = n_epochs
+        self.sample_points = UniformlySampledPoint(boundary_tuple, n_samples=self.n_samples)
+        self.sample_points_tensor = torch.from_numpy(self.sample_points()).float()
 
-    # sample_points = sample_points.dot(np.diag([2,2])) + np.array([-1,-1])
+    def gradient(self):
 
+        delta = torch.zeros_like(self.sample_points_tensor, requires_grad=True)
 
-    sample_points = sample_points_uniformly(boundary_tuple, n_samples=n_samples)
+        prediction = self.neural_net.forward(None, self.sample_points_tensor + delta)
 
-
-
-    sample_points_tensor = torch.from_numpy(sample_points).float()
-
-    for _ in range(0,n_epochs):
-
-        delta = torch.zeros_like(sample_points_tensor, requires_grad=True)
-
-        predict = neural_net.forward(None, sample_points_tensor + delta)
-
-        loss = torch.sum((predict-0.5)**2)
+        loss = torch.sum((prediction-0.5)**2)
 
         loss.backward()
 
-        sample_points_tensor -= epsilon * delta.grad.detach()
+        return delta.grad.detach()
 
-    delta = torch.zeros_like(sample_points_tensor, requires_grad=True)
-
-    predict = neural_net.forward(None,sample_points_tensor+delta)
-    loss = torch.sum((predict-0.5)**2)
-
-    loss.backward()
+    def get_sample_points(self):
+        return self.sample_points_tensor
 
 
-    sample_points_tensor = sample_points_tensor[\
-        torch.stack((
-        #torch.norm(delta.grad.detach(), dim=1)> 1.e-05,\
-        (1.-predict>1e-1)[:,0],\
-        (predict>1e-1)[:,0]\
-        ),dim=1).all(dim=1)\
-        ]
-
-    sample_points_boundary = sample_points_tensor.numpy()
-
-    return sample_points_boundary
+    def get_gradient_field(self):
+        return torch.cat((self.get_sample_points(),self.gradient()), -1)
 
 
-def sample_points_uniformly(tuple_list: list, n_samples: int=1000):
-    """ Sample uniformaly random in a box
+    def predict(self):
+        return self.neural_net.forward(None, self.sample_points_tensor)
+
+    
+    def gradient_step(self):
+        self.sample_points_tensor -= self.epsilon * self.gradient()
+
+    
+
+    def gradient_flow(self):
+        for _ in range(self.n_epochs):
+            self.gradient_step()
+
+
+    def compute_boundary(self, precision=1e-1):
+        self.gradient_flow()
+        predict = self.predict()
+
+        sample_points_db_tensor = self.sample_points_tensor[\
+            torch.stack((
+            (predict > precision)[:,0],\
+            (predict > precision)[:,1]\
+            ),dim=1).all(dim=1)\
+            ]
+        
+        sample_points_db = sample_points_db_tensor.numpy()
+        # in case the nn prediction was poor
+        if len(sample_points_db) > 0:
+            return sample_points_db
+        return torch.zeros_like(self.sample_points_tensor).numpy()
+
+    def __call__(self, precision=1e-1):
+        return self.compute_boundary(precision)
+
+
+    def return_sample_points(self):
+        return self.sample_points
+
+class UniformlySampledPoint():
+    """ Sample uniformly random in a box
 
     Args:
         tuple_list (list): list of intervals
         n_samples (int): number of sample points
     """
-    dim = len(tuple_list)
-    try:
-        for (left, right) in tuple_list:
-            assert(left <= right)
-    except:
-        print("Tuples have have to be non-empty intervals")
+    def __init__(self, tuple_list: list, n_samples: int=1000):
+        """Generates n_samples uniformely random points in a box
+        specified in tuple_list
 
-    scale = np.array([[right-left for (left, right) in tuple_list]])
-    translation = np.array([[left for (left, _) in tuple_list]])
+        Args:
+            tuple_list (list): list of dimensionwise upper and lower bounds of box
+            n_samples (int, optional): number of sample points. Defaults to 1000.
+        """
+        self._dim = len(tuple_list)
+        try:
+            for (left, right) in tuple_list:
+                assert(left <= right)
+        except:
+            raise ValueError("Tuples have have to be non-empty intervals")
 
-    sample_point = np.random.rand(n_samples, dim) * scale + translation
+        scale = np.array([[right-left for (left, right) in tuple_list]])
+        translation = np.array([[left for (left, _) in tuple_list]])
 
-    return sample_point
+        self._sample_points = np.random.rand(n_samples, self._dim) * scale + translation
+    
+    def __call__(self):
+        return self._sample_points
+
+    def get_dim(self):
+        """Returns dimension of sample point cloud
+
+        Returns:
+            int: dimension of point cloud
+        """
+        return self._dim

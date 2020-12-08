@@ -1,3 +1,5 @@
+#import os
+
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -8,7 +10,8 @@ import torch
 from sklearn.decomposition import PCA
 
 
-def plot_decision_boundary(data, labels, boundary_points, n_components=2):
+
+def plot_decision_boundary(data, labels, boundary_points, n_components=2, show=True):
     """Plot decision boundaries with the data
 
     Args:
@@ -34,23 +37,28 @@ def plot_decision_boundary(data, labels, boundary_points, n_components=2):
     df_bdry = pd.DataFrame(bdry_pca, columns = ["z"+str(i) for i in range(len(X_pca[0]))])
     if n_comp == 1:
         fig = px.scatter(df_data,x="x0",color=labels)
-        fig.add_trace(px.scatter(df_bdry, x="z0").data[0])
-        fig.show()
+        fig2 = px.scatter(df_bdry, x="z0")
+        fig.add_trace(fig2.data[0])
     elif n_comp == 2:
+        df_bdry['labels']=[0.6]*df_bdry.shape[0]
         fig = px.scatter(df_data,x="x0",y="x1",color=labels)
-        fig.add_trace(px.scatter(df_bdry, x="z0",y="z1").data[0])
-        fig.show()
+        fig2 = px.scatter(df_bdry, x="z0",y="z1",color="labels")
+        fig.add_trace(fig2.data[0])
     elif n_comp == 3:
         fig = px.scatter_3d(df_data,x="x0",y="x1",z="x2",color=labels)
-        fig.add_trace(px.scatter_3d(df_bdry, x="z0",y="z1",z="z2").data[0])
-        fig.show()
+        fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
+        fig.add_trace(fig2.data[0])
     else:
         fig = px.scatter_3d(df_data,x="x0",y="x1",z="x2",color=labels)
-        fig.add_trace(px.scatter_3d(df_bdry, x="z0",y="z1",z="z2").data[0])
+        fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
+        fig.add_trace(fig2.data[0])
+    if show:
         fig.show()
+    else:
+        return fig
 
 
-def plot_activation_contours(model,delta=0.1, boundary_tuple=((-1.5, 1.5),(-1.5, 1.5))):
+def plot_activation_contours(model,delta=0.1, boundary_tuple=((-1.5, 1.5),(-1.5, 1.5)), show=True):
     """Plot the contours of the last layer softmax
         
         Args:
@@ -61,7 +69,7 @@ def plot_activation_contours(model,delta=0.1, boundary_tuple=((-1.5, 1.5),(-1.5,
         - n_components (int, optional): [description]. Defaults to 2.
         """
     
-    delta = 0.1
+    delta = delta
     x = np.arange(*boundary_tuple[0], delta)
     y = np.arange(*boundary_tuple[1], delta)
     X, Y = np.meshgrid(x, y)
@@ -76,5 +84,8 @@ def plot_activation_contours(model,delta=0.1, boundary_tuple=((-1.5, 1.5),(-1.5,
     Z_tensor = model.forward(None, XY_tensor)
     Z_tensor = Z_tensor[:,0].reshape((X_tensor.shape[0],X_tensor.shape[1]))
     Z = Z_tensor.detach().numpy()
-    fig = go.Figure(data =go.Contour(z=Z))
-    fig.show()
+    fig = go.Figure(data =go.Contour(z=Z,x=x,y=y))
+    if show:
+        fig.show()
+    else:
+        return fig

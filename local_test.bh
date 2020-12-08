@@ -16,3 +16,5 @@ for n in examples/*.ipynb
 do
   jupyter nbconvert --to notebook --execute $n
 done
+
+rm examples/*.nbconvert.ipynb
