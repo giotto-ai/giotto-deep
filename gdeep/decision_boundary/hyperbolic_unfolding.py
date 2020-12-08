@@ -112,7 +112,7 @@ class TwoSphere(nn.Module):
         
         self.dim = 2
 
-                
+
     def forward(self, t, y):
         try:
             assert(y.shape[-1]==2*self.dim)
