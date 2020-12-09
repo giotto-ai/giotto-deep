@@ -31,7 +31,7 @@ def persistence_diagrams_of_activations(model, X,
     for i, activations_layer in enumerate(activations_layers.get_outputs()):
         if layers.in_list(i):
 
-            choosen_activations_layer = activations_layer.numpy()
+            choosen_activations_layer = activations_layer.cpu().numpy()
             choosen_activations_layers.append(choosen_activations_layer)
 
     persistence_diagrams = VR.fit_transform(choosen_activations_layers)

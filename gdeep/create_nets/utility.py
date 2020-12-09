@@ -135,8 +135,10 @@ def get_activations(model, X_tensor, layer_types=[torch.nn.Linear]):
             hook_handles.append(handle)
     
     model.eval()
-
-    model(None,X_tensor)
+    if torch.cuda.is_available():
+        model(None,X_tensor.cuda())
+    else:
+        model(None,X_tensor)
 
     for handle in hook_handles:
         handle.remove()
