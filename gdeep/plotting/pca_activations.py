@@ -23,7 +23,7 @@ def plot_PCA_activations(model, X, labels, n_components=2):
         if activations_layer.shape[1]>n_components:
             n_comp = n_components
             pca = PCA(n_components=n_comp)
-            X_pca = pca.fit_transform(activations_layer)
+            X_pca = pca.fit_transform(activations_layer.cpu())
         else:
             n_comp = activations_layer.shape[1]
             X_pca = activations_layer
