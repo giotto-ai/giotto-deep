@@ -29,7 +29,7 @@ def create_test_img(learn, f, return_img=True):
     if return_img: return img,x
     return x
 
-def to_cuda(*args): [o.cuda() for o in args]
+def to_cuda(*args): return [o.cuda() for o in args]
 
 def get_label_idx(learn:Learner, preds:torch.Tensor,
                   label:Union[str,int,None]):
@@ -85,7 +85,7 @@ def compute_gcam_items(learn: Learner,
         If `target_layer` is None, then it is set to `learn.model[:-1]`
         """
     if cuda:
-        to_cuda(learn.model, x)
+        learn.model, x = to_cuda(learn.model, x)
     target_layer = get_target_layer(learn, target_layer)
     with HookBwd(target_layer) as hook_g:
         with Hook(target_layer) as hook:
