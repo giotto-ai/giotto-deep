@@ -76,15 +76,15 @@ def get_target_layer(learn: Learner,
 def compute_gcam_items(learn: Learner,
                        x: TensorImage,
                        label: Union[str,int,None] = None,
-                       target_layer: Union[nn.Module, callable, None] = None,
-                       cuda: bool = False
+                       target_layer: Union[nn.Module, callable, None] = None
                        ):
     """Compute gradient and activations of `target_layer` of `learn.model`
         for `x` with respect to `label`.
         
         If `target_layer` is None, then it is set to `learn.model[:-1]`
         """
-    if cuda:
+
+    if torch.cuda.is_available():
         learn.model, x = to_cuda(learn.model, x)
     target_layer = get_target_layer(learn, target_layer)
     with HookBwd(target_layer) as hook_g:
@@ -157,7 +157,6 @@ def gradcam(self: Learner,
             show_original=False, img_size=None, alpha=0.5,
             cmap = 'magma',
             font_path=None, font_size=None, grid_ncol=4,
-            cuda: bool = False,
             **kwargs
             ):
     '''Plot Grad-CAMs of all specified `labels` with respect to `target_layer`
@@ -186,7 +185,7 @@ def gradcam(self: Learner,
     
     results = []
     for label in labels:
-        grads, acts, preds, _label = compute_gcam_items(self, x, label, target_layer, cuda)
+        grads, acts, preds, _label = compute_gcam_items(self, x, label, target_layer)
         gcams[label] = compute_gcam_map(grads, acts)
         preds_dict = {l:pred for pred,l in zip(preds, self.dls.vocab)}
         pred_img = plot_gcam(self, img, x, gcams[label], alpha=alpha, cmap=cmap)
