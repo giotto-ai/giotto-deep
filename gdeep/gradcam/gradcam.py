@@ -83,6 +83,7 @@ def compute_gcam_items(learn: Learner,
         
         If `target_layer` is None, then it is set to `learn.model[:-1]`
         """
+
     if torch.cuda.is_available():
         learn.model, x = to_cuda(learn.model, x)
     target_layer = get_target_layer(learn, target_layer)
