@@ -196,7 +196,7 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
 
         ode_initial_conditions = torch.stack((self.points, self.vectors))
 
-        step_size = 1e-1
+        step_size = .5
         # t = torch.arange(0, 3e0, 2e-3)
 
         ode_solver_output = odeint(odes, ode_initial_conditions, 
