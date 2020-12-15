@@ -119,38 +119,44 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         """
         Args:
             model (Callable[[torch.Tensor], torch.Tensor]): Function that maps
-                a `torch.Tensor` of shape (N, D_in) to a tensor either of
-                shape (N) and with values in [0,1] or of shape (N, D_out) with
+                a `torch.Tensor` of shape (N, D_1, ..., D_k) to a tensor either of
+                shape (N) and with values in [0,1] or of shape (N, num_classes) with
                 values in [0, 1] such that the last axis sums to 1.
 
-            initial_points (torch.Tensor): `torch.Tensor` of shape (N, D_in)
+            initial_points (torch.Tensor): `torch.Tensor` of shape (N, D_1, ..., D_k)
                 containing the starting points.
 
-            initial_vectors(torch.Tensor): `torch.Tensor` of shape (N, D_in)
+            initial_vectors(torch.Tensor): `torch.Tensor` of shape (N, D_1, ..., D_k)
                 containing the starting tangent vectors (directions).
                 Prefarably normalized.
 
             integrator: unused
         """
-        self.points = initial_points
+        self.input_shape = initial_points.shape # (N, D_1, ..., D_k)
 
-        output = model(self.points)
-        output_shape = output.size()
+        output = model(initial_points[:1])
+        output_shape = output.shape # (1,) or (1, num_classes)
 
         if not len(output_shape) in [1, 2]:
             raise RuntimeError('Output of model has wrong size!')
         # Convert `model` to `self.model` with generalized distance
         # to the decision boundary as output.
-        self.model = self._convert_to_distance_to_boundary(model, output_shape)
+        distance_fct = self._convert_to_distance_to_boundary(model, output_shape)
 
         # Check if `self.model` has the right output shape
-        distance_function = self.model(self.points)
-        assert len(distance_function.size()) == 1, \
-            f'Output shape is {distance_function.size()}'
-
+        distance = distance_fct(initial_points)
+        assert len(distance.size()) == 1, \
+            f'Output shape is {distance.size()}'
+        
+        # Flatten self.points and self.vectors to (N, D_1*...* D_k)
+        # and adjust input for distance function
+        self.points = initial_points.reshape((self.input_shape[0],-1))
         # Normalize tangent vectors in quasihyperbolic metric
-        #print(initial_points.size(), initial_vectors.size(), distance_function.size())
-        self.vectors = initial_vectors * distance_function.unsqueeze(-1)
+        self.vectors = torch.einsum('i,i...->i...',
+                            distance,
+                            initial_vectors
+                        ).reshape((self.input_shape[0], -1))
+        self.distance_fct = lambda x: distance_fct(x.reshape((-1,)+self.input_shape[1:]))
 
         self.integrator = integrator
 
@@ -163,10 +169,18 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
             # self.points.grad.zero_()
             # loss = torch.sum(torch.log(self.model(self.points)))
             # loss.backward()
-            y.requires_grad = True
-            loss = torch.sum(torch.log(self.model(y)))
+            
+            # Code without adding an addition vector
+            # y.requires_grad = True
+            # loss = torch.sum(torch.log(self.model(y)))
+            # loss.backward()
+            # return y.grad.detach()
+            
+            # Code without adding an addition vector
+            delta = torch.zeros_like(y, requires_grad=True)
+            loss = torch.sum(torch.log(self.distance_fct(y + delta)))
             loss.backward()
-            return y.grad.detach()
+            return delta.grad.detach()
 
         # quasi-hyperbolic geodesic equation
         def odes(t, x):
@@ -193,8 +207,26 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         self.vectors = ode_solver_output[1, 1]
 
     def get_decision_boundary(self) -> torch.Tensor:
-        return self.points
+        """Return computed approximation of decision boundary.
+        You have to call the step function before getting meaningful
+        results.
+        
+        Returns:
+            torch.Tensor: Tensor of shape (N, D_1, ..., D_k)
+        """
+        return self.points.reshape((-1,)+self.input_shape[1:])
 
     def get_filtered_decision_boundary(self, delta=0.01) -> torch.Tensor:
-        distance = self.model(self.points)
-        return self.points[distance <= delta]
+        """Return computed approximation of decision boundary filtered by
+        distance function value <= delta.
+        You have to call the step function before getting meaningful
+        results.
+
+        Args:
+            delta (float, optional): Threshold. Defaults to 0.01.
+
+        Returns:
+            torch.Tensor: Tensor of shape (*, D_1, ..., D_k)
+        """
+        distance = self.distance_fct(self.points)
+        return self.points[distance <= delta].reshape((-1,)+self.input_shape[1:])
