@@ -23,6 +23,9 @@ examples/models
 examples/*.html
 
 # Data files
+*.gif
+*.mp4
+*.png
 *.pkl
 *.csv
 *.zip
