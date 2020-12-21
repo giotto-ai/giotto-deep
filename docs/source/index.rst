@@ -15,10 +15,19 @@ Welcome to giotto-deep's documentation!
 Indices and tables
 ==================
 
-.. automodule:: gdeep.neural_nets
+.. automodule:: gdeep.create_nets
    :members:
    
-.. automodule:: gdeep.heatmaps
+.. automodule:: gdeep.create_data
+   :members:
+   
+.. automodule:: gdeep.decision_boundary
+   :members:
+   
+.. automodule:: gdeep.plotting
+   :members:
+   
+.. automodule:: gdeep.gradcam
    :members:
 
 References
