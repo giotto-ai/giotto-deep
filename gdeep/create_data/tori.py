@@ -64,6 +64,43 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
     return torus_point_clouds, torus_labels
 
 
+def make_torus_point_cloud2(label: int, n_points: int, noise: float, \
+                            rotation: Rotation, base_point: np.array, radius1: float = 1., radius2: float = 1.):
+    """Generate point cloud of a torus using 2 radii for its definition
+
+    Args:
+        label (int): label of the data points
+        n_points (int): number of sample points for each direction
+        noise (float): noise
+        rotation: Rotation
+        base_point (np.array): center of the torus
+        radius: float
+
+    Returns:
+        (np.array, np.array): data_points, labels
+    """
+    torus_point_clouds = np.asarray(
+        [
+            [
+                (radius1 + radius2 * np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
+                (radius1 + radius2 * np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
+                radius2 * np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
+            ]
+            for t in range(n_points)
+            for s in range(n_points)
+        ]
+    )
+
+    torus_point_clouds = np.einsum("ij,kj->ki", rotation.rotation_matrix(), torus_point_clouds)
+
+    torus_point_clouds += base_point
+
+    # label tori with 2
+    torus_labels = label * np.ones(n_points ** 2)
+
+    return torus_point_clouds, torus_labels
+
+
 def make_torus_dataset(entangled: bool=True)->pd.core.frame.DataFrame:
     """Generates pandas Dataframe of two tori in 3D. The labels correspond to
     the different Tori.
