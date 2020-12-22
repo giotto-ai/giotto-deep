@@ -56,7 +56,7 @@ def persistence_diagrams_of_activations(model, X,
 
     for i, activations_layer in enumerate(activations_layers.get_outputs()):
         if layers.in_list(i):
-            choosen_activations_layer = activations_layer.numpy()
+            choosen_activations_layer = activations_layer.cpu().numpy()
             choosen_activations_layers.append(choosen_activations_layer)
 
     if k > 0 and mode == 'VR':
@@ -74,10 +74,17 @@ def plot_persistence_diagrams(persistence_diagrams, save = False):
         plot_persistence_diagram.show()
 
 def  betti_plot_layers(persistence_diagrams, homology_dimension = [0,1]):
-    """Given persistence_diagrams of activation accross layers, returns the plots of the Betti Surfaces where x-axis is
-    the filter parameter, y-axis is the layer, and z-axis is the betti number associated at x and y"""
+    """
+    Args:
+        persistence_diagrams: A list of persistence diagrams
+        homology_dimension (int array, optional): An array of homology dimensions
+
+    Returns:
+          Plots the persistent Betti surfaces of activation accross layers, returns the plots of the Betti Surfaces
+          where x-axis is the filter parameter, y-axis is the layer, and z-axis is the betti number associated at x and y
+
+    """
 
     BC = BettiCurve()
-    plots = plot_betti_surfaces(BC.fit_transform(persistence_diagrams), BC.fit(persistence_diagrams).samplings_)
-    for i in homology_dimension:
-        plots[i].show()
+    BC.fit(persistence_diagrams)
+    plots = plot_betti_surfaces(BC.transform(persistence_diagrams), BC.samplings_)
