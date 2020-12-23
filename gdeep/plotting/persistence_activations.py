@@ -87,3 +87,5 @@ def  betti_plot_layers(persistence_diagrams, homology_dimension = [0,1]):
     BC = BettiCurve()
     BC.fit(persistence_diagrams)
     plots = plot_betti_surfaces(BC.transform(persistence_diagrams), BC.samplings_)
+    for i in homology_dimension:
+        plots[i].show()
