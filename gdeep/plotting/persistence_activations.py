@@ -76,13 +76,12 @@ def plot_persistence_diagrams(persistence_diagrams, save = False):
 def  betti_plot_layers(persistence_diagrams, homology_dimension = [0,1]):
     """
     Args:
-        persistence_diagrams: A list of persistence diagrams
+        persistence_diagrams: A list of persistence diagrams of the data accross the layers
         homology_dimension (int array, optional): An array of homology dimensions
 
     Returns:
-          Plots the persistent Betti surfaces of activation accross layers, returns the plots of the Betti Surfaces
-          where x-axis is the filter parameter, y-axis is the layer, and z-axis is the betti number associated at x and y
-
+          figs/fig – a tuple of figures representing the Betti surfaces of the data accross layers of the NN, with one figure per dimension in homology_dimensions.
+           Otherwise, a single figure representing the Betti curve of the single sample present.
     """
 
     BC = BettiCurve()
