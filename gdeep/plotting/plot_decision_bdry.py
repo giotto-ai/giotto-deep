@@ -15,11 +15,10 @@ def plot_decision_boundary(data, labels, boundary_points, n_components=2, show=T
     """Plot decision boundaries with the data
 
     Args:
-    -----
-     - data 2darray: arraa of the dataset
-     - boundary_points 2darray: output of gradient_flow
-     - labels list or 1darray: [description]
-     - n_components (int, optional): [description]. Defaults to 2.
+       data 2darray: area of the dataset
+       boundary_points 2darray: output of gradient_flow
+       labels list or 1darray: [description]
+       n_components (int, optional): [description]. Defaults to 2.
     """
     
     if len(data[0])>n_components:
@@ -37,21 +36,25 @@ def plot_decision_boundary(data, labels, boundary_points, n_components=2, show=T
     df_bdry = pd.DataFrame(bdry_pca, columns = ["z"+str(i) for i in range(len(X_pca[0]))])
     if n_comp == 1:
         fig = px.scatter(df_data,x="x0",color=labels)
-        fig2 = px.scatter(df_bdry, x="z0")
-        fig.add_trace(fig2.data[0])
+        if df_bdry.shape[0]>0:
+            fig2 = px.scatter(df_bdry, x="z0")
+            fig.add_trace(fig2.data[0])
     elif n_comp == 2:
         df_bdry['labels']=[0.6]*df_bdry.shape[0]
         fig = px.scatter(df_data,x="x0",y="x1",color=labels)
-        fig2 = px.scatter(df_bdry, x="z0",y="z1",color="labels")
-        fig.add_trace(fig2.data[0])
+        if df_bdry.shape[0]>0:
+            fig2 = px.scatter(df_bdry, x="z0",y="z1",color="labels")
+            fig.add_trace(fig2.data[0])
     elif n_comp == 3:
         fig = px.scatter_3d(df_data,x="x0",y="x1",z="x2",color=labels)
-        fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
-        fig.add_trace(fig2.data[0])
+        if df_bdry.shape[0]>0:
+            fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
+            fig.add_trace(fig2.data[0])
     else:
         fig = px.scatter_3d(df_data,x="x0",y="x1",z="x2",color=labels)
-        fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
-        fig.add_trace(fig2.data[0])
+        if df_bdry.shape[0]>0:
+            fig2 = px.scatter_3d(df_bdry, x="z0",y="z1",z="z2")
+            fig.add_trace(fig2.data[0])
     if show:
         fig.show()
     else:
