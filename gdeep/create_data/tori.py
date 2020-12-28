@@ -28,7 +28,7 @@ class Rotation():
 
 
 def make_torus_point_cloud(label: int, n_points: int, noise: float,\
-    rotation: Rotation, base_point: np.array, radius: float=1.):
+    rotation: Rotation, base_point: np.array, radius: float = 1.):
     """Generate point cloud of a torus
 
     Args:
@@ -63,6 +63,40 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
 
     return torus_point_clouds, torus_labels
 
+
+def sample_torus_uniformely(n_samples: int = 100,
+                            r: float = .3, R: float = 1.):
+    """ Sample uniformly points on embedded torus where a
+    distance R from the centre of the tube to the centre
+    of the torus and a distance r from the centre of the
+    tube to the surface of the tube with r≤R.
+    cf. https://math.stackexchange.com/questions/2017079
+    /uniform-random-points-on-a-torus
+
+    Args:
+        float (r, optional): [description]. Defaults to 1..
+        float (R, optional): [description]. Defaults to .5.
+
+    Returns:
+        np.array: uniformely sampled points on torus of shape (n_samples, 3).
+    """
+    assert r <= R
+
+    n_points = 0
+    sample_points = np.zeros((n_samples, 3))
+
+    while(n_points < n_samples):
+        u, v, w = tuple(np.random.uniform(0., 1., 3))
+        theta, psi = 2.*np.pi*u, 2.*np.pi*v
+        if w <= (R + r * np.cos(theta))/(R + r):
+            sample_points[n_points, :] = np.array([
+                (R + r * np.cos(theta)) * np.cos(psi),
+                (R + r * np.cos(theta)) * np.sin(psi),
+                r * np.sin(theta)
+            ])
+            n_points += 1
+
+    return sample_points
 
 def make_torus_dataset(entangled: bool=True)->pd.core.frame.DataFrame:
     """Generates pandas Dataframe of two tori in 3D. The labels correspond to
