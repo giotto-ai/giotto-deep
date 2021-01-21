@@ -13,7 +13,6 @@
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
@@ -323,7 +322,50 @@ radius: float</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt id="gdeep.create_data.make_torus_point_cloud2">
+<code class="sig-prename descclassname">gdeep.create_data.</code><code class="sig-name descname">make_torus_point_cloud2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">n_points</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">noise</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">rotation</span><span class="p">:</span> <span class="n">gdeep.create_data.tori.Rotation</span></em>, <em class="sig-param"><span class="n">base_point</span><span class="p">:</span> <span class="n">numpy.array</span></em>, <em class="sig-param"><span class="n">radius1</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">radius2</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.create_data.make_torus_point_cloud2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate point cloud of a torus using 2 radii for its definition</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>label (int): label of the data points
+n_points (int): number of sample points for each direction
+noise (float): noise
+rotation: Rotation
+base_point (np.array): center of the torus
+radius: float</p>
+</dd>
+<dt>Returns:</dt><dd><p>(np.array, np.array): data_points, labels</p>
+</dd>
+</dl>
+</dd></dl>
+
 <span class="target" id="module-gdeep.decision_boundary"></span><dl class="py class">
+<dt id="gdeep.decision_boundary.Compactification">
+<em class="property">class </em><code class="sig-prename descclassname">gdeep.decision_boundary.</code><code class="sig-name descname">Compactification</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">precision</span><span class="o">=</span><span class="default_value">0.4</span></em>, <em class="sig-param"><span class="n">n_features</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n_samples</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">epsilon</span><span class="o">=</span><span class="default_value">0.05</span></em>, <em class="sig-param"><span class="n">n_epochs</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5000</span></em>, <em class="sig-param"><span class="n">boundary_tuple</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">neural_net</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>torch.nn.modules.module.Module<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.decision_boundary.Compactification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to compactify the feature space and get
+better topological insights.</p>
+<dl class="py method">
+<dt id="gdeep.decision_boundary.Compactification.create_final_distance_matrix">
+<code class="sig-name descname">create_final_distance_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.decision_boundary.Compactification.create_final_distance_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main function to call without arguments</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="gdeep.decision_boundary.Compactification.plot_chart">
+<code class="sig-name descname">plot_chart</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">i</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.decision_boundary.Compactification.plot_chart" title="Permalink to this definition">¶</a></dt>
+<dd><p>This functions plots the points in each chart.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>i: int</dt><dd><p>the chart index, from -1 to n_features</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt id="gdeep.decision_boundary.DecisionBoundaryCalculator">
 <em class="property">class </em><code class="sig-prename descclassname">gdeep.decision_boundary.</code><code class="sig-name descname">DecisionBoundaryCalculator</code><a class="headerlink" href="#gdeep.decision_boundary.DecisionBoundaryCalculator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Abstract class for calculating the decision boundary of
@@ -407,8 +449,23 @@ n_samples (int): number of sample points</p>
 </dd></dl>
 
 <span class="target" id="module-gdeep.plotting"></span><dl class="py function">
+<dt id="gdeep.plotting.betti_plot_layers">
+<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">betti_plot_layers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">persistence_diagrams</span></em>, <em class="sig-param"><span class="n">homology_dimension</span><span class="o">=</span><span class="default_value">[0, 1]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.betti_plot_layers" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Args:</dt><dd><p>persistence_diagrams: A list of persistence diagrams of the data accross the layers
+homology_dimension (int array, optional): An array of homology dimensions</p>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>figs/fig – a tuple of figures representing the Betti surfaces of the data accross layers of the NN, with one figure per dimension in homology_dimensions.</dt><dd><p>Otherwise, a single figure representing the Betti curve of the single sample present.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="gdeep.plotting.persistence_diagrams_of_activations">
-<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">persistence_diagrams_of_activations</code><span class="sig-paren">(</span><em class="sig-param">model, X, layer_types=[&lt;class 'torch.nn.modules.linear.Linear'&gt;], homology_dimensions=[0, 1], layers=&lt;gdeep.create_nets.utility.Layers_list object&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.persistence_diagrams_of_activations" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">persistence_diagrams_of_activations</code><span class="sig-paren">(</span><em class="sig-param">model, X, layer_types=[&lt;class 'torch.nn.modules.linear.Linear'&gt;], homology_dimensions=[0, 1], layers=&lt;gdeep.create_nets.utility.Layers_list object&gt;, k=-1, mode='VR', max_edge_length=inf</em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.persistence_diagrams_of_activations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns list of persistence diagrams of the activations of all
 layers of type layer_types</p>
 <dl class="simple">
@@ -416,7 +473,9 @@ layers of type layer_types</p>
 X 2darray: [description]
 layer_types (list, optional): [description]. Defaults to [torch.nn.Linear].
 homology_dimensions (list, optional): list of homology dimensions. Defaults to [0, 1].
-layers ([type], optional): list of layer types to consider. Defaults to Layers_list(‘All’).</p>
+layers ([type], optional): list of layer types to consider. Defaults to Layers_list(‘All’)
+k (optional) : number of neighbors parameter of the k-NN distance .
+mode (optional) : choose the filtration (‘VR’ or ‘alpha’) to compute persistence default to ‘VR’.</p>
 </dd>
 <dt>Returns:</dt><dd><p>list: list of persistence diagrams of activations of the different layers</p>
 </dd>
@@ -453,14 +512,13 @@ layers ([type], optional): list of layer types to consider. Defaults to Layers_l
 <dt id="gdeep.plotting.plot_decision_boundary">
 <code class="sig-prename descclassname">gdeep.plotting.</code><code class="sig-name descname">plot_decision_boundary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">labels</span></em>, <em class="sig-param"><span class="n">boundary_points</span></em>, <em class="sig-param"><span class="n">n_components</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">show</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.plotting.plot_decision_boundary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot decision boundaries with the data</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>data 2darray: arraa of the dataset</p></li>
-<li><p>boundary_points 2darray: output of gradient_flow</p></li>
-<li><p>labels list or 1darray: [description]</p></li>
-<li><p>n_components (int, optional): [description]. Defaults to 2.</p></li>
-</ul>
-</div></blockquote>
+<dl class="simple">
+<dt>Args:</dt><dd><p>data 2darray: area of the dataset
+boundary_points 2darray: output of gradient_flow
+labels list or 1darray: [description]
+n_components (int, optional): [description]. Defaults to 2.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <span class="target" id="module-gdeep.gradcam"></span><div class="section" id="references">
@@ -525,7 +583,7 @@ layers ([type], optional): list of layer types to consider. Defaults to Layers_l
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2020, L2F SA.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
     </div>
   </body>
 </html>
