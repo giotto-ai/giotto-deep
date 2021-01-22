@@ -3,7 +3,8 @@ import torch
 import numpy as np
 from torch import nn
 from gdeep.create_nets import Net, train_classification_nn
-from gdeep.decision_boundary import UniformlySampledPoint, GradientFlow
+from gdeep.decision_boundary import UniformlySampledPoint,\
+    GradientFlowDecisionBoundaryCalculator
 
 
 # plot
@@ -90,14 +91,22 @@ class Compactification():
             sample_points = UniformlySampledPoint(self.boundary_tuple, n_samples=self.n_samples)
             plot_points_tensor = torch.from_numpy(sample_points()).float()
             # move to i-th patch
-            sample_points_tensor = self.transition_to_patch(plot_points_tensor,i)
-            GF = GradientFlow(n_epochs=self.n_epochs, epsilon=self.epsilon,
-                              neural_net=self.neural_net, boundary_tuple=self.boundary_tuple,
-                              n_samples=self.n_samples)
-            GF.sample_points_tensor = sample_points_tensor
-            res = GF(precision=self.precision)
+            sample_points_tensor = self.transition_to_patch(plot_points_tensor, i)
+            # Using old gradient flow implementation
+            # GF = GradientFlow(n_epochs=self.n_epochs, epsilon=self.epsilon,
+            #                   neural_net=self.neural_net, boundary_tuple=self.boundary_tuple,
+            #                   n_samples=self.n_samples)
+            # GF.sample_points_tensor = sample_points_tensor
+            # res = GF(precision=self.precision)
+            
+            # Using new gradient flow implementation
+            gf = GradientFlowDecisionBoundaryCalculator(model=self.neural_net,
+                                                        initial_points=sample_points_tensor,
+                                                        optimizer=lambda params: torch.optim.Adam(params))
+            gf.step(number_of_steps=self.n_epochs)
+            res = gf.get_filtered_decision_boundary(delta=self.precision).detach()
             # back to 0-th patch
-            plot_points_tensor = self.transition_to_patch(res,i)
+            plot_points_tensor = self.transition_to_patch(res, i)
             self.patches.append(plot_points_tensor)
         self.check_compute_charts = True
         return self.patches
