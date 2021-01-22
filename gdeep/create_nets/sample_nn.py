@@ -92,7 +92,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.verbose = verbose
         self.arch = arch
-        for i,in_f in enumerate(arch):
+        for i, in_f in enumerate(arch):
             try:
                 val = "self.layer"+str(i)+"="+\
                 "nn.Linear("+str(in_f) +","+str(arch[i+1])+")"
@@ -133,6 +133,68 @@ class Net(nn.Module):
                 print("x"+str(i)+" size: ",eval("x"+str(i)+".shape"))
         return eval("x"+str(i))
 
+class SmoothNet(nn.Module):
+    '''This is the custom network that is easily built from an array,
+    in which the number and dimensions of the layers is specified.
+    (from Matteo)
+    '''
+    def __init__(self,verbose = 0, arch=[2,3,3]):
+        '''
+        Parameters
+        ----------
+        
+         - verbose: bool, default = 0;
+             set this to 1 for debugging
+         - arch: list of int or 1d array, default=[2,3,3];
+             this is the list containing the dimension of the layers
+             inside your network. all laysers have ``relu`` except for
+             the last one which has ``sigmoid`` as activation function.
+             The fsrt number is the dimension of the input! No need to
+             specify the output dimension of 1
+        '''
+        super().__init__()
+        self.verbose = verbose
+        self.arch = arch
+        for i, in_f in enumerate(arch):
+            try:
+                val = "self.layer"+str(i)+"="+\
+                "nn.Linear("+str(in_f) +","+str(arch[i+1])+")"
+                exec(val)
+                val2 = "self.layer"+str(i)+".weight.data.uniform_(-1, 1)"
+                eval(val2)
+                val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
+                eval(val3)
+            except:
+                val = "self.layer"+str(i)+"="+\
+                "nn.Linear("+str(in_f) +",2)"
+                exec(val)
+                val2 = "self.layer"+str(i)+".weight.data.uniform_(-1, 1)"
+                eval(val2)
+                val3 = "self.layer"+str(i)+".bias.data.uniform_(-1, 1)"
+                eval(val3)
+
+    def forward(self, x_cat, x_cont):
+        #output_vars = []
+        for i,in_f in enumerate(self.arch):
+            if i == 0:
+                val = "x"+str(i)+"=F.elu("+\
+                "self.layer"+str(i)+"(x_cont)"+")"
+            # put sigmoid in last layer
+            elif i == len(self.arch)-1:
+                val = "x"+str(i)+"=F.softmax("+\
+                "self.layer"+str(i)+"(x"+str(i-1)+")"+",dim=-1)"
+            else:
+                val = "x"+str(i)+"=F.elu("+\
+                "self.layer"+str(i)+"(x"+str(i-1)+")"+")"
+            if self.verbose:
+                print(val)
+            try:
+                exec(val)
+            except:
+                raise ValueError("The dimensions of x"+str(i)+" are not correct!")
+            if self.verbose:
+                print("x"+str(i)+" size: ",eval("x"+str(i)+".shape"))
+        return eval("x"+str(i))
 
 class CircleNN(nn.Module):
     """ Generates a neural network that is proportional to a Gaussian Kernel in 2D
@@ -167,7 +229,7 @@ class CircleNN3D(nn.Module):
 
 
 class SampleCNN_MNIST_SAMPLE(nn.Module):
-    def __init__(self):
+    def __init__(self, smooth=False):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 6, 5, padding=2)
         self.pool = nn.MaxPool2d(2, 2)
@@ -175,13 +237,17 @@ class SampleCNN_MNIST_SAMPLE(nn.Module):
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 2)
+        if smooth:
+            self.activation = F.elu
+        else:
+            self.activation = F.relu
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.activation(self.conv1(x)))
+        x = self.pool(self.activation(self.conv2(x)))
         x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.activation(self.fc1(x))
+        x = self.activation(self.fc2(x))
         x = self.fc3(x)
         return x
 

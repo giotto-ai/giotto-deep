@@ -98,7 +98,40 @@ def sample_torus_uniformely(n_samples: int = 100,
 
     return sample_points
 
-def make_torus_dataset(entangled: bool=True)->pd.core.frame.DataFrame:
+def sample_klein_bottle_uniformely(n_samples: int = 100,
+                                   r: float = 0.75):
+    """ Sample points on a klein bottle embedded in R^4
+    uniformely with respect to the volumn of the restriced
+    euclidian metric.
+    https://corybrunson.github.io/2019/02/01/sampling/
+
+    Args:
+        n_samples (int, optional): number of sample points.
+            Defaults to 100.
+        r (float, optional): [description]. Defaults to 0.75.
+    """
+    assert r >= 0 and r <= 1
+
+    def jacobian_klein(r):
+        return lambda theta: r * np.sqrt((1 + r * np.cos(theta)) ^ 2 +
+                                         (.5 * r * np.sin(theta)) ^ 2)
+
+    jacobian_klein_vectorized = np.vectorize(jacobian_klein)
+    
+    def sample_klein_theta(n_samples, r):
+        x = []
+        while (len(x) < n_samples):
+            theta = np.random.uniform(0, 2 * np.pi, n_samples)
+            jacobian = jacobian_klein(r)
+            jacobian_theta <- sapply(theta, jacobian)
+            eta = np.random.uniform(n, 0, jacobian(0))
+            x <- c(x, theta[jacobian_theta > eta])
+        }
+        return x
+    d= None
+
+
+def make_torus_dataset(entangled: bool = True) -> pd.core.frame.DataFrame:
     """Generates pandas Dataframe of two tori in 3D. The labels correspond to
     the different Tori.
 

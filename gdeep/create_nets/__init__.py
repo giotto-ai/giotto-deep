@@ -1,7 +1,7 @@
 
 from .sample_nn import CircleNN3D, SimpleNN, DeeperNN, LogisticRegressionNN,\
     Net, CircleNN,\
-    SampleCNN_MNIST_SAMPLE, SampleCNN_MNIST_SAMPLE_2
+    SampleCNN_MNIST_SAMPLE, SampleCNN_MNIST_SAMPLE_2, SmoothNet
 from .utility import Layers_list, train_classification_nn, SaveOutput,\
     SaveNodeOutput, SaveLayerOutput,\
     get_activations, ToFastaiNN, ToPyTorchNN, PeriodicNeuralNetworkMaker
@@ -23,5 +23,6 @@ __all__ = [
     'PeriodicNeuralNetworkMaker',
     'SampleCNN_MNIST_SAMPLE',
     'Layers_list',
-    'SampleCNN_MNIST_SAMPLE_2'
+    'SampleCNN_MNIST_SAMPLE_2',
+    'SmoothNet'
     ]

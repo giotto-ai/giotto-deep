@@ -210,7 +210,7 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         """Return computed approximation of decision boundary.
         You have to call the step function before getting meaningful
         results.
-        
+
         Returns:
             torch.Tensor: Tensor of shape (N, D_1, ..., D_k)
         """
