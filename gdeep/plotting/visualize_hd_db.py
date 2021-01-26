@@ -108,3 +108,10 @@ class LowDimensionalPlane():
                   self.u.unsqueeze(0)) \
             .sum(tuple_len_u_shifted)
         return y_proj @ self.u2v
+
+
+class LowDimensionalPlaneIsometric(LowDimensionalPlane):
+    def __init__(self, x, v):
+        super().__init__(x, v)
+        #self.std2iso =
+        #self.iso2std =
