@@ -177,6 +177,7 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
             # return y.grad.detach()
             
             # Code without adding an addition vector
+            y = y.detach()
             delta = torch.zeros_like(y, requires_grad=True)
             loss = torch.sum(torch.log(self.distance_fct(y + delta)))
             loss.backward()
