@@ -4,6 +4,7 @@ from .compute_boundary import GradientFlow, UniformlySampledPoint
 #from .hyperbolic_unfolding import Geodesics, FlatEuclidean, TwoSphere, UpperHalfPlane, CircleNN, ConformTrafoNN, HyperbolicUnfoldingGeoEq
 from .decision_boundary_calculator import DecisionBoundaryCalculator, GradientFlowDecisionBoundaryCalculator, QuasihyperbolicDecisionBoundaryCalculator
 #from .compute_topology import
+from .stratification_decision_boundary import StratificationGenerator
 
 __all__ = [
     'CategoricalDataCloud',
@@ -18,5 +19,6 @@ __all__ = [
     # 'HyperbolicUnfoldingGeoEq',
     'DecisionBoundaryCalculator',
     'GradientFlowDecisionBoundaryCalculator',
-    'QuasihyperbolicDecisionBoundaryCalculator'
+    'QuasihyperbolicDecisionBoundaryCalculator',
+    'StratificationGenerator'
     ]
