@@ -7,5 +7,6 @@ __all__ = [
     'heatmaps',
     'utility',
     'decision_boundary',
-    'plotting'
+    'plotting',
+    'intersection_homology'
     ] 

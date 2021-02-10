@@ -9,4 +9,5 @@ matplotlib_venn
 scikit-learn
 scipy
 fastai
+networkx
 torchdiffeq
