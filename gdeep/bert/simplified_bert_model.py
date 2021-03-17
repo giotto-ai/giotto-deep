@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 
+# for type testing
+from typing import Optional
+
 # Huggingface Bert implementation
 from transformers import BertConfig
 
@@ -29,17 +32,17 @@ class SimplifiedMultiHeadSelfAttention(nn.Module):
         # scaling factor in row-wise softmax to prevent small gradients
         self.scale_factor = self.dim_head ** -0.5
 
-    def forward(self, x: torch.tensor, mask: torch.tensor = None
-                ) -> torch.tensor:
+    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
+                ) -> torch.Tensor:
         """ Forward pass
 
         Args:
-            x (torch.tensor): input tensor of shape [batch, tokens, dim]
-            mask (torch.tensor, optional): attention mask of shape
+            x (torch.Tensor): input tensor of shape [batch, tokens, dim]
+            mask (torch.Tensor, optional): attention mask of shape
                 [batch, tokens, dim]. Defaults to None.
 
         Returns:
-            torch.tensor: attention result concatenated head-wise
+            torch.Tensor: attention result concatenated head-wise
         """
         assert x.dim() == 3  # [batch, tokens, dim]
         qkv = self.to_qvk(x)  # [batch, tokens, 3 * heads * dim_heads]
@@ -58,21 +61,21 @@ class SimplifiedMultiHeadSelfAttention(nn.Module):
 
     def __compute_mhsa(
                 self,
-                q: torch.tensor,
-                k: torch.tensor,
-                v: torch.tensor,
-                mask: torch.tensor = None) -> torch.tensor:
+                q: torch.Tensor,
+                k: torch.Tensor,
+                v: torch.Tensor,
+                mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """ Implemenatation of multi head self attention values
 
         Args:
-            q (torch.tensor): query tensor of shape [batch, tokens, dim]
-            k (torch.tensor): key tensor of shape [batch, tokens, dim]
-            v (torch.tensor): value tensor of shape [batch, tokens, dim]
-            mask (torch.tensor, optional): attention mask of shape.
+            q (torch.Tensor): query tensor of shape [batch, tokens, dim]
+            k (torch.Tensor): key tensor of shape [batch, tokens, dim]
+            v (torch.Tensor): value tensor of shape [batch, tokens, dim]
+            mask (torch.Tensor, optional): attention mask of shape.
                 Defaults to None.
 
         Returns:
-            torch.tensor: attention values of shape [batch, tokens, dim]
+            torch.Tensor: attention values of shape [batch, tokens, dim]
         """
         # scalar product of query and key vectors
         scaled_dot_prod = torch.einsum('... i d, ... j d -> ... i j', q, k)\
@@ -113,14 +116,13 @@ class SimplifiedBertBlock(nn.Module):
         dim = config.hidden_size  # token's vector length
         # dimension of the inner linear layer
         intermediate_dim = config.intermediate_size
-        heads = config.num_attention_heads  # number of attention heads
         # value added to the denominator of the normalization for numerical
         # stability
         layer_norm_eps = config.layer_norm_eps
         dropout = config.dropout  # probabilty of dropping values
 
         #  attention layer
-        self.mhsa = SimplifiedMultiHeadSelfAttention(dim, heads)
+        self.mhsa = SimplifiedMultiHeadSelfAttention(config)
         self.attention_linear = nn.Linear(dim, dim)
         self.drop_1 = nn.Dropout(dropout)
         self.norm_1 = nn.LayerNorm(dim, eps=layer_norm_eps)
@@ -135,8 +137,8 @@ class SimplifiedBertBlock(nn.Module):
         )
         self.norm_2 = nn.LayerNorm(dim, eps=layer_norm_eps)
 
-    def forward(self, x: torch.tensor, mask: torch.tensor = None
-                ) -> torch.tensor:
+    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
+                ) -> torch.Tensor:
         attention_output = self.attention_linear(
             self.drop_1(self.mhsa(x, mask))
             )
@@ -168,8 +170,8 @@ class SimplifiedBertEncoder(nn.Module):
         # methods
         self.layers = nn.ModuleList(self.block_list)
 
-    def forward(self, x: torch.tensor, mask: torch.tensor = None
-                ) -> torch.tensor:
+    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
+                ) -> torch.Tensor:
         for layer in self.layers:
             x = layer(x, mask)
         return x
@@ -231,8 +233,8 @@ class SimplifiedBertEmbeddings(nn.Module):
         self.dropout_layer = nn.Dropout(dropout)
 
     def forward(self,
-                input_ids: torch.tensor,
-                token_type_ids: torch.tensor
+                input_ids: torch.Tensor,
+                token_type_ids: torch.Tensor
                 ):
         seq_length = input_ids.shape[1]
 
@@ -305,10 +307,10 @@ class SimplifiedBertClassifier(nn.Module):
         self.classifier = nn.Linear(dim, num_labels)
 
     def forward(self,
-                input_ids: torch.tensor,
-                token_type_ids: torch.tensor,
-                attention_mask: torch.tensor
-                ) -> torch.tensor:
+                input_ids: torch.Tensor,
+                token_type_ids: torch.Tensor,
+                attention_mask: torch.Tensor
+                ) -> torch.Tensor:
         x = self.embedding(input_ids, token_type_ids)
 
         x = self.encoder(x, attention_mask)
