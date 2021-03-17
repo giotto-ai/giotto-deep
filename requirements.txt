@@ -9,5 +9,12 @@ matplotlib_venn
 scikit-learn
 scipy
 fastai
+<<<<<<< HEAD
 torchdiffeq
 colormath
+=======
+networkx
+torchdiffeq
+transformers
+einops
+>>>>>>> master
