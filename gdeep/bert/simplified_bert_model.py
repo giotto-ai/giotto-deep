@@ -5,10 +5,10 @@ import torch.nn as nn
 from typing import Optional
 
 # Huggingface Bert implementation
-from transformers import BertConfig
+from transformers import BertConfig  # type: ignore
 
 # extended einstein operations for tensor operations
-from einops import rearrange
+from einops import rearrange  # type: ignore
 
 
 class SimplifiedMultiHeadSelfAttention(nn.Module):
@@ -94,6 +94,7 @@ class SimplifiedMultiHeadSelfAttention(nn.Module):
                     dimensionality!
                     """
                     )
+                raise
 
         # Row-wise softmax
         attention = torch.softmax(scaled_dot_prod, dim=-1)
@@ -238,13 +239,13 @@ class SimplifiedBertEmbeddings(nn.Module):
                 ):
         seq_length = input_ids.shape[1]
 
-        inputs_embeds = self.word_embeddings(input_ids)  # word embedding+
+        inputs_embeds = self.word_embeddings(input_ids)  # word embedding
 
         # token embedding
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
         # shrink position_ids to seq_length
-        position_ids = self.position_ids[:, : seq_length]
+        position_ids = self.position_ids[:, : seq_length]  # type: ignore
         absolute_embeddings = self.position_embeddings(position_ids)
 
         embeddings = inputs_embeds + token_type_embeddings\
