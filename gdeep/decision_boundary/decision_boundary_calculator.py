@@ -177,8 +177,8 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
 
             # quasi-hyperbolic geodesic equation see markdown comment
             ddy = 2*torch.einsum('bi,bi,bj->bj', gradient_log_delta, dy, dy)\
-                  - torch.einsum('bi,bj,bj->bi', gradient_log_delta, dy, dy)
-            return torch.stack((dy,ddy))
+                - torch.einsum('bi,bj,bj->bi', gradient_log_delta, dy, dy)
+            return torch.stack((dy, ddy))
 
         ode_initial_conditions = torch.stack((self.points, self.vectors))
 

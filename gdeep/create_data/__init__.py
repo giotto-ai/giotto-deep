@@ -1,5 +1,6 @@
 
-from .tori import Rotation, make_torus_point_cloud,make_torus_point_cloud2, make_torus_dataset
+from .tori import Rotation, make_torus_point_cloud, make_torus_point_cloud2,\
+    make_torus_dataset
 
 __all__ = [
     'Rotation',

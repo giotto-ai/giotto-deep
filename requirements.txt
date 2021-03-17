@@ -11,3 +11,5 @@ scipy
 fastai
 networkx
 torchdiffeq
+transformers
+einops

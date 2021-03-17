@@ -101,7 +101,7 @@ def make_torus_point_cloud2(label: int, n_points: int, noise: float, \
     return torus_point_clouds, torus_labels
 
 
-def make_torus_dataset(entangled: bool=True)->pd.core.frame.DataFrame:
+def make_torus_dataset(entangled: bool = True) -> pd.core.frame.DataFrame:
     """Generates pandas Dataframe of two tori in 3D. The labels correspond to
     the different Tori.
 
