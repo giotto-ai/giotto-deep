@@ -1,4 +1,4 @@
-from .compute_persistence import
+from .torch_pers import
 
 __all__=[
     'IntersectionHomology',

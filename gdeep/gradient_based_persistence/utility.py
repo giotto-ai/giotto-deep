@@ -7,14 +7,14 @@ import numpy as np
 from gtda.externals.python.simplex_tree_interface import SimplexTree as ST
 
 
-def min_max_loss(net, input_shape, n_epochs):
+def min_max_loss(net, input_shape, n_epochs, lr=0.0001):
     for param in net.parameters():
         param.requires_grad = False
     inputs_descent = torch.rand(input_shape, requires_grad=True)
     inputs_ascent = inputs_descent.detach().clone()
     inputs_ascent.requires_grad = True
 
-    optimizer = optim.SGD([inputs_descent], lr=0.0001)
+    optimizer = optim.SGD([inputs_descent], lr=lr)
 
     # perform gradient descent
     for epoch in range(n_epochs):
@@ -28,7 +28,7 @@ def min_max_loss(net, input_shape, n_epochs):
         min, loss_min = inputs_descent, loss.item()
 
     # perform gradient ascent
-    optimizer = optim.SGD([inputs_ascent], lr=0.0001)
+    optimizer = optim.SGD([inputs_ascent], lr=lr)
     for epoch in range(n_epochs):
         outputs = net(inputs_ascent)
         loss = -(outputs).sum()
@@ -62,7 +62,7 @@ def get_min_max(class_nn, input_shape, n_epochs, n_sample):
 
 #### Build Graph
 
-def build_graph(min_max, clusterer):
+def build_graph(min_max, clusterer = DBSCAN(eps = 0.1,min_samples=5)):
     G = nx.DiGraph()
 
     #### Cluster nodes of the graph
