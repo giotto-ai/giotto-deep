@@ -1,6 +1,6 @@
-from .torch_pers import
+from .torch_pers import torch_pers
 
 __all__=[
-    'IntersectionHomology',
-    'compute_coarsest_strata'
+    'smale_quiver',
+    'persistence'
 ]
