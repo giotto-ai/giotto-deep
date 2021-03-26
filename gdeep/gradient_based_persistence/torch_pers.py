@@ -63,7 +63,7 @@ class PersistenceComputer:
                         'loss']
         self.one_skeleton = one_skeleton
 
-    def get_simplices(self)
+    def get_simplices(self):
         self.get_one_skeleton()
         simplices = []
         for e in list(self.one_skeleton.edges()):
