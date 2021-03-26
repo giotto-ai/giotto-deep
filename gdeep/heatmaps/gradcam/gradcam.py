@@ -3,8 +3,10 @@
 
 import PIL
 import torchvision
+import torch
 from fastai.vision.all import *
 from gdeep.gradcam.utility import *
+from typing import Union
 
 class Hook():
     def __init__(self, m):
@@ -76,7 +78,7 @@ def get_target_layer(learn: Learner,
 def compute_gcam_items(learn: Learner,
                        x: TensorImage,
                        label: Union[str,int,None] = None,
-                       target_layer: Union[nn.Module, callable, None] = None
+                       target_layer: Union[nn.Module, None] = None
                        ):
     """Compute gradient and activations of `target_layer` of `learn.model`
         for `x` with respect to `label`.

@@ -6,6 +6,8 @@ __all__ = ['open_image', 'img2arraylike', 'make_img_grid', 'color']
 # Cell
 from fastai.vision.all import *
 
+from typing import Union
+
 # Cell
 import PIL
 from typing import List

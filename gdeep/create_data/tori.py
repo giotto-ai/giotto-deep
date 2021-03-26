@@ -1,6 +1,7 @@
 import math
-import numpy as np
-import pandas as pd
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
+
 
 class Rotation():
     def __init__(self, axis_0, axis_1, angle):
@@ -16,13 +17,13 @@ class Rotation():
 
     def rotation_matrix(self):
         rotation_matrix = np.identity(3)
-        rotation_matrix[self._axis_0,self._axis_0]\
+        rotation_matrix[self._axis_0, self._axis_0]\
             = math.cos(self._angle)
-        rotation_matrix[self._axis_1,self._axis_1]\
+        rotation_matrix[self._axis_1, self._axis_1]\
             = math.cos(self._angle)
-        rotation_matrix[self._axis_1,self._axis_0]\
+        rotation_matrix[self._axis_1, self._axis_0]\
             = math.sin(self._angle)
-        rotation_matrix[self._axis_0,self._axis_1]\
+        rotation_matrix[self._axis_0, self._axis_1]\
             = -math.sin(self._angle)
         return rotation_matrix
 
@@ -53,7 +54,7 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
                 for s in range(n_points)
             ]
         )
-    
+
     torus_point_clouds = np.einsum("ij,kj->ki",  rotation.rotation_matrix(), torus_point_clouds)
 
     torus_point_clouds += base_point
@@ -64,7 +65,6 @@ def make_torus_point_cloud(label: int, n_points: int, noise: float,\
     return torus_point_clouds, torus_labels
 
 
-<<<<<<< HEAD
 def sample_torus_uniformely(n_samples: int = 100,
                             r: float = .3, R: float = 1.):
     """ Sample uniformly points on embedded torus where a
@@ -99,74 +99,37 @@ def sample_torus_uniformely(n_samples: int = 100,
 
     return sample_points
 
-def sample_klein_bottle_uniformely(n_samples: int = 100,
-                                   r: float = 0.75):
-    """ Sample points on a klein bottle embedded in R^4
-    uniformely with respect to the volumn of the restriced
-    euclidian metric.
-    https://corybrunson.github.io/2019/02/01/sampling/
+# def sample_klein_bottle_uniformely(n_samples: int = 100,
+#                                    r: float = 0.75):
+#     """ Sample points on a klein bottle embedded in R^4
+#     uniformely with respect to the volumn of the restriced
+#     euclidian metric.
+#     https://corybrunson.github.io/2019/02/01/sampling/
 
-    Args:
-        n_samples (int, optional): number of sample points.
-            Defaults to 100.
-        r (float, optional): [description]. Defaults to 0.75.
-    """
-    assert r >= 0 and r <= 1
+#     Args:
+#         n_samples (int, optional): number of sample points.
+#             Defaults to 100.
+#         r (float, optional): [description]. Defaults to 0.75.
+#     """
+#     assert r >= 0 and r <= 1
 
-    def jacobian_klein(r):
-        return lambda theta: r * np.sqrt((1 + r * np.cos(theta)) ^ 2 +
-                                         (.5 * r * np.sin(theta)) ^ 2)
+#     def jacobian_klein(r):
+#         return lambda theta: r * np.sqrt((1 + r * np.cos(theta)) ^ 2 +
+#                                          (.5 * r * np.sin(theta)) ^ 2)
 
-    jacobian_klein_vectorized = np.vectorize(jacobian_klein)
+#     jacobian_klein_vectorized = np.vectorize(jacobian_klein)
     
-    def sample_klein_theta(n_samples, r):
-        x = []
-        while (len(x) < n_samples):
-            theta = np.random.uniform(0, 2 * np.pi, n_samples)
-            jacobian = jacobian_klein(r)
-            jacobian_theta <- sapply(theta, jacobian)
-            eta = np.random.uniform(n, 0, jacobian(0))
-            x <- c(x, theta[jacobian_theta > eta])
-        }
-        return x
-    d= None
-=======
-def make_torus_point_cloud2(label: int, n_points: int, noise: float, \
-                            rotation: Rotation, base_point: np.array, radius1: float = 1., radius2: float = 1.):
-    """Generate point cloud of a torus using 2 radii for its definition
-
-    Args:
-        label (int): label of the data points
-        n_points (int): number of sample points for each direction
-        noise (float): noise
-        rotation: Rotation
-        base_point (np.array): center of the torus
-        radius: float
-
-    Returns:
-        (np.array, np.array): data_points, labels
-    """
-    torus_point_clouds = np.asarray(
-        [
-            [
-                (radius1 + radius2 * np.cos(s)) * np.cos(t) + noise * (np.random.rand(1)[0] - 0.5),
-                (radius1 + radius2 * np.cos(s)) * np.sin(t) + noise * (np.random.rand(1)[0] - 0.5),
-                radius2 * np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
-            ]
-            for t in range(n_points)
-            for s in range(n_points)
-        ]
-    )
-
-    torus_point_clouds = np.einsum("ij,kj->ki", rotation.rotation_matrix(), torus_point_clouds)
-
-    torus_point_clouds += base_point
-
-    # label tori with 2
-    torus_labels = label * np.ones(n_points ** 2)
-
-    return torus_point_clouds, torus_labels
->>>>>>> master
+#     def sample_klein_theta(n_samples, r):
+#         x = []
+#         while (len(x) < n_samples):
+#             theta = np.random.uniform(0, 2 * np.pi, n_samples)
+#             jacobian = jacobian_klein(r)
+#             jacobian_theta <- sapply(theta, jacobian)
+#             eta = np.random.uniform(n, 0, jacobian(0))
+#             x <- c(x, theta[jacobian_theta > eta])
+#         }
+#         return x
+#     d= None
 
 
 def make_torus_dataset(entangled: bool = True) -> pd.core.frame.DataFrame:
@@ -184,7 +147,7 @@ def make_torus_dataset(entangled: bool = True) -> pd.core.frame.DataFrame:
     if entangled:
         torus_point_cloud[0], torus_labels[0] = make_torus_point_cloud(0, 50, 0.0,\
             Rotation(1,2,math.pi/2), np.array([[0,0,0]]), radius=.3)
-        torus_point_cloud[1], torus_labels[1]  = make_torus_point_cloud(1, 50, 0.0,\
+        torus_point_cloud[1], torus_labels[1] = make_torus_point_cloud(1, 50, 0.0,\
             Rotation(1,2,0), np.array([[2,0,0]]), radius=.3)
     else:
         torus_point_cloud[0], torus_labels[0] = make_torus_point_cloud(0, 50, 0.0,\

@@ -1,3 +1,13 @@
+"""Simplified BERT model for classification using einops
+
+http://einops.rocks/pytorch-examples.html
+
+Hacked by Raphael Reinauer 2021 (https://github.com/raphaelreinauer)
+"""
+
+# Use mypy --ignore-missing-imports gdeep/bert/simplified_bert_model.py
+# for type checking
+
 import torch
 import torch.nn as nn
 
@@ -65,7 +75,7 @@ class SimplifiedMultiHeadSelfAttention(nn.Module):
                 k: torch.Tensor,
                 v: torch.Tensor,
                 mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """ Implemenatation of multi head self attention values
+        """ Implementation of multi head self attention values
 
         Args:
             q (torch.Tensor): query tensor of shape [batch, tokens, dim]
@@ -87,15 +97,13 @@ class SimplifiedMultiHeadSelfAttention(nn.Module):
                     mask == 0,
                     -float('inf')
                     )
-            except Exception:
-                print(
+            except RuntimeError:
+                raise AssertionError(
                     """"
-                    mask and scaled dot product do not have the same
+                    mask and scaled_dot_product do not have the same
                     dimensionality!
                     """
                     )
-                raise
-
         # Row-wise softmax
         attention = torch.softmax(scaled_dot_prod, dim=-1)
         return torch.einsum('... i j, ... j d -> ... i d', attention, v)
@@ -120,7 +128,7 @@ class SimplifiedBertBlock(nn.Module):
         # value added to the denominator of the normalization for numerical
         # stability
         layer_norm_eps = config.layer_norm_eps
-        dropout = config.dropout  # probabilty of dropping values
+        dropout = config.dropout  # probability of dropping values
 
         #  attention layer
         self.mhsa = SimplifiedMultiHeadSelfAttention(config)
@@ -213,7 +221,7 @@ class SimplifiedBertEmbeddings(nn.Module):
         # value added to the denominator of the normalization for numerical
         # stability
         layer_norm_eps = config.layer_norm_eps
-        dropout = config.dropout  # probabilty of dropping values
+        dropout = config.dropout  # probability of dropping values
 
         self.word_embeddings = nn.Embedding(vocab_size,
                                             dim,
@@ -224,7 +232,7 @@ class SimplifiedBertEmbeddings(nn.Module):
         self.position_embeddings = nn.Embedding(max_position_embeddings, dim)
 
         # position_ids that will be encoded by the ´position_embeddings´ layer
-        # register_buffered are non-trainable weigths
+        # register_buffered are non-trainable weights
         self.register_buffer(
             "position_ids",
             torch.arange(config.max_position_embeddings).expand((1, -1))
