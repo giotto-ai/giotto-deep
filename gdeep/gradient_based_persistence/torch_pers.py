@@ -19,7 +19,7 @@ class smale_quiver:
         add_index(self.quiver, class_nn(), epsilon= 0.1)
 
     def fit_transform(self, class_nn, input_shape, n_sample = 200):
-        self.fit(class_nn, input_shape, n_sample = 200)
+        self.fit(class_nn, input_shape, n_sample = n_sample)
         return self.quiver
 
     def plot(self):
@@ -34,7 +34,7 @@ class smale_quiver:
 
         nt.show('nx.html')
 
-    def fit_transform_plot(self, class_nn, input_shape, n_sample = n_sample):
+    def fit_transform_plot(self, class_nn, input_shape, n_sample = 200):
         self.fit(class_nn, input_shape, n_sample = n_sample)
         self.plot()
         return self.quiver
@@ -70,7 +70,8 @@ class PersistenceComputer:
             simplices.append(([e[0], e[1]], self.one_skeleton.edges[e]['value']))
         for i in list(self.one_skeleton.nodes()):
             simplices.append(([i], self.one_skeleton.nodes[i]['value']))
-    self.simplices = simplices
+        self.simplices = simplices
+
 
     def get_persistence(self):
         self.get_simplices()
