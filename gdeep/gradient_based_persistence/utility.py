@@ -31,7 +31,7 @@ def min_max_loss(net, input_shape, n_epochs, lr=0.0001):
     optimizer = optim.SGD([inputs_ascent], lr=lr)
     for epoch in range(n_epochs):
         outputs = net(inputs_ascent)
-        loss = -(outputs).sum()
+        loss = - outputs.sum()
         loss.backward()
         optimizer.step()
     with torch.no_grad():
@@ -54,8 +54,8 @@ def get_min_max(class_nn, input_shape, n_epochs, n_sample):
     infinity_min = [-1000000.0] * len(min_max['max'][0])
     min_max['min'] = torch.stack(min_max['min']).detach()
     min_max['max'] = torch.stack(min_max['max']).detach()
-    min_max['min'] = np.nan_to_num(min_max['min'], nan=infinity_max)
-    min_max['max'] = np.nan_to_num(min_max['max'], nan=infinity_min)
+    min_max['min'] = np.nan_to_num(min_max['min'], nan=infinity_min)
+    min_max['max'] = np.nan_to_num(min_max['max'], nan=infinity_max)
 
     return min_max
 
@@ -88,23 +88,6 @@ def build_graph(min_max, clusterer = DBSCAN(eps = 0.1,min_samples=5)):
     return G
 
 
-### Hessian
-
-def jacobian(y, x, create_graph=False):
-    jac = []
-    flat_y = y.reshape(-1)
-    grad_y = torch.zeros_like(flat_y)
-    for i in range(len(flat_y)):
-        grad_y[i] = 1.
-        grad_x, = torch.autograd.grad(flat_y, x, grad_y, retain_graph=True, create_graph=create_graph)
-        jac.append(grad_x.reshape(x.shape))
-        grad_y[i] = 0.
-    return torch.stack(jac).reshape(y.shape + x.shape)
-
-
-def hessian(y, x):
-    return jacobian(jacobian(y, x, create_graph=True), x)
-
 
 ### Index
 
@@ -113,7 +96,7 @@ def add_index(G, net, epsilon=0.1):
         x = torch.tensor(G.nodes[i]['coordinate'], requires_grad=True)
         hessian_x = torch.autograd.functional.hessian(net, x)
         eig = torch.symeig(hessian_x, eigenvectors=False)[0]
-        index = sum([1 for i in eig if i < -epsilon])
+        index = sum([1 for value in eig if value < -epsilon])
         G.nodes[i]['index'] = index
 
 

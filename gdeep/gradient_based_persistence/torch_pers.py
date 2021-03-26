@@ -34,19 +34,51 @@ class smale_quiver:
 
         nt.show('nx.html')
 
-    def fit_transform_plot(self, class_nn, input_shape, n_sample = 200):
-        self.fit(class_nn, input_shape, n_sample = 200)
+    def fit_transform_plot(self, class_nn, input_shape, n_sample = n_sample):
+        self.fit(class_nn, input_shape, n_sample = n_sample)
         self.plot()
         return self.quiver
 
 
-class persistence:
+class PersistenceComputer:
 
     def __init__(self, smale_quiver):
         self.smale_quiver = smale_quiver
 
-    def diagram(self):
-        one_skeleton = get_one_skeleton(smale_quiver.quiver)
-        simplices = get_simplices(one_skeleton)
-        return persistence(simplices)
+    def get_one_skeleton(self):
+        one_skeleton = nx.Graph()
+        for i in list(self.smale_quiver.nodes()):
+            if self.smale_quiver.nodes[i]['index'] == 1:
+                if len(list(self.smale_quiver.predecessors(i))) == 1:
+                    one_skeleton.add_node(list(self.smale_quiver.predecessors(i))[0])
+                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[0]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[0]][
+                        'loss']
+                if len(list(self.smale_quiver.predecessors(i))) == 2:
+                    one_skeleton.add_edge(list(self.smale_quiver.predecessors(i))[0], list(self.smale_quiver.predecessors(i))[1])
+                    one_skeleton.edges[list(self.smale_quiver.predecessors(i))[0], list(self.smale_quiver.predecessors(i))[1]]['value'] = self.smale_quiver.nodes[i][
+                        'loss']
+                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[0]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[0]][
+                        'loss']
+                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[1]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[1]][
+                        'loss']
+        return self.one_skeleton = one_skeleton
+
+    def get_simplices(self)
+        self.get_one_skeleton()
+        simplices = []
+        for e in list(self.one_skeleton.edges()):
+            simplices.append(([e[0], e[1]], self.one_skeleton.edges[e]['value']))
+        for i in list(self.one_skeleton.nodes()):
+            simplices.append(([i], self.one_skeleton.nodes[i]['value']))
+        return self.simplices = simplices
+
+    def get_persistence(self):
+        self.get_simplices()
+        filtered_complex = ST()
+        for simplex, value in self.simplices:
+            filtered_complex.insert(simplex, value)
+        self.persistence = filtered_complex.persistence()
+        return self.persistence
+
+
 
