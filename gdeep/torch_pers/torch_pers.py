@@ -1,5 +1,6 @@
 import torch
 import networkx as nx
+import numpy as np
 from sklearn.cluster import DBSCAN
 from gdeep.torch_pers.utility import *
 from pyvis.network import Network
@@ -13,28 +14,26 @@ class SmaleQuiverComputer:
 
 
 
-    def fit(self, class_nn, input_shape, n_sample = 200):
+    def fit(self, class_nn, input_shape, n_sample = int(200)):
         min_max = get_min_max(class_nn, input_shape, self.n_epochs, n_sample)
         self.quiver = build_graph(min_max, self.clusterer)
         add_index(self.quiver, class_nn(), epsilon= 0.1)
-
-    def fit_transform(self, class_nn, input_shape, n_sample = 200):
-        self.fit(class_nn, input_shape, n_sample = n_sample)
-        return self.quiver
-
-    def plot(self):
         nt = Network(notebook=True, directed=True)
         nt.barnes_hut()
-        nt.add_nodes([int(i) for i in list(self.quiver.nodes())], value=[float(self.quiver.nodes[i]['loss']) for i in list(self.quiver.nodes())],
-                     x=[pos[i][0] for i in list(self.quiver.nodes())], y=[self.quiver.nodes[i]['loss'] for i in list(self.quiver.nodes())],
+        nt.add_nodes([int(i) for i in list(self.quiver.nodes())],
+                     value=[float(self.quiver.nodes[i]['loss']) for i in list(self.quiver.nodes())],
                      title=['index' + str(self.quiver.nodes[i]['index']) for i in list(self.quiver.nodes())],
                      color=[self.quiver.nodes[i]['index'] for i in list(self.quiver.nodes())])
         for e in list(self.quiver.edges()):
             nt.add_edge(source=int(e[0]), to=int(e[1]))
+        self.quiver_to_plot = nt
 
-        nt.show('nx.html')
+    def fit_transform(self, class_nn, input_shape, n_sample = int(200)):
+        self.fit(class_nn, input_shape, n_sample = n_sample)
+        return self.quiver
 
-    def fit_transform_plot(self, class_nn, input_shape, n_sample = 200):
+
+    def fit_transform_plot(self, class_nn, input_shape, n_sample = int(200)):
         self.fit(class_nn, input_shape, n_sample = n_sample)
         self.plot()
         return self.quiver
@@ -78,7 +77,11 @@ class PersistenceComputer:
         filtered_complex = ST()
         for simplex, value in self.simplices:
             filtered_complex.insert(simplex, value)
-        self.persistence = filtered_complex.persistence()
+        pers = filtered_complex.persistence()
+        d = []
+        for dim , bar in pers:
+            d.append([bar[0],bar[1],dim])
+        self.persistence = np.array(d)
         return self.persistence
 
 
