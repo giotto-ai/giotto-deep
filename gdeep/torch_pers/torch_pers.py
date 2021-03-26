@@ -1,11 +1,11 @@
 import torch
 import networkx as nx
 from sklearn.cluster import DBSCAN
-from gdeep.gradient_based_persistence.utility import *
+from gdeep.torch_pers.utility import *
 from pyvis.network import Network
 
 
-class smale_quiver:
+class SmaleQuiverComputer:
     def __init__(self,  n_epochs = 10, lr = 0.0001, clusterer = DBSCAN(eps = 0.1,min_samples=5)):
         self.n_epochs = n_epochs
         self.lr = lr

@@ -9,5 +9,5 @@ __all__ = [
     'decision_boundary',
     'plotting',
     'intersection_homology',
-    'gradient_based_persistence'
+    'torch_pers'
     ] 
