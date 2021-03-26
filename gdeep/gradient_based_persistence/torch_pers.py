@@ -61,7 +61,7 @@ class PersistenceComputer:
                         'loss']
                     one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[1]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[1]][
                         'loss']
-        return self.one_skeleton = one_skeleton
+        self.one_skeleton = one_skeleton
 
     def get_simplices(self)
         self.get_one_skeleton()
@@ -70,7 +70,7 @@ class PersistenceComputer:
             simplices.append(([e[0], e[1]], self.one_skeleton.edges[e]['value']))
         for i in list(self.one_skeleton.nodes()):
             simplices.append(([i], self.one_skeleton.nodes[i]['value']))
-        return self.simplices = simplices
+    self.simplices = simplices
 
     def get_persistence(self):
         self.get_simplices()
