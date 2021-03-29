@@ -42,7 +42,7 @@ class SmaleQuiverComputer:
 
         min_max = get_min_max(class_nn, input_shape, self.n_epochs, n_sample)
         self.quiver = build_graph(min_max, self.clusterer)
-        add_index(self.quiver, class_nn(), epsilon= 0.1)
+        add_index(self.quiver, class_nn(), threshold= 0.1)
         nt = Network(notebook=True, directed=True)
         nt.barnes_hut()
         nt.add_nodes([int(i) for i in list(self.quiver.nodes())],
