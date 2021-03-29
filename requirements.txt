@@ -11,3 +11,4 @@ scipy
 fastai
 networkx
 torchdiffeq
+pyvis
