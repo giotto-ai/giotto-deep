@@ -97,16 +97,19 @@ class PersistenceComputer:
             if self.smale_quiver.nodes[i]['index'] == 1:
                 if len(list(self.smale_quiver.predecessors(i))) == 1:
                     one_skeleton.add_node(list(self.smale_quiver.predecessors(i))[0])
-                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[0]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[0]][
+                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[0]]['value'] = \
+                        self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[0]][
                         'loss']
                 if len(list(self.smale_quiver.predecessors(i))) == 2:
-                    one_skeleton.add_edge(list(self.smale_quiver.predecessors(i))[0], list(self.smale_quiver.predecessors(i))[1])
-                    one_skeleton.edges[list(self.smale_quiver.predecessors(i))[0], list(self.smale_quiver.predecessors(i))[1]]['value'] = self.smale_quiver.nodes[i][
+                    one_skeleton.add_edge(list(self.smale_quiver.predecessors(i))[0], \
+                                          list(self.smale_quiver.predecessors(i))[1])
+                    one_skeleton.edges[list(self.smale_quiver.predecessors(i))[0], \
+                                       list(self.smale_quiver.predecessors(i))[1]]['value'] = self.smale_quiver.nodes[i][
                         'loss']
-                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[0]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[0]][
-                        'loss']
-                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[1]]['value'] = self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[1]][
-                        'loss']
+                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[0]]['value'] = \
+                        self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[0]]['loss']
+                    one_skeleton.nodes[list(self.smale_quiver.predecessors(i))[1]]['value'] = \
+                        self.smale_quiver.nodes[list(self.smale_quiver.predecessors(i))[1]]['loss']
         self.one_skeleton = one_skeleton
 
     def get_simplices(self):

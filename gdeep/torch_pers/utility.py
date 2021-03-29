@@ -8,6 +8,20 @@ from gtda.externals.python.simplex_tree_interface import SimplexTree as ST
 
 
 def min_max_loss(net, input_shape, n_epochs, lr=0.0001):
+    '''
+
+    Args:
+        net: a nn.module
+        input_shape: the input_shape for net
+        n_epochs: the number of epochs for which to run gradient ascent/descent
+        lr: learning rate of gradient ascent/descent
+
+    Returns: from a random initialization, returns the endpoints of gradient descent and ascent, together
+    with the respective values of the function
+
+    '''
+
+
     for param in net.parameters():
         param.requires_grad = False
     inputs_descent = torch.rand(input_shape, requires_grad=True)
@@ -41,6 +55,19 @@ def min_max_loss(net, input_shape, n_epochs, lr=0.0001):
 
 
 def get_min_max(class_nn, input_shape, n_epochs, n_sample):
+
+    '''
+
+    Args:
+        class_nn: a class of nn.module encoding the function to study
+        input_shape: the input_shape of class_nn
+        n_epochs: the number of epochs for which to run gradient ascent/descent
+        n_sample: the number of sample gradient flow to perform
+
+    Returns: a list of starting point and endpoint of integral lines with respect to the gradient
+    of class_nn, together with their respective function values
+
+    '''
     min_max = {'min': [], 'loss_min': [], 'max': [], 'loss_max': []}
     net = class_nn()
     # net.to(dev)
@@ -63,6 +90,17 @@ def get_min_max(class_nn, input_shape, n_epochs, n_sample):
 #### Build Graph
 
 def build_graph(min_max, clusterer = DBSCAN(eps = 0.1,min_samples=5)):
+    '''
+
+    Args:
+        min_max: an output of get_min_max function
+        clusterer: a clusterer class in the sci-kit learn api
+
+    Returns: A networkx grqph, with nodes being clustered critical points, and an edges between two critical
+    points if we found an integral line between those points
+
+    '''
+
     G = nx.DiGraph()
 
     #### Cluster nodes of the graph
@@ -91,44 +129,25 @@ def build_graph(min_max, clusterer = DBSCAN(eps = 0.1,min_samples=5)):
 
 ### Index
 
-def add_index(G, net, epsilon=0.1):
+def add_index(G, net, threshold=0.1):
+    '''
+
+    Args:
+        G: an output of build_graph
+        net: the function from which G is built
+        threshold: a smoothing parameter to decide when an eigenvalue of the hessian must be considered negative
+
+    Returns:
+
+    '''
     for i in list(G.nodes()):
         x = torch.tensor(G.nodes[i]['coordinate'], requires_grad=True)
         hessian_x = torch.autograd.functional.hessian(net, x)
         eig = torch.symeig(hessian_x, eigenvectors=False)[0]
-        index = sum([1 for value in eig if value < -epsilon])
+        index = sum([1 for value in eig if value < -threshold])
         G.nodes[i]['index'] = index
 
 
-def get_one_skeleton(G):
-    one_skeleton = nx.Graph()
-    for i in list(G.nodes()):
-        if G.nodes[i]['index'] == 1:
-            if len(list(G.predecessors(i))) == 1:
-                one_skeleton.add_node(list(G.predecessors(i))[0])
-                one_skeleton.nodes[list(G.predecessors(i))[0]]['value'] = G.nodes[list(G.predecessors(i))[0]]['loss']
-            if len(list(G.predecessors(i))) == 2:
-                one_skeleton.add_edge(list(G.predecessors(i))[0], list(G.predecessors(i))[1])
-                one_skeleton.edges[list(G.predecessors(i))[0], list(G.predecessors(i))[1]]['value'] = G.nodes[i]['loss']
-                one_skeleton.nodes[list(G.predecessors(i))[0]]['value'] = G.nodes[list(G.predecessors(i))[0]]['loss']
-                one_skeleton.nodes[list(G.predecessors(i))[1]]['value'] = G.nodes[list(G.predecessors(i))[1]]['loss']
-    return one_skeleton
-
-
-def get_simplices(one_skeleton):
-    simplices = []
-    for e in list(one_skeleton.edges()):
-        simplices.append(([e[0], e[1]], one_skeleton.edges[e]['value']))
-    for i in list(one_skeleton.nodes()):
-        simplices.append(([i], one_skeleton.nodes[i]['value']))
-    return simplices
-
-
-def persistence(simplices):
-    filtered_complex = ST()
-    for simplex, value in simplices:
-        filtered_complex.insert(simplex, value)
-    return filtered_complex.persistence()
 
 
 
