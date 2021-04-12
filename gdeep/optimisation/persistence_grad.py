@@ -20,14 +20,20 @@ class PersistenceGradient():
         NN (int): the number of gradient iterations.
         Lambda (float): the relative weight of the regularisation part
             of the `persistence_function`.
+        homology_dimensions (tuple): tuple of homology dimensions.
         
     '''
-    def __init__(self,Xp,epsilon:float=0.05, NN:int=10, Lambda:float = 0.5):
+    def __init__(self,Xp,epsilon:float=0.05, NN:int=10, Lambda:float = 0.5,
+                 homology_dimensions=None):
         self.Xp = Xp.detach().clone()
         self.epsilon = epsilon
         self.NN = NN
         self.Lambda = Lambda
         self.grads = torch.zeros_like(self.Xp)
+        if homology_dimensions is None:
+            self.homology_dimensions = (0,1)
+        else:
+            self.homology_dimensions = homology_dimensions
         
     @staticmethod
     def powerset(iterable):
@@ -46,7 +52,7 @@ class PersistenceGradient():
     def _simplicial_pairs_of_indices(self,X):
         '''Private function to compute the pair of indice in X to
         matching the iimplices.'''
-        simplices = [s for s in list(self.powerset(list(range(0,len(X)))))[1:] if len(s) < 4]
+        simplices = [s for s in list(self.powerset(list(range(0,len(X)))))[1:] if len(s) <= max(self.homology_dimensions)+1]
         pairs_of_indices = [self._combinations_with_single(s) for s in simplices]
         return pairs_of_indices
 
@@ -60,7 +66,7 @@ class PersistenceGradient():
         
     def _compute_pairs(self):
         '''Use giotto-tda to compute homology (b,d) pairs'''
-        vr = vrp(homology_dimensions=(0,1))
+        vr = vrp(homology_dimensions=self.homology_dimensions)
         dgms = vr.fit_transform([self.Xp])
         pairs = dgms[0][:,:2]
         return pairs
