@@ -109,78 +109,55 @@ class PersistenceGradient():
                 # if not, then infinite persistence
             if i not in persistence_pairs_set:
                 #print("phi_i:",phi_i)
-                index=torch.nonzero(torch.isclose(torch.from_numpy(pairs).float(),phi_i,atol=num_tolerance))
-                if len(index)>0:
-                    #print("index:",index)
-                    equal_number=pairs[index[0,0]][(index[0,1]+1)%2]
-                    #print("paired filtr value: ", equal_number)
-                    #print(phi[:100])
-                    try:
-                        j = torch.nonzero(torch.isclose(phi,torch.tensor(equal_number,dtype=torch.float32),rtol=num_tolerance))[0,0]
-                    except:
-                        warnings.warn("Numerical approximation errors! Incresing tolerance.")
-                        #print("Homology paris:",pairs)
-                        #print("Filtration number considered:",equal_number)
-                        #print("Elements in Phi:")
-                        #for element in phi:
-                        #    print(element)
-                        num_tolerance=num_tolerance*10
-                        try:
-                            j = torch.nonzero(torch.isclose(phi,torch.tensor(equal_number,dtype=torch.float32),rtol=num_tolerance))[0,0]
-                        except:
-                            warnings.warn("Numerical approximation errors! Incresing tolerance.")
-                            num_tolerance=num_tolerance*10
-                            j = torch.nonzero(torch.isclose(phi,torch.tensor(equal_number,dtype=torch.float32),rtol=num_tolerance))[0,0]
-                        
-                    if j.item() not in persistence_pairs_set:
-                        persistence_pairs.append((i,j.item(),homology_dims[index[0,0]]))
-                        #print(homology_dims[index[0,0]])
-                        persistence_pairs_set.add(i)
-                        persistence_pairs_set.add(j.item())
-                    else:
-                        persistence_pairs.append((i,np.inf,homology_dims[index[0,0]]))
-                        #print(homology_dims[index[0,0]])
-                        persistence_pairs_set.add(i)
-                    #print("pair:",i,j)
-                    pairs = np.vstack((pairs[:index[0,0]],pairs[index[0,0]+1:]))
-                    homology_dims = np.concatenate((homology_dims[:index[0,0]],homology_dims[index[0,0]+1:]))
-                    #print(homology_dims)
-                    phi_to_remove.append(phi_i)
-                    phi_to_remove.append(phi[j])
-                    #print("remaining pairs:",pairs)
-                    #print("remaining phi:", phi_to_remove)
-                else:
-                    at_least_two=torch.nonzero(torch.isclose(phi,phi_i,atol=num_tolerance))
-                    #print("at least two:", at_least_two)
-                    if len(at_least_two)>1:
-                        j = at_least_two[1,0]
-                        #print("pair:",i,j)
+                try:
+                    index=torch.nonzero(torch.isclose(torch.from_numpy(pairs).float(),phi_i,rtol=num_tolerance))
+                    if len(index)>0:
+                        #print("index:",index)
+                        equal_number=pairs[index[0,0]][(index[0,1]+1)%2]
+                        #print("paired filtr value: ", equal_number)
+                        j = torch.argmin(torch.abs(phi-torch.tensor(equal_number,dtype=torch.float32)))
                         if j.item() not in persistence_pairs_set:
-                            persistence_pairs.append((i,j.item(),0.)) # zero as default
+                            persistence_pairs.append((i,j.item(),homology_dims[index[0,0]]))
+                            #print(homology_dims[index[0,0]])
                             persistence_pairs_set.add(i)
                             persistence_pairs_set.add(j.item())
                         else:
-                            persistence_pairs.append((i,np.inf,0.)) # zero as default
+                            persistence_pairs.append((i,np.inf,homology_dims[index[0,0]]))
+                            #print(homology_dims[index[0,0]])
                             persistence_pairs_set.add(i)
-                        phi_to_remove.append(phi[at_least_two[0,0]])
-                        phi_to_remove.append(phi[at_least_two[1,0]])
+                        #print("pair:",i,j)
+                        pairs = np.vstack((pairs[:index[0,0]],pairs[index[0,0]+1:]))
+                        homology_dims = np.concatenate((homology_dims[:index[0,0]],homology_dims[index[0,0]+1:]))
+                        #print(homology_dims)
+                        phi_to_remove.append(phi_i)
+                        phi_to_remove.append(phi[j])
+                        #print("remaining pairs:",pairs)
                         #print("remaining phi:", phi_to_remove)
                     else:
-                        try:
+                        at_least_two=torch.nonzero(torch.isclose(phi,phi_i,atol=num_tolerance))
+                        #print("at least two:", at_least_two)
+                        if len(at_least_two)>1:
+                            j = at_least_two[1,0]
+                            #print("pair:",i,j)
+                            if j.item() not in persistence_pairs_set:
+                                persistence_pairs.append((i,j.item(),0.)) # zero as default
+                                persistence_pairs_set.add(i)
+                                persistence_pairs_set.add(j.item())
+                            else:
+                                persistence_pairs.append((i,np.inf,0.)) # zero as default
+                                persistence_pairs_set.add(i)
+                            phi_to_remove.append(phi[at_least_two[0,0]])
+                            phi_to_remove.append(phi[at_least_two[1,0]])
+                            #print("remaining phi:", phi_to_remove)
+                        else:
                             index=torch.nonzero(torch.isclose(torch.stack(phi_to_remove),phi_i,rtol=num_tolerance))
-                        except:
-                            warnings.warn("Numerical approximation errors! Incresing tolerance.")
-                            num_tolerance=num_tolerance*10
-                            try:
-                                index=torch.nonzero(torch.isclose(torch.stack(phi_to_remove),phi_i,rtol=num_tolerance))
-                            except:
-                                warnings.warn("Numerical approximation errors! Incresing tolerance.")
-                                num_tolerance=num_tolerance*10
-                                index=torch.nonzero(torch.isclose(torch.stack(phi_to_remove),phi_i,rtol=num_tolerance))
-                        #print("going for infinity:", index)
-                        if len(index)==0:
-                            persistence_pairs.append((i,np.inf,0.)) # zero as default
-                            persistence_pairs_set.add(i)
+                            if len(index)==0:
+                                persistence_pairs.append((i,np.inf,0.)) # zero as default
+                                persistence_pairs_set.add(i)
+                except:
+                    warnings.warn("Numerical approximation errors! Incresing tolerance.")
+                    num_tolerance = 10*num_tolerance
+                    
         #print(persistence_pairs)
         return persistence_pairs
 
