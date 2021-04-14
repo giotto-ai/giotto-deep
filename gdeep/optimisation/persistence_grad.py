@@ -230,8 +230,8 @@ class PersistenceGradient():
                 z = np.concatenate((z,self.Xp.detach().numpy()[:,2]))
                 w = np.concatenate((w,10*self.lr*self.grads.numpy()[:,2]))
             except:
-                z = np.concatenate((z,[0]))
-                w = np.concatenate((w,[0]))
+                z = np.concatenate((z,0*self.Xp.detach().numpy()[:,1]))
+                w = np.concatenate((w,0*self.grads.numpy()[:,1]))
             optimizer.step()
         
         fig = ff.create_quiver(x,y,u,v)
