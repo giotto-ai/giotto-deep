@@ -27,9 +27,12 @@ class PersistenceGradient():
         
     '''
     def __init__(self,Xp,lr:float=0.001, n_epochs:int=10, Lambda:float = 0.5,
-                 homology_dimensions=None,approx_digits:int = 7):
+                 homology_dimensions=None,collapse_edges=True, max_edge_length=np.inf,
+                 approx_digits:int = 7):
         self.Xp = Xp.detach().clone()
         self.Xp.requires_grad=True
+        self.collapse_edges = collapse_edges
+        self.max_edge_length = max_edge_length
         if self.Xp.shape[0]==self.Xp.shape[1]:
             self.metric="precomputed"
         else:
@@ -83,7 +86,8 @@ class PersistenceGradient():
         
     def _compute_pairs(self):
         '''Use giotto-tda to compute homology (b,d) pairs'''
-        vr = vrp(metric=self.metric,homology_dimensions=self.homology_dimensions)
+        vr = vrp(metric=self.metric,homology_dimensions=self.homology_dimensions,
+                 max_edge_length=self.max_edge_length,collapse_edges=self.collapse_edges)
         dgms = vr.fit_transform([self.Xp.detach().numpy()])
         pairs = dgms[0]#[:,:2]
         return pairs[:,:2], pairs[:,2]
