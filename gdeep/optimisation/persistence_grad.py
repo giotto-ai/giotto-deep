@@ -23,12 +23,18 @@ class PersistenceGradient():
         Lambda (float): the relative weight of the regularisation part
             of the `persistence_function`.
         homology_dimensions (tuple): tuple of homology dimensions.
+        approx_digits (int): digits after which to trunc floats
         
     '''
-    def __init__(self,Xp,lr:float=0.01, n_epochs:int=10, Lambda:float = 0.5,
-                 homology_dimensions=None):
+    def __init__(self,Xp,lr:float=0.001, n_epochs:int=10, Lambda:float = 0.5,
+                 homology_dimensions=None,approx_digits:int = 7):
         self.Xp = Xp.detach().clone()
         self.Xp.requires_grad=True
+        if self.Xp.shape[0]==self.Xp.shape[1]:
+            self.metric="precomputed"
+        else:
+            self.metric="euclidean"
+        self.approx_digits = approx_digits
         self.lr = lr
         self.n_epochs = n_epochs
         self.Lambda = Lambda
@@ -66,14 +72,18 @@ class PersistenceGradient():
         where K is the top simplicial complex of the VR filtration.
         It is ddefined as:
         $\Phi_{\sigma}(X)=max_{i,j \in \sigma}||x_i-x_j||.$ '''
-        dist_mat = torch.cdist(X,X)
+        if self.metric=="precomputed":
+            dist_mat = X
+            
+        else:
+            dist_mat = torch.cdist(X,X)
         lista = [max([dist_mat[pair] for pair in pairs]) for pairs in self._simplicial_pairs_of_indices(X)]
         lista.sort() # inplace
         return lista
         
     def _compute_pairs(self):
         '''Use giotto-tda to compute homology (b,d) pairs'''
-        vr = vrp(homology_dimensions=self.homology_dimensions)
+        vr = vrp(metric=self.metric,homology_dimensions=self.homology_dimensions)
         dgms = vr.fit_transform([self.Xp.detach().numpy()])
         pairs = dgms[0]#[:,:2]
         return pairs[:,:2], pairs[:,2]
@@ -88,91 +98,41 @@ class PersistenceGradient():
             phi (list): this is the the list of all the ordered filtration values
             
         Returns:
-            persistence_pairs (list): this is a list of triplets (i,j,homology_dim). `i` and `j` are the
-                indices in the list `phi` associated to a positive-negative pair.
+            persistence_pairs (2darray): this is an array of pairs (i,j). `i` and `j` are the
+                indices in the list `phi` associated to a positive-negative pair. When
+                `j` is equal to `-1`, it means that the match was not found and the feature
+                is infinitely persistent. When `(i,j)=(-1,-1)`, simply discard the pair.
         '''
-        num_tolerance = 1e-04
         pairs, homology_dims = self._compute_pairs()
-        #print(pairs)
-        #print(homology_dims)
-        phi = torch.stack(phi)
-        #print(phi.shape)
-        phi_to_remove = []
-        persistence_pairs = []
-        persistence_pairs_set = set()
-        for i,phi_i in enumerate(phi):
-            # check if phi_i is in `pairs`
-                # if so, match it with the other element of the pair
-                # add i,j and j,i elements in the `persistence_pairs`
-                # drop the pair from pairs and from `phi_to_remove`
-            # if not, check if there is another equal element in `phi_to_remove`
-                # if so, add the i,j and j,i elements in the `persistence_pairs`
-                # drop from `phi_to_remove`
-                # if not, then infinite persistence
-            if i not in persistence_pairs_set:
-                #print("phi_i:",phi_i)
-                try:
-                    index=torch.nonzero(torch.isclose(torch.from_numpy(pairs).float(),phi_i,rtol=num_tolerance))
-                    if len(index)>0:
-                        #print("index:",index)
-                        equal_number=pairs[index[0,0]][(index[0,1]+1)%2]
-                        #print("paired filtr value: ", equal_number)
-                        j = torch.argmin(torch.abs(phi-torch.tensor(equal_number,dtype=torch.float32)))
-                        if j.item() not in persistence_pairs_set:
-                            persistence_pairs.append((i,j.item(),homology_dims[index[0,0]]))
-                            #print(homology_dims[index[0,0]])
-                            persistence_pairs_set.add(i)
-                            persistence_pairs_set.add(j.item())
-                        else:
-                            persistence_pairs.append((i,np.inf,homology_dims[index[0,0]]))
-                            #print(homology_dims[index[0,0]])
-                            persistence_pairs_set.add(i)
-                        #print("pair:",i,j)
-                        pairs = np.vstack((pairs[:index[0,0]],pairs[index[0,0]+1:]))
-                        homology_dims = np.concatenate((homology_dims[:index[0,0]],homology_dims[index[0,0]+1:]))
-                        #print(homology_dims)
-                        phi_to_remove.append(phi_i)
-                        phi_to_remove.append(phi[j])
-                        #print("remaining pairs:",pairs)
-                        #print("remaining phi:", phi_to_remove)
-                    else:
-                        at_least_two=torch.nonzero(torch.isclose(phi,phi_i,atol=num_tolerance))
-                        #print("at least two:", at_least_two)
-                        if len(at_least_two)>1:
-                            j = at_least_two[1,0]
-                            #print("pair:",i,j)
-                            if j.item() not in persistence_pairs_set:
-                                persistence_pairs.append((i,j.item(),0.)) # zero as default
-                                persistence_pairs_set.add(i)
-                                persistence_pairs_set.add(j.item())
-                            else:
-                                persistence_pairs.append((i,np.inf,0.)) # zero as default
-                                persistence_pairs_set.add(i)
-                            phi_to_remove.append(phi[at_least_two[0,0]])
-                            phi_to_remove.append(phi[at_least_two[1,0]])
-                            #print("remaining phi:", phi_to_remove)
-                        else:
-                            index=torch.nonzero(torch.isclose(torch.stack(phi_to_remove),phi_i,rtol=num_tolerance))
-                            if len(index)==0:
-                                persistence_pairs.append((i,np.inf,0.)) # zero as default
-                                persistence_pairs_set.add(i)
-                except:
-                    warnings.warn("Numerical approximation errors! Incresing tolerance.")
-                    num_tolerance = 10*num_tolerance
-                    
-        #print(persistence_pairs)
-        return persistence_pairs
+        #print("pairs computed")
+        phi = torch.stack(phi).detach().tolist()
+        #print("got phi")
+        approx_pairs = [round(x,self.approx_digits) for x in list(chain(*pairs))]
+        #print("pairs approximated")
+        indices_in_phi_of_pairs = [i for i in range(len(phi)) if round(phi[i],self.approx_digits) in approx_pairs]
+        #print("indices found")
+        persistence_pairs_array = -np.ones((len(indices_in_phi_of_pairs),2),dtype=np.int32)
+        #print("start loop")
+        for i in indices_in_phi_of_pairs:
+            try:
+                temp_index = approx_pairs.index(round(phi[i],self.approx_digits))
+                approx_pairs[temp_index] = np.inf
+                persistence_pairs_array[temp_index//2,temp_index%2]=int(i)
+            except:
+                pass
+        return persistence_pairs_array
 
     def persistence_function(self,X):
         '''This is the Loss functon to optimise.
+        $L=-\sum_i^p |\epsilon_{i2}-\epsilon_{i1}|+ \lambda \sum_{x in X} ||x||_2^2$
         It is composed of a regularisation term and a
-        funtion on the filtration values that is (p,q)-permutation
+        function on the filtration values that is (p,q)-permutation
         invariant.'''
         out = 0
         phi = self.Phi(X)
         persistence_array = self._persistence(phi)
         for item in persistence_array:
-            if item[1] is not np.inf:
+            if item[1] != -1:
                 out += (phi[item[1]]-phi[item[0]])
         reg = torch.trace(X.mm(X.T))
         return -out + self.Lambda*reg # maximise persistence and avoid points drifting away too much
