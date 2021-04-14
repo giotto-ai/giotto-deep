@@ -1,9 +1,9 @@
 import torch
-from torch import nn
 from torch import optim
 from gtda.homology import VietorisRipsPersistence as vrp
 import plotly.express as px
 import plotly.figure_factory as ff
+import plotly.graph_objects as go
 import pandas as pd
 from itertools import chain, combinations
 import numpy as np
@@ -60,14 +60,16 @@ class PersistenceGradient():
         #print("len simplx",len(simplices))
         pairs_of_indices = [self._combinations_with_single(s) for s in simplices]
         return pairs_of_indices
-
+    
     def Phi(self,X):
         '''This function is from $(R^d)^n$ to R^{|K|},
         where K is the top simplicial complex of the VR filtration.
         It is ddefined as:
         $\Phi_{\sigma}(X)=max_{i,j \in \sigma}||x_i-x_j||.$ '''
         dist_mat = torch.cdist(X,X)
-        return [max([dist_mat[pair] for pair in pairs]) for pairs in self._simplicial_pairs_of_indices(X)]
+        lista = [max([dist_mat[pair] for pair in pairs]) for pairs in self._simplicial_pairs_of_indices(X)]
+        lista.sort() # inplace
+        return lista
         
     def _compute_pairs(self):
         '''Use giotto-tda to compute homology (b,d) pairs'''
@@ -177,18 +179,40 @@ class PersistenceGradient():
 
     def plot(self):
         '''plot the vector field, in 2D, of the point cloud with its gradients'''
-        x,y,u,v = self.Xp.detach().numpy()[:,0], self.Xp.detach().numpy()[:,1], self.grads.numpy()[:,0], self.grads.numpy()[:,1]
-        fig = ff.create_quiver(x,y,u,v)
+        x,y,u,v = self.Xp.detach().numpy()[:,0], self.Xp.detach().numpy()[:,1], 10*self.lr*self.grads.numpy()[:,0], 10*self.lr*self.grads.numpy()[:,1]
+        try:
+            z = self.Xp.detach().numpy()[:,2]
+            w = 10*self.lr*self.grads.numpy()[:,2]
+            fig = go.Figure(data=go.Cone(
+                x=x,
+                y=y,
+                z=z,
+                u=u,
+                v=v,
+                w=w,
+                sizemode="absolute",
+                sizeref=2,
+                anchor="tip"))
+        except:
+            fig = ff.create_quiver(x,y,u,v)
+        
         fig.show()
 
     def SGD(self):
         '''This function is the core function of this class and uses the
         SGD method to move points around in ordder to optimise
-        `persistence_function`.'''
+        `persistence_function`.
+        
+        Returns:
+           fig : plotly `quiver_plot`
+           fig3d : plotly `cone_plot`
+           loss_val (list): loss function values over the epochs'''
         x = []
+        z = []
         y = []
         u = []
         v = []
+        w = []
         loss_val = []
         
         optimizer = optim.Adam([self.Xp], lr=self.lr)
@@ -202,7 +226,23 @@ class PersistenceGradient():
             self.grads = -self.Xp.grad.detach()
             u = np.concatenate((u,10*self.lr*self.grads.numpy()[:,0]))
             v = np.concatenate((v,10*self.lr*self.grads.numpy()[:,1]))
+            try:
+                z = np.concatenate((z,self.Xp.detach().numpy()[:,2]))
+                w = np.concatenate((w,10*self.lr*self.grads.numpy()[:,2]))
+            except:
+                z = np.concatenate((z,[0]))
+                w = np.concatenate((w,[0]))
             optimizer.step()
         
         fig = ff.create_quiver(x,y,u,v)
-        return fig, loss_val
+        fig3d = go.Figure(data=go.Cone(
+            x=x,
+            y=y,
+            z=z,
+            u=u,
+            v=v,
+            w=w,
+            sizemode="absolute",
+            sizeref=2,
+            anchor="tip"))
+        return fig, fig3d, loss_val
