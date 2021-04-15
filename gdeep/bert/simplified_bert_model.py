@@ -307,6 +307,7 @@ class SimplifiedBertClassifier(nn.Module):
         super().__init__()
         dim = config.hidden_size  # token's vector length
 
+        # Initialize Layers
         self.embedding = SimplifiedBertEmbeddings(config)
 
         self.encoder = SimplifiedBertEncoder(config)
