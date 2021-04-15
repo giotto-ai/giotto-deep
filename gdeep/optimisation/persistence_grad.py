@@ -71,7 +71,7 @@ class PersistenceGradient():
         return pairs_of_indices
     
     def Phi(self,X):
-        '''This function is from $(R^d)^n$ to R^{|K|},
+        '''This function is from $(R^d)^n$ to $R^{|K|}$,
         where K is the top simplicial complex of the VR filtration.
         It is ddefined as:
         $\Phi_{\sigma}(X)=max_{i,j \in \sigma}||x_i-x_j||.$ '''
@@ -80,7 +80,7 @@ class PersistenceGradient():
             
         else:
             dist_mat = torch.cdist(X,X)
-        lista = [max([dist_mat[pair] for pair in pairs]) for pairs in self._simplicial_pairs_of_indices(X)]
+        lista = [max([dist_mat[pair] for pair in pairs]) for pairs in self._simplicial_pairs_of_indices(X) if max([dist_mat[pair] for pair in pairs]) <= self.max_edge_length]
         lista.sort() # inplace
         return lista
         
@@ -124,6 +124,7 @@ class PersistenceGradient():
                 persistence_pairs_array[temp_index//2,temp_index%2]=int(i)
             except:
                 pass
+        #print("end loop")
         return persistence_pairs_array
 
     def persistence_function(self,X):
