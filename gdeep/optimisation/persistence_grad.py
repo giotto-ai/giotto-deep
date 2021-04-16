@@ -10,8 +10,10 @@ from itertools import chain, combinations
 import numpy as np
 from tqdm import tqdm
 import warnings
-from math import comb
+from math import factorial
 import multiprocessing
+import operator as op
+from functools import reduce
 
 class PersistenceGradient():
     '''This clas computes the gradient of the persistence
@@ -51,7 +53,7 @@ class PersistenceGradient():
             self.homology_dimensions = (0,1)
         else:
             self.homology_dimensions = homology_dimensions
-        
+    
     @staticmethod
     def powerset(iterable,max_length):
         '''powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
@@ -116,7 +118,8 @@ class PersistenceGradient():
         Is = simplicial_pairs[:,0]
         Js = simplicial_pairs[:,1]
         #print("compute phi")
-        lista = torch.max((torch.gather(torch.index_select(self.dist_mat, 0, Is),1,Js.reshape(-1,1))).reshape(-1,comb(max(self.homology_dimensions)+2,2)),1)
+        comb_number=comb(max(self.homology_dimensions)+2,2)
+        lista = torch.max((torch.gather(torch.index_select(self.dist_mat, 0, Is),1,Js.reshape(-1,1))).reshape(-1,comb_number),1)
         #print("phi is computed, but unsorted")
         #lista = [max([dist_mat[pair] for pair in pairs]) for pairs in simplicial_pairs if max([dist_mat[pair] for pair in pairs]) <= self.max_edge_length]
         lista = torch.sort(lista[0])[0] # not inplace
@@ -291,3 +294,11 @@ def _combinations_with_single(tupl,max_length):
     temp_list = list(combinations(tupl,2))
     list2 = temp_list+((max_length-len(temp_list))*[(tupl[0],tupl[1])])
     return np.array(list2)
+    
+
+def comb(nnn,kkk):
+    '''this function computes n!/(k!*(n-k)!) efficiently'''
+    kkk = min(kkk, nnn-kkk)
+    numer = reduce(op.mul, range(nnn, nnn-kkk, -1), 1)
+    denom = reduce(op.mul, range(1, kkk+1), 1)
+    return numer // denom
