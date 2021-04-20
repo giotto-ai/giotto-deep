@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch import optim
 from gtda.homology import VietorisRipsPersistence as vrp
+from gtda.homology import FlagserPersistence as flp
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -31,11 +32,13 @@ class PersistenceGradient():
         metric (string): either `"euclidean"` or `"precomputed"`. The
             second one is in case of X being the pairwise-distance matrix or
             the adjaceny matrix of a graph.
+        directed (bool): whether the input graph is a directed graph
+            or not. Relevant only if `metric = "precomputed"`
         
     '''
     def __init__(self,zeta:float = 0.5,homology_dimensions=None,
                  collapse_edges:bool=True, max_edge_length=np.inf,
-                 approx_digits:int = 6, metric=None):
+                 approx_digits:int = 6, metric=None, directed = False):
 
         self.collapse_edges = collapse_edges
         self.max_edge_length = max_edge_length
@@ -43,6 +46,7 @@ class PersistenceGradient():
             self.metric = "euclidean"
         else:
             self.metric=metric
+        self.directed = directed
         self.approx_digits = approx_digits
         self.zeta = zeta
         if homology_dimensions is None:
@@ -135,10 +139,15 @@ class PersistenceGradient():
                 the list of pairs (b,d)
             homology_dim (tensor): this 1d tensor contains the homology
                 group index'''
-        vr = vrp(metric=self.metric,homology_dimensions=self.homology_dimensions,
-                 max_edge_length=self.max_edge_length,collapse_edges=self.collapse_edges)
-        dgms = vr.fit_transform([X.detach().numpy()])
-        pairs = dgms[0]#[:,:2]
+        if self.directed and self.metric == "precomputed":
+            dgms = flp().fit_transform([X.detach().numpy()])
+            pairs = dgms[0]
+        else:
+            vr = vrp(metric=self.metric,homology_dimensions=self.homology_dimensions,
+                     max_edge_length=self.max_edge_length,collapse_edges=self.collapse_edges)
+            dgms = vr.fit_transform([X.detach().numpy()])
+            pairs = dgms[0]#[:,:2]
+
         return pairs[:,:2], pairs[:,2]
         
     def _persistence(self,X):
@@ -181,7 +190,7 @@ class PersistenceGradient():
         #print(phi_approx)
         #indices_in_phi_of_pairs = [i for i in range(len(phi)) if round(phi[i],self.approx_digits) in approx_pairs]
         #print("indices found")
-        persistence_pairs_array = -np.ones((len(indices_in_phi_of_pairs),2),dtype=np.int32)
+        persistence_pairs_array = -np.ones((len(approx_pairs),2),dtype=np.int32)
         #print("start loop")
         for i in indices_in_phi_of_pairs:
             try:
