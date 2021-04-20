@@ -66,7 +66,6 @@ def test_PersistenceGradient_4d():
                          collapse_edges=False)
     assert X.dtype == torch.float32
     assert pg.phi(X).shape[0] == 14
-    print(pg._persistence(X)[0])
     assert (np.array([[ 0,  1],[-1, -1],[-1, -1],[-1, -1]]) == pg._persistence(X)[0]).all()
     assert pg.persistence_function(X).item() >= 0.3467579483985901 + 0.001
     pg.SGD(X)
