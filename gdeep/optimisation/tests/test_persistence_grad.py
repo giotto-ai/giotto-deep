@@ -99,7 +99,4 @@ def test_PersistenceGradient_matrix_2():
     assert pg.persistence_function(dist).item() == -4.
     fig, fig3d, loss_val = pg.SGD(dist,n_epochs=1,
                              lr=0.002)
-    assert (dist.grad == torch.tensor([[ 1.,  0.,  0.,  0.],
-        [ 0.,  1., -1., -1.],
-        [ 0.,  0.,  1., -1.],
-        [ 0.,  0.,  0.,  0.]])).all().item()
+
