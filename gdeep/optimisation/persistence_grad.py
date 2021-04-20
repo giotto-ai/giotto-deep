@@ -16,13 +16,11 @@ import operator as op
 from functools import reduce
 
 class PersistenceGradient():
-    '''This clas computes the gradient of the persistence
+    '''This class computes the gradient of the persistence
     diagram with respect to a point cloud.
     
     Args:
-        lr (float): learning rate for the SGD.
-        n_epochs (int): the number of gradient iterations.
-        Lambda (float): the relative weight of the regularisation part
+        zeta (float): the relative weight of the regularisation part
             of the `persistence_function`
         homology_dimensions (tuple): tuple of homology dimensions
         collapse_edges (bool): whether to use Collapse or not
@@ -31,12 +29,12 @@ class PersistenceGradient():
         approx_digits (int): digits after which to trunc floats for
             list comparison
         metric (string): either `"euclidean"` or `"precomputed"`. The
-            second oe is in case of X being the pairwise-distance matrix or
+            second one is in case of X being the pairwise-distance matrix or
             the adjaceny matrix of a graph.
         
     '''
-    def __init__(self,lr:float=0.001, n_epochs:int=10, Lambda:float = 0.5,
-                 homology_dimensions=None,collapse_edges:bool=True, max_edge_length=np.inf,
+    def __init__(self,zeta:float = 0.5,homology_dimensions=None,
+                 collapse_edges:bool=True, max_edge_length=np.inf,
                  approx_digits:int = 6, metric=None):
 
         self.collapse_edges = collapse_edges
@@ -46,9 +44,7 @@ class PersistenceGradient():
         else:
             self.metric=metric
         self.approx_digits = approx_digits
-        self.lr = lr
-        self.n_epochs = n_epochs
-        self.Lambda = Lambda
+        self.zeta = zeta
         if homology_dimensions is None:
             self.homology_dimensions = (0,1)
         else:
@@ -103,7 +99,7 @@ class PersistenceGradient():
         #print("pairs of indices")
         return torch.tensor(pairs_of_indices)
     
-    def Phi(self,X):
+    def phi(self,X):
         '''This function is from $(R^d)^n$ to $R^{|K|}$,
         where K is the top simplicial complex of the VR filtration.
         It is ddefined as:
@@ -119,14 +115,26 @@ class PersistenceGradient():
         Js = simplicial_pairs[:,1]
         #print("compute phi")
         comb_number=comb(max(self.homology_dimensions)+2,2)
+        # morally, this is what one would like to do:
+        # lista = [max([dist_mat[pair] for pair in pairs]) for pairs in simplicial_pairs if max([dist_mat[pair] for pair in pairs]) <= self.max_edge_length]
         lista = torch.max((torch.gather(torch.index_select(self.dist_mat, 0, Is),1,Js.reshape(-1,1))).reshape(-1,comb_number),1)
         #print("phi is computed, but unsorted")
-        #lista = [max([dist_mat[pair] for pair in pairs]) for pairs in simplicial_pairs if max([dist_mat[pair] for pair in pairs]) <= self.max_edge_length]
+        
         lista = torch.sort(lista[0])[0] # not inplace
         return lista
         
     def _compute_pairs(self,X):
-        '''Use giotto-tda to compute homology (b,d) pairs'''
+        '''Use giotto-tda to compute homology (b,d) pairs
+        
+        Args:
+            X (tensor): this is the input point cloud or the input
+                pairwise distance or the adjacency matrix of a graph
+        
+        Returns:
+            pairs (tensor): this tensor is the tensor obtained from
+                the list of pairs (b,d)
+            homology_dim (tensor): this 1d tensor contains the homology
+                group index'''
         vr = vrp(metric=self.metric,homology_dimensions=self.homology_dimensions,
                  max_edge_length=self.max_edge_length,collapse_edges=self.collapse_edges)
         dgms = vr.fit_transform([X.detach().numpy()])
@@ -146,10 +154,13 @@ class PersistenceGradient():
             persistence_pairs (2darray): this is an array of pairs (i,j). `i` and `j` are the
                 indices in the list `phi` associated to a positive-negative pair. When
                 `j` is equal to `-1`, it means that the match was not found and the feature
-                is infinitely persistent. When `(i,j)=(-1,-1)`, simply discard the pair.
+                is infinitely persistent. When `(i,j)=(-1,-1)`, simply discard the pair
+            phi (tensor): this is the 1d tensor of all filtration values
+            homology_dims (tensor): this 1d tensor contains the homology
+                group index
         '''
         #print("computing phi")
-        phi = self.Phi(X)
+        phi = self.phi(X)
         pairs, homology_dims = self._compute_pairs(X)
         #print(pairs)
         #print("pairs computed")
@@ -178,11 +189,11 @@ class PersistenceGradient():
                 #print("added:",temp_index)
                 approx_pairs[temp_index] = float('inf')
                 persistence_pairs_array[temp_index//2,temp_index%2]=int(i)
-            except:
+            except ValueError:
                 #print("not added:",i)
                 pass
         #print("end loop")
-        return persistence_pairs_array, phi
+        return persistence_pairs_array, phi, homology_dims
 
     def persistence_function(self,X):
         '''This is the Loss functon to optimise.
@@ -192,22 +203,25 @@ class PersistenceGradient():
         invariant.'''
         out = 0
         #print("run persistence")
-        persistence_array, phi = self._persistence(X)
+        persistence_array, phi, _ = self._persistence(X)
         for item in persistence_array:
             if item[1] != -1:
                 out += (phi[item[1]]-phi[item[0]])
-        reg = torch.trace(X.mm(X.T))
-        return -out + self.Lambda*reg # maximise persistence and avoid points drifting away too much
+        reg = (X**2).sum()
+        return -out + self.zeta*reg # maximise persistence and avoid points drifting away too much
 
-    def SGD(self,X):
+    def SGD(self,X,lr:float=0.01,n_epochs:int=5):
         '''This function is the core function of this class and uses the
         SGD method to move points around in ordder to optimise
-        `persistence_function`.
+        `persistence_function`
         
         Args:
             Xp (torch.tensor): 2d tensor representing the point cloud,
                 the first dimension is `n_points` while the second
-                `n_features`.
+                `n_features`
+            lr (float): learning rate for the SGD
+            n_epochs (int): the number of gradient iterations
+            
         Returns:
            fig : plotly `quiver_plot`
            fig3d : plotly `cone_plot`
@@ -224,8 +238,8 @@ class PersistenceGradient():
         w = []
         loss_val = []
         
-        optimizer = optim.Adam([X], lr=self.lr)
-        for _ in tqdm(range(self.n_epochs)):
+        optimizer = optim.Adam([X], lr=lr)
+        for _ in tqdm(range(n_epochs)):
             #print("start loop")
             optimizer.zero_grad()
             #print("create loss")
