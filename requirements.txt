@@ -12,3 +12,4 @@ fastai
 networkx
 torchdiffeq
 tqdm
+transformers
