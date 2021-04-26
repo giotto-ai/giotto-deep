@@ -14,3 +14,4 @@ torchdiffeq
 torchviz
 transformers
 einops
+tqdm
