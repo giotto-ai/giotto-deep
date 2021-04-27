@@ -50,7 +50,11 @@ jobs:
         set --exit
         python -m pip install wheel
         python setup.py bdist_wheel
-        python -m pip install dist/*.whl
+        foreach ($n in Get-ChildItem dist/*.whl)
+        {
+          echo $n.fullname
+          python -m pip install $n.fullname
+        }
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
