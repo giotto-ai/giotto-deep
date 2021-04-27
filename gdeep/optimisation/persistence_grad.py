@@ -36,23 +36,17 @@ class PersistenceGradient():
             or not. Relevant only if `metric = "precomputed"`
         
     '''
-    def __init__(self,zeta:float = 0.5,homology_dimensions=None,
+    def __init__(self,zeta:float = 0.5,homology_dimensions=(0,1),
                  collapse_edges:bool=True, max_edge_length=np.inf,
-                 approx_digits:int = 6, metric=None, directed = False):
+                 approx_digits:int = 6, metric="euclidean", directed = False):
 
         self.collapse_edges = collapse_edges
         self.max_edge_length = max_edge_length
-        if metric is None:
-            self.metric = "euclidean"
-        else:
-            self.metric=metric
+        self.metric=metric
         self.directed = directed
         self.approx_digits = approx_digits
         self.zeta = zeta
-        if homology_dimensions is None:
-            self.homology_dimensions = (0,1)
-        else:
-            self.homology_dimensions = homology_dimensions
+        self.homology_dimensions = homology_dimensions
     
     @staticmethod
     def powerset(iterable,max_length):
