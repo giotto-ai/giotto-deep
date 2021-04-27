@@ -41,7 +41,7 @@ jobs:
     - name: Integration tests
       run: |
         set -e
-        foreach (n in examples/*.ipynb)
+        foreach ($n in examples/*.ipynb)
         {
           jupyter nbconvert --to notebook --execute $n
         }
