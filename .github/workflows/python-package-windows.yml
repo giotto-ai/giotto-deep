@@ -40,14 +40,14 @@ jobs:
         pytest
     - name: Integration tests
       run: |
-        set -e:$true
+        set --exit
         foreach ($n in examples/*.ipynb)
         {
           jupyter nbconvert --to notebook --execute $n
         }
     - name: Build and install wheels
       run: |
-        set -e
+        set --exit
         python -m pip install wheel
         python setup.py bdist_wheel
         python -m pip install dist/*.whl
