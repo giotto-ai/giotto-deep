@@ -40,7 +40,7 @@ jobs:
         pytest
     - name: Integration tests
       run: |
-        set -e
+        set -e:$true
         foreach ($n in examples/*.ipynb)
         {
           jupyter nbconvert --to notebook --execute $n
