@@ -41,9 +41,9 @@ jobs:
     - name: Integration tests
       run: |
         set --exit
-        foreach ($n in examples/*.ipynb)
+        foreach ($n in Get-ChildItem examples/*.ipynb)
         {
-          jupyter nbconvert --to notebook --execute $n
+          jupyter nbconvert --to notebook --execute $n.fullname
         }
     - name: Build and install wheels
       run: |
