@@ -10,6 +10,7 @@ from tqdm import tqdm
 import multiprocessing
 import operator as op
 from functools import reduce
+from typing import Iterator
 
 
 class PersistenceGradient():
@@ -51,7 +52,7 @@ class PersistenceGradient():
         self.homology_dimensions = homology_dimensions
 
     @staticmethod
-    def powerset(iterable, max_length: int) -> chain:
+    def powerset(iterable, max_length: int) -> Iterator:
         '''powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
         up to `max_length`.'''
         s = list(iterable)
@@ -121,9 +122,10 @@ class PersistenceGradient():
         #    <= self.max_edge_length]
         lista = torch.max((torch.gather(torch.index_select(self.dist_mat,
                                                            0, ks),
-                          1, js.reshape(-1, 1))).reshape(-1, comb_number), 1)
-        lista = torch.sort(lista[0])[0]  # not inplace
-        return torch.tensor(lista)
+                          1, js.reshape(-1, 1))).reshape(-1,
+                                                         comb_number), 1)[0]
+        lista = torch.sort(lista)[0]  # not inplace
+        return lista
 
     def _compute_pairs(self, X):
         '''Use giotto-tda to compute homology (b,d) pairs
@@ -235,12 +237,12 @@ class PersistenceGradient():
             X = torch.tensor(X)
         X.requires_grad = True
         grads = torch.zeros_like(X)
-        x = 0
-        z = 0
-        y = 0
-        u = 0
-        v = 0
-        w = 0
+        x = np.array([])
+        z = np.array([])
+        y = np.array([])
+        u = np.array([])
+        v = np.array([])
+        w = np.array([])
         loss_val = []
         optimizer = optim.Adam([X], lr=lr)
         for _ in tqdm(range(n_epochs)):

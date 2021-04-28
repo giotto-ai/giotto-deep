@@ -37,7 +37,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Type checking with mypy
       run: |
-        mypy --ignore-missing-imports .
+        mypy --ignore-missing-imports . || {
+          status=$? echo "Type checking errors!"
+        }
     - name: Test with pytest
       run: |
         pytest
