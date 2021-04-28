@@ -98,9 +98,10 @@ class PersistenceGradient():
         if len(simplices_array)>10000000:
             #print("parallel")
             pairs_of_indices = self._parallel_apply_along_axis(_combinations_with_single,1,simplices_array,comb_number)
-        pairs_of_indices = np.apply_along_axis(_combinations_with_single,1,simplices_array,comb_number)
+        else:
+            pairs_of_indices = np.apply_along_axis(_combinations_with_single,1,simplices_array,comb_number)
         #print("pairs of indices")
-        return torch.tensor(pairs_of_indices)
+        return torch.tensor(pairs_of_indices,dtype=torch.int64)
     
     def phi(self,X):
         '''This function is from $(R^d)^n$ to $R^{|K|}$,
