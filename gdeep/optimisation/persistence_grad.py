@@ -20,6 +20,11 @@ class PersistenceGradient():
     '''This class computes the gradient of the persistence
     diagram with respect to a point cloud.
     
+    Discalimer: this algorithm works well for generic point clouds.
+    In case your point cloud has many simplices with same
+    filtration values, the matching of the points to the persistent
+    features may fail to disambiguate.
+    
     Args:
         zeta (float): the relative weight of the regularisation part
             of the `persistence_function`
