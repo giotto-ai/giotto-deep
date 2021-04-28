@@ -82,4 +82,3 @@ for k, var in var_dict.items():
     print(f"{k} grad: {var[0].grad}")
     np.testing.assert_almost_equal(var[0].grad.item(), var[1])
 # %%
-[1, 2].index(3)
