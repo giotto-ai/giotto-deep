@@ -234,7 +234,7 @@ class PersistenceGradient():
         if not type(X) == torch.Tensor:
             X = torch.tensor(X)
         X.requires_grad = True
-        self.grads = torch.zeros_like(X)
+        grads = torch.zeros_like(X)
         x = []
         z = []
         y = []
@@ -250,19 +250,19 @@ class PersistenceGradient():
             x = np.concatenate((x, X.detach().numpy()[:, 0]))
             y = np.concatenate((y, X.detach().numpy()[:, 1]))
             loss.backward()  # compute gradients and store them in Xp.grad
-            self.grads = -X.grad.detach()
-            u = np.concatenate((u, 1/self.grads.norm(2,
-                                1).mean()*self.grads.numpy()[:, 0]))
-            v = np.concatenate((v, 1/self.grads.norm(2,
-                                1).mean()*self.grads.numpy()[:, 1]))
+            grads = -X.grad.detach()
+            u = np.concatenate((u, 1/grads.norm(2,
+                                1).mean()*grads.numpy()[:, 0]))
+            v = np.concatenate((v, 1/grads.norm(2,
+                                1).mean()*grads.numpy()[:, 1]))
             try:
                 z = np.concatenate((z, X.detach().numpy()[:, 2]))
                 w = np.concatenate((w,
-                                    1/self.grads.norm(2) *
-                                    self.grads.numpy()[:, 2]))
+                                    1/grads.norm(2) *
+                                    grads.numpy()[:, 2]))
             except IndexError:
                 z = np.concatenate((z, 0*X.detach().numpy()[:, 1]))
-                w = np.concatenate((w, 0*self.grads.numpy()[:, 1]))
+                w = np.concatenate((w, 0*grads.numpy()[:, 1]))
             optimizer.step()
         fig = ff.create_quiver(x, y, u, v)
         fig3d = go.Figure(data=go.Cone(
