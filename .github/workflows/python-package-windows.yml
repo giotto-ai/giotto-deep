@@ -60,5 +60,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: pip_wheel_${{ matrix.python-version }}
+        name: pip_wheel_win_${{ matrix.python-version }}
         path: dist
