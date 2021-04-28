@@ -101,7 +101,7 @@ class PersistenceGradient():
                                                    comb_number)
         return torch.tensor(pairs_of_indices, dtype=torch.int64)
 
-    def phi(self, X: torch.tensor) -> torch.tensor:
+    def phi(self, X: torch.Tensor) -> torch.Tensor:
         '''This function is from $(R^d)^n$ to $R^{|K|}$,
         where K is the top simplicial complex of the VR filtration.
         It is ddefined as:
@@ -123,7 +123,7 @@ class PersistenceGradient():
                                                            0, ks),
                           1, js.reshape(-1, 1))).reshape(-1, comb_number), 1)
         lista = torch.sort(lista[0])[0]  # not inplace
-        return lista
+        return torch.tensor(lista)
 
     def _compute_pairs(self, X):
         '''Use giotto-tda to compute homology (b,d) pairs
@@ -199,7 +199,7 @@ class PersistenceGradient():
                 pass
         return persistence_pairs_array, phi, homology_dims
 
-    def persistence_function(self, X: torch.tensor) -> torch.tensor:
+    def persistence_function(self, X: torch.Tensor) -> torch.Tensor:
         '''This is the Loss functon to optimise.
         $L=-\sum_i^p |\epsilon_{i2}-\epsilon_{i1}|+
         \lambda \sum_{x in X} ||x||_2^2$
@@ -214,7 +214,7 @@ class PersistenceGradient():
         reg = (X**2).sum()  # regularisation term
         return -out + self.zeta*reg  # maximise persistence
 
-    def SGD(self, X: torch.tensor, lr: float = 0.01, n_epochs: int = 5):
+    def SGD(self, X: torch.Tensor, lr: float = 0.01, n_epochs: int = 5):
         '''This function is the core function of this class and uses the
         SGD method to move points around in ordder to optimise
         `persistence_function`
@@ -235,12 +235,12 @@ class PersistenceGradient():
             X = torch.tensor(X)
         X.requires_grad = True
         grads = torch.zeros_like(X)
-        x = []
-        z = []
-        y = []
-        u = []
-        v = []
-        w = []
+        x = 0
+        z = 0
+        y = 0
+        u = 0
+        v = 0
+        w = 0
         loss_val = []
         optimizer = optim.Adam([X], lr=lr)
         for _ in tqdm(range(n_epochs)):
