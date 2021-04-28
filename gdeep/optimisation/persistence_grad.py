@@ -10,6 +10,7 @@ from tqdm import tqdm
 import multiprocessing
 import operator as op
 from functools import reduce
+from typing import Iterator
 
 
 class PersistenceGradient():
@@ -51,7 +52,7 @@ class PersistenceGradient():
         self.homology_dimensions = homology_dimensions
 
     @staticmethod
-    def powerset(iterable, max_length: int) -> chain:
+    def powerset(iterable, max_length: int) -> Iterator:
         '''powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
         up to `max_length`.'''
         s = list(iterable)
@@ -101,7 +102,7 @@ class PersistenceGradient():
                                                    comb_number)
         return torch.tensor(pairs_of_indices, dtype=torch.int64)
 
-    def phi(self, X: torch.tensor) -> torch.tensor:
+    def phi(self, X: torch.Tensor) -> torch.Tensor:
         '''This function is from $(R^d)^n$ to $R^{|K|}$,
         where K is the top simplicial complex of the VR filtration.
         It is ddefined as:
@@ -121,8 +122,9 @@ class PersistenceGradient():
         #    <= self.max_edge_length]
         lista = torch.max((torch.gather(torch.index_select(self.dist_mat,
                                                            0, ks),
-                          1, js.reshape(-1, 1))).reshape(-1, comb_number), 1)
-        lista = torch.sort(lista[0])[0]  # not inplace
+                          1, js.reshape(-1, 1))).reshape(-1,
+                                                         comb_number), 1)[0]
+        lista = torch.sort(lista)[0]  # not inplace
         return lista
 
     def _compute_pairs(self, X):
@@ -199,7 +201,7 @@ class PersistenceGradient():
                 pass
         return persistence_pairs_array, phi, homology_dims
 
-    def persistence_function(self, X: torch.tensor) -> torch.tensor:
+    def persistence_function(self, X: torch.Tensor) -> torch.Tensor:
         '''This is the Loss functon to optimise.
         $L=-\sum_i^p |\epsilon_{i2}-\epsilon_{i1}|+
         \lambda \sum_{x in X} ||x||_2^2$
@@ -214,7 +216,7 @@ class PersistenceGradient():
         reg = (X**2).sum()  # regularisation term
         return -out + self.zeta*reg  # maximise persistence
 
-    def SGD(self, X: torch.tensor, lr: float = 0.01, n_epochs: int = 5):
+    def SGD(self, X: torch.Tensor, lr: float = 0.01, n_epochs: int = 5):
         '''This function is the core function of this class and uses the
         SGD method to move points around in ordder to optimise
         `persistence_function`
@@ -235,12 +237,12 @@ class PersistenceGradient():
             X = torch.tensor(X)
         X.requires_grad = True
         grads = torch.zeros_like(X)
-        x = []
-        z = []
-        y = []
-        u = []
-        v = []
-        w = []
+        x = np.array([])
+        z = np.array([])
+        y = np.array([])
+        u = np.array([])
+        v = np.array([])
+        w = np.array([])
         loss_val = []
         optimizer = optim.Adam([X], lr=lr)
         for _ in tqdm(range(n_epochs)):

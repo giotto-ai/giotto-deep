@@ -79,15 +79,15 @@ def test_PersistenceGradient_4d():
 def test_PersistenceGradient_matrix():
     # simulate the weighted graph
     dist = torch.tensor([[0., 2, 3],
-                        [2, 0., 2],
-                        [3, 2, 0.]])
+                        [2, 0., 2.2],
+                        [3, 2.2, 0.]])
 
     pg = PersistenceGradient(homology_dimensions=(0, 1),
                              zeta=0.0,
                              collapse_edges=False,
                              metric="precomputed")
-    assert all(pg.phi(dist) == torch.tensor([0., 0., 0., 2., 2., 3., 3.]))
-    assert pg.persistence_function(dist).item() == -4.
+    assert all(pg.phi(dist) == torch.tensor([0., 0., 0., 2., 2.2, 3., 3.]))
+    assert pg.persistence_function(dist).item() >= -4.2 - 0.0001
     fig, fig3d, loss_val = pg.SGD(dist, n_epochs=1,
                                   lr=0.002)
     assert (dist.grad == torch.tensor([[1., -1., 0.],
