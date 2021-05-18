@@ -1,5 +1,8 @@
+#!/usr/bin/env python
+#  type: ignore
 # This code is taken from the fastai2_extension package.
 # acknowlegment to rsomani95
+
 
 import PIL
 import torchvision
