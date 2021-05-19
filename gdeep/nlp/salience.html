@@ -1,0 +1,217 @@
+<div id="text">txdsfa</div>
+
+<script>
+var words = [{
+  'word': 'Lorem',
+  'attention': 0.39
+}, {
+  'word': 'ipsum',
+  'attention': 0.76
+}, {
+  'word': 'dolor',
+  'attention': 0.2
+}, {
+  'word': 'sit',
+  'attention': 0.43
+}, {
+  'word': 'amet,',
+  'attention': 0.54
+}, {
+  'word': 'consectetur',
+  'attention': 0.29
+}, {
+  'word': 'adipiscing',
+  'attention': 0.98
+}, {
+  'word': 'elit,',
+  'attention': 0.23
+}, {
+  'word': 'sed',
+  'attention': 0.18
+}, {
+  'word': 'do',
+  'attention': 0.81
+}, {
+  'word': 'eiusmod',
+  'attention': 0.97
+}, {
+  'word': 'tempor',
+  'attention': 0.86
+}, {
+  'word': 'incididunt',
+  'attention': 0.67
+}, {
+  'word': 'ut',
+  'attention': 0.32
+}, {
+  'word': 'labore',
+  'attention': 0.26
+}, {
+  'word': 'et',
+  'attention': 0.35
+}, {
+  'word': 'dolore',
+  'attention': 0.8
+}, {
+  'word': 'magna',
+  'attention': 0.52
+}, {
+  'word': 'aliqua.',
+  'attention': 0.79
+}, {
+  'word': 'Ut',
+  'attention': 0.53
+}, {
+  'word': 'enim',
+  'attention': 0.12
+}, {
+  'word': 'ad',
+  'attention': 0.54
+}, {
+  'word': 'minim',
+  'attention': 0.44
+}, {
+  'word': 'veniam,',
+  'attention': 0.79
+}, {
+  'word': 'quis',
+  'attention': 0.06
+}, {
+  'word': 'nostrud',
+  'attention': 0.23
+}, {
+  'word': 'exercitation',
+  'attention': 0.46
+}, {
+  'word': 'ullamco',
+  'attention': 0.93
+}, {
+  'word': 'laboris',
+  'attention': 0.91
+}, {
+  'word': 'nisi',
+  'attention': 0.94
+}, {
+  'word': 'ut',
+  'attention': 0.26
+}, {
+  'word': 'aliquip',
+  'attention': 0.76
+}, {
+  'word': 'ex',
+  'attention': 0.89
+}, {
+  'word': 'ea',
+  'attention': 0.49
+}, {
+  'word': 'commodo',
+  'attention': 0.11
+}, {
+  'word': 'consequat.',
+  'attention': 0.92
+}, {
+  'word': 'Duis',
+  'attention': 0.11
+}, {
+  'word': 'aute',
+  'attention': 0.96
+}, {
+  'word': 'irure',
+  'attention': 0.46
+}, {
+  'word': 'dolor',
+  'attention': 0.31
+}, {
+  'word': 'in',
+  'attention': 0.85
+}, {
+  'word': 'reprehenderit',
+  'attention': 0.97
+}, {
+  'word': 'in',
+  'attention': 0.66
+}, {
+  'word': 'voluptate',
+  'attention': 0.79
+}, {
+  'word': 'velit',
+  'attention': 0.13
+}, {
+  'word': 'esse',
+  'attention': 0.44
+}, {
+  'word': 'cillum',
+  'attention': 0.92
+}, {
+  'word': 'dolore',
+  'attention': 0.87
+}, {
+  'word': 'eu',
+  'attention': 0.32
+}, {
+  'word': 'fugiat',
+  'attention': 0.85
+}, {
+  'word': 'nulla',
+  'attention': 0.22
+}, {
+  'word': 'pariatur.',
+  'attention': 0.11
+}, {
+  'word': 'Excepteur',
+  'attention': 0.49
+}, {
+  'word': 'sint',
+  'attention': 0.57
+}, {
+  'word': 'occaecat',
+  'attention': 0.86
+}, {
+  'word': 'cupidatat',
+  'attention': 0.47
+}, {
+  'word': 'non',
+  'attention': 0.68
+}, {
+  'word': 'proident,',
+  'attention': 0.46
+}, {
+  'word': 'sunt',
+  'attention': 0.98
+}, {
+  'word': 'in',
+  'attention': 0.92
+}, {
+  'word': 'culpa',
+  'attention': 0.5
+}, {
+  'word': 'qui',
+  'attention': 0.43
+}, {
+  'word': 'officia',
+  'attention': 0.93
+}, {
+  'word': 'deserunt',
+  'attention': 0.4
+}, {
+  'word': 'mollit',
+  'attention': 0.04
+}, {
+  'word': 'anim',
+  'attention': 0.67
+}, {
+  'word': 'id',
+  'attention': 0.08
+}, {
+  'word': 'est',
+  'attention': 0.72
+}, {
+  'word': 'laborum.',
+  'attention': 0.66
+}];
+
+$('text').html($.map(words, function(w) {
+  return '<span style="background-color:hsl(360,100%,' + (w.attention * 50 + 50) + '%)">' + w.word + ' </span>'
+}))
+
+</script>
