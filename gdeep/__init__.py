@@ -1,6 +1,3 @@
-
-from ._version import __version__
-
 __all__ = [
     'create_nets',
     'gradcam',

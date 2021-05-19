@@ -18,12 +18,13 @@ def test_gfdbc_2_dim():
 
     g = GradientFlowDecisionBoundaryCalculator(
             model=circle_detect_nn,
-            initial_points=torch.rand((100,2)),
+            initial_points=torch.rand((100, 2)),
             optimizer=lambda params: torch.optim.Adam(params)
     )
     for i in range(100):
         g.step()
     assert g.get_decision_boundary().size() == torch.Size([100, 2])
+
 
 def test_gfdbc_multiclass():
     
@@ -31,7 +32,7 @@ def test_gfdbc_multiclass():
 
     g = GradientFlowDecisionBoundaryCalculator(
             model=circle_nn_3d,
-            initial_points=torch.rand((100,3)),
+            initial_points=torch.rand((100, 3)),
             optimizer=lambda params: torch.optim.Adam(params)
     )
     for i in range(100):

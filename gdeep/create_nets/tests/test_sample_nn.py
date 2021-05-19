@@ -1,7 +1,7 @@
 """Testing for simpleNN."""
 # License: GNU AGPLv3
 
-import numpy as np
+import numpy as np  # type: ignore
 import pytest
 import torch
 

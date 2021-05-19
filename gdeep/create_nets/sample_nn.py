@@ -196,22 +196,22 @@ class SmoothNet(nn.Module):
                 print("x"+str(i)+" size: ",eval("x"+str(i)+".shape"))
         return eval("x"+str(i))
 
+
 class CircleNN(nn.Module):
     """ Generates a neural network that is proportional to a Gaussian Kernel in 2D
     """
     def __init__(self):
         super().__init__()
-        
+
         self.dim = 2
 
-                
     def forward(self, x_cont):
         try:
-            assert(x_cont.shape[-1]==2)
-        except:
+            assert(x_cont.shape[-1] == 2)
+        except AssertionError:
             raise ValueError(f'input has to be a {2}-dimensional vector')
-        activation = 0.5*torch.exp(-torch.sum(x_cont**2, axis=-1)+1)-0.5
-        return activation.reshape((-1,1))
+        activation = 0.5*torch.exp(-torch.sum(x_cont**2, axis=-1) + 1) - 0.5
+        return activation.reshape((-1, 1))
     
     def return_input_dim(self):
         return 2
@@ -269,62 +269,3 @@ class SampleCNN_MNIST_SAMPLE_2(nn.Module):
         x = self.fc2(x)
         return x
 
-# class ListModule(nn.Module):
-#     """
-#     cf https://discuss.pytorch.org/t/list-of-nn-module-in-a-nn-module/219/2
-#     Args:
-#         nn ([type]): [description]
-#     """
-#     def __init__(self, *args):
-#         super(ListModule, self).__init__()
-#         idx = 0
-#         for module in args:
-#             self.add_module(str(idx), module)
-#             idx += 1
-
-#     def __getitem__(self, idx):
-#         if idx < 0 or idx >= len(self._modules):
-#             raise IndexError('index {} is out of range'.format(idx))
-#         it = iter(self._modules.values())
-#         for i in range(idx):
-#             next(it)
-#         return next(it)
-
-#     def __iter__(self):
-#         return iter(self._modules.values())
-
-#     def __len__(self):
-#         return len(self._modules)
-
-
-# class ConstructorNN(ListModule):
-#     """ This Constructor creates a fully connected 
-#     neural network for binary classification from
-#     an array of the width of every layer
-#     """
-#     def __init__(self, layer_widths, verbose=True):
-#         try:
-#             assert(len(layer_widths>0))
-#         except:
-#             print("The layer_widths is not a valid input")
-
-#         layer_widths.append(1)
-
-#         super(ConstructorNN, self).__init__()
-#         layers = []
-
-#         for layer_number, layer_width in enumerate(layer_widths[1:]):
-#             layers.append(nn.Linear(layer_widths[layer_number],layer_width))
-
-
-#             if verbose:
-#                 print("Appended nn.Linear", (layer_widths[layer_number],layer_width))
-
-#         self.layers = ListModule(*layers)
-
-    
-#     def forward(self, x):
-#         for layer in self.layers[:-1]:
-#             x = F.relu(layer(x))
-
-#         return F.sigmoid(self.layers[-1](x))

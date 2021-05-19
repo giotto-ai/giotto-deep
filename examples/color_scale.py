@@ -18,8 +18,8 @@ This is similar to 'cubehelix', except in Lch space instead of RGB space:
     lab_color_scale(hue=0, rot=-1.5, chroma=30)
 """
 
-from numpy import asarray, cos, sin, vstack, array, ones, radians, linspace
-from matplotlib import cm
+from numpy import asarray, cos, sin, vstack, array, ones, radians, linspace  # type: ignore
+from matplotlib import cm  # type: ignore
 
 """
 Both libraries produce similar, but not identical, results.

@@ -21,7 +21,8 @@ def test_embedding_layer_copier():
         bem(input_ids = inputs['input_ids'], token_type_ids=inputs['token_type_ids']),
         model.bert.embeddings(input_ids = inputs['input_ids'], token_type_ids=inputs['token_type_ids'])
     )
-    
+ 
+
 def test_bert_classifier_copier():
     bc = SimplifiedBertClassifier()
     bc.embedding = BertEmbeddingsWeightCopier(model.bert.embeddings, config).build_layer()
