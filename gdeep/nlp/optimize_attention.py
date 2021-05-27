@@ -184,7 +184,7 @@ def plot_weighted_graph(weight_matrix: Union[np.ndarray, torch.Tensor],*,
 
 # %%
 sample_attention_graphs = np.load(
-    "attention_graphs_arrays/attention_scores_bert_sample_66.npy")
+    "../../examples/attention_graphs_arrays/attention_scores_bert_sample_66.npy")
 # uncomment to hide [CLS] and [SEP] token
 # sample_attention_graphs = sample_attention_graphs[: ,: ,1:-1, 1:-1]
 
@@ -192,10 +192,8 @@ sample_attention_graphs = np.load(
 #print("input sentence:\n", "Believe it or not, this was at one time the worst movie I had ever seen. Since that time, I have seen many more movies that are worse (how is it possible??) Therefore, to be fair, I had to give this movie a 2 out of 10. But it was a tough call.")
 #print("attention_graphs shape:", sample_attention_graphs.shape)
 
-for layer, head in [(23, 1)]:#, (3, 1), (8,3), (16, 3), (23, 1)]:
-    plot_weighted_graph(sample_attention_graphs[layer, head][:10, :10],
-                        save_path=("attention_graph_plots/" +
-                                   f"attention_graph_{layer}_{head}.svg"))# %%
+for layer, head in [(1, 1)]:#, (3, 1), (8,3), (16, 3), (23, 1)]:
+    plot_weighted_graph(sample_attention_graphs[layer, head])# %%
 
 # %%
 

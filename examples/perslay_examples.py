@@ -214,7 +214,12 @@ class SetTransformer(nn.Module):
 
 model = SetTransformer(dim_input=4, dim_output=5)
 
-print('model has', model.num_params(), 'trainable parameters.')  # type: ignore
+
+def num_params(model: nn.Module) -> int:
+    return sum([parameter.nelement() for parameter in model.parameters()])
+
+
+print('model has', num_params(model), 'trainable parameters.')  # type: ignore
 
 # CUDA for PyTorch
 use_cuda = torch.cuda.is_available()
