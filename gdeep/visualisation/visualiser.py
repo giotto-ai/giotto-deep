@@ -220,15 +220,15 @@ class Visualiser:
                                                           (1, '#000000')],
                                                          N=256)
 
-        fig, _ = visualization.visualize_image_attr_multiple
-            (np.transpose(interpreter.attrib.squeeze().cpu().detach().numpy(),
+        fig, _ = visualization.visualize_image_attr_multiple(
+            np.transpose(interpreter.attrib.squeeze().cpu().detach().numpy(),
+                         (1, 2, 0)),
+            np.transpose(interpreter.image.squeeze().cpu().detach().numpy(),
                           (1, 2, 0)),
-             np.transpose(interpreter.image.squeeze().cpu().detach().numpy(),
-                          (1, 2, 0)),
-             ["original_image", "heat_map"],
-             ["all", "positive"],
-             cmap=default_cmap,
-             show_colorbar=True)
+            ["original_image", "heat_map"],
+            ["all", "positive"],
+            cmap=default_cmap,
+            show_colorbar=True)
         self.pipe.writer.add_figure(interpreter.method,
                                     fig)
         return fig
