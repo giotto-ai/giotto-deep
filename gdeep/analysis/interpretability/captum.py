@@ -1,6 +1,7 @@
 from captum.attr import TokenReferenceBase, \
     visualization, FeatureAblation, \
-    DeepLift, NoiseTunnel, IntegratedGradients
+    DeepLift, NoiseTunnel, IntegratedGradients, \
+    LayerIntegratedGradients, Occlusion
 import torch
 
 
