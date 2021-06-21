@@ -56,7 +56,6 @@ def persistence_diagrams_to_sequence(
     Returns:
         Dict[Int, Tensor]: List of tensors of the shape described above
     """
-    raise DeprecationWarning("persistence_diagrams_to_sequence is deprecated")
     types = list(tensor_dict.keys())
 
     sequence_dict = {}
@@ -200,7 +199,7 @@ def load_data(
 #     return x
 
 
-x_pd, x_features, y = load_data("MUTAG")
+x_pds, x_features, y = load_data("MUTAG")
 # %%
 # Test persistence_diagrams_to_sequence with MUTAG dataset
 
@@ -330,7 +329,7 @@ for i in range(3):
     except AssertionError:
         print("expected:\n", expected_output[i])
         print("actual:\n", output[i])
-        raise Exception("persistence_diagrams_to_sequence does not match")
+        raise AssertionError("persistence_diagrams_to_sequence does not match")
 
 
 # %%
@@ -374,46 +373,51 @@ def diagram_to_tensor(
 
 
 # check if tensorised diagrams have the correct shape
-try:
-    assert all((
-                diagram_to_tensor(
-                    tensor_dict["type1"]).shape == torch.Size([3, 7, 2]),
-                diagram_to_tensor(
-                    tensor_dict["type2"]).shape == torch.Size([3, 10, 2])
-            ))
-except AssertionError:
-    print("Converted diagrams do not have correct shape.")
-    raise
 
-n_types = len(tensor_dict)  # number of diagram types
+def test_diagram_to_tensor():
+    try:
+        assert all((
+                    diagram_to_tensor(
+                        tensor_dict["type1"]).shape == torch.Size([3, 7, 2]),
+                    diagram_to_tensor(
+                        tensor_dict["type2"]).shape == torch.Size([3, 10, 2])
+                ))
+    except AssertionError:
+        print("Converted diagrams do not have correct shape.")
+        raise
 
-diagrams_list = []
-for type_ in tensor_dict:
-    diagrams_list.append(diagram_to_tensor(tensor_dict[type_]))
+test_diagram_to_tensor()
 
-max_number_of_points_per_type = max([diagram.shape[1] for
-                                     diagram in diagrams_list])
+    # n_types = len(tensor_dict)  # number of diagram types
 
-data = []
+    # diagrams_list = []
+    # for type_ in tensor_dict:
+    #     diagrams_list.append(diagram_to_tensor(tensor_dict[type_]))
 
-for type_idx, diagram in enumerate(diagrams_list):
-    # diagram tensor with one-hot encoding in the zeroth coordinate
-    # and a dimension in the second coordinate that fits the number
-    # of points in the diagrams for all types
-    diagram_tensor = torch.zeros((
-                        diagram.shape[0],
-                        max_number_of_points_per_type,
-                        2
-                    ))
-    # shape: [graph_idx]
-    diagram_cat = torch.tensor([type_idx] * diagram.shape[0], dtype=torch.int32)
-    # shape: [graph_idx, point_idx, coordinate]
-    diagram_tensor[:, :diagram.shape[1], :] = diagram
-    
-    # if type_idx == 0:
-    #     # shape 
-    #     data = 
-    print(diagram_tensor.shape)
+    # max_number_of_points_per_type = max([diagram.shape[1] for
+    #                                     diagram in diagrams_list])
+
+    # data = []
+
+    # for type_idx, diagram in enumerate(diagrams_list):
+    #     # diagram tensor with one-hot encoding in the zeroth coordinate
+    #     # and a dimension in the second coordinate that fits the number
+    #     # of points in the diagrams for all types
+    #     diagram_tensor = torch.zeros((
+    #                         diagram.shape[0],
+    #                         max_number_of_points_per_type,
+    #                         2
+    #                     ))
+    #     # shape: [graph_idx]
+    #     diagram_cat = torch.tensor([type_idx] * diagram.shape[0], dtype=torch.int32)
+    #     # shape: [graph_idx, point_idx, coordinate]
+    #     diagram_tensor[:, :diagram.shape[1], :] = diagram
+        
+    #     try:
+    #     if type_idx == 0:
+    #         # shape 
+    #         data = 
+    #     print(diagram_tensor.shape)
 
 
 # %%
