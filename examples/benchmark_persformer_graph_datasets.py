@@ -27,13 +27,14 @@ import numpy as np  # typing: ignore
 import random
 import torch
 from torch import Tensor
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader, dataset
 from einops import rearrange  # typing: ignore
 from os.path import join, isfile
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from gdeep.topology_layers import ISAB, PMA
+from gdeep.topology_layers import ISAB, PMA, SetTransformer
 # for loading extended persistence diagrams that are in hdf5 format
 import h5py  # typing: ignore
 
@@ -182,7 +183,7 @@ def load_data(
             "\nNumber of classes", label_encoder.classes_.shape[0]
             )
     return (persistence_diagrams_to_sequence(tensor_dict),
-            torch.tensor(x_features),
+            torch.tensor(x_features, dtype=torch.float),
             torch.tensor(y))
 
 # def convert_to_one_hot(x: torch.Tensor, axis: int = 0) -> torch.Tensor:
@@ -199,7 +200,7 @@ def load_data(
 #     return x
 
 
-x_pds, x_features, y = load_data("MUTAG")
+x_pds_dict, x_features, y = load_data("MUTAG")
 # %%
 # Test persistence_diagrams_to_sequence with MUTAG dataset
 
@@ -419,9 +420,215 @@ test_diagram_to_tensor()
     #         data = 
     #     print(diagram_tensor.shape)
 
+# %%
+# Set up dataset and dataloader
+
+# transform x_pds to a single tensor with tailing zeros
+num_types = x_pds_dict[0].shape[1] - 2
+num_graphs = len(x_pds_dict.keys())
+
+max_number_of_points = max([x_pd.shape[0]
+                            for _, x_pd in x_pds_dict.items()])
+
+x_pds = torch.zeros((num_graphs, max_number_of_points, num_types + 2))
+
+for idx, x_pd in x_pds_dict.items():
+    x_pds[idx, :x_pd.shape[0], :] = x_pd
+
+# https://discuss.pytorch.org/t/make-a-tensordataset-and-dataloader
+# -with-multiple-inputs-parameters/26605
+mutag_ds = TensorDataset(x_pds, x_features, y)
+
+mutag_ds_train, mutag_ds_val = torch.utils.data.random_split(mutag_ds,
+                                                              [148, 40])
+
+mutag_dl_train = DataLoader(
+    mutag_ds_train,
+    batch_size=16,
+    shuffle=True
+)
+
+mutag_dl_val = DataLoader(
+    mutag_ds_val,
+    batch_size=16,
+    shuffle=True
+)
+
+# for batch_idx, (x_pd, x_feature, label) in enumerate(mutag_dl):
+#     print(batch_idx, x_pd.shape, x_feature.shape, label.shape)
+
+#%%
+st = SetTransformer(
+        dim_input=mutag_ds[0][0].shape[1],
+        num_outputs=1,
+        dim_output=10
+        )
+st(mutag_ds[0][0].unsqueeze(0))
+
 
 # %%
 # Train Persformer on MUTAG dataset
 
 class GraphClassifier(nn.Module):
-    __init__(self, )
+    """Classifier for Graphs using persistence features and additional
+    features. The vectorization is based on a set transformer.
+    """
+    def __init__(self,
+                 num_features,
+                 dim_input=6,
+                 num_outputs=1,
+                 dim_output=10,
+                 num_classes=2):
+        super(GraphClassifier, self).__init__()
+        self.st = SetTransformer(
+            dim_input=dim_input,
+            num_outputs=num_outputs,
+            dim_output=dim_output
+            )
+        self.num_classes = num_classes
+        self.ff1 = nn.Linear(dim_output + num_features, 50)
+        self.ff2 = nn.Linear(50, 20)
+        self.ff3 = nn.Linear(20, num_classes)
+        
+        
+    def forward(self, x_pd: Tensor, x_feature: Tensor) -> Tensor:
+        """Forward pass of the graph classifier.
+        The persistence features are encoded with a set transformer
+        and concatenated with the feature vector. These concatenated
+        features are used for classification using a fully connected
+        feed -forward layer.
+
+        Args:
+            x_pd (Tensor): persistence diagrams of the graph
+            x_feature (Tensor): additional graph features
+        """
+        pd_vector = st(x_pd)
+        features_stacked = torch.hstack((pd_vector, x_feature))
+        x = nn.Relu(self.ff_1(features_stacked)
+        x = nn.Relu(self.ff_2(x))
+        x = nn.Relu(self.ff_3(x))
+        return x
+        
+gc = GraphClassifier(
+        num_features=mutag_ds[0][1].shape[0],
+        dim_input=mutag_ds[0][0].shape[1],
+        num_outputs=1,
+        dim_output=10)
+
+# %%
+def compute_accuracy(
+                    model: nn.Module,
+                    dl,
+                    use_cuda: bool = False
+                  ) -> Tuple[int, float]:
+    """Print the accuracy of the network on the dataset
+    provided by the data loader.
+
+    Args:
+        model (nn.Module): Model to be evaluated.
+        dataloader ([type]): dataloader of the dataset the model is being
+            evaluated.
+        use_cuda (bool, optional): If the model is on GPU. Defaults to False.
+    """
+    model.eval()
+    correct = 0
+    total = 0
+
+    for x_pd, x_feature, label in dl:
+        outputs = model(x_pd, x_feature).squeeze(1)
+        _, predictions = torch.max(outputs, 1)
+        total += label.size(0)
+        correct += (predictions == label).sum().item()
+
+    return (total, 100 * correct/total)
+
+def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
+          lr: float = 1e-3, num_epochs=10,
+          verbose=False):
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    gc.train()
+    losses: List[float] = []
+    for epoch in range(num_epochs):
+        loss_per_epoch = 0
+        for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
+            loss = criterion(model(x_pd, x_feature), label.long())
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            loss_per_epoch += loss.item()
+        losses.append(loss_per_epoch)
+        if verbose:
+            # print train loss, test and model accuracy
+            print("epoch:", epoch, "loss:", loss_per_epoch)
+            test_total, test_accuracy = compute_accuracy(model,
+                                                         train_dl,
+                                                         val_dl)
+            print('Test',
+                    'accuracy of the network on the', test_total,
+                    'diagrams: %8.2f %%' % test_accuracy
+                    )
+            if val_dl is not None:
+                val_total, val_accuracy = compute_accuracy(model,
+                                                             val_dl)
+                print('Val',
+                        'accuracy of the network on the', val_total,
+                        'diagrams: %8.2f %%' % val_accuracy
+                        )
+    return losses
+
+            
+losses = train(gc, mutag_dl_train, mutag_dl_val, verbose=True, num_epochs=50)
+
+#%%
+
+
+# %%
+# Use SAM optimizer 
+from sam import SAM
+
+def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
+          lr: float = 1e-3, num_epochs=10,
+          verbose=False):
+    base_optimizer = torch.optim.SGD
+    optimizer = SAM(model.parameters(), base_optimizer, lr=0.1, momentum=0.9)
+    gc.train()
+    losses: List[float] = []
+    for epoch in range(num_epochs):
+        loss_per_epoch = 0
+        for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
+            
+            # first forward-backward pass
+            loss = criterion(model(x_pd, x_feature), label.long())
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.first_step(zero_grad=True)
+            # second forward-backward pass
+            criterion(model(x_pd, x_feature), label.long()).backward()
+            optimizer.second_step(zero_grad=True)
+            
+            loss_per_epoch += loss.item()
+        losses.append(loss_per_epoch)
+        if verbose:
+            # print train loss, test and model accuracy
+            print("epoch:", epoch, "loss:", loss_per_epoch)
+            test_total, test_accuracy = compute_accuracy(model,
+                                                         train_dl,
+                                                         val_dl)
+            print('Test',
+                    'accuracy of the network on the', test_total,
+                    'diagrams: %8.2f %%' % test_accuracy
+                    )
+            if val_dl is not None:
+                val_total, val_accuracy = compute_accuracy(model,
+                                                             val_dl)
+                print('Val',
+                        'accuracy of the network on the', val_total,
+                        'diagrams: %8.2f %%' % val_accuracy
+                        )
+    return losses
+
+# %%
+losses = sam_train(gc, mutag_dl_train, mutag_dl_val, verbose=True, num_epochs=200)
+# %%
+import matplotlib.pyplot as plt
+plt.plot(losses)
