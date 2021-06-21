@@ -1,9 +1,9 @@
 
-from .persformer import SmallSetTransformer
+from .persformer import SetTransformer
 from .modules import ISAB, PMA, SAB
 
 __all__ = [
-    'SmallSetTransformer',
+    'SetTransformer',
     'ISAB',
     'PMA',
     'SAB'
