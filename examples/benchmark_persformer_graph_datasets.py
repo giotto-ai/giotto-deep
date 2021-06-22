@@ -39,6 +39,9 @@ from gdeep.topology_layers import ISAB, PMA, SetTransformer
 import h5py  # typing: ignore
 
 # %%
+DATASET_NAME = "NCI1"
+
+# %%
 
 
 def persistence_diagrams_to_sequence(
@@ -74,10 +77,11 @@ def persistence_diagrams_to_sequence(
         tensor_list = []
         for type_idx, type_ in enumerate(types):
             n_pts = tensor_dict[type_][str(graph_idx)].shape[0]
-            tensor_list.append(encode_points(graph_idx,
-                                             type_idx,
-                                             type_,
-                                             n_pts))
+            if(n_pts > 0):
+                tensor_list.append(encode_points(graph_idx,
+                                                type_idx,
+                                                type_,
+                                                n_pts))
         sequence_dict[graph_idx] = torch.cat(tensor_list, axis=0)
     return sequence_dict
 
@@ -200,7 +204,7 @@ def load_data(
 #     return x
 
 
-x_pds_dict, x_features, y = load_data("MUTAG")
+x_pds_dict, x_features, y = load_data(DATASET_NAME)
 # %%
 # Test persistence_diagrams_to_sequence with MUTAG dataset
 
@@ -437,20 +441,25 @@ for idx, x_pd in x_pds_dict.items():
 
 # https://discuss.pytorch.org/t/make-a-tensordataset-and-dataloader
 # -with-multiple-inputs-parameters/26605
-mutag_ds = TensorDataset(x_pds, x_features, y)
+total_size = x_pds.shape[0]
 
-mutag_ds_train, mutag_ds_val = torch.utils.data.random_split(mutag_ds,
-                                                              [148, 40])
+graph_ds = TensorDataset(x_pds, x_features, y)
 
-mutag_dl_train = DataLoader(
-    mutag_ds_train,
-    batch_size=16,
+train_size = int(total_size * 0.8)
+graph_ds_train, graph_ds_val = torch.utils.data.random_split(
+                                                    graph_ds,
+                                                    [train_size,
+                                                    total_size - train_size])
+
+graph_dl_train = DataLoader(
+    graph_ds_train,
+    batch_size=64,
     shuffle=True
 )
 
-mutag_dl_val = DataLoader(
-    mutag_ds_val,
-    batch_size=16,
+graph_dl_val = DataLoader(
+    graph_ds_val,
+    batch_size=64,
     shuffle=True
 )
 
@@ -458,12 +467,12 @@ mutag_dl_val = DataLoader(
 #     print(batch_idx, x_pd.shape, x_feature.shape, label.shape)
 
 #%%
-st = SetTransformer(
-        dim_input=mutag_ds[0][0].shape[1],
-        num_outputs=1,
-        dim_output=10
-        )
-st(mutag_ds[0][0].unsqueeze(0))
+# st = SetTransformer(
+#         dim_input=mutag_ds[0][0].shape[1],
+#         num_outputs=1,
+#         dim_output=10
+#         )
+# st(mutag_ds[0][0].unsqueeze(0))
 
 
 # %%
@@ -486,9 +495,9 @@ class GraphClassifier(nn.Module):
             dim_output=dim_output
             )
         self.num_classes = num_classes
-        self.ff1 = nn.Linear(dim_output + num_features, 50)
-        self.ff2 = nn.Linear(50, 20)
-        self.ff3 = nn.Linear(20, num_classes)
+        self.ff_1 = nn.Linear(dim_output + num_features, 50)
+        self.ff_2 = nn.Linear(50, 20)
+        self.ff_3 = nn.Linear(20, num_classes)
         
         
     def forward(self, x_pd: Tensor, x_feature: Tensor) -> Tensor:
@@ -502,18 +511,23 @@ class GraphClassifier(nn.Module):
             x_pd (Tensor): persistence diagrams of the graph
             x_feature (Tensor): additional graph features
         """
-        pd_vector = st(x_pd)
+        pd_vector = self.st(x_pd)
         features_stacked = torch.hstack((pd_vector, x_feature))
-        x = nn.Relu(self.ff_1(features_stacked)
-        x = nn.Relu(self.ff_2(x))
-        x = nn.Relu(self.ff_3(x))
+        x = nn.ReLU()(self.ff_1(features_stacked))
+        x = nn.ReLU()(self.ff_2(x))
+        x = self.ff_3(x)
         return x
         
 gc = GraphClassifier(
-        num_features=mutag_ds[0][1].shape[0],
-        dim_input=mutag_ds[0][0].shape[1],
+        num_features=graph_ds_train[0][1].shape[0],
+        dim_input=graph_ds_train[0][0].shape[1],
         num_outputs=1,
         dim_output=10)
+
+# %%
+x_pd, x_feature, y= next(iter(graph_dl_train))
+# print(x_pd.shape)
+gc(x_pd, x_feature).shape
 
 # %%
 def compute_accuracy(
@@ -576,11 +590,18 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
                         )
     return losses
 
-            
-losses = train(gc, mutag_dl_train, mutag_dl_val, verbose=True, num_epochs=50)
+# %%
+gc.st.enc[0].mab0.fc_q.weight
+# %%
+        
+losses = train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=300)
 
 #%%
+gc.st.enc[0].mab0.fc_q.weight
 
+# %%
+import matplotlib.pyplot as plt
+plt.plot(losses)
 
 # %%
 # Use SAM optimizer 
@@ -590,7 +611,7 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
           lr: float = 1e-3, num_epochs=10,
           verbose=False):
     base_optimizer = torch.optim.SGD
-    optimizer = SAM(model.parameters(), base_optimizer, lr=0.1, momentum=0.9)
+    optimizer = SAM(model.parameters(), base_optimizer, lr=0.01, momentum=0.9)
     gc.train()
     losses: List[float] = []
     for epoch in range(num_epochs):
@@ -628,7 +649,17 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
     return losses
 
 # %%
-losses = sam_train(gc, mutag_dl_train, mutag_dl_val, verbose=True, num_epochs=200)
+losses = sam_train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=200)
+
+
 # %%
-import matplotlib.pyplot as plt
-plt.plot(losses)
+
+filename = join("graph_data",
+                "MUTAG",
+                "MUTAG" + ".hdf5")
+diagrams_file = h5py.File(filename, "r")
+
+for x, v in diagrams_file['Ext1_10.0-hks'].items():
+    if np.isclose(np.array(v)[0, 0], 0.0657, atol=1e-4):
+        print(x, np.array(v))
+# %%
