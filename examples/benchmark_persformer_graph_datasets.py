@@ -460,7 +460,7 @@ graph_dl_train = DataLoader(
 graph_dl_val = DataLoader(
     graph_ds_val,
     batch_size=64,
-    shuffle=True
+    shuffle=False
 )
 
 # for batch_idx, (x_pd, x_feature, label) in enumerate(mutag_dl):
@@ -495,6 +495,7 @@ class GraphClassifier(nn.Module):
             dim_output=dim_output
             )
         self.num_classes = num_classes
+        self.bn = nn.BatchNorm1d(dim_output + num_features)
         self.ff_1 = nn.Linear(dim_output + num_features, 50)
         self.ff_2 = nn.Linear(50, 20)
         self.ff_3 = nn.Linear(20, num_classes)
@@ -513,6 +514,7 @@ class GraphClassifier(nn.Module):
         """
         pd_vector = self.st(x_pd)
         features_stacked = torch.hstack((pd_vector, x_feature))
+        x = self.bn(features_stacked)
         x = nn.ReLU()(self.ff_1(features_stacked))
         x = nn.ReLU()(self.ff_2(x))
         x = self.ff_3(x)
@@ -560,9 +562,9 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
           lr: float = 1e-3, num_epochs=10,
           verbose=False):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    gc.train()
     losses: List[float] = []
     for epoch in range(num_epochs):
+        model.train()
         loss_per_epoch = 0
         for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
             loss = criterion(model(x_pd, x_feature), label.long())
@@ -594,7 +596,7 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
 gc.st.enc[0].mab0.fc_q.weight
 # %%
         
-losses = train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=300)
+losses = train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=100)
 
 #%%
 gc.st.enc[0].mab0.fc_q.weight
@@ -662,4 +664,76 @@ diagrams_file = h5py.File(filename, "r")
 for x, v in diagrams_file['Ext1_10.0-hks'].items():
     if np.isclose(np.array(v)[0, 0], 0.0657, atol=1e-4):
         print(x, np.array(v))
+# %%
+from torch.utils.tensorboard import SummaryWriter
+import numpy as np
+
+writer = SummaryWriter(log_dir="summaries")
+
+for n_iter in range(100):
+    writer.add_scalar('Loss/train', np.random.random(), n_iter)
+    writer.add_scalar('Loss/test', np.random.random(), n_iter)
+    writer.add_scalar('Accuracy/train', np.random.random(), n_iter)
+    writer.add_scalar('Accuracy/test', np.random.random(), n_iter)
+# %%
+for n_iter in range(100):
+    writer.add_scalar('Loss/train', np.random.random(), n_iter)
+    writer.add_scalar('Loss/test', np.random.random(), n_iter)
+    writer.add_scalar('Accuracy/train', np.random.random(), n_iter)
+    writer.add_scalar('Accuracy/test', np.random.random(), n_iter)#
+# %%
+!pwd
+# %%
+tensorboard --logdir='data'
+# %%
+from pandas_datareader import data
+import matplotlib.pyplot as plt
+import pandas as pd
+import datetime as dt
+import urllib.request, json
+import os
+import numpy as np
+
+# This code has been tested with TensorFlow 1.6
+import tensorflow as tf
+# %%
+%tensorboard --logdir summaries
+# %%
+%load_ext tensorboard
+# %%
+import tensorflow as tf
+import datetime, os
+# %%
+fashion_mnist = tf.keras.datasets.fashion_mnist
+
+(x_train, y_train),(x_test, y_test) = fashion_mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+# %%
+def create_model():
+  return tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28, 28)),
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(10, activation='softmax')
+  ])
+# %%
+def train_model():
+  
+  model = create_model()
+  model.compile(optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy'])
+
+  logdir = os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+  tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
+
+  model.fit(x=x_train, 
+            y=y_train, 
+            epochs=5, 
+            validation_data=(x_test, y_test), 
+            callbacks=[tensorboard_callback])
+
+train_model()
+# %%
+%tensorboard --logdir logs
 # %%
