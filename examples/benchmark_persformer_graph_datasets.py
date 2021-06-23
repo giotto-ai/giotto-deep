@@ -40,7 +40,10 @@ import h5py  # typing: ignore
 
 # %%
 DATASET_NAME = "NCI1"
-
+pers_only = True
+# CUDA for PyTorch
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda:0" if use_cuda else "cpu")
 # %%
 
 
@@ -205,6 +208,8 @@ def load_data(
 
 
 x_pds_dict, x_features, y = load_data(DATASET_NAME)
+if pers_only:
+    x_features = 0.* x_features
 # %%
 # Test persistence_diagrams_to_sequence with MUTAG dataset
 
@@ -453,12 +458,14 @@ graph_ds_train, graph_ds_val = torch.utils.data.random_split(
 
 graph_dl_train = DataLoader(
     graph_ds_train,
+    num_workers=4,
     batch_size=64,
     shuffle=True
 )
 
 graph_dl_val = DataLoader(
     graph_ds_val,
+    num_workers=4,
     batch_size=64,
     shuffle=False
 )
@@ -524,12 +531,12 @@ gc = GraphClassifier(
         num_features=graph_ds_train[0][1].shape[0],
         dim_input=graph_ds_train[0][0].shape[1],
         num_outputs=1,
-        dim_output=10)
+        dim_output=50)
 
 # %%
-x_pd, x_feature, y= next(iter(graph_dl_train))
-# print(x_pd.shape)
-gc(x_pd, x_feature).shape
+# x_pd, x_feature, y= next(iter(graph_dl_train))
+# # print(x_pd.shape)
+# gc(x_pd, x_feature).shape
 
 # %%
 def compute_accuracy(
@@ -551,22 +558,38 @@ def compute_accuracy(
     total = 0
 
     for x_pd, x_feature, label in dl:
-        outputs = model(x_pd, x_feature).squeeze(1)
-        _, predictions = torch.max(outputs, 1)
+        if use_cuda:
+            print("cuda")
+            x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
+                    label.cuda()
+        outputs = model(x_pd, x_feature)
+        loss = nn.CrossEntropyLoss()(outputs, label)
+        _, predictions = torch.max(outputs.squeeze(1), 1)
         total += label.size(0)
         correct += (predictions == label).sum().item()
 
-    return (total, 100 * correct/total)
+    return (total, 100 * correct/total, loss.item())
+
 
 def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
           lr: float = 1e-3, num_epochs=10,
           verbose=False):
+    if use_cuda:
+        model = nn.DataParallel(model)
+        model = model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     losses: List[float] = []
+    val_losses: List[float] = []
+    train_accuracies: List[float] = []
+    val_accuracies: List[float] = []
     for epoch in range(num_epochs):
         model.train()
         loss_per_epoch = 0
         for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
+            # transfer to GPU
+            if use_cuda:
+                x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
+                    label.cuda()
             loss = criterion(model(x_pd, x_feature), label.long())
             optimizer.zero_grad()
             loss.backward()
@@ -576,38 +599,53 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
         if verbose:
             # print train loss, test and model accuracy
             print("epoch:", epoch, "loss:", loss_per_epoch)
-            test_total, test_accuracy = compute_accuracy(model,
-                                                         train_dl,
-                                                         val_dl)
+            train_total, train_accuracy, _ = compute_accuracy(model,
+                                                         train_dl
+                                                         )
             print('Test',
-                    'accuracy of the network on the', test_total,
-                    'diagrams: %8.2f %%' % test_accuracy
-                    )
+                  'accuracy of the network on the', train_total,
+                  'diagrams: %8.2f %%' % train_accuracy
+                  )
+            train_accuracies.append(train_accuracy)
             if val_dl is not None:
-                val_total, val_accuracy = compute_accuracy(model,
-                                                             val_dl)
+                val_total, val_accuracy, val_loss = compute_accuracy(model,
+                                                           val_dl)
                 print('Val',
                         'accuracy of the network on the', val_total,
                         'diagrams: %8.2f %%' % val_accuracy
                         )
-    return losses
-
-# %%
-gc.st.enc[0].mab0.fc_q.weight
+                val_losses.append(val_loss)
+                val_accuracies.append(val_accuracy)
+    return losses, val_losses, train_accuracies, val_accuracies
 # %%
         
-losses = train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=100)
+losses, val_losses, train_accuracies, val_accuracies = train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=100)
 
-#%%
-gc.st.enc[0].mab0.fc_q.weight
 
 # %%
 import matplotlib.pyplot as plt
-plt.plot(losses)
+# plot losses
+plt.plot(losses, label='train_loss')
+plt.plot(val_losses, label='val_loss')
+plt.legend()
+plt.show()
 
+# %%
+# plot accuracies
+plt.plot(train_accuracies, label='train_acc')
+plt.plot(val_accuracies, label='val_acc')
+plt.plot([72.3]*len(train_accuracies), label='PersLay')
+plt.legend()
+plt.show()
 # %%
 # Use SAM optimizer 
 from sam import SAM
+
+gc_sam = GraphClassifier(
+        num_features=graph_ds_train[0][1].shape[0],
+        dim_input=graph_ds_train[0][0].shape[1],
+        num_outputs=1,
+        dim_output=50)
 
 def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
           lr: float = 1e-3, num_epochs=10,
@@ -616,6 +654,9 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
     optimizer = SAM(model.parameters(), base_optimizer, lr=0.01, momentum=0.9)
     gc.train()
     losses: List[float] = []
+    val_losses: List[float] = []
+    train_accuracies: List[float] = []
+    val_accuracies: List[float] = []
     for epoch in range(num_epochs):
         loss_per_epoch = 0
         for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
@@ -634,24 +675,31 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
         if verbose:
             # print train loss, test and model accuracy
             print("epoch:", epoch, "loss:", loss_per_epoch)
-            test_total, test_accuracy = compute_accuracy(model,
-                                                         train_dl,
-                                                         val_dl)
+            train_total, train_accuracy, _ = compute_accuracy(model,
+                                                         train_dl
+                                                         )
             print('Test',
-                    'accuracy of the network on the', test_total,
-                    'diagrams: %8.2f %%' % test_accuracy
-                    )
+                  'accuracy of the network on the', train_total,
+                  'diagrams: %8.2f %%' % train_accuracy
+                  )
+            train_accuracies.append(train_accuracy)
             if val_dl is not None:
-                val_total, val_accuracy = compute_accuracy(model,
-                                                             val_dl)
+                val_total, val_accuracy, val_loss = compute_accuracy(model,
+                                                           val_dl)
                 print('Val',
                         'accuracy of the network on the', val_total,
                         'diagrams: %8.2f %%' % val_accuracy
                         )
-    return losses
+                val_losses.append(val_loss)
+                val_accuracies.append(val_accuracy)
+    return losses, val_losses, train_accuracies, val_accuracies
 
 # %%
-losses = sam_train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=200)
+losses, val_losses, train_accuracies, val_accuracies = sam_train(gc_sam, graph_dl_train, graph_dl_val, verbose=True, num_epochs=100)
+
+# %%
+# %%
+losses, val_losses, train_accuracies, val_accuracies = train(gc_sam, graph_dl_train, graph_dl_val, verbose=True, num_epochs=50)
 
 
 # %%
