@@ -22,21 +22,22 @@
 
 # %%
 # Import libraries:
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 import numpy as np  # typing: ignore
 import random
 import torch
 from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader, dataset
-from einops import rearrange  # typing: ignore
+from torch.utils.data import TensorDataset, DataLoader
 from os.path import join, isfile
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from gdeep.topology_layers import ISAB, PMA, SetTransformer
+import pandas as pd  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
+from sklearn.preprocessing import LabelEncoder  # type: ignore
+import h5py  # type: ignore
+from gdeep.topology_layers import SetTransformer
 # for loading extended persistence diagrams that are in hdf5 format
-import h5py  # typing: ignore
+from sam import SAM
 
 # %%
 DATASET_NAME = "NCI1"
@@ -82,16 +83,17 @@ def persistence_diagrams_to_sequence(
             n_pts = tensor_dict[type_][str(graph_idx)].shape[0]
             if(n_pts > 0):
                 tensor_list.append(encode_points(graph_idx,
-                                                type_idx,
-                                                type_,
-                                                n_pts))
-        sequence_dict[graph_idx] = torch.cat(tensor_list, axis=0)
+                                                 type_idx,
+                                                 type_,
+                                                 n_pts))
+        sequence_dict[graph_idx] = torch.cat(tensor_list,
+                                             axis=0)  # type: ignore
     return sequence_dict
 
 
 # %%
 # Load extended persistence diagrams and additional features
-    
+
 
 def load_data(
         dataset_: str = "MUTAG",
@@ -135,7 +137,6 @@ def load_data(
     # corresponding persistence diagram. These may contain different
     # numbers of points.
 
-    persistence_array_dict: Dict[int, np.array] = {}
     # list of tensorised persistence diagrams
 
     additional_features = pd.read_csv(filenames[".csv"], index_col=0, header=0)
@@ -149,7 +150,7 @@ def load_data(
     # number of graphs in the dataset
 
     # convert values in diagrams_file from numpy.ndarray to torch.tensor
-    tensor_dict = {}
+    tensor_dict = {}  # type: ignore
 
     for type_ in diagrams_file.keys():
         tensor_dict[type_] = {}
@@ -157,31 +158,6 @@ def load_data(
             tensor_dict[type_][graph] = torch.tensor(
                                             diagrams_file[type_][graph]
                                             )
-
-    # for pt_idx, persistence_type in enumerate(diagrams_file.keys()):
-    #     diagram_dict = diagrams_file[persistence_type]
-    #     temp_arr_dict: Dict[int, np.array] = {}
-    #     # dictionary containing the graph index as key and the
-    #     # points (as np.array) of the persistence diagram of type
-    #     # `persistence_type` as value.
-
-    #     # compute maximal number of points an store persistence points in
-    #     # temp_arr_dict
-    #     max_number_of_points = 0
-    #     for graph_idx in diagrams_file[persistence_type].keys():
-    #         pt_arr = np.array(diagram_dict[graph_idx])
-    #         max_number_of_points = max(max_number_of_points, pt_arr.shape[0])
-    #         temp_arr_dict[int(graph_idx)] = pt_arr
-    #     persistence_array_dict[pt_idx] = np.zeros((
-    #                                                 number_of_graphs,
-    #                                                 max_number_of_points,
-    #                                                 2
-    #                                              ))
-    #     # store all persistence points in temp_arr_dict in a single tensor
-    #     # arrays will be filled by zeros to have a uniform tensor of shape
-    #     # [number_of_graphs, max_number_of_points, 2]
-    #     for graph_idx in temp_arr_dict.keys():
-    #         persistence_array_dict[pt_idx] = temp_arr_dict[graph_idx]
 
     if verbose:
         print(
@@ -193,25 +169,13 @@ def load_data(
             torch.tensor(x_features, dtype=torch.float),
             torch.tensor(y))
 
-# def convert_to_one_hot(x: torch.Tensor, axis: int = 0) -> torch.Tensor:
-#     """Convert tensor to one-hot representation along given axis.
-
-#     Args:
-#         x (torch.Tensor): Tensor to be converted.
-#         axis (int, optional): Axis of the conversion. Defaults to 0.
-
-#     Returns:
-#         torch.Tensor: Tensor converted
-#     """
-
-#     return x
-
 
 x_pds_dict, x_features, y = load_data(DATASET_NAME)
 if pers_only:
-    x_features = 0.* x_features
+    x_features = 0.0 * x_features
 # %%
 # Test persistence_diagrams_to_sequence with MUTAG dataset
+
 
 def random_compatibility_test(n_trials: int = 10) -> None:
     """Randomly check if persistence diagram is correctly converted to
@@ -227,16 +191,15 @@ def random_compatibility_test(n_trials: int = 10) -> None:
                     "MUTAG",
                     "MUTAG" + ".hdf5")
     diagrams_file = h5py.File(filename, "r")
-    
+
     # load_data with `load_data` methode
-    seq_pd, _ , _ = load_data("MUTAG")
+    seq_pd, _, _ = load_data("MUTAG")
 
     for _ in range(n_trials):
 
         type_ = random.choice(list(diagrams_file.keys()))
 
         type_index = list(diagrams_file.keys()).index(type_)
-
 
         graph_number = random.choice(list(diagrams_file[type_].keys()))
 
@@ -245,7 +208,6 @@ def random_compatibility_test(n_trials: int = 10) -> None:
 
         computed_pts = seq_pd[int(graph_number)][idx][:, :2]
 
-
         original_pts = torch.tensor(diagrams_file[type_][graph_number])
 
         try:
@@ -253,7 +215,8 @@ def random_compatibility_test(n_trials: int = 10) -> None:
         except AssertionError:
             raise AssertionError("persistence_diagrams_to_sequence does not" +
                                  "return the right sequence tensor")
-            
+
+
 random_compatibility_test()
 # %%
 # Test persistence_diagrams_to_sequence
@@ -396,52 +359,22 @@ def test_diagram_to_tensor():
         print("Converted diagrams do not have correct shape.")
         raise
 
+
 test_diagram_to_tensor()
-
-    # n_types = len(tensor_dict)  # number of diagram types
-
-    # diagrams_list = []
-    # for type_ in tensor_dict:
-    #     diagrams_list.append(diagram_to_tensor(tensor_dict[type_]))
-
-    # max_number_of_points_per_type = max([diagram.shape[1] for
-    #                                     diagram in diagrams_list])
-
-    # data = []
-
-    # for type_idx, diagram in enumerate(diagrams_list):
-    #     # diagram tensor with one-hot encoding in the zeroth coordinate
-    #     # and a dimension in the second coordinate that fits the number
-    #     # of points in the diagrams for all types
-    #     diagram_tensor = torch.zeros((
-    #                         diagram.shape[0],
-    #                         max_number_of_points_per_type,
-    #                         2
-    #                     ))
-    #     # shape: [graph_idx]
-    #     diagram_cat = torch.tensor([type_idx] * diagram.shape[0], dtype=torch.int32)
-    #     # shape: [graph_idx, point_idx, coordinate]
-    #     diagram_tensor[:, :diagram.shape[1], :] = diagram
-        
-    #     try:
-    #     if type_idx == 0:
-    #         # shape 
-    #         data = 
-    #     print(diagram_tensor.shape)
 
 # %%
 # Set up dataset and dataloader
 
 # transform x_pds to a single tensor with tailing zeros
 num_types = x_pds_dict[0].shape[1] - 2
-num_graphs = len(x_pds_dict.keys())
+num_graphs = len(x_pds_dict.keys())  # type: ignore
 
 max_number_of_points = max([x_pd.shape[0]
-                            for _, x_pd in x_pds_dict.items()])
+                            for _, x_pd in x_pds_dict.items()])  # type: ignore
 
 x_pds = torch.zeros((num_graphs, max_number_of_points, num_types + 2))
 
-for idx, x_pd in x_pds_dict.items():
+for idx, x_pd in x_pds_dict.items():  # type: ignore
     x_pds[idx, :x_pd.shape[0], :] = x_pd
 
 # https://discuss.pytorch.org/t/make-a-tensordataset-and-dataloader
@@ -454,7 +387,7 @@ train_size = int(total_size * 0.8)
 graph_ds_train, graph_ds_val = torch.utils.data.random_split(
                                                     graph_ds,
                                                     [train_size,
-                                                    total_size - train_size])
+                                                     total_size - train_size])
 
 graph_dl_train = DataLoader(
     graph_ds_train,
@@ -469,17 +402,6 @@ graph_dl_val = DataLoader(
     batch_size=64,
     shuffle=False
 )
-
-# for batch_idx, (x_pd, x_feature, label) in enumerate(mutag_dl):
-#     print(batch_idx, x_pd.shape, x_feature.shape, label.shape)
-
-#%%
-# st = SetTransformer(
-#         dim_input=mutag_ds[0][0].shape[1],
-#         num_outputs=1,
-#         dim_output=10
-#         )
-# st(mutag_ds[0][0].unsqueeze(0))
 
 
 # %%
@@ -506,8 +428,7 @@ class GraphClassifier(nn.Module):
         self.ff_1 = nn.Linear(dim_output + num_features, 50)
         self.ff_2 = nn.Linear(50, 20)
         self.ff_3 = nn.Linear(20, num_classes)
-        
-        
+
     def forward(self, x_pd: Tensor, x_feature: Tensor) -> Tensor:
         """Forward pass of the graph classifier.
         The persistence features are encoded with a set transformer
@@ -522,11 +443,12 @@ class GraphClassifier(nn.Module):
         pd_vector = self.st(x_pd)
         features_stacked = torch.hstack((pd_vector, x_feature))
         x = self.bn(features_stacked)
-        x = nn.ReLU()(self.ff_1(features_stacked))
+        x = nn.ReLU()(self.ff_1(x))
         x = nn.ReLU()(self.ff_2(x))
         x = self.ff_3(x)
         return x
-        
+
+
 gc = GraphClassifier(
         num_features=graph_ds_train[0][1].shape[0],
         dim_input=graph_ds_train[0][0].shape[1],
@@ -534,16 +456,13 @@ gc = GraphClassifier(
         dim_output=50)
 
 # %%
-# x_pd, x_feature, y= next(iter(graph_dl_train))
-# # print(x_pd.shape)
-# gc(x_pd, x_feature).shape
 
-# %%
+
 def compute_accuracy(
                     model: nn.Module,
                     dl,
                     use_cuda: bool = False
-                  ) -> Tuple[int, float]:
+                  ) -> Tuple[int, float, float]:
     """Print the accuracy of the network on the dataset
     provided by the data loader.
 
@@ -561,7 +480,7 @@ def compute_accuracy(
         if use_cuda:
             print("cuda")
             x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
-                    label.cuda()
+                label.cuda()
         outputs = model(x_pd, x_feature)
         loss = nn.CrossEntropyLoss()(outputs, label)
         _, predictions = torch.max(outputs.squeeze(1), 1)
@@ -600,8 +519,8 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             # print train loss, test and model accuracy
             print("epoch:", epoch, "loss:", loss_per_epoch)
             train_total, train_accuracy, _ = compute_accuracy(model,
-                                                         train_dl
-                                                         )
+                                                              train_dl
+                                                              )
             print('Test',
                   'accuracy of the network on the', train_total,
                   'diagrams: %8.2f %%' % train_accuracy
@@ -609,21 +528,25 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             train_accuracies.append(train_accuracy)
             if val_dl is not None:
                 val_total, val_accuracy, val_loss = compute_accuracy(model,
-                                                           val_dl)
+                                                                     val_dl)
                 print('Val',
-                        'accuracy of the network on the', val_total,
-                        'diagrams: %8.2f %%' % val_accuracy
-                        )
+                      'accuracy of the network on the', val_total,
+                      'diagrams: %8.2f %%' % val_accuracy
+                      )
                 val_losses.append(val_loss)
                 val_accuracies.append(val_accuracy)
     return losses, val_losses, train_accuracies, val_accuracies
 # %%
-        
-losses, val_losses, train_accuracies, val_accuracies = train(gc, graph_dl_train, graph_dl_val, verbose=True, num_epochs=100)
+
+
+losses, val_losses, train_accuracies, val_accuracies = train(gc,
+                                                             graph_dl_train,
+                                                             graph_dl_val,
+                                                             verbose=True,
+                                                             num_epochs=100)
 
 
 # %%
-import matplotlib.pyplot as plt
 # plot losses
 plt.plot(losses, label='train_loss')
 plt.plot(val_losses, label='val_loss')
@@ -638,8 +561,7 @@ plt.plot([72.3]*len(train_accuracies), label='PersLay')
 plt.legend()
 plt.show()
 # %%
-# Use SAM optimizer 
-from sam import SAM
+# Use SAM optimizer
 
 gc_sam = GraphClassifier(
         num_features=graph_ds_train[0][1].shape[0],
@@ -647,9 +569,10 @@ gc_sam = GraphClassifier(
         num_outputs=1,
         dim_output=50)
 
+
 def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
-          lr: float = 1e-3, num_epochs=10,
-          verbose=False):
+              lr: float = 1e-3, num_epochs=10,
+              verbose=False):
     base_optimizer = torch.optim.SGD
     optimizer = SAM(model.parameters(), base_optimizer, lr=0.01, momentum=0.9)
     gc.train()
@@ -660,7 +583,7 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
     for epoch in range(num_epochs):
         loss_per_epoch = 0
         for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
-            
+
             # first forward-backward pass
             loss = criterion(model(x_pd, x_feature), label.long())
             optimizer.zero_grad()
@@ -669,15 +592,15 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             # second forward-backward pass
             criterion(model(x_pd, x_feature), label.long()).backward()
             optimizer.second_step(zero_grad=True)
-            
+
             loss_per_epoch += loss.item()
         losses.append(loss_per_epoch)
         if verbose:
             # print train loss, test and model accuracy
             print("epoch:", epoch, "loss:", loss_per_epoch)
             train_total, train_accuracy, _ = compute_accuracy(model,
-                                                         train_dl
-                                                         )
+                                                              train_dl
+                                                              )
             print('Test',
                   'accuracy of the network on the', train_total,
                   'diagrams: %8.2f %%' % train_accuracy
@@ -685,103 +608,25 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             train_accuracies.append(train_accuracy)
             if val_dl is not None:
                 val_total, val_accuracy, val_loss = compute_accuracy(model,
-                                                           val_dl)
+                                                                     val_dl)
                 print('Val',
-                        'accuracy of the network on the', val_total,
-                        'diagrams: %8.2f %%' % val_accuracy
-                        )
+                      'accuracy of the network on the', val_total,
+                      'diagrams: %8.2f %%' % val_accuracy
+                      )
                 val_losses.append(val_loss)
                 val_accuracies.append(val_accuracy)
     return losses, val_losses, train_accuracies, val_accuracies
 
 # %%
-losses, val_losses, train_accuracies, val_accuracies = sam_train(gc_sam, graph_dl_train, graph_dl_val, verbose=True, num_epochs=100)
-
-# %%
-# %%
-losses, val_losses, train_accuracies, val_accuracies = train(gc_sam, graph_dl_train, graph_dl_val, verbose=True, num_epochs=50)
 
 
-# %%
-
-filename = join("graph_data",
-                "MUTAG",
-                "MUTAG" + ".hdf5")
-diagrams_file = h5py.File(filename, "r")
-
-for x, v in diagrams_file['Ext1_10.0-hks'].items():
-    if np.isclose(np.array(v)[0, 0], 0.0657, atol=1e-4):
-        print(x, np.array(v))
-# %%
-from torch.utils.tensorboard import SummaryWriter
-import numpy as np
-
-writer = SummaryWriter(log_dir="summaries")
-
-for n_iter in range(100):
-    writer.add_scalar('Loss/train', np.random.random(), n_iter)
-    writer.add_scalar('Loss/test', np.random.random(), n_iter)
-    writer.add_scalar('Accuracy/train', np.random.random(), n_iter)
-    writer.add_scalar('Accuracy/test', np.random.random(), n_iter)
-# %%
-for n_iter in range(100):
-    writer.add_scalar('Loss/train', np.random.random(), n_iter)
-    writer.add_scalar('Loss/test', np.random.random(), n_iter)
-    writer.add_scalar('Accuracy/train', np.random.random(), n_iter)
-    writer.add_scalar('Accuracy/test', np.random.random(), n_iter)#
-# %%
-!pwd
-# %%
-tensorboard --logdir='data'
-# %%
-from pandas_datareader import data
-import matplotlib.pyplot as plt
-import pandas as pd
-import datetime as dt
-import urllib.request, json
-import os
-import numpy as np
-
-# This code has been tested with TensorFlow 1.6
-import tensorflow as tf
-# %%
-%tensorboard --logdir summaries
-# %%
-%load_ext tensorboard
-# %%
-import tensorflow as tf
-import datetime, os
-# %%
-fashion_mnist = tf.keras.datasets.fashion_mnist
-
-(x_train, y_train),(x_test, y_test) = fashion_mnist.load_data()
-x_train, x_test = x_train / 255.0, x_test / 255.0
-# %%
-def create_model():
-  return tf.keras.models.Sequential([
-    tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(512, activation='relu'),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(10, activation='softmax')
-  ])
-# %%
-def train_model():
-  
-  model = create_model()
-  model.compile(optimizer='adam',
-                loss='sparse_categorical_crossentropy',
-                metrics=['accuracy'])
-
-  logdir = os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-  tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
-
-  model.fit(x=x_train, 
-            y=y_train, 
-            epochs=5, 
-            validation_data=(x_test, y_test), 
-            callbacks=[tensorboard_callback])
-
-train_model()
-# %%
-%tensorboard --logdir logs
-# %%
+(losses,
+ val_losses,
+ train_accuracies,
+ val_accuracies) = sam_train(gc_sam,
+                             graph_dl_train,
+                             graph_dl_val,
+                             verbose=True,
+                             num_epochs=100)
+ 
+ 
