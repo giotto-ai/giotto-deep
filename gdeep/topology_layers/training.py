@@ -1,0 +1,138 @@
+from typing import Tuple, List
+import torch
+from torch import Tensor
+import torch.nn as nn
+from .sam import SAM
+
+def compute_accuracy(
+                    model: nn.Module,
+                    dl,
+                    use_cuda: bool = False
+                  ) -> Tuple[int, float, float]:
+    """Print the accuracy of the network on the dataset
+    provided by the data loader.
+
+    Args:
+        model (nn.Module): Model to be evaluated.
+        dataloader ([type]): dataloader of the dataset the model is being
+            evaluated.
+        use_cuda (bool, optional): If the model is on GPU. Defaults to False.
+    """
+    model.eval()
+    correct = 0
+    total = 0
+
+    for x_pd, x_feature, label in dl:
+        if use_cuda:
+            print("cuda")
+            x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
+                label.cuda()
+        outputs = model(x_pd, x_feature)
+        loss = nn.CrossEntropyLoss()(outputs, label)
+        _, predictions = torch.max(outputs.squeeze(1), 1)
+        total += label.size(0)
+        correct += (predictions == label).sum().item()
+
+    return (total, 100 * correct/total, loss.item())
+
+
+def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
+          lr: float = 1e-3, num_epochs=10,
+          verbose=False,
+          use_cuda: bool = False):
+    if use_cuda:
+        model = nn.DataParallel(model)
+        model = model.cuda()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    losses: List[float] = []
+    val_losses: List[float] = []
+    train_accuracies: List[float] = []
+    val_accuracies: List[float] = []
+    for epoch in range(num_epochs):
+        model.train()
+        loss_per_epoch = 0
+        for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
+            # transfer to GPU
+            if use_cuda:
+                x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
+                    label.cuda()
+            l2_lambda = 0.01
+            l2_reg = torch.tensor(0.)
+            for param in model.parameters():
+                l2_reg += torch.norm(param)
+            loss = criterion(model(x_pd, x_feature), label.long())
+            loss += l2_lambda * l2_reg
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            loss_per_epoch += loss.item()
+        losses.append(loss_per_epoch)
+        if verbose:
+            # print train loss, test and model accuracy
+            print("epoch:", epoch, "loss:", loss_per_epoch)
+            train_total, train_accuracy, _ = compute_accuracy(model,
+                                                              train_dl
+                                                              )
+            print('Test',
+                  'accuracy of the network on the', train_total,
+                  'diagrams: %8.2f %%' % train_accuracy
+                  )
+            train_accuracies.append(train_accuracy)
+            if val_dl is not None:
+                val_total, val_accuracy, val_loss = compute_accuracy(model,
+                                                                     val_dl)
+                print('Val',
+                      'accuracy of the network on the', val_total,
+                      'diagrams: %8.2f %%' % val_accuracy
+                      )
+                val_losses.append(val_loss)
+                val_accuracies.append(val_accuracy)
+    return losses, val_losses, train_accuracies, val_accuracies
+
+
+def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
+              lr: float = 1e-3, num_epochs=10,
+              verbose=False):
+    base_optimizer = torch.optim.SGD
+    optimizer = SAM(model.parameters(), base_optimizer, lr=0.01, momentum=0.9)
+    gc.train()
+    losses: List[float] = []
+    val_losses: List[float] = []
+    train_accuracies: List[float] = []
+    val_accuracies: List[float] = []
+    for epoch in range(num_epochs):
+        loss_per_epoch = 0
+        for batch_idx, (x_pd, x_feature, label) in enumerate(train_dl):
+
+            # first forward-backward pass
+            loss = criterion(model(x_pd, x_feature), label.long())
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.first_step(zero_grad=True)
+            # second forward-backward pass
+            criterion(model(x_pd, x_feature), label.long()).backward()
+            optimizer.second_step(zero_grad=True)
+
+            loss_per_epoch += loss.item()
+        losses.append(loss_per_epoch)
+        if verbose:
+            # print train loss, test and model accuracy
+            print("epoch:", epoch, "loss:", loss_per_epoch)
+            train_total, train_accuracy, _ = compute_accuracy(model,
+                                                              train_dl
+                                                              )
+            print('Test',
+                  'accuracy of the network on the', train_total,
+                  'diagrams: %8.2f %%' % train_accuracy
+                  )
+            train_accuracies.append(train_accuracy)
+            if val_dl is not None:
+                val_total, val_accuracy, val_loss = compute_accuracy(model,
+                                                                     val_dl)
+                print('Val',
+                      'accuracy of the network on the', val_total,
+                      'diagrams: %8.2f %%' % val_accuracy
+                      )
+                val_losses.append(val_loss)
+                val_accuracies.append(val_accuracy)
+    return losses, val_losses, train_accuracies, val_accuracies

@@ -1,9 +1,7 @@
 # from https://github.com/juho-lee/set_transformer/blob/master/max_regression_demo.ipynb  # noqa: E501
 
-from typing import List, Tuple, Optional
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from gdeep.topology_layers.modules import ISAB, PMA  # type: ignore
 
 
@@ -104,95 +102,96 @@ class SetTransformer(nn.Module):
         return total_params
 
 
-def train(
-        model,
-        num_epochs: int = 10,
-        lr: float = 1e-3,
-        train_dataloader: Optional[DataLoader] = None,
-        validation_dataloader: DataLoader = None,
-        use_cuda: bool = False,
-        verbose: bool = False,
-        ) -> List[float]:
-    """Custom training loop for Set Transformer on the dataset ``
+# def train(
+#         model,
+#         num_epochs: int = 10,
+#         lr: float = 1e-3,
+#         train_dataloader: Optional[DataLoader] = None,
+#         validation_dataloader: DataLoader = None,
+#         use_cuda: bool = False,
+#         verbose: bool = False,
+#         ) -> List[float]:
+#     """Custom training loop for Set Transformer on the dataset ``
 
-    Args:
-        model (nn.Module): Set Transformer model to be trained
-        num_epochs (int, optional): Number of training epochs. Defaults to 10.
-        lr (float, optional): Learning rate for training. Defaults to 1e-3.
-        verbose (bool, optional): Print training loss, training accuracy and
-            validation if set to True. Defaults to False.
+#     Args:
+#         model (nn.Module): Set Transformer model to be trained
+#         num_epochs (int, optional): Number of training epochs. 
+#           Defaults to 10.
+#         lr (float, optional): Learning rate for training. Defaults to 1e-3.
+#         verbose (bool, optional): Print training loss, training accuracy and
+#             validation if set to True. Defaults to False.
 
-    Returns:
-        List[float]: List of training losses
-    """
-    try:
-        assert train_dataloader is not None
-    except AssertionError:
-        print("train_dataloader is not set")
-    if use_cuda:
-        model = nn.DataParallel(model)
-        model = model.cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.CrossEntropyLoss()
-    losses: List[float] = []
-    # training loop
-    for epoch in range(num_epochs):
-        model.train()
-        loss_per_epoch = 0
-        for x_batch, y_batch in train_dataloader:  # type: ignore
-            # transfer to GPU
-            if use_cuda:
-                x_batch, y_batch = x_batch.cuda(), y_batch.cuda()
-            loss = criterion(model(x_batch), y_batch.long())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            loss_per_epoch += loss.item()
-        losses.append(loss_per_epoch)
-        if verbose:
-            # print train loss, test and model accuracy
-            print("epoch:", epoch, "loss:", loss_per_epoch)
-            test_total, test_accuracy = compute_accuracy(model,
-                                                         train_dataloader)
-            print('Test',
-                  'accuracy of the network on the', test_total,
-                  'diagrams: %8.2f %%' % test_accuracy
-                  )
-            if validation_dataloader is not None:
-                test_total, test_accuracy = compute_accuracy(model,
-                                                             train_dataloader)
-                print('Test',
-                      'accuracy of the network on the', test_total,
-                      'diagrams: %8.2f %%' % test_accuracy
-                      )
-    return losses
+#     Returns:
+#         List[float]: List of training losses
+#     """
+#     try:
+#         assert train_dataloader is not None
+#     except AssertionError:
+#         print("train_dataloader is not set")
+#     if use_cuda:
+#         model = nn.DataParallel(model)
+#         model = model.cuda()
+#     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+#     criterion = nn.CrossEntropyLoss()
+#     losses: List[float] = []
+#     # training loop
+#     for epoch in range(num_epochs):
+#         model.train()
+#         loss_per_epoch = 0
+#         for x_batch, y_batch in train_dataloader:  # type: ignore
+#             # transfer to GPU
+#             if use_cuda:
+#                 x_batch, y_batch = x_batch.cuda(), y_batch.cuda()
+#             loss = criterion(model(x_batch), y_batch.long())
+#             optimizer.zero_grad()
+#             loss.backward()
+#             optimizer.step()
+#             loss_per_epoch += loss.item()
+#         losses.append(loss_per_epoch)
+#         if verbose:
+#             # print train loss, test and model accuracy
+#             print("epoch:", epoch, "loss:", loss_per_epoch)
+#             test_total, test_accuracy = compute_accuracy(model,
+#                                                          train_dataloader)
+#             print('Test',
+#                   'accuracy of the network on the', test_total,
+#                   'diagrams: %8.2f %%' % test_accuracy
+#                   )
+#             if validation_dataloader is not None:
+#                 test_total, test_accuracy = compute_accuracy(model,
+#                                                              train_dataloader)
+#                 print('Test',
+#                       'accuracy of the network on the', test_total,
+#                       'diagrams: %8.2f %%' % test_accuracy
+#                       )
+#     return losses
 
 
-def compute_accuracy(
-                    model: nn.Module,
-                    dataloader,
-                    use_cuda: bool = False
-                  ) -> Tuple[int, float]:
-    """Print the accuracy of the network on the dataset
-    provided by the data loader.
+# def compute_accuracy(
+#                     model: nn.Module,
+#                     dataloader,
+#                     use_cuda: bool = False
+#                   ) -> Tuple[int, float]:
+#     """Print the accuracy of the network on the dataset
+#     provided by the data loader.
 
-    Args:
-        model (nn.Module): Model to be evaluated.
-        dataloader ([type]): dataloader of the dataset the model is being
-            evaluated.
-        use_cuda (bool, optional): If the model is on GPU. Defaults to False.
-    """
-    correct = 0
-    total = 0
+#     Args:
+#         model (nn.Module): Model to be evaluated.
+#         dataloader ([type]): dataloader of the dataset the model is being
+#             evaluated.
+#         use_cuda (bool, optional): If the model is on GPU. Defaults to False.
+#     """
+#     model.eval()
+#     correct = 0
+#     total = 0
 
-    with torch.no_grad():
-        for x_batch, y_batch in dataloader:
-            # transform the data to GPU
-            if use_cuda:
-                x_batch, y_batch = x_batch.cuda(), y_batch.cuda()
-            outputs = model(x_batch).squeeze(1)
-            _, predictions = torch.max(outputs, 1)
-            total += y_batch.size(0)
-            correct += (predictions == y_batch).sum().item()
+#     for x_batch, y_batch in dataloader:
+#         # transform the data to GPU
+#         if use_cuda:
+#             x_batch, y_batch = x_batch.cuda(), y_batch.cuda()
+#         outputs = model(x_batch).squeeze(1)
+#         _, predictions = torch.max(outputs, 1)
+#         total += y_batch.size(0)
+#         correct += (predictions == y_batch).sum().item()
 
-    return (total, 100 * correct/total)
+#     return (total, 100 * correct/total)
