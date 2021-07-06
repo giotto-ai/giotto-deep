@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Callable, Union, Any
 import torch
 import torch.nn as nn
 from .sam import SAM
@@ -40,11 +40,17 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
           lr: float = 1e-3, num_epochs=10,
           verbose=False,
           use_cuda: bool = False,
-          use_regularization=False):
+          use_regularization=False,
+          optimizer: Union[Callable[[torch.Tensor], torch.optim.Optimizer],
+                           Any] = None):
     if use_cuda:
         model = nn.DataParallel(model)
         model = model.cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    if optimizer is None:
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    else:
+        optimizer = optimizer(model.parameters())
+
     losses: List[float] = []
     val_losses: List[float] = []
     train_accuracies: List[float] = []
@@ -89,7 +95,9 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
 
 def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
               lr: float = 1e-3, num_epochs=10,
-              verbose=False, use_cuda=False, use_regularization=False):
+              verbose=False, use_cuda=False, use_regularization=False,
+              optimizer: Union[Callable[[torch.Tensor], torch.optim.Optimizer],
+                           Any] = None):
     if use_regularization:
         raise NotImplementedError("L2-regularization is not implemented" +
                                   "for SAM training.")

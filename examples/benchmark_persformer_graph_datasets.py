@@ -37,15 +37,15 @@ from gdeep.topology_layers import sam_train
 # %%
 # Use on of the following datasets to train the model
 # MUTAG, PROTEINS, COX2
-dataset_name = "NCI1"
+dataset_name = "COX2"
 
 pers_only = True
 use_sam = False
-n_epochs = 100
-lr = 1e-4
+n_epochs = 30
+lr = 1e-3
 batch_size = 16
-ln = False  # LayerNorm in Set Transformer
-use_regularization = True  # Use L2-regularization
+ln = True  # LayerNorm in Set Transformer
+use_regularization = False  # Use L2-regularization
 balance_dataset = True  # balance dataset to 50 by removing datapoint from
 use_induced_attention = False  # use trainable query vector instead of
 # self-attention; use induced attention for large sets because of the
@@ -53,6 +53,7 @@ use_induced_attention = False  # use trainable query vector instead of
 # the class with more points
 # only use the persistence diagrams as features not the spectral features
 train_size = 0.8  # ratio train size to total size of dataset
+optimizer = lambda params: torch.optim.Adam(params, lr=lr)  # noqa: E731
 
 # CUDA for PyTorch
 use_cuda = torch.cuda.is_available()
@@ -154,17 +155,21 @@ graph_dl_val = DataLoader(
 
 # %%
 # Compute balance of train and validation datasets
-y_b = next(iter(graph_dl_val))[-1]
-print('val_size:', y_b.shape[0])
-print('val_balance:', y_b.sum() / y_b.shape[0])
+val_balance = 0
+val_total = 0
+for _, _, y_batch in graph_dl_val:
+    val_balance += y_batch.sum()
+    val_total += y_batch.shape[0]
+print('train_size:', val_total)
+print('train_balance', val_balance / val_total)
 
 train_balance = 0
 train_total = 0
 for _, _, y_batch in graph_dl_train:
     train_balance += y_batch.sum()
     train_total += y_batch.shape[0]
-print('train_size:', train_total)
-print('train_balance', train_balance / train_total)
+print('val_size:', train_total)
+print('val_balance', train_balance / train_total)
 
 # %%
 # Define Model architecture for the graph classifier
@@ -214,6 +219,7 @@ class GraphClassifier(nn.Module):
             x_feature (Tensor): additional graph features
         """
         pd_vector = self.st(x_pd)
+        #print(pd_vector.shape, x_feature.shape)
         features_stacked = torch.hstack((pd_vector, x_feature))
         x = self.ln(features_stacked)
         x = nn.ReLU()(self.ff_1(x))
@@ -247,16 +253,17 @@ else:
                             verbose=True,
                             num_epochs=n_epochs,
                             use_cuda=use_cuda,
-                            use_regularization=use_regularization
+                            use_regularization=use_regularization,
+                            optimizer=optimizer
                             )
 
 
 # %%
 # plot losses
 plt.plot(losses, label='train_loss')
-plt.plot([4* x for x in val_losses], label='4 * val_loss')
+plt.plot([4 * x for x in val_losses], label='4 * val_loss')
 plt.legend()
-plt.title("Losses", dataset_name, "extended persistence features only")
+plt.title("Losses " + dataset_name + " extended persistence features only")
 plt.show()
 
 # %%
@@ -266,12 +273,13 @@ plt.plot(val_accuracies, label='val_acc')
 plt.plot([benchmark_accuracy]*len(train_accuracies),
          label='PersLay PD only')
 plt.legend()
-plt.title("Accuracies", dataset_name, "extended persistence features only")
+plt.title("Accuracies " + dataset_name + " extended persistence features only")
 plt.show()
 
 
 # %%
-
+lr = 1e-3
+n_epochs = 200
 # %%
 
 # %%
