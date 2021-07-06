@@ -16,7 +16,8 @@ import torch
 import torch.nn as nn
 
 from transformers import BertConfig, BertLayer, BertModel  # type: ignore
-from transformers.modeling_bert import BertSelfAttention  # type: ignore
+# flake8: noqa
+from transformers.models.bert.modeling_bert import BertSelfAttention  # type: ignore
 
 from .simplified_bert_model import SimplifiedMultiHeadSelfAttention, \
     SimplifiedBertBlock, SimplifiedBertEncoder, SimplifiedBertEmbeddings, \

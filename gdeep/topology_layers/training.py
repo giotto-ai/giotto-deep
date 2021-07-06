@@ -1,8 +1,8 @@
 from typing import Tuple, List
 import torch
-from torch import Tensor
 import torch.nn as nn
 from .sam import SAM
+
 
 def compute_accuracy(
                     model: nn.Module,
@@ -39,7 +39,8 @@ def compute_accuracy(
 def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
           lr: float = 1e-3, num_epochs=10,
           verbose=False,
-          use_cuda: bool = False):
+          use_cuda: bool = False,
+          use_regularization=False):
     if use_cuda:
         model = nn.DataParallel(model)
         model = model.cuda()
@@ -56,12 +57,14 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             if use_cuda:
                 x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
                     label.cuda()
-            l2_lambda = 0.01
-            l2_reg = torch.tensor(0.)
-            for param in model.parameters():
-                l2_reg += torch.norm(param)
+            
             loss = criterion(model(x_pd, x_feature), label.long())
-            loss += l2_lambda * l2_reg
+            if use_regularization:
+                l2_lambda = 0.01
+                l2_reg = torch.tensor(0.)
+                for param in model.parameters():
+                    l2_reg += torch.norm(param)
+                loss += l2_lambda * l2_reg
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -73,18 +76,12 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             train_total, train_accuracy, _ = compute_accuracy(model,
                                                               train_dl
                                                               )
-            print('Test',
-                  'accuracy of the network on the', train_total,
-                  'diagrams: %8.2f %%' % train_accuracy
-                  )
+            print('Train', train_total, train_accuracy)
             train_accuracies.append(train_accuracy)
             if val_dl is not None:
                 val_total, val_accuracy, val_loss = compute_accuracy(model,
                                                                      val_dl)
-                print('Val',
-                      'accuracy of the network on the', val_total,
-                      'diagrams: %8.2f %%' % val_accuracy
-                      )
+                print('Val', val_total, val_accuracy)
                 val_losses.append(val_loss)
                 val_accuracies.append(val_accuracy)
     return losses, val_losses, train_accuracies, val_accuracies
@@ -92,10 +89,13 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
 
 def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
               lr: float = 1e-3, num_epochs=10,
-              verbose=False):
+              verbose=False, use_cuda=False, use_regularization=False):
+    if use_regularization:
+        raise NotImplementedError("L2-regularization is not implemented" +
+                                  "for SAM training.")
     base_optimizer = torch.optim.SGD
     optimizer = SAM(model.parameters(), base_optimizer, lr=0.01, momentum=0.9)
-    gc.train()
+    model.train()
     losses: List[float] = []
     val_losses: List[float] = []
     train_accuracies: List[float] = []
@@ -121,18 +121,19 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             train_total, train_accuracy, _ = compute_accuracy(model,
                                                               train_dl
                                                               )
-            print('Test',
-                  'accuracy of the network on the', train_total,
-                  'diagrams: %8.2f %%' % train_accuracy
-                  )
+            print('Train', train_total, train_accuracy)
             train_accuracies.append(train_accuracy)
             if val_dl is not None:
                 val_total, val_accuracy, val_loss = compute_accuracy(model,
                                                                      val_dl)
-                print('Val',
-                      'accuracy of the network on the', val_total,
-                      'diagrams: %8.2f %%' % val_accuracy
-                      )
+                print('Val', val_total, val_accuracy)
                 val_losses.append(val_loss)
                 val_accuracies.append(val_accuracy)
     return losses, val_losses, train_accuracies, val_accuracies
+
+
+def print_accuracy(type_: str, total: int, accuracy: float) -> None:
+    print(type_,
+          'accuracy of the network on the', total,
+          'diagrams: %8.2f %%' % accuracy
+          )

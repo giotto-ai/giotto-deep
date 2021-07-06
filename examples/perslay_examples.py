@@ -22,7 +22,7 @@ except AssertionError:
 # If `use_precomputed_dgms` is `False` the ORBIT5K dataset will
 # be recomputed, otherwise the ORBIT5K dataset in the folder
 # `data/ORBIT5K` will be used
-use_precomputed_dgms = True
+use_precomputed_dgms = False
 
 dgms_filename = os.path.join('data', 'ORBIT5K',
                              'alpha_persistence_diagrams.npy')
@@ -77,7 +77,7 @@ if not use_precomputed_dgms:
 
         # generate dataset
         for cidx, p in enumerate(config['parameters']):  # type: ignore
-            x[cidx, :, 0, :] = np.random.rand(num_orbits, 2)
+            x[cidx, :, 0, :] = np.random.rand(num_orbits, 2)  # type: ignore
 
             for i in range(1, config['num_pts_per_orbit']):  # type: ignore
                 x_cur = x[cidx, :, i - 1, 0]
@@ -146,7 +146,7 @@ for dataset_type in ['train', 'validation']:
     x = np.concatenate(
         (
             x[:, :, :2],
-            (np.eye(config['num_homology_dimensions'])
+            (np.eye(config['num_homology_dimensions'])  # type: ignore
              [x[:, :, -1].astype(np.int32)]),
         ),
         axis=-1)

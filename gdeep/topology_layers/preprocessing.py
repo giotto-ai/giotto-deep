@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict
 
 from sklearn.preprocessing import LabelEncoder  # type: ignore
 from os.path import join, isfile
@@ -7,11 +7,11 @@ import h5py  # type: ignore
 
 import torch
 from torch import Tensor
-import torch.nn as nn
 import torch.nn.functional as F
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+
 
 def persistence_diagrams_to_sequence(
         tensor_dict: Dict[str, Dict[str, Tensor]]
@@ -54,6 +54,7 @@ def persistence_diagrams_to_sequence(
         sequence_dict[graph_idx] = torch.cat(tensor_list,
                                              axis=0)  # type: ignore
     return sequence_dict
+
 
 def load_data(
         dataset_: str = "MUTAG",
@@ -128,8 +129,8 @@ def load_data(
     return (persistence_diagrams_to_sequence(tensor_dict),
             torch.tensor(x_features, dtype=torch.float),
             torch.tensor(y))
-    
-    
+
+
 def diagram_to_tensor(
     tensor_dict_per_type: Dict[str, torch.Tensor]
         ) -> torch.Tensor:

@@ -2,7 +2,7 @@
 
 import torch
 import torch.nn as nn
-from gdeep.topology_layers.modules import ISAB, PMA  # type: ignore
+from gdeep.topology_layers.modules import ISAB, PMA, SAB  # type: ignore
 
 
 class SmallDeepSet(nn.Module):
@@ -102,6 +102,70 @@ class SetTransformer(nn.Module):
         return total_params
 
 
+class SelfAttentionSetTransformer(nn.Module):
+    """ Vanilla SetTransformer from
+    https://github.com/juho-lee/set_transformer/blob/master/main_pointcloud.py
+    """
+    def __init__(
+        self,
+        dim_input=3,
+        num_outputs=1,
+        dim_output=40,  # number of classes
+        dim_hidden=128,
+        num_heads=4,
+        ln=False,  # use layer norm
+    ):
+        """Init of SetTransformer.
+
+        Args:
+            dim_input (int, optional): Dimension of input data for each
+            element in the set. Defaults to 3.
+            num_outputs (int, optional): Number of outputs. Defaults to 1.
+            dim_output (int, optional): Number of classes. Defaults to 40.
+            dim_hidden (int, optional): Number of induced points, see  Set
+                Transformer paper. Defaults to 128.
+            num_heads (int, optional): Number of attention heads. Defaults
+                to 4.
+            ln (bool, optional): If `True` layer norm will not be applied.
+                Defaults to False.
+        """
+        super(SelfAttentionSetTransformer, self).__init__()
+        self.enc = nn.Sequential(
+            SAB(dim_input, dim_hidden, num_heads, ln=ln),
+            SAB(dim_hidden, dim_hidden, num_heads, ln=ln),
+        )
+        self.dec = nn.Sequential(
+            nn.Dropout(),
+            PMA(dim_hidden, num_heads, num_outputs, ln=ln),
+            nn.Dropout(),
+            nn.Linear(dim_hidden, dim_output),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass
+
+        Args:
+            x (torch.Tensor): Batch tensor of shape
+                [batch, sequence_length, dim_in]
+
+        Returns:
+            torch.Tensor: Tensor with predictions of the `dim_output` classes.
+        """
+        x = self.enc(x)
+        x = self.dec(x)
+        return x.squeeze()
+
+    def num_params(self) -> int:
+        """Returns number of trainable parameters.
+
+        Returns:
+            int: Number of trainable parameters.
+        """
+        total_params = 0
+        for parameter in self.parameters():
+            total_params += parameter.nelement()
+        return total_params
+
 # def train(
 #         model,
 #         num_epochs: int = 10,
@@ -115,7 +179,7 @@ class SetTransformer(nn.Module):
 
 #     Args:
 #         model (nn.Module): Set Transformer model to be trained
-#         num_epochs (int, optional): Number of training epochs. 
+#         num_epochs (int, optional): Number of training epochs.
 #           Defaults to 10.
 #         lr (float, optional): Learning rate for training. Defaults to 1e-3.
 #         verbose (bool, optional): Print training loss, training accuracy and
@@ -193,5 +257,4 @@ class SetTransformer(nn.Module):
 #         _, predictions = torch.max(outputs, 1)
 #         total += y_batch.size(0)
 #         correct += (predictions == y_batch).sum().item()
-
 #     return (total, 100 * correct/total)
