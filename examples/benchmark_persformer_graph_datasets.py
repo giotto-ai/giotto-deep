@@ -22,6 +22,7 @@
 
 # %%
 # Import libraries:
+import time
 import torch
 from torch import Tensor
 import torch.nn as nn
@@ -41,10 +42,10 @@ dataset_name = "COX2"
 
 pers_only = True
 use_sam = False
-n_epochs = 30
+n_epochs = 100
 lr = 1e-3
 batch_size = 16
-ln = True  # LayerNorm in Set Transformer
+ln = False  # LayerNorm in Set Transformer
 use_regularization = False  # Use L2-regularization
 balance_dataset = True  # balance dataset to 50 by removing datapoint from
 use_induced_attention = False  # use trainable query vector instead of
@@ -185,14 +186,17 @@ class GraphClassifier(nn.Module):
                  num_outputs=1,
                  dim_output=50,
                  num_classes=2,
-                 ln=ln):
+                 ln=ln,
+                 num_heads=4
+                 ):
         super(GraphClassifier, self).__init__()
         if use_induced_attention:
             self.st = SetTransformer(
                 dim_input=dim_input,
                 num_outputs=num_outputs,
                 dim_output=dim_output,
-                ln=ln
+                ln=ln,
+                num_heads=num_heads
                 )
         else:
             self.st = SelfAttentionSetTransformer(
@@ -227,7 +231,6 @@ class GraphClassifier(nn.Module):
         x = self.ff_3(x)
         return x
 
-
 # define graph classifier
 gc = GraphClassifier(
         num_features=graph_ds_train[0][1].shape[0],
@@ -242,6 +245,7 @@ else:
     train_fct = train
 
 # train the model and return losses and accuracies information
+tic = time.perf_counter()
 (losses,
  val_losses,
  train_accuracies,
@@ -256,7 +260,8 @@ else:
                             use_regularization=use_regularization,
                             optimizer=optimizer
                             )
-
+toc = time.perf_counter()
+print(f"Trained model for {n_epochs} in {toc - tic:0.4f} seconds")
 
 # %%
 # plot losses

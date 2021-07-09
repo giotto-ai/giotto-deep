@@ -24,7 +24,6 @@ def compute_accuracy(
 
     for x_pd, x_feature, label in dl:
         if use_cuda:
-            print("cuda")
             x_pd, x_feature, label = x_pd.cuda(), x_feature.cuda(),\
                 label.cuda()
         outputs = model(x_pd, x_feature)
@@ -68,6 +67,8 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             if use_regularization:
                 l2_lambda = 0.01
                 l2_reg = torch.tensor(0.)
+                if use_cuda:
+                    l2_reg.cuda()
                 for param in model.parameters():
                     l2_reg += torch.norm(param)
                 loss += l2_lambda * l2_reg
@@ -75,18 +76,19 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             loss.backward()
             optimizer.step()
             loss_per_epoch += loss.item()
-        losses.append(loss_per_epoch)
         if verbose:
             # print train loss, test and model accuracy
-            print("epoch:", epoch, "loss:", loss_per_epoch)
-            train_total, train_accuracy, _ = compute_accuracy(model,
-                                                              train_dl
-                                                              )
+            train_total, train_accuracy, train_loss = compute_accuracy(model,
+                                                                       train_dl,
+                                                                       use_cuda)
+            losses.append(train_loss)
+            print("epoch:", epoch, "loss:", train_loss)
             print('Train', train_total, train_accuracy)
             train_accuracies.append(train_accuracy)
             if val_dl is not None:
                 val_total, val_accuracy, val_loss = compute_accuracy(model,
-                                                                     val_dl)
+                                                                     val_dl,
+                                                                     use_cuda)
                 print('Val', val_total, val_accuracy)
                 val_losses.append(val_loss)
                 val_accuracies.append(val_accuracy)
@@ -127,13 +129,15 @@ def sam_train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
             # print train loss, test and model accuracy
             print("epoch:", epoch, "loss:", loss_per_epoch)
             train_total, train_accuracy, _ = compute_accuracy(model,
-                                                              train_dl
+                                                              train_dl,
+                                                              use_cuda
                                                               )
             print('Train', train_total, train_accuracy)
             train_accuracies.append(train_accuracy)
             if val_dl is not None:
                 val_total, val_accuracy, val_loss = compute_accuracy(model,
-                                                                     val_dl)
+                                                                     val_dl,
+                                                                     use_cuda)
                 print('Val', val_total, val_accuracy)
                 val_losses.append(val_loss)
                 val_accuracies.append(val_accuracy)
