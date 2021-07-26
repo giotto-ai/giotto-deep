@@ -42,6 +42,9 @@ class Pipeline:
         self.writer = writer
     
     def reset_epoch(self):
+        """method to reset global training and validation
+        epoch count
+        """
         self.train_epoch = 0
         self.val_epoch = 0
 
@@ -49,9 +52,6 @@ class Pipeline:
         """private method to run a single training
         loop
         """
-        # size = len(self.dataloaders[0].dataset)
-        # size = len(dl_tr.dataset)
-
         steps = len(dl_tr)
 
         tik = time.time()
@@ -79,7 +79,7 @@ class Pipeline:
         return loss
 
     def _val_loop(self, dl_val, writer_tag = ""):
-        """private method to run a single test
+        """private method to run a single validation
         loop
         """
         # size = len(self.dataloaders[1].dataset)
@@ -193,30 +193,10 @@ class Pipeline:
         
         # print(self.dataloaders[0].dataset)
         for fold,(tr_idx, val_idx) in enumerate(fold.split(data_idx)):
-
-            # print(tr_idx)
-            # print(val_idx)
-
-            # ds_tr = torch.utils.data.Subset(self.dataloaders[0], tr_idx)
-            # dl_tr = torch.utils.data.DataLoader(ds_tr, shuffle=False, batch_size=1024)
             if len(self.dataloaders) == 1 or len(self.dataloaders) == 2:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False, batch_size=batch_size, sampler = SubsetRandomSampler(tr_idx))
-            # print(dl_tr)
-            # print(self.dataloaders[0])
-
-            # for i in self.dataloaders[0]:
-            #     print(i)
-            # for batch, (X, y) in enumerate(dl_tr):
-            #     print(batch)
-
-            # ds_val = torch.utils.data.Subset(self.dataloaders[0].dataset, val_idx)
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False, batch_size=batch_size, sampler = SubsetRandomSampler(val_idx))
-            # print(dl_val)
-            # print(self.dataloaders[0])
-
-            # for i in dl_val:
-            #     print(i)
-
+ 
             if cross_validation and (len(self.dataloaders) == 1 or len(self.dataloaders) == 2):
                 print("\n\n********** Fold ", fold+1, "**************")
             

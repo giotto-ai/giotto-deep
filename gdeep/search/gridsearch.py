@@ -56,6 +56,8 @@ class Gridsearch(Pipeline, Benchmark):
     #     self.pipe = False
     
     def objective(self, trial, optimizer, n_epochs = 10, batch_size = 512, writer_string = "", **kwargs):
+        """default callback function for optuna's study
+        """
         if isinstance(optimizer, list):
             optimizer = trial.suggest_categorical("optimizer", optimizer)
         # else:
@@ -74,12 +76,10 @@ class Gridsearch(Pipeline, Benchmark):
         k_folds = 5
         data_idx = list (range(len(self.dataloaders[0])*batch_size))
 
-        # print(folds)
         fold = KFold(k_folds, shuffle = False)
         
         Pipeline.reset_epoch(self)
 
-        # print(self.dataloaders[0].dataset)
         for fold,(tr_idx, val_idx) in enumerate(fold.split(data_idx)):
             if len(self.dataloaders) == 1 or len(self.dataloaders) == 2:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False, batch_size=batch_size, sampler = SubsetRandomSampler(tr_idx))
@@ -88,7 +88,7 @@ class Gridsearch(Pipeline, Benchmark):
         
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
-            # print(trial.number, trial.params)
+
             loss = Pipeline._train_loop(self, dl_tr, writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
             self.val_epoch = t
             accuracy = Pipeline._val_loop(self, dl_val, writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
@@ -111,6 +111,8 @@ class Gridsearch(Pipeline, Benchmark):
            return accuracy
     
     def start(self, optimizer, n_epochs=10, batch_size = 512, **kwargs):
+        """method to be called when starting the gridsearch
+        """
         if self.pipe:
             if self.search_metric == "loss":
                 study = optuna.create_study(direction="minimize")

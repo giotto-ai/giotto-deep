@@ -21,6 +21,8 @@ class Benchmark:
         self.writer = writer
 
     def start(self, optimizer, epochs, batch_size, **kwargs):
+        """method to be called when starting the benchmarking
+        """
         if not isinstance(self.models_dicts, list):
             print ("Error: Provided models must be a Python list of dictionaries")
 
