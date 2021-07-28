@@ -12,6 +12,10 @@ from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import matplotlib.pyplot as plt
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
 
 class Visualiser:
     """This class is the bridge to send to the tensorboard
@@ -36,7 +40,7 @@ class Visualiser:
         dataiter = iter(self.pipe.dataloaders[0])
         images, labels = dataiter.next()
         # print(str(labels.item()))
-        self.pipe.writer.add_graph(self.pipe.model, images)
+        self.pipe.writer.add_graph(self.pipe.model, images.to(DEVICE))
         features_list = []
         labels_list = []
         index = 0

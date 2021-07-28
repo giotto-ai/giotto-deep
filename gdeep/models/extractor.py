@@ -4,6 +4,10 @@ from ..analysis.decision_boundary import GradientFlowDecisionBoundaryCalculator
 from ..analysis.decision_boundary import UniformlySampledPoint
 from . import SaveLayerOutput
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
 
 class ModelExtractor:
     """This class wraps nn.Modules to extract
@@ -15,7 +19,8 @@ class ModelExtractor:
     """
 
     def __init__(self, model, loss_fn):
-        self.model = model
+        # self.model = model
+        self.model = model.to(DEVICE)
         self.loss_fn = loss_fn
 
     def get_decision_boundary(self, input_example, n_epochs=100,
@@ -41,6 +46,8 @@ class ModelExtractor:
         # reshape points as example
         sample_points_tensor = \
             sample_points_tensor.reshape(-1, *input_example.shape)
+        
+        sample_points_tensor = sample_points_tensor.to(DEVICE)
         # print(sample_points_tensor.shape)
         # Using new gradient flow implementation
         gf = GradientFlowDecisionBoundaryCalculator(model=self.model,
@@ -111,7 +118,10 @@ class ModelExtractor:
             list: list of tensors, corresponding
                 to the gradient of the weights.
         """
+        
         x.requires_grad = True
+        x = x.to(DEVICE)
+        kwargs["target"] = kwargs["target"].to(DEVICE)
         loss = self.loss_fn(self.model(x),
                             **kwargs)
 

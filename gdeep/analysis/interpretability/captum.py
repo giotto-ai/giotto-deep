@@ -4,6 +4,10 @@ from captum.attr import TokenReferenceBase, \
     LayerIntegratedGradients, Occlusion
 import torch
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
 
 class Interpreter:
     """Class to visualise the activation maps,
@@ -19,7 +23,8 @@ class Interpreter:
 
     def __init__(self, model,
                  method="IntegratedGradients"):
-        self.model = model
+        # self.model = model
+        self.model = model.to(DEVICE)
         self.method = method
         self.stored_visualisations = []
         self.image = None
@@ -28,6 +33,7 @@ class Interpreter:
         self.attrib = None
 
     def interpret_image(self, X, y, **kwargs):
+        X = X.to(DEVICE)
         occlusion = eval(self.method+"(self.model)")
         att = occlusion.attribute(X, target=y, **kwargs)
         self.image = X
