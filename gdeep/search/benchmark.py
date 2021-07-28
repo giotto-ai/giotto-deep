@@ -60,3 +60,4 @@ class Benchmark:
     #         print("Training on {}".format(model["name"]) )
     #         pipe = Pipeline(model["model"], dataloaders,loss_fn, self.writer)
     #         pipe.train(optimizer, epochs, lr=learning_rate)
+    

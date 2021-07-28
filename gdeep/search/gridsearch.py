@@ -12,6 +12,7 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
+
 class Gridsearch(Pipeline, Benchmark):
     """This is the generic class that allows
     the user to perform gridsearch over several
@@ -69,26 +70,26 @@ class Gridsearch(Pipeline, Benchmark):
         k_folds = 5
         data_idx = list(range(len(self.dataloaders[0])*batch_size))
 
-        fold=KFold(k_folds, shuffle = False)
+        fold = KFold(k_folds, shuffle=False)
 
         Pipeline.reset_epoch(self)
 
         for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
             if len(self.dataloaders) == 1 or len(self.dataloaders) == 2:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False,
-                 batch_size=batch_size, sampler=SubsetRandomSampler(tr_idx))
+                                                    batch_size=batch_size, sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False,
-                 batch_size=batch_size, sampler=SubsetRandomSampler(val_idx))
+                                                     batch_size=batch_size, sampler=SubsetRandomSampler(val_idx))
             break
 
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
 
             loss = Pipeline._train_loop(self, dl_tr,
-             writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
+                                        writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
             self.val_epoch = t
             accuracy = Pipeline._val_loop(self, dl_val,
-             writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
+                                          writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
 
             if self.search_metric == "loss":
                 trial.report(loss, t)
@@ -107,7 +108,7 @@ class Gridsearch(Pipeline, Benchmark):
         else:
             return accuracy
 
-    def start(self, optimizer, n_epochs=10, batch_size = 512, **kwargs):
+    def start(self, optimizer, n_epochs=10, batch_size=512, **kwargs):
         """method to be called when starting the gridsearch
         """
         if self.pipe:
@@ -116,7 +117,7 @@ class Gridsearch(Pipeline, Benchmark):
             else:
                 study = optuna.create_study(direction="maximize")
             study.optimize(lambda trial: self.objective(trial, optimizer, n_epochs,
-             batch_size, **kwargs), n_trials=self.n_trials, timeout=600)
+                                                        batch_size, **kwargs), n_trials=self.n_trials, timeout=600)
 
             pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
             complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -149,7 +150,8 @@ class Gridsearch(Pipeline, Benchmark):
 
                     Pipeline.__init__(self, model["model"], dataloaders["dataloaders"], self.bench.loss_fn, self.bench.writer)
 
-                    study.optimize(lambda trial: self.objective(trial, optimizer, n_epochs, batch_size, writer_string, **kwargs), n_trials=self.n_trials, timeout=600)
+                    study.optimize(lambda trial: self.objective(trial, optimizer, n_epochs, batch_size, writer_string,
+                                                                **kwargs), n_trials=self.n_trials, timeout=600)
 
                     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
                     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])

@@ -9,6 +9,7 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
+
 class Pipeline:
     """This is the generic class that allows
     the user to benchhmark models over architectures
@@ -23,7 +24,7 @@ class Pipeline:
 
     """
 
-    # def __init__(self, model, dataloaders, loss_fn, writer, 
+    # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model, dataloaders, loss_fn, writer):
         self.model = model.to(DEVICE)
@@ -64,7 +65,7 @@ class Pipeline:
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             self.writer.add_scalar(writer_tag + "/Loss/train", loss, self.train_epoch)
-            self.train_epoch=self.train_epoch + 1
+            self.train_epoch = self.train_epoch + 1
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
@@ -193,15 +194,15 @@ class Pipeline:
         data_idx = list(range(len(self.dataloaders[0])*batch_size))
 
         # print(folds)
-        fold = KFold(k_folds, shuffle = False)
+        fold = KFold(k_folds, shuffle=False)
 
         # print(self.dataloaders[0].dataset)
         for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
             if len(self.dataloaders) == 1 or len(self.dataloaders) == 2:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                 shuffle=False, batch_size=batch_size, sampler = SubsetRandomSampler(tr_idx))
+                                                    shuffle=False, batch_size=batch_size, sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                 shuffle=False, batch_size=batch_size, sampler = SubsetRandomSampler(val_idx))
+                                                     shuffle=False, batch_size=batch_size, sampler=SubsetRandomSampler(val_idx))
 
             if cross_validation and (len(self.dataloaders) == 1 or len(self.dataloaders) == 2):
                 print("\n\n********** Fold ", fold+1, "**************")
