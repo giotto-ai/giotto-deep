@@ -17,3 +17,4 @@ psutil
 kaleido
 torchtext
 html2image
+optuna
