@@ -88,8 +88,8 @@ class Gridsearch(Pipeline, Benchmark):
             loss = Pipeline._train_loop(self, dl_tr,
                                         writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
             self.val_epoch = t
-            accuracy = Pipeline._val_loop(self, dl_val,
-                                          writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
+            accuracy = Pipeline._val_loop(self, dl_val, writer_string +
+                                          ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
 
             if self.search_metric == "loss":
                 trial.report(loss, t)

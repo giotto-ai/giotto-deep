@@ -57,8 +57,9 @@ class PreprocessText:
             if type(text) is tuple:
                 text = text[0]
             counter.update(self.tokenizer(text))
-        self.vocabulary = Vocab(counter, min_freq=1)
-
+        # self.vocabulary = Vocab(counter, min_freq=1)
+        self.vocabulary = Vocab(counter)
+        
     def build_new_dataloaders(self, **kwargs):
         """This method return the dataloaders of the tokenised
         sentences, each converted to a list of integers via the
@@ -71,9 +72,11 @@ class PreprocessText:
         label_pipeline = lambda x: int(x) - 1
         text_pipeline = lambda x: [self.vocabulary[token] for token in
                                    self.tokenizer(x)]
+        
         label_list, text_list = [], []
         MAX_LENGTH = 0
         pad_item = self.vocabulary["."]
+        
         for (_label, _text) in self.dataloaders[0]:
             label_list.append(label_pipeline(_label))
             if type(_text) is tuple:
@@ -83,12 +86,14 @@ class PreprocessText:
             MAX_LENGTH = max(MAX_LENGTH, processed_text.shape[0])
             text_list.append(processed_text)
             # offset_list.append(processed_text.size(0))
+
         label_list = torch.tensor(label_list)
         text_list = torch.stack([torch.cat([item,
                                             pad_item *
                                             torch.ones(MAX_LENGTH -
                                                        item.shape[0])])
                                  for item in text_list])
+
         # offset_list = torch.tensor(offset_list[:-1]).cumsum(dim=0)
         training_data = TextDataset(text_list, label_list)
         label_list, text_list = [], []

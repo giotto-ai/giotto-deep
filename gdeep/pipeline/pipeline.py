@@ -3,6 +3,7 @@ import torch
 import time
 from sklearn.model_selection import KFold
 from torch.utils.data.sampler import SubsetRandomSampler
+from gdeep.data import PreprocessText
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -174,7 +175,7 @@ class Pipeline:
 
         return 100*correct
 
-    def train(self, optimizer, n_epochs=10, cross_validation=False, batch_size=512, **kwargs):
+    def train(self, optimizer, n_epochs=10, cross_validation=False, batch_size=512, type="text", **kwargs):
         """Function to run the trianing cycles.
 
         Args:
@@ -194,15 +195,15 @@ class Pipeline:
         data_idx = list(range(len(self.dataloaders[0])*batch_size))
 
         # print(folds)
-        fold = KFold(k_folds, shuffle=False)
+        fold = KFold(k_folds, shuffle=False)        
 
-        # print(self.dataloaders[0].dataset)
+        print(self.dataloaders[0].dataset)
         for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
             if len(self.dataloaders) == 1 or len(self.dataloaders) == 2:
-                dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                    shuffle=False, batch_size=batch_size, sampler=SubsetRandomSampler(tr_idx))
-                dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                     shuffle=False, batch_size=batch_size, sampler=SubsetRandomSampler(val_idx))
+                dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False,
+                                                    batch_size=batch_size, sampler=SubsetRandomSampler(tr_idx))
+                dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False,
+                                                     batch_size=batch_size, sampler=SubsetRandomSampler(val_idx))
 
             if cross_validation and (len(self.dataloaders) == 1 or len(self.dataloaders) == 2):
                 print("\n\n********** Fold ", fold+1, "**************")
@@ -210,6 +211,8 @@ class Pipeline:
             print("TOTAL EPOCHS ", n_epochs)
             for t in range(n_epochs):
                 print(f"Epoch {t+1}\n-------------------------------")
+                # for i in dl_tr:
+                #     print (i)
                 self._train_loop(dl_tr)
                 self.val_epoch = t+1
                 self._val_loop(dl_val)
