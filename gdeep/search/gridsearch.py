@@ -28,8 +28,8 @@ class Gridsearch(Pipeline, Benchmark):
     def __init__(self, obj, search_metric="loss", n_trials=10):
         self.pipe = obj
         if (isinstance(obj, Pipeline)):
-            # super(Gridsearch, self).__init__(obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
-            Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
+            super(Gridsearch, self).__init__(obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
+            # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.pipe = True
         elif (isinstance(obj, Benchmark)):
             Benchmark.__init__(self, obj.models_dicts, obj.dataloaders_dicts, obj.loss_fn, obj.writer)
@@ -85,10 +85,10 @@ class Gridsearch(Pipeline, Benchmark):
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
 
-            loss = Pipeline._train_loop(self, dl_tr,
+            loss = super(Gridsearch, self)._train_loop(dl_tr,
                                         writer_string + ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
             self.val_epoch = t
-            accuracy = Pipeline._val_loop(self, dl_val, writer_string +
+            accuracy = super(Gridsearch, self)._val_loop(dl_val, writer_string +
                                           ", Gridsearch trial: " + str(trial.number) + ", " + str(trial.params))
 
             if self.search_metric == "loss":
@@ -117,7 +117,7 @@ class Gridsearch(Pipeline, Benchmark):
             else:
                 study = optuna.create_study(direction="maximize")
             study.optimize(lambda trial: self.objective(trial, optimizer, n_epochs,
-                                                        batch_size, **kwargs), n_trials=self.n_trials, timeout=600)
+                                                        batch_size, **kwargs), n_trials=self.n_trials, timeout=None)
 
             pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
             complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -148,10 +148,10 @@ class Gridsearch(Pipeline, Benchmark):
                     else:
                         study = optuna.create_study(direction="maximize")
 
-                    Pipeline.__init__(self, model["model"], dataloaders["dataloaders"], self.bench.loss_fn, self.bench.writer)
+                    super(Gridsearch, self).__init__(model["model"], dataloaders["dataloaders"], self.bench.loss_fn, self.bench.writer)
 
                     study.optimize(lambda trial: self.objective(trial, optimizer, n_epochs, batch_size, writer_string,
-                                                                **kwargs), n_trials=self.n_trials, timeout=600)
+                                                                **kwargs), n_trials=self.n_trials, timeout=None)
 
                     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
                     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
