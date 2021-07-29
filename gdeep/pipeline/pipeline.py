@@ -55,6 +55,7 @@ class Pipeline:
         """
 
         steps = len(dl_tr)
+        loss = -100    # arbitrary starting value to avoid nan loss
 
         tik = time.time()
         # for batch, (X, y) in enumerate(self.dataloaders[0]):
