@@ -68,7 +68,7 @@ def train(model, train_dl, val_dl, criterion=nn.CrossEntropyLoss(),
                 l2_lambda = 0.01
                 l2_reg = torch.tensor(0.)
                 if use_cuda:
-                    l2_reg.cuda()
+                    l2_reg = l2_reg.cuda()
                 for param in model.parameters():
                     l2_reg += torch.norm(param)
                 loss += l2_lambda * l2_reg
