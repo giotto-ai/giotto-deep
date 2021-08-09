@@ -17,6 +17,9 @@ examples/dask-worker-space
 examples/.ipynb_checkpoints
 examples/*/
 examples/*.nbconvert.ipynb
+examples/runs/*
+examples/data/*
+examples/.*
 
 # Html files
 examples/*.html
