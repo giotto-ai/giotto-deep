@@ -11,6 +11,7 @@ scipy
 networkx
 torchdiffeq
 transformers
+einops
 tensorboard
 captum
 psutil
