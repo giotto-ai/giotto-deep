@@ -1,53 +1,62 @@
-# %% [markdown]
-# ## Benchmarking PersFormer on the graph datasets.
-# We will compare the accuracy on the graph datasets of our SetTransformer
-# based on PersFormer with the perslayer introduced in the paper:
-# https://arxiv.org/abs/1904.09378
+# To add a new cell, type '# %%'
+# To add a new markdown cell, type '# %% [markdown]'
+# %%
+from IPython import get_ipython
 
 # %% [markdown]
-# ## Benchmarking MUTAG
-# We will compare the test accuracies of PersLay and PersFormer on the MUTAG
-# dataset. It consists of 188 graphs categorised into two classes.
-# We will train the PersFormer on the same input features as PersFormer to
-# get a fair comparison.
-# The features PersLay is trained on are the extended persistence diagrams of
-# the vertices of the graph filtered by the heat kernel signature (HKS)
-# at time t=10.
-# The maximum (wrt to the architecture and the hyperparameters) mean test
-# accuracy of PersLay is 89.8(±0.9) and the train accuracy with the same
-# model and the same hyperparameters is 92.3.
-# They performed 10-fold evaluation, i.e. splitting the dataset into
-# 10 equally-sized folds and then record the test accuracy of the i-th
-# fold and training the model on the 9 other folds.
+#  ## Benchmarking PersFormer on the graph datasets.
+#  We will compare the accuracy on the graph datasets of our SetTransformer
+#  based on PersFormer with the perslayer introduced in the paper:
+#  https://arxiv.org/abs/1904.09378
+# %% [markdown]
+#  ## Benchmarking MUTAG
+#  We will compare the test accuracies of PersLay and PersFormer on the MUTAG
+#  dataset. It consists of 188 graphs categorised into two classes.
+#  We will train the PersFormer on the same input features as PersFormer to
+#  get a fair comparison.
+#  The features PersLay is trained on are the extended persistence diagrams of
+#  the vertices of the graph filtered by the heat kernel signature (HKS)
+#  at time t=10.
+#  The maximum (wrt to the architecture and the hyperparameters) mean test
+#  accuracy of PersLay is 89.8(±0.9) and the train accuracy with the same
+#  model and the same hyperparameters is 92.3.
+#  They performed 10-fold evaluation, i.e. splitting the dataset into
+#  10 equally-sized folds and then record the test accuracy of the i-th
+#  fold and training the model on the 9 other folds.
 
 # %%
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
+
 # Import libraries:
+import os
+import random
 import time
 import torch
 from torch import Tensor
 import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, Subset
 import matplotlib.pyplot as plt  # type: ignore
 
-from gdeep.topology_layers import load_data, SetTransformer,\
-    SelfAttentionSetTransformer, train
+from gdeep.topology_layers import load_data, SetTransformer,    SelfAttentionSetTransformer, train
 
 # for SAM training
 from gdeep.topology_layers import sam_train
 
+
 # %%
 # Use on of the following datasets to train the model
 # MUTAG, PROTEINS, COX2
-dataset_name = "COX2"
+dataset_name = "PROTEINS"
 
 pers_only = True
 use_sam = False
 n_epochs = 100
 lr = 1e-3
-batch_size = 16
-ln = False  # LayerNorm in Set Transformer
+batch_size = 64
+ln = True  # LayerNorm in Set Transformer
 use_regularization = False  # Use L2-regularization
-balance_dataset = True  # balance dataset to 50 by removing datapoint from
+balance_dataset = False  # balance dataset to 50 by removing datapoint from
 use_induced_attention = False  # use trainable query vector instead of
 # self-attention; use induced attention for large sets because of the
 # quadratic scaling of self-attention.
@@ -55,6 +64,9 @@ use_induced_attention = False  # use trainable query vector instead of
 # only use the persistence diagrams as features not the spectral features
 train_size = 0.8  # ratio train size to total size of dataset
 optimizer = lambda params: torch.optim.Adam(params, lr=lr)  # noqa: E731
+use_data_augmentation = True
+if use_data_augmentation:
+    balance_dataset = False
 
 # CUDA for PyTorch
 use_cuda = torch.cuda.is_available()
@@ -74,30 +86,72 @@ elif dataset_name == "NCI1" and pers_only:
 else:
     raise NotImplementedError("benchmark_accuracy not defined")
 
+
+# %%
+def pad_pds(x_pds_dict, max_number_of_points):
+    """Pad persistence diagrams to make them the same size
+
+    Args:
+        x_pds_dict (dict): dictionary of persistence diagrams. The
+            keys must be from 0 to size of x_pds_dict.
+        max_number_of_points (int): padding size. If one of the persistence
+            diagrams in x_pds_dict has more than max_number_of_points points,
+            a runtime error will be thrown.
+
+    Returns:
+        torch.Tensor: padded persistence diagrams
+    """
+    # transform x_pds to a single tensor with tailing zeros
+    num_types = x_pds_dict[0].shape[1] - 2
+    num_graphs = len(x_pds_dict.keys())  # type: ignore
+
+    x_pds = torch.zeros((num_graphs, max_number_of_points, num_types + 2))
+
+    for idx, x_pd in x_pds_dict.items():  # type: ignore
+        if x_pd.shape[0] > max_number_of_points:
+            raise RuntimeError("max_number_of_points is smaller than points in x_pd")
+        x_pds[idx, :x_pd.shape[0], :] = x_pd
+
+    return x_pds
+
+
 # %%
 # Load extended persistence diagrams and additional features
 
 
 x_pds_dict, x_features, y = load_data(dataset_name)
 
-# if `pers_only` set spectral features to 0
-if pers_only:
-    x_features = 0.0 * x_features
+original_data_size = y.shape[0]
 
-# %%
-# Padding persistence diagrams to make them the same size
-
-# transform x_pds to a single tensor with tailing zeros
-num_types = x_pds_dict[0].shape[1] - 2
-num_graphs = len(x_pds_dict.keys())  # type: ignore
-
+# Compute the max number of points in the persistence diagrams
 max_number_of_points = max([x_pd.shape[0]
                             for _, x_pd in x_pds_dict.items()])  # type: ignore
 
-x_pds = torch.zeros((num_graphs, max_number_of_points, num_types + 2))
+x_pds = pad_pds(x_pds_dict, max_number_of_points)
 
-for idx, x_pd in x_pds_dict.items():  # type: ignore
-    x_pds[idx, :x_pd.shape[0], :] = x_pd
+
+# Data augmentation using the graphs generated by GRAN
+if use_data_augmentation and dataset_name == 'PROTEINS':
+    # load file with training indices of the data augmentation
+    idx_class = {}
+
+    for class_ in ['1', '2']:
+        with open(os.path.join('graph_data', dataset_name + '_' + class_, 'gid.txt')) as f:
+            lines = f.readlines()
+            idx_class[class_] = [int(idx) for idx in lines[0].split(', ')]
+
+        # load the augmented training data for class_
+        x_pds_dict_aug, x_features_aug, y_aug = load_data(dataset_name + "_" + class_)
+        x_pds_aug = pad_pds(x_pds_dict_aug, max_number_of_points)
+
+        x_pds = torch.cat([x_pds, x_pds_aug], axis=0)
+        # here might be a problem
+        x_features = torch.cat([x_features[:, :x_features_aug.shape[1]], x_features_aug], axis=0)
+        y = torch.cat([y, y_aug], axis=0)
+
+# if `pers_only` set spectral features to 0
+if pers_only:
+    x_features = 0.0 * x_features
 
 
 # %%
@@ -108,7 +162,7 @@ if balance_dataset:
         class_to_remove = 1
         num_classes_to_remove = int(2 * y.sum() - y.shape[0])
     else:
-        class_to_remove = 0
+        #class_to_remove = 0
         num_classes_to_remove = int(y.shape[0] - 2 * y.sum())
     idxs_to_remove = ((y == class_to_remove)
                       .nonzero(as_tuple=False)[:num_classes_to_remove, 0]
@@ -124,20 +178,30 @@ if balance_dataset:
 
 print('balance:', (y.sum() / y.shape[0]).item())
 
+
 # %%
 # Set up dataset and dataloader
 # create the datasets
 # https://discuss.pytorch.org/t/make-a-tensordataset-and-dataloader
 # -with-multiple-inputs-parameters/26605
-total_size = x_pds.shape[0]
 
 graph_ds = TensorDataset(x_pds, x_features, y)
 
-train_size = int(total_size * train_size)
-graph_ds_train, graph_ds_val = torch.utils.data.random_split(
-                                                    graph_ds,
-                                                    [train_size,
-                                                     total_size - train_size])
+# Use the graphs in the validation dataset that where not used for the graph augmentation
+valid_idx = list(set(range(original_data_size)) - set(idx_class['1'] + idx_class['2']))
+train_idx = [i for i in range(x_pds.shape[0]) if i not in valid_idx]
+
+if use_data_augmentation and dataset_name == 'PROTEINS':
+    graph_ds_train, graph_ds_val = Subset(graph_ds, train_idx), Subset(graph_ds, valid_idx)
+else:
+    total_size = x_pds.shape[0]
+    train_size = int(total_size * train_size)
+    graph_ds_train, graph_ds_val = torch.utils.data.random_split(
+                                                        graph_ds,
+                                                        [train_size,
+                                                        total_size - train_size],
+                                                        generator=torch.Generator().manual_seed(36))
+    
 
 # create data loaders
 graph_dl_train = DataLoader(
@@ -154,6 +218,7 @@ graph_dl_val = DataLoader(
     shuffle=False
 )
 
+
 # %%
 # Compute balance of train and validation datasets
 val_balance = 0
@@ -161,21 +226,19 @@ val_total = 0
 for _, _, y_batch in graph_dl_val:
     val_balance += y_batch.sum()
     val_total += y_batch.shape[0]
-print('train_size:', val_total)
-print('train_balance', val_balance / val_total)
+print('val_size:', val_total)
+print('val_balance', (val_balance / val_total).item())
 
 train_balance = 0
 train_total = 0
 for _, _, y_batch in graph_dl_train:
     train_balance += y_batch.sum()
     train_total += y_batch.shape[0]
-print('val_size:', train_total)
-print('val_balance', train_balance / train_total)
+print('train_size:', train_total)
+print('train_balance', (train_balance / train_total).item())
+
 
 # %%
-# Define Model architecture for the graph classifier
-
-
 class GraphClassifier(nn.Module):
     """Classifier for Graphs using persistence features and additional
     features. The vectorization is based on a set transformer.
@@ -188,7 +251,7 @@ class GraphClassifier(nn.Module):
                  num_classes=2,
                  ln=ln,
                  num_heads=4
-                 ):
+                ):
         super(GraphClassifier, self).__init__()
         if use_induced_attention:
             self.st = SetTransformer(
@@ -231,60 +294,227 @@ class GraphClassifier(nn.Module):
         x = self.ff_3(x)
         return x
 
-# define graph classifier
-gc = GraphClassifier(
-        num_features=graph_ds_train[0][1].shape[0],
-        dim_input=graph_ds_train[0][0].shape[1],
-        num_outputs=1,
-        dim_output=50)
 
 # %%
-if use_sam:
-    train_fct = sam_train
-else:
-    train_fct = train
+# Define Model architecture for the graph classifier
 
-# train the model and return losses and accuracies information
-tic = time.perf_counter()
-(losses,
- val_losses,
- train_accuracies,
- val_accuracies) = train_fct(
-                            gc,
-                            graph_dl_train,
-                            graph_dl_val,
-                            lr=lr,
-                            verbose=True,
-                            num_epochs=n_epochs,
-                            use_cuda=use_cuda,
-                            use_regularization=use_regularization,
-                            optimizer=optimizer
-                            )
-toc = time.perf_counter()
-print(f"Trained model for {n_epochs} in {toc - tic:0.4f} seconds")
-
-# %%
-# plot losses
-plt.plot(losses, label='train_loss')
-plt.plot([4 * x for x in val_losses], label='4 * val_loss')
-plt.legend()
-plt.title("Losses " + dataset_name + " extended persistence features only")
-plt.show()
-
-# %%
-# plot accuracies
-plt.plot(train_accuracies, label='train_acc')
-plt.plot(val_accuracies, label='val_acc')
-plt.plot([benchmark_accuracy]*len(train_accuracies),
-         label='PersLay PD only')
-plt.legend()
-plt.title("Accuracies " + dataset_name + " extended persistence features only")
-plt.show()
-
-
-# %%
-lr = 1e-3
+num_runs = 10
 n_epochs = 200
-# %%
+
+
+for i in range(num_runs):
+    print("Test run number", i, "of", num_runs)
+    lr = random.choice([1e-3, 1e-4])
+    ln = random.choice([True, False])  # LayerNorm in Set Transformer
+    use_regularization = random.choice([True, False])  # Use L2-regularization
+    use_induced_attention = random.choice([True, False])  # use trainable query vector instead of
+    # self-attention; use induced attention for large sets because of the
+    # quadratic scaling of self-attention.
+    # the class with more points
+    # only use the persistence diagrams as features not the spectral features
+    optimizer = lambda params: torch.optim.Adam(params, lr=lr)  # noqa: E731
+    dim_output = random.choice([30, 50, 80, 100])
+    num_heads = random.choice([8, 12, 16, 20])
+
+    print(f"""lr={lr}\nregularization={use_regularization}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nnum_heads{num_heads}""")
+
+    # define graph classifier
+    gc = GraphClassifier(
+            num_features=graph_ds_train[0][1].shape[0],
+            dim_input=graph_ds_train[0][0].shape[1],
+            num_outputs=1,
+            dim_output=dim_output,
+            num_heads=num_heads)
+
+    if use_sam:
+        train_fct = sam_train
+    else:
+        train_fct = train
+
+    # train the model and return losses and accuracies information
+    tic = time.perf_counter()
+    (losses,
+     val_losses,
+     train_accuracies,
+     val_accuracies) = train_fct(
+                                gc,
+                                graph_dl_train,
+                                graph_dl_val,
+                                lr=lr,
+                                verbose=True,
+                                num_epochs=n_epochs,
+                                use_cuda=use_cuda,
+                                use_regularization=use_regularization,
+                                optimizer=optimizer
+                                )
+    toc = time.perf_counter()
+    print(f"Trained model for {n_epochs} in {toc - tic:0.4f} seconds")
+    del gc
+    # plot losses
+    plt.plot(losses, label='train_loss')
+    plt.plot([4 * x for x in val_losses], label='4 * val_loss')
+    plt.legend()
+    plt.title("Losses " + dataset_name + " extended persistence features only")
+
+    plt.savefig("losses.png")
+    plt.show()
+
+    # plot accuracies
+    plt.plot(train_accuracies, label='train_acc')
+    plt.plot(val_accuracies, label='val_acc')
+    plt.plot([benchmark_accuracy]*len(train_accuracies),
+             label='PersLay PD only')
+    plt.legend()
+    plt.title("Accuracies " + dataset_name + " extended persistence features only")
+
+    plt.savefig("accuracies.png")
+    plt.show()
+    # plot metadata
+    plt.text(0.2, 0.5,
+             f"""\nlr={lr}\nuse_regularization={use_regularization}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nnum_heads={num_heads}""",
+             fontsize='xx-large')
+    plt.axis('off')
+
+    plt.savefig("metadata.png")
+    plt.show()
+
+    import sys
+    from PIL import Image
+
+    images = [Image.open(x) for x in ['losses.png', 'accuracies.png', 'metadata.png']]
+    widths, heights = zip(*(i.size for i in images))
+
+    total_width = sum(widths)
+    max_height = max(heights)
+
+    new_im = Image.new('RGB', (total_width, max_height))
+
+    x_offset = 0
+    for im in images:
+      new_im.paste(im, (x_offset,0))
+      x_offset += im.size[0]
+
+    new_im.save(f"""Benchmark_PersFormer_graph/MUTAG_Benchmark/balanced_lr_{lr}_{use_regularization}_{use_induced_attention}_{ln}_{dim_output}_{num_heads}.png""")
+
 
 # %%
+#0.001_True_False_False_30
+num_runs = 40
+n_epochs = 5000
+
+
+for i in range(num_runs):
+    lr = random.choice([5e-4, 1e-4, 1e-5, 5e-5])
+    ln = random.choice([True])  # LayerNorm in Set Transformer
+    use_regularization = random.choice([False, True])  # Use L2-regularization
+    use_induced_attention = random.choice([False])  # use trainable query vector instead of
+    # self-attention; use induced attention for large sets because of the
+    # quadratic scaling of self-attention.
+    # the class with more points
+    # only use the persistence diagrams as features not the spectral features
+    optimizer = lambda params: torch.optim.Adam(params, lr=lr)  # noqa: E731
+    dim_output = random.choice([60, 70, 80, 90, 100])
+    num_heads = random.choice([8, 12, 16, 20])
+
+    specification = f"""\nlr={lr}\nuse_regularization={use_regularization}\nnum_heads={num_heads}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nepochs={n_epochs}"""
+    print(specification)
+
+    # define graph classifier
+    gc = GraphClassifier(
+            num_features=graph_ds_train[0][1].shape[0],
+            dim_input=graph_ds_train[0][0].shape[1],
+            num_outputs=1,
+            dim_output=dim_output,
+            num_heads=num_heads)
+
+    if use_sam:
+        train_fct = sam_train
+    else:
+        train_fct = train
+
+    # train the model and return losses and accuracies information
+    tic = time.perf_counter()
+    (losses,
+     val_losses,
+     train_accuracies,
+     val_accuracies) = train_fct(
+                                gc,
+                                graph_dl_train,
+                                graph_dl_val,
+                                lr=lr,
+                                verbose=True,
+                                num_epochs=n_epochs,
+                                use_cuda=use_cuda,
+                                use_regularization=use_regularization,
+                                optimizer=optimizer
+                                )
+    toc = time.perf_counter()
+    print(f"Trained model for {n_epochs} in {toc - tic:0.4f} seconds")
+    del gc
+    # plot losses
+    plt.plot(losses, label='train_loss')
+    plt.plot([4 * x for x in val_losses], label='4 * val_loss')
+    plt.legend()
+    plt.title("Losses " + dataset_name + " extended persistence features only")
+
+    plt.savefig("losses.png")
+    plt.show()
+
+    # plot accuracies
+    plt.plot(train_accuracies, label='train_acc')
+    plt.plot(val_accuracies, label='val_acc')
+    plt.plot([benchmark_accuracy]*len(train_accuracies),
+             label='PersLay PD only')
+    plt.legend()
+    plt.title("Accuracies " + dataset_name + " extended persistence features only")
+
+    plt.savefig("accuracies.png")
+    plt.show()
+    # plot metadata
+    plt.text(0.2, 0.4,
+             specification + f"""\n{toc - tic:0.4f} seconds""",
+             fontsize='xx-large')
+    plt.axis('off')
+
+    plt.savefig("metadata.png")
+    plt.show()
+
+    import sys
+    from PIL import Image
+
+    images = [Image.open(x) for x in ['losses.png', 'accuracies.png', 'metadata.png']]
+    widths, heights = zip(*(i.size for i in images))
+
+    total_width = sum(widths)
+    max_height = max(heights)
+
+    new_im = Image.new('RGB', (total_width, max_height))
+
+    x_offset = 0
+    for im in images:
+      new_im.paste(im, (x_offset,0))
+      x_offset += im.size[0]
+
+    new_im.save(f"""Benchmark_PersFormer_graph/"""+ specification.replace("\n", "_") + "_"+ str(i) + """.png""")
+
+
+# %%
+list(gc.parameters())
+
+
+# %%
+use_cuda
+
+
+# %%
+use_sam
+
+
+# %%
+print("""a\nb""".replace("\n", "_"))
+
+
+# %%
+
+
+
