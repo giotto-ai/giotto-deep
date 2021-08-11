@@ -279,7 +279,7 @@ class GraphClassifier(nn.Module):
         The persistence features are encoded with a set transformer
         and concatenated with the feature vector. These concatenated
         features are used for classification using a fully connected
-        feed -forward layer.
+        feed-forward layer.
 
         Args:
             x_pd (Tensor): persistence diagrams of the graph
