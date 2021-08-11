@@ -193,7 +193,7 @@ class Pipeline:
             dl_val = self.dataloaders[1]
 
         k_folds = 5
-        data_idx = list(range(len(self.dataloaders[0])*batch_size))
+        data_idx = list(range(len(self.dataloaders[0].dataset)))
 
         # print(folds)
         fold = KFold(k_folds, shuffle=False)        
@@ -205,6 +205,7 @@ class Pipeline:
                                                     batch_size=batch_size, sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset, shuffle=False,
                                                      batch_size=batch_size, sampler=SubsetRandomSampler(val_idx))
+
 
             if cross_validation and (len(self.dataloaders) == 1 or len(self.dataloaders) == 2):
                 print("\n\n********** Fold ", fold+1, "**************")

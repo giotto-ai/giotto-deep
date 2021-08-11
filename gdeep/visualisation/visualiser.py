@@ -155,9 +155,11 @@ class Visualiser:
                                   neural_net=self.pipe.model)
 
             d_final, label_final = cc.create_final_distance_matrix()
+            d_final = d_final.to(torch.device("cpu"))
             embedding = MDS(n_components=3,
                             dissimilarity="precomputed")
             db = embedding.fit_transform(d_final)
+
             self.pipe.writer.add_embedding(db,
                                            tag="compactified_decision_boundary",
                                            global_step=0)
@@ -169,6 +171,7 @@ class Visualiser:
                                            tag="decision_boundary",
                                            global_step=0)
             self.pipe.writer.flush()
+
             return db, None, None
 
     def betti_plot_layers(self, homology_dimension=(0, 1), example=None):

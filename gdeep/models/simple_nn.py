@@ -1,6 +1,11 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
 
 # build a custom network class to easily do experiments
 class FFNet(nn.Module):
@@ -20,7 +25,8 @@ class FFNet(nn.Module):
     """
 
     def __init__(self, verbose=0, arch=[2, 3, 3, 2]):
-        super(FFNet, self).__init__()
+        # super(FFNet, self).__init__()
+        super(self.__class__, self).__init__()
         self.verbose = verbose
         self.arch = arch
         for i, in_f in enumerate(arch):
@@ -51,6 +57,8 @@ class FFNet(nn.Module):
                             str(i - 1) + ")" + ")"
                 if self.verbose:
                     print(val)
+                
+                x_cont = x_cont.to(torch.device(DEVICE))
                 try:
                     exec(val)
                 except:

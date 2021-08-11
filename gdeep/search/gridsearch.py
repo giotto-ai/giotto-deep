@@ -68,7 +68,7 @@ class Gridsearch(Pipeline, Benchmark):
             dl_val = self.dataloaders[1]
 
         k_folds = 5
-        data_idx = list(range(len(self.dataloaders[0])*batch_size))
+        data_idx = list(range(len(self.dataloaders[0].dataset)))
 
         fold = KFold(k_folds, shuffle=False)
 
@@ -121,6 +121,9 @@ class Gridsearch(Pipeline, Benchmark):
 
             pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
             complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            
+            fig = optuna.visualization.plot_optimization_history(study)
+            fig.show()
 
             print("Study statistics: ")
             print("  Number of finished trials: ", len(study.trials))

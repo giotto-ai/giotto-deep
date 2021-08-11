@@ -1,3 +1,4 @@
+from numpy import dtype
 import torch
 from gtda.homology import VietorisRipsPersistence, \
     WeakAlphaPersistence
@@ -17,6 +18,8 @@ def knn_distance_matrix(X, k=3):
     """
 
     kng = KNeighborsGraph(n_neighbors=k)
+    
+    X = [t.cpu() for t in X]
     adj = kng.fit_transform(X)
     return GraphGeodesicDistance(directed=False).fit_transform(adj)
 
