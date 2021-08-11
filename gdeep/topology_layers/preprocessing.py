@@ -130,6 +130,75 @@ def load_data(
             torch.tensor(x_features, dtype=torch.float),
             torch.tensor(y))
 
+def load_data_as_tensor(
+        dataset_name: str = "PROTEINS",
+        path_dataset: str = "graph_data",
+        verbose: bool = False
+        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    x_pds_dict, x_features, y = load_data(dataset_name)
+
+    # Compute the max number of points in the persistence diagrams
+    max_number_of_points = max([x_pd.shape[0]
+                                for _, x_pd in x_pds_dict.items()])  # type: ignore
+
+    x_pds = pad_pds(x_pds_dict, max_number_of_points)
+
+    return x_pds, x_features, y
+
+def load_augmented_data_as_tensor(
+        dataset_name: str = "PROTEINS",
+        path_dataset: str = "graph_data",
+        verbose: bool = False
+        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    if dataset_ != "PROTEINS":
+        raise NotImplementedError()
+    x_pds, x_features, y
+
+    # Indices of graphs that are used for the graph generation per class
+    idx_class = {}
+
+    for class_ in ['1', '2']:
+        with open(os.path.join('graph_data', dataset_name + '_' + class_, 'gid.txt')) as f:
+            lines = f.readlines()
+            idx_class[class_] = [int(idx) for idx in lines[0].split(', ')]
+
+        # load the augmented training data for class_
+        x_pds_dict_aug, x_features_aug, y_aug = load_data(dataset_name + "_" + class_)
+        # load_data only encodes a single class
+        if class_ == '2':
+            y_aug += 1
+        x_pds_aug = pad_pds(x_pds_dict_aug, max_number_of_points)
+
+        x_pds = torch.cat([x_pds, x_pds_aug], axis=0)
+        # here might be a problem
+        x_features = torch.cat([x_features[:, :x_features_aug.shape[1]], x_features_aug], axis=0)
+        y = torch.cat([y, y_aug], axis=0)
+
+def pad_pds(x_pds_dict, max_number_of_points):
+    """Pad persistence diagrams to make them the same size
+
+    Args:
+        x_pds_dict (dict): dictionary of persistence diagrams. The
+            keys must be from 0 to size of x_pds_dict.
+        max_number_of_points (int): padding size. If one of the persistence
+            diagrams in x_pds_dict has more than max_number_of_points points,
+            a runtime error will be thrown.
+
+    Returns:
+        torch.Tensor: padded persistence diagrams
+    """
+    # transform x_pds to a single tensor with tailing zeros
+    num_types = x_pds_dict[0].shape[1] - 2
+    num_graphs = len(x_pds_dict.keys())  # type: ignore
+
+    x_pds = torch.zeros((num_graphs, max_number_of_points, num_types + 2))
+
+    for idx, x_pd in x_pds_dict.items():  # type: ignore
+        if x_pd.shape[0] > max_number_of_points:
+            raise RuntimeError("max_number_of_points is smaller than points in x_pd")
+        x_pds[idx, :x_pd.shape[0], :] = x_pd
+
+    return x_pds
 
 def diagram_to_tensor(
     tensor_dict_per_type: Dict[str, torch.Tensor]

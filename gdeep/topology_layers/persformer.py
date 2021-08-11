@@ -2,6 +2,7 @@
 
 import torch
 import torch.nn as nn
+from torch import Tensor
 from gdeep.topology_layers.modules import ISAB, PMA, SAB  # type: ignore
 
 
@@ -48,7 +49,7 @@ class SetTransformer(nn.Module):
         num_inds=32,  # number of induced points, see  Set Transformer paper
         dim_hidden=128,
         num_heads=4,
-        ln=False,  # use layer norm
+        ln=True,  # use layer norm
     ):
         """Init of SetTransformer.
 
@@ -165,6 +166,61 @@ class SelfAttentionSetTransformer(nn.Module):
         for parameter in self.parameters():
             total_params += parameter.nelement()
         return total_params
+
+class GraphClassifier(nn.Module):
+    """Classifier for Graphs using persistence features and additional
+    features. The vectorization is based on a set transformer.
+    """
+    def __init__(self,
+                 num_features,
+                 dim_input=6,
+                 num_outputs=1,
+                 dim_output=50,
+                 num_classes=2,
+                 ln=True,
+                 num_heads=4
+                ):
+        super(GraphClassifier, self).__init__()
+        if use_induced_attention:
+            self.st = SetTransformer(
+                dim_input=dim_input,
+                num_outputs=num_outputs,
+                dim_output=dim_output,
+                ln=ln,
+                num_heads=num_heads
+                )
+        else:
+            self.st = SelfAttentionSetTransformer(
+                dim_input=dim_input,
+                num_outputs=num_outputs,
+                dim_output=dim_output,
+                ln=ln
+                )
+        self.num_classes = num_classes
+        self.ln = nn.LayerNorm(dim_output + num_features)
+        self.ff_1 = nn.Linear(dim_output + num_features, 50)
+        self.ff_2 = nn.Linear(50, 20)
+        self.ff_3 = nn.Linear(20, num_classes)
+
+    def forward(self, x_pd: Tensor, x_feature: Tensor) -> Tensor:
+        """Forward pass of the graph classifier.
+        The persistence features are encoded with a set transformer
+        and concatenated with the feature vector. These concatenated
+        features are used for classification using a fully connected
+        feed -forward layer.
+
+        Args:
+            x_pd (Tensor): persistence diagrams of the graph
+            x_feature (Tensor): additional graph features
+        """
+        pd_vector = self.st(x_pd)
+        #print(pd_vector.shape, x_feature.shape)
+        features_stacked = torch.hstack((pd_vector, x_feature))
+        x = self.ln(features_stacked)
+        x = nn.ReLU()(self.ff_1(x))
+        x = nn.ReLU()(self.ff_2(x))
+        x = self.ff_3(x)
+        return x
 
 # def train(
 #         model,
