@@ -178,9 +178,10 @@ class GraphClassifier(nn.Module):
                  dim_output=50,
                  num_classes=2,
                  ln=True,
-                 num_heads=4
+                 num_heads=4,
+                 use_induced_attention=False
                 ):
-        super(GraphClassifier, self).__init__()
+        super().__init__()
         if use_induced_attention:
             self.st = SetTransformer(
                 dim_input=dim_input,

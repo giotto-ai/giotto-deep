@@ -156,6 +156,8 @@ def load_augmented_data_as_tensor(
         raise NotImplementedError()
     x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)
 
+    original_data_size = x_pds.shape[0]
+    max_number_of_points = x_pds.shape[1]
     # Indices of graphs that are used for the graph generation per class
     idx_class = {}
 
@@ -175,6 +177,8 @@ def load_augmented_data_as_tensor(
         # here might be a problem
         x_features = torch.cat([x_features[:, :x_features_aug.shape[1]], x_features_aug], axis=0)
         y = torch.cat([y, y_aug], axis=0)
+
+    return x_pds, x_features, y, original_data_size, idx_class
 
 def pad_pds(x_pds_dict, max_number_of_points):
     """Pad persistence diagrams to make them the same size
