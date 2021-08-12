@@ -4,6 +4,8 @@ from sklearn.preprocessing import LabelEncoder  # type: ignore
 from os.path import join, isfile
 
 import h5py  # type: ignore
+import os
+
 
 import torch
 from torch import Tensor
@@ -150,9 +152,9 @@ def load_augmented_data_as_tensor(
         path_dataset: str = "graph_data",
         verbose: bool = False
         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    if dataset_ != "PROTEINS":
+    if dataset_name != "PROTEINS":
         raise NotImplementedError()
-    x_pds, x_features, y
+    x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)
 
     # Indices of graphs that are used for the graph generation per class
     idx_class = {}
