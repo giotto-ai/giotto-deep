@@ -152,12 +152,12 @@ def load_augmented_data_as_tensor(
         path_dataset: str = "graph_data",
         verbose: bool = False
         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    if dataset_name != "PROTEINS":
+    if dataset_name not in ["PROTEINS", "MUTAG"]:
         raise NotImplementedError()
     x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)
 
     original_data_size = x_pds.shape[0]
-    max_number_of_points = x_pds.shape[1]
+    
     # Indices of graphs that are used for the graph generation per class
     idx_class = {}
 
@@ -171,14 +171,29 @@ def load_augmented_data_as_tensor(
         # load_data only encodes a single class
         if class_ == '2':
             y_aug += 1
+        max_number_of_points = x_pds.shape[1]
         x_pds_aug = pad_pds(x_pds_dict_aug, max_number_of_points)
 
+
+        # Catch the case where x_pds_aug and x_pds have not the same length (i.e. 1-component)
+        if x_pds_aug.shape[1] > x_pds.shape[1]:
+            x_pds = pad_pds_tensor(x_pds, x_pds_aug.shape[1])
         x_pds = torch.cat([x_pds, x_pds_aug], axis=0)
         # here might be a problem
-        x_features = torch.cat([x_features[:, :x_features_aug.shape[1]], x_features_aug], axis=0)
+        min_feature_size = min(x_features.shape[1], x_features_aug.shape[1])
+        x_features = torch.cat([x_features[:, :min_feature_size], x_features_aug[:, :min_feature_size]], axis=0)
         y = torch.cat([y, y_aug], axis=0)
 
     return x_pds, x_features, y, original_data_size, idx_class
+
+def pad_pds_tensor(x, s):
+    """
+    Pad to a tensor of 1-component of size s
+    """
+    assert x.shape[1] <= s, "x.shape[1] has to be less of equal s"
+    x_out = torch.zeros((x.shape[0], s, x.shape[2]))
+    x_out[:, :x.shape[1], :] = x
+    return x_out
 
 def pad_pds(x_pds_dict, max_number_of_points):
     """Pad persistence diagrams to make them the same size
@@ -197,12 +212,14 @@ def pad_pds(x_pds_dict, max_number_of_points):
     num_types = x_pds_dict[0].shape[1] - 2
     num_graphs = len(x_pds_dict.keys())  # type: ignore
 
-    x_pds = torch.zeros((num_graphs, max_number_of_points, num_types + 2))
+    m_n_pts = max(max_number_of_points, max([x_pd.shape[0] for _, x_pd in x_pds_dict.items()]))
+    x_pds = torch.zeros((num_graphs, m_n_pts, num_types + 2))
 
     for idx, x_pd in x_pds_dict.items():  # type: ignore
-        if x_pd.shape[0] > max_number_of_points:
-            raise RuntimeError("max_number_of_points is smaller than points in x_pd")
-        x_pds[idx, :x_pd.shape[0], :] = x_pd
+        #if x_pd.shape[0] > max_number_of_points:
+        #    raise RuntimeError("max_number_of_points is smaller than points in x_pd")
+        n_pts = x_pd.shape[0]
+        x_pds[idx, :n_pts, :] = x_pd[:, :]
 
     return x_pds
 
