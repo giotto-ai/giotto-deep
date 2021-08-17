@@ -115,6 +115,7 @@ class SelfAttentionSetTransformer(nn.Module):
         dim_hidden=128,
         num_heads=4,
         ln=False,  # use layer norm
+        n_layers=1
     ):
         """Init of SetTransformer.
 
@@ -130,11 +131,14 @@ class SelfAttentionSetTransformer(nn.Module):
             ln (bool, optional): If `True` layer norm will not be applied.
                 Defaults to False.
         """
-        super(SelfAttentionSetTransformer, self).__init__()
-        self.enc = nn.Sequential(
-            SAB(dim_input, dim_hidden, num_heads, ln=ln),
-            SAB(dim_hidden, dim_hidden, num_heads, ln=ln),
-        )
+        super().__init__()
+        self.emb = SAB(dim_input, dim_hidden, num_heads, ln=ln)
+
+        self.n_layers = n_layers
+        self.enc_list = nn.ModuleList([
+            SAB(dim_hidden, dim_hidden, num_heads, ln=ln)
+            for _ in range(n_layers)
+        ])
         self.dec = nn.Sequential(
             nn.Dropout(),
             PMA(dim_hidden, num_heads, num_outputs, ln=ln),
@@ -152,7 +156,9 @@ class SelfAttentionSetTransformer(nn.Module):
         Returns:
             torch.Tensor: Tensor with predictions of the `dim_output` classes.
         """
-        x = self.enc(x)
+        x = self.emb(x)
+        for l in self.enc_list:
+            x = l(x)
         x = self.dec(x)
         return x.squeeze()
 
@@ -179,7 +185,8 @@ class GraphClassifier(nn.Module):
                  num_classes=2,
                  ln=True,
                  num_heads=4,
-                 use_induced_attention=False
+                 use_induced_attention=False,
+                 dim_hidden=128
                 ):
         super().__init__()
         if use_induced_attention:
@@ -188,14 +195,16 @@ class GraphClassifier(nn.Module):
                 num_outputs=num_outputs,
                 dim_output=dim_output,
                 ln=ln,
-                num_heads=num_heads
+                num_heads=num_heads,
+                dim_hidden=dim_hidden
                 )
         else:
             self.st = SelfAttentionSetTransformer(
                 dim_input=dim_input,
                 num_outputs=num_outputs,
                 dim_output=dim_output,
-                ln=ln
+                ln=ln,
+                dim_hidden=dim_hidden
                 )
         self.num_classes = num_classes
         self.ln = nn.LayerNorm(dim_output + num_features)
