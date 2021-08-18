@@ -8,6 +8,7 @@ pp = pprint.PrettyPrinter(indent=4)
 import matplotlib.pyplot as plt
 from typing import List
 from attrdict import AttrDict
+from pathlib import Path
 import numpy as np  # type: ignore
 import torch
 from torch.utils.data import TensorDataset, DataLoader
@@ -17,6 +18,7 @@ from gdeep.topology_layers import SelfAttentionSetTransformer, train_vec,\
     sam_train
 from gdeep.create_data import generate_orbit_parallel, create_pd_orbits,\
     convert_pd_orbits_to_tensor
+from gdeep.plotting import save_run_summary
 
 #%%
 
@@ -42,16 +44,8 @@ config = AttrDict({
          })
 
 # %%
-try:
-    assert os.path.isdir(
-        os.path.join('./data', config.dataset_name)
-        )
-except AssertionError:
-    if not os.path.isdir('./data'):
-        os.mkdir('./data')
-    os.mkdir(
-        os.path.join('./data', config.dataset_name)
-    )
+Path(os.path.join('./data', config.dataset_name))\
+    .mkdir(parents=True, exist_ok=True)
 
 # If `use_precomputed_dgms` is `False` the ORBIT5K dataset will
 # be recomputed, otherwise the ORBIT5K dataset in the folder
@@ -202,7 +196,7 @@ for i in range(num_runs):
     pp.pprint(config_run)
 
     # Trained the model and return loss and accuracy information
-    (losses,
+    (train_losses,
      val_losses,
      train_accuracies,
      val_accuracies) = train_fct(
@@ -221,50 +215,14 @@ for i in range(num_runs):
     print(f"Trained model for {n_epochs} in {toc - tic:0.4f} seconds")
     del gc
     # plot losses
+    save_run_summary(
+        train_losses,
+        val_losses,
+        train_accuracies,
+        val_accuracies,
+        config_run,
+        config,
+    )
     
-# %%
-def save_run_summary(losses, val_losses, config)->None:
-    plt.plot(losses, label='train_loss')
-    plt.plot([x for x in val_losses], label='val_loss')
-    plt.legend()
-    plt.title("Losses " + config.dataset_name + " extended persistence features only")
+#%%
 
-    plt.savefig("losses.png")
-    plt.show()
-
-    # plot accuracies
-    plt.plot(train_accuracies, label='train_acc')
-    plt.plot(val_accuracies, label='val_acc')
-    plt.legend()
-    plt.title("Accuracies " + config.dataset_name + " extended persistence features only")
-
-    plt.savefig("accuracies.png")
-    plt.show()
-    # plot metadata
-    plt.text(0.2, 0.5,
-             f"""\nlr={lr}\nuse_regularization={use_regularization}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nnum_heads={num_heads}\ndim_hidden={dim_hidden}\nnum_layers={num_layers}""",
-             fontsize='x-large')
-    plt.axis('off')
-
-    plt.savefig("metadata.png")
-    plt.show()
-
-    image_files = ['losses.png', 'accuracies.png', 'metadata.png']
-    images = [Image.open(x) for x in image_files]
-    widths, heights = zip(*(i.size for i in images))
-
-    total_width = sum(widths)
-    max_height = max(heights)
-
-    new_im = Image.new('RGB', (total_width, max_height))
-
-    x_offset = 0
-    for im in images:
-      new_im.paste(im, (x_offset,0))
-      x_offset += im.size[0]
-    max_val_acc = '{:2.2%}'.format(max(val_accuracies)/100)
-    new_im.save(f"""Benchmark_PersFormer_graph/{config.dataset_name}_Benchmark/max_val_acc{max_val_acc}_lr_{lr}_{use_regularization}_{use_induced_attention}_{ln}_{dim_output}_{num_heads}_{dim_hidden}_{num_layers}_epochs_{n_epochs}_run_{i}.png""")
-
-    # delete temporary images
-    for image in image_files:
-        os.remove(image)
