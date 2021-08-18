@@ -162,6 +162,7 @@ class SelfAttentionSetTransformer(nn.Module):
         x = self.dec(x)
         return x.squeeze()
 
+    @property
     def num_params(self) -> int:
         """Returns number of trainable parameters.
 

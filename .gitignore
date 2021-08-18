@@ -60,3 +60,6 @@ test-output.xml
 
 # JavaScript for plots display
 examples/*.js
+examples/perslay_orbit_benchmark.py
+
+init_environment.sh

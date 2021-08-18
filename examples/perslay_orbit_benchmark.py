@@ -3,19 +3,20 @@
 %autoreload 2
 import random
 import time
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 import matplotlib.pyplot as plt
 from typing import List
 from attrdict import AttrDict
 import numpy as np  # type: ignore
 import torch
-import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-import multiprocessing
-import os
 from einops import rearrange  # type: ignore
-from gtda.homology import WeakAlphaPersistence  # type: ignore
-from gtda.plotting import plot_diagram  # type: ignore
-from gdeep.topology_layers import SelfAttentionSetTransformer, train_vec, sam_train
+import os
+from gdeep.topology_layers import SelfAttentionSetTransformer, train_vec,\
+    sam_train
+from gdeep.create_data import generate_orbit_parallel, create_pd_orbits,\
+    convert_pd_orbits_to_tensor
 
 #%%
 
@@ -29,13 +30,14 @@ config = AttrDict({
             'dataset_name': 'ORBIT'+ str(k) + 'K',
             'parameters': parameters,
             'num_classes': len(parameters),
-            'num_orbits': int(n_points / len(parameters)),  # number of orbits per class
+            'num_orbits': int(n_points / len(parameters)),
+            # number of orbits per class
             'num_pts_per_orbit': int(n_points / 5),
             'homology_dimensions': homology_dimensions,
             'num_homology_dimensions': len(homology_dimensions),
-            'validation_percentage': 100,  # size of validation dataset relative
-            # to training if 100 the train and validation datasets have the
-            # same size
+            'validation_percentage': 100,  # size of validation dataset
+            # relative to training if 100 the train and validation datasets
+            # have the same size
             'use_precomputed_dgms': False,
          })
 
@@ -61,6 +63,8 @@ dgms_filename_validation = os.path.join('data', config.dataset_name,
                                         'alpha_persistence_diagrams_' +
                                         'validation.npy')
 
+# Load the ORBIT5K dataset if it exists and if config.use_precomputed_dgms
+# is set to `True`
 if config.use_precomputed_dgms:
     try:
         assert(os.path.isfile(dgms_filename_train))
@@ -88,58 +92,20 @@ if not config.use_precomputed_dgms:
         else:
             num_orbits = int(config['num_orbits']  # type: ignore
                              * config['validation_percentage'] / 100)
-        x = np.zeros((
-                        config['num_classes'],  # type: ignore
-                        num_orbits,
-                        config['num_pts_per_orbit'],
-                        2
-                    ))
+        orbits = generate_orbit_parallel(
+            num_classes = config.num_classes,
+            num_orbits=num_orbits,
+            num_pts_per_orbit=config.num_pts_per_orbit,
+            parameters=config.parameters,
+        )
 
-        # generate dataset
-        for cidx, p in enumerate(config['parameters']):  # type: ignore
-            x[cidx, :, 0, :] = np.random.rand(num_orbits, 2)  # type: ignore
 
-            for i in range(1, config['num_pts_per_orbit']):  # type: ignore
-                x_cur = x[cidx, :, i - 1, 0]
-                y_cur = x[cidx, :, i - 1, 1]
+        diagrams = create_pd_orbits(
+            orbits,
+            num_classes = config.num_classes,
+            homology_dimensions=config.homology_dimensions,
+        )
 
-                x[cidx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
-                x_next = x[cidx, :, i, 0]
-                x[cidx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
-
-        """
-        # old non-parallel version
-        for cidx, p in enumerate(config['parameters']):  # type: ignore
-            for i in range(config['num_orbits']):  # type: ignore
-                x[cidx][i] = generate_orbit(
-                    num_pts_per_orbit=config['num_pts_per_orbit'],
-                    parameter=p
-                    )
-        """
-
-        assert(not np.allclose(x[0, 0], x[0, 1]))
-
-        # compute weak alpha persistence
-        wap = WeakAlphaPersistence(
-                            homology_dimensions=config['homology_dimensions'],
-                            n_jobs=multiprocessing.cpu_count()
-                            )
-        # c: class, o: orbit, p: point, d: dimension
-        x_stack = rearrange(x, 'c o p d -> (c o) p d')  # stack classes
-        diagrams = wap.fit_transform(x_stack)
-        # shape: (num_classes * n_samples, n_features, 3)
-
-        # combine class and orbit dimensions
-        diagrams = rearrange(
-                                diagrams,
-                                '(c o) p d -> c o p d',
-                                c=config['num_classes']  # type: ignore
-                            )
-
-        # plot sample persistence diagrams for debugging
-        if(False):
-            plot_diagram(diagrams[1, 2])
-            plot_diagram(diagrams[2, 2])
 
         # save dataset
         if dataset_type == 'train':
@@ -159,109 +125,83 @@ for dataset_type in ['train', 'validation']:
     with open(dgms_filename, 'rb') as f:
         x = np.load(f)
 
-    # c: class, o: orbit, p: point in persistence diagram,
-    # d: coordinates + homology dimension
-    x = rearrange(
-                    x,
-                    'c o p d -> (c o) p d',
-                    c=config['num_classes']  # type: ignore
-                )
-    # convert homology dimension to one-hot encoding
-    x = np.concatenate(
-        (
-            x[:, :, :2],
-            (np.eye(config['num_homology_dimensions'])  # type: ignore
-             [x[:, :, -1].astype(np.int32)]),
-        ),
-        axis=-1)
-    # convert from [orbit, sequence_length, feature] to
-    # [orbit, feature, sequence_length] to fit to the
-    # input_shape of `SmallSetTransformer`
-    # x = rearrange(x, 'o s f -> o f s')
-
-    # generate labels
-    y_list = []
-    for i in range(config['num_classes']):  # type: ignore
-        y_list += [i] * config['num_orbits']  # type: ignore
-
-    y = np.array(y_list)
-
-    # load dataset to PyTorch dataloader
-
-    x_tensor = torch.Tensor(x)
-    print(dataset_type, x_tensor[0])
-    y_tensor = torch.Tensor(y).long()
+    x_tensor, y_tensor = convert_pd_orbits_to_tensor(
+        diagrams=x,
+        num_classes=config['num_classes'],
+        num_orbits=config['num_orbits'],
+        num_homology_dimensions=config['num_homology_dimensions'], 
+    )
 
     dataset = TensorDataset(x_tensor, y_tensor)
     if dataset_type == 'train':
         dataloader = DataLoader(dataset,
                                 shuffle=True,
-                                batch_size=2 ** 6)
+                                batch_size=2 ** 3)
     else:
         dataloader_validation = DataLoader(dataset,
-                                           batch_size=2 ** 6)
+                                           batch_size=2 ** 3)
 
 # %%
 
-
-# initialize SetTransformer model
-
-model = SelfAttentionSetTransformer(dim_input=4, dim_output=5)
-
-
-def num_params(model: nn.Module) -> int:
-    return sum([parameter.nelement() for parameter in model.parameters()])
-
-
-print('model has', num_params(model), 'trainable parameters.')  # type: ignore
-
-# CUDA for PyTorch
+# Load CUDA for PyTorch if  available
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 
-# %%
-# Define Model architecture for the graph classifier
-
-num_runs = 3
-n_epochs = 200
+# Specify the random parameter search procedure
+num_runs = 2
+n_epochs = 1
 
 
 for i in range(num_runs):
     print("Test run number", i + 1, "of", num_runs)
-    lr = random.choice([1e-2, 1e-3, 1e-4])
-    ln = random.choice([True])  # LayerNorm in Set Transformer
-    use_regularization = random.choice([False])  # Use L2-regularization
-    use_induced_attention = random.choice([False])  # use trainable query vector instead of
+
+    # Randomly choose the hyper-parameters
+    config_run = AttrDict({})
+    config_run.lr = random.choice([1e-2, 1e-3, 1e-4])
+    config_run.ln = random.choice([True])  # LayerNorm in Set Transformer
+    config_run.use_regularization = random.choice([False, True])
+    # Use L2-regularization
+    config_run.use_induced_attention = random.choice([False])
+    # use trainable query vector instead of
     # self-attention; use induced attention for large sets because of the
     # quadratic scaling of self-attention.
     # the class with more points
     # only use the persistence diagrams as features not the spectral features
-    optimizer = lambda params: torch.optim.Adam(params, lr=lr)  # noqa: E731
-    dim_hidden = random.choice([64, 128, 256, 512])
-    dim_output = random.choice([20, 50, 100])
-    num_heads = random.choice([4, 8, 16, 32])
-    num_layers = random.choice([1, 2, 4, 8])
-    use_sam = random.choice([False])
+    config_run.optimizer = lambda params: torch.optim.Adam(params,
+                                                           lr=config_run.lr)
+    config_run.dim_hidden = random.choice([64, 128, 256, 512])
+    config_run.dim_output = random.choice([20, 50, 100])
+    config_run.num_heads = random.choice([4, 8, 16])
+    config_run.num_layers = random.choice([1, 2, 3])
+    config_run.use_sam = random.choice([False])
 
-    print(f"""lr={lr}\nregularization={use_regularization}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nnum_heads={num_heads}\ndim_hidden={dim_hidden}""")
 
-    # define graph classifier
+    # initialize set transformer model
     gc = SelfAttentionSetTransformer(
             dim_input=4,
             num_outputs=1,
             dim_output=config.num_classes,
-            num_heads=num_heads,
-            dim_hidden=dim_hidden,
-            n_layers=num_layers
+            num_heads=config_run.num_heads,
+            dim_hidden=config_run.dim_hidden,
+            n_layers=config_run.num_layers
             )
 
-    if use_sam:
+    # Choose the training method
+    if config_run.use_sam:
         train_fct = sam_train
     else:
         train_fct = train_vec
 
     # train the model and return losses and accuracies information
     tic = time.perf_counter()
+    
+    #Print number of trainable parameters
+    print(f"number of trainable parameters: {gc.num_params}")
+
+    # Print the model configuration
+    pp.pprint(config_run)
+
+    # Trained the model and return loss and accuracy information
     (losses,
      val_losses,
      train_accuracies,
@@ -269,17 +209,21 @@ for i in range(num_runs):
                                 gc,
                                 dataloader,
                                 dataloader_validation,
-                                lr=lr,
+                                lr=config_run.lr,
                                 verbose=True,
                                 num_epochs=n_epochs,
                                 use_cuda=use_cuda,
-                                use_regularization=use_regularization,
-                                optimizer=optimizer
+                                use_regularization=config_run\
+                                    .use_regularization,
+                                optimizer=config_run.optimizer
                                 )
     toc = time.perf_counter()
     print(f"Trained model for {n_epochs} in {toc - tic:0.4f} seconds")
     del gc
     # plot losses
+    
+# %%
+def save_run_summary(losses, val_losses, config)->None:
     plt.plot(losses, label='train_loss')
     plt.plot([x for x in val_losses], label='val_loss')
     plt.legend()
@@ -298,17 +242,15 @@ for i in range(num_runs):
     plt.show()
     # plot metadata
     plt.text(0.2, 0.5,
-             f"""\nlr={lr}\nuse_regularization={use_regularization}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nnum_heads={num_heads}\ndim_hidden={dim_hidden}""",
-             fontsize='xx-large')
+             f"""\nlr={lr}\nuse_regularization={use_regularization}\nuse_induced_attention={use_induced_attention}\nln={ln}\ndim_output={dim_output}\nnum_heads={num_heads}\ndim_hidden={dim_hidden}\nnum_layers={num_layers}""",
+             fontsize='x-large')
     plt.axis('off')
 
     plt.savefig("metadata.png")
     plt.show()
 
-    import sys
-    from PIL import Image
-
-    images = [Image.open(x) for x in ['losses.png', 'accuracies.png', 'metadata.png']]
+    image_files = ['losses.png', 'accuracies.png', 'metadata.png']
+    images = [Image.open(x) for x in image_files]
     widths, heights = zip(*(i.size for i in images))
 
     total_width = sum(widths)
@@ -321,11 +263,8 @@ for i in range(num_runs):
       new_im.paste(im, (x_offset,0))
       x_offset += im.size[0]
     max_val_acc = '{:2.2%}'.format(max(val_accuracies)/100)
-    new_im.save(f"""Benchmark_PersFormer_graph/{config.dataset_name}_Benchmark/max_val_acc{{max_val_acc}}_lr_{lr}_{use_regularization}_{use_induced_attention}_{ln}_{dim_output}_{num_heads}_{dim_hidden}_epochs_{n_epochs}_run_{i}.png""")
+    new_im.save(f"""Benchmark_PersFormer_graph/{config.dataset_name}_Benchmark/max_val_acc{max_val_acc}_lr_{lr}_{use_regularization}_{use_induced_attention}_{ln}_{dim_output}_{num_heads}_{dim_hidden}_{num_layers}_epochs_{n_epochs}_run_{i}.png""")
 
-
-# %%
-
-# %%
-
-# %%
+    # delete temporary images
+    for image in image_files:
+        os.remove(image)

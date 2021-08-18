@@ -1,9 +1,11 @@
 import numpy as np  # type: ignore
+import warnings
 
 
 def generate_orbit(num_pts_per_orbit: int = 100,
                    parameter: float = 1.0) -> np.ndarray:
     """Generate sequence of points of a dynamical system
+    Non-parallel version
 
     Args:
         num_pts_per_orbit (int, optional): Number of points to generate.
@@ -14,6 +16,10 @@ def generate_orbit(num_pts_per_orbit: int = 100,
     Returns:
         np.ndarray: Array of sampled points of the dynamical system.
     """
+    warnings.warn("This methode is deprecated. Use the parallel\
+                   version create_data.parallel_orbit.generate_\
+                       orbit_parallel",
+                  DeprecationWarning)
     try:
         assert parameter > 0
     except AssertionError:
