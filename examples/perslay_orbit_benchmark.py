@@ -223,6 +223,5 @@ for i in range(num_runs):
         config_run,
         config,
     )
-    
 #%%
 
