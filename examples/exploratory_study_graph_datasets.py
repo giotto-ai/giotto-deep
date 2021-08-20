@@ -12,8 +12,9 @@ import pandas as pd  # type: ignore
 import plotly.express as px  # type: ignore
 
 from gtda.diagrams import PairwiseDistance  # type: ignore
-
 from gdeep.topology_layers import load_data
+
+from sklearn.metrics import pairwise_distances # type: ignore
 
 # %%
 dataset_name = "PROTEINS"
@@ -57,7 +58,7 @@ for type_ in range(int(max(diagrams[0][:, 2]) + 1.0)):
                              'constant')
         pd_type_pad[:, 2] = type_
         pds.append(pd_type_pad)
-    pwd = PairwiseDistance(metric='bottleneck', n_jobs=8)
+    pwd = PairwiseDistance(metric='wasserstein', n_jobs=8)
     distances_type = pwd.fit_transform(np.stack(pds))
     distances = distances + distances_type**2
 distances.shape
