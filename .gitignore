@@ -17,7 +17,13 @@ examples/dask-worker-space
 examples/.ipynb_checkpoints
 examples/*/
 examples/*.nbconvert.ipynb
+<<<<<<< HEAD
 examples/models
+=======
+examples/runs/*
+examples/data/*
+examples/.*
+>>>>>>> master
 
 # Html files
 examples/*.html

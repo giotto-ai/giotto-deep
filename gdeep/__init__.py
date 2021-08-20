@@ -1,10 +1,8 @@
 __all__ = [
-    'create_nets',
-    'gradcam',
-    'heatmaps',
+    'analysis',
+    'data',
+    'models',
+    'pipeline',
     'utility',
-    'decision_boundary',
-    'plotting',
-    'intersection_homology',
-    'optimisation'
+    'visualisation'
     ] 
