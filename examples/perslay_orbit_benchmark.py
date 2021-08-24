@@ -14,17 +14,21 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 from einops import rearrange  # type: ignore
 import os
+
+from torch.utils.tensorboard import SummaryWriter
+
 from gdeep.topology_layers import SelfAttentionSetTransformer, train_vec,\
     sam_train
-from gdeep.create_data import generate_orbit_parallel, create_pd_orbits,\
+from gdeep.data import generate_orbit_parallel, create_pd_orbits,\
     convert_pd_orbits_to_tensor
-from gdeep.plotting import save_run_summary
 
 #%%
 
 parameters = (2.5, 3.5, 4.0, 4.1, 4.3)  # different classes of orbits
 homology_dimensions = (0, 1)
-n_points = 1_000  # should be divisible by len(parameters)
+n_points = 1_000  # 
+assert n_points % len(parameters) == 0,\
+    "n_points should be divisible by len(parameters)"
 k = int(n_points / 1000)
 
 config = AttrDict({

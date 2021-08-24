@@ -1,8 +1,10 @@
 # from https://github.com/juho-lee/set_transformer/blob/master/max_regression_demo.ipynb  # noqa: E501
+#### Author: Raphael Reinauer
 
 import torch
 import torch.nn as nn
 from torch import Tensor
+from torch.nn.modules.dropout import Dropout
 from gdeep.topology_layers.modules import ISAB, PMA, SAB  # type: ignore
 
 
@@ -38,74 +40,9 @@ class SmallDeepSet(nn.Module):
 
 
 class SetTransformer(nn.Module):
-    """ Vanilla SetTransformer from
+    """ SetTransformer from
     https://github.com/juho-lee/set_transformer/blob/master/main_pointcloud.py
-    """
-    def __init__(
-        self,
-        dim_input=3,
-        num_outputs=1,
-        dim_output=40,  # number of classes
-        num_inds=32,  # number of induced points, see  Set Transformer paper
-        dim_hidden=128,
-        num_heads=4,
-        ln=True,  # use layer norm
-    ):
-        """Init of SetTransformer.
-
-        Args:
-            dim_input (int, optional): Dimension of input data for each
-            element in the set. Defaults to 3.
-            num_outputs (int, optional): Number of outputs. Defaults to 1.
-            dim_output (int, optional): Number of classes. Defaults to 40.
-            dim_hidden (int, optional): Number of induced points, see  Set
-                Transformer paper. Defaults to 128.
-            num_heads (int, optional): Number of attention heads. Defaults
-                to 4.
-            ln (bool, optional): If `True` layer norm will not be applied.
-                Defaults to False.
-        """
-        super(SetTransformer, self).__init__()
-        self.enc = nn.Sequential(
-            ISAB(dim_input, dim_hidden, num_heads, num_inds, ln=ln),
-            ISAB(dim_hidden, dim_hidden, num_heads, num_inds, ln=ln),
-        )
-        self.dec = nn.Sequential(
-            nn.Dropout(),
-            PMA(dim_hidden, num_heads, num_outputs, ln=ln),
-            nn.Dropout(),
-            nn.Linear(dim_hidden, dim_output),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass
-
-        Args:
-            x (torch.Tensor): Batch tensor of shape
-                [batch, sequence_length, dim_in]
-
-        Returns:
-            torch.Tensor: Tensor with predictions of the `dim_output` classes.
-        """
-        x = self.enc(x)
-        x = self.dec(x)
-        return x.squeeze()
-
-    def num_params(self) -> int:
-        """Returns number of trainable parameters.
-
-        Returns:
-            int: Number of trainable parameters.
-        """
-        total_params = 0
-        for parameter in self.parameters():
-            total_params += parameter.nelement()
-        return total_params
-
-
-class SelfAttentionSetTransformer(nn.Module):
-    """ Vanilla SetTransformer from
-    https://github.com/juho-lee/set_transformer/blob/master/main_pointcloud.py
+    with either induced attention or classical self attention.
     """
     def __init__(
         self,
@@ -115,7 +52,9 @@ class SelfAttentionSetTransformer(nn.Module):
         dim_hidden=128,
         num_heads=4,
         ln=False,  # use layer norm
-        n_layers=1
+        n_layers=1,
+        use_induced_attention=False,
+        dropout=0.0
     ):
         """Init of SetTransformer.
 
@@ -132,17 +71,30 @@ class SelfAttentionSetTransformer(nn.Module):
                 Defaults to False.
         """
         super().__init__()
+
+        assert dim_hidden % num_heads == 0, \
+            "Number of hidden dimensions must be divisible by number of heads."
+
         self.emb = SAB(dim_input, dim_hidden, num_heads, ln=ln)
 
         self.n_layers = n_layers
-        self.enc_list = nn.ModuleList([
-            SAB(dim_hidden, dim_hidden, num_heads, ln=ln)
-            for _ in range(n_layers)
-        ])
+        if use_induced_attention:
+            self.enc_list = nn.ModuleList([
+                nn.Sequential(
+                ISAB(dim_hidden, dim_hidden, num_heads, ln=ln),
+                nn.Dropout(p=dropout)
+                )
+                for _ in range(n_layers)
+            ])
+        else:
+            self.enc_list = nn.ModuleList([
+                SAB(dim_hidden, dim_hidden, num_heads, ln=ln)
+                for _ in range(n_layers)
+            ])
         self.dec = nn.Sequential(
-            nn.Dropout(),
+            nn.Dropout(p=dropout),
             PMA(dim_hidden, num_heads, num_outputs, ln=ln),
-            nn.Dropout(),
+            nn.Dropout(p=dropout),
             nn.Linear(dim_hidden, dim_output),
         )
 
@@ -187,26 +139,20 @@ class GraphClassifier(nn.Module):
                  ln=True,
                  num_heads=4,
                  use_induced_attention=False,
-                 dim_hidden=128
+                 dim_hidden=128,
+                 dropout=0.0,
                 ):
         super().__init__()
-        if use_induced_attention:
-            self.st = SetTransformer(
-                dim_input=dim_input,
-                num_outputs=num_outputs,
-                dim_output=dim_output,
-                ln=ln,
-                num_heads=num_heads,
-                dim_hidden=dim_hidden
-                )
-        else:
-            self.st = SelfAttentionSetTransformer(
-                dim_input=dim_input,
-                num_outputs=num_outputs,
-                dim_output=dim_output,
-                ln=ln,
-                dim_hidden=dim_hidden
-                )
+        self.st = SetTransformer(
+            dim_input=dim_input,
+            num_outputs=num_outputs,
+            dim_output=dim_output,
+            ln=ln,
+            num_heads=num_heads,
+            dim_hidden=dim_hidden,
+            use_induced_attention=use_induced_attention,
+            dropout=dropout,
+            )
         self.num_classes = num_classes
         self.ln = nn.LayerNorm(dim_output + num_features)
         self.ff_1 = nn.Linear(dim_output + num_features, 50)

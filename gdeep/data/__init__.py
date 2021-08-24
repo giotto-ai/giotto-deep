@@ -3,6 +3,8 @@ from .tori import Rotation, \
     CreateToriDataset, GenericDataset
 from .torch_datasets import TorchDataLoader
 from .preprocessing import PreprocessText, TextDataset
+from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
+    convert_pd_orbits_to_tensor
 
 
 __all__ = [
@@ -12,5 +14,8 @@ __all__ = [
     'GenericDataset',
     'PreprocessText',
     'TextDataset',
-    'TorchDataLoader'
+    'TorchDataLoader',
+    'generate_orbit_parallel',
+    'create_pd_orbits',
+    'convert_pd_orbits_to_tensor',
     ]

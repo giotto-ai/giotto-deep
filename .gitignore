@@ -17,13 +17,10 @@ examples/dask-worker-space
 examples/.ipynb_checkpoints
 examples/*/
 examples/*.nbconvert.ipynb
-<<<<<<< HEAD
 examples/models
-=======
 examples/runs/*
 examples/data/*
 examples/.*
->>>>>>> master
 
 # Html files
 examples/*.html
@@ -66,6 +63,7 @@ test-output.xml
 
 # JavaScript for plots display
 examples/*.js
+
 examples/perslay_orbit_benchmark.py
 
 init_environment.sh

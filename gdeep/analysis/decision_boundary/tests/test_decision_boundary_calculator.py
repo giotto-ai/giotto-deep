@@ -35,4 +35,5 @@ def test_gfdbc_multiclass():
         g.step()
     assert g.get_decision_boundary().size() == torch.Size([100, 3])
 
-# TODO: Check if significant number of points lie close to the decision boundary
+# TODO: Check if significant number of points lie close to the decision
+# boundary

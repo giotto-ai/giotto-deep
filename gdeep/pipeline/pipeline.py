@@ -58,12 +58,22 @@ class Pipeline:
         loss = -100    # arbitrary starting value to avoid nan loss
 
         tik = time.time()
+        self.model.train()
         # for batch, (X, y) in enumerate(self.dataloaders[0]):
-        for batch, (X, y) in enumerate(dl_tr):
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
-            # Compute prediction and loss
-            pred = self.model(X)
+        for batch, batch_data in enumerate(dl_tr):
+            if len(batch_data) == 2:
+                X, X_features, y = batch_data
+                X = X.to(DEVICE)
+                y = y.to(DEVICE)
+                # Compute prediction and loss
+                pred = self.model(X)
+            elif len(batch_data) == 3:
+                X, X_features, y = batch_data
+                X = X.to(DEVICE)
+                X_features = X_features.to(DEVICE)
+                y = y.to(DEVICE)
+                # Compute prediction and loss
+                pred = self.model(X, X_features)
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             self.writer.add_scalar(writer_tag + "/Loss/train", loss, self.train_epoch)
@@ -91,32 +101,42 @@ class Pipeline:
         val_loss, correct = 0, 0
         class_label = []
         class_probs = []
-        with torch.no_grad():
-            pred = 0
+        self.model.eval()
+        pred = 0
 
-            # for X, y in self.dataloaders[1]:
-            for X, y in dl_val:
+        # for X, y in self.dataloaders[1]:
+        for batch_data in dl_val:
+            if len(batch_data) == 2:
+                X, X_features, y = batch_data
                 X = X.to(DEVICE)
                 y = y.to(DEVICE)
+                # Compute prediction and loss
                 pred = self.model(X)
-                class_probs_batch = [F.softmax(el, dim=0)
-                                     for el in pred]
-                class_probs.append(class_probs_batch)
-                val_loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) ==
-                            y).type(torch.float).sum().item()
-                class_label.append(y)
-            # add data to tensorboard
-            val_probs = torch.cat([torch.stack(batch) for batch in class_probs])
-            val_label = torch.cat(class_label)
+            elif len(batch_data) == 3:
+                X, X_features, y = batch_data
+                X = X.to(DEVICE)
+                X_features = X_features.to(DEVICE)
+                y = y.to(DEVICE)
+                # Compute prediction and loss
+                pred = self.model(X, X_features)
+            class_probs_batch = [F.softmax(el, dim=0)
+                                    for el in pred]
+            class_probs.append(class_probs_batch)
+            val_loss += self.loss_fn(pred, y).item()
+            correct += (pred.argmax(1) ==
+                        y).type(torch.float).sum().item()
+            class_label.append(y)
+        # add data to tensorboard
+        val_probs = torch.cat([torch.stack(batch) for batch in class_probs])
+        val_label = torch.cat(class_label)
 
-            for class_index in range(len(pred[0])):
-                tensorboard_truth = val_label == class_index
-                tensorboard_probs = val_probs[:, class_index]
-                self.writer.add_pr_curve(str(class_index),
-                                         tensorboard_truth,
-                                         tensorboard_probs,
-                                         global_step=0)
+        for class_index in range(len(pred[0])):
+            tensorboard_truth = val_label == class_index
+            tensorboard_probs = val_probs[:, class_index]
+            self.writer.add_pr_curve(str(class_index),
+                                        tensorboard_truth,
+                                        tensorboard_probs,
+                                        global_step=0)
         self.writer.flush()
 
         val_loss /= size
@@ -140,33 +160,42 @@ class Pipeline:
         test_loss, correct = 0, 0
         class_label = []
         class_probs = []
-        with torch.no_grad():
-            pred = 0
+        self.model.eval()
+        pred = 0
 
-            # for X, y in self.dataloaders[1]:
-            for X, y in dl_test:
+        for batch_data in dl_test:
+            if len(batch_data) == 2:
+                X, X_features, y = batch_data
                 X = X.to(DEVICE)
                 y = y.to(DEVICE)
+                # Compute prediction and loss
                 pred = self.model(X)
-                class_probs_batch = [F.softmax(el, dim=0)
-                                     for el in pred]
-                class_probs.append(class_probs_batch)
-                test_loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) ==
-                            y).type(torch.float).sum().item()
-                class_label.append(y)
-            # add data to tensorboard
-            test_probs = torch.cat([torch.stack(batch) for batch in
-                                    class_probs])
-            test_label = torch.cat(class_label)
+            elif len(batch_data) == 3:
+                X, X_features, y = batch_data
+                X = X.to(DEVICE)
+                X_features = X_features.to(DEVICE)
+                y = y.to(DEVICE)
+                # Compute prediction and loss
+                pred = self.model(X, X_features)
+            class_probs_batch = [F.softmax(el, dim=0)
+                                    for el in pred]
+            class_probs.append(class_probs_batch)
+            test_loss += self.loss_fn(pred, y).item()
+            correct += (pred.argmax(1) ==
+                        y).type(torch.float).sum().item()
+            class_label.append(y)
+        # add data to tensorboard
+        test_probs = torch.cat([torch.stack(batch) for batch in
+                                class_probs])
+        test_label = torch.cat(class_label)
 
-            for class_index in range(len(pred[0])):
-                tensorboard_truth = test_label == class_index
-                tensorboard_probs = test_probs[:, class_index]
-                self.writer.add_pr_curve(str(class_index),
-                                         tensorboard_truth,
-                                         tensorboard_probs,
-                                         global_step=0)
+        for class_index in range(len(pred[0])):
+            tensorboard_truth = test_label == class_index
+            tensorboard_probs = test_probs[:, class_index]
+            self.writer.add_pr_curve(str(class_index),
+                                        tensorboard_truth,
+                                        tensorboard_probs,
+                                        global_step=0)
         self.writer.flush()
 
         test_loss /= size
@@ -176,7 +205,8 @@ class Pipeline:
 
         return 100*correct
 
-    def train(self, optimizer, n_epochs=10, cross_validation=False, batch_size=512, type="text", **kwargs):
+    def train(self, optimizer, n_epochs=10, cross_validation=False,
+        batch_size=512, type="text", **kwargs):
         """Function to run the trianing cycles.
 
         Args:
