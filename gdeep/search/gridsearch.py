@@ -220,7 +220,7 @@ class Gridsearch(Pipeline, Benchmark):
         for col in df_res.columns:
             vals = df_res[col].values
             if vals.dtype in [np.float16, np.float64, 
-                                 np.float32, np.float128,
+                                 np.float32,
                                  np.int32, np.int64, 
                                  np.int16]:
                 list_of_arrays.append(vals)
