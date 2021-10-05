@@ -224,10 +224,10 @@ class Pipeline:
 
         if optimizers_param is None:
             optimizers_param = {"lr":0.001}
-        if dataloaders_param is None:
-            dataloaders_param = {}
-        
         dl_tr = self.dataloaders[0]
+        if dataloaders_param is None:
+            dataloaders_param = {"batch_size":dl_tr.batch_size}
+        
         #print("here:",len(dl_tr))
         if len(self.dataloaders) == 3:
             dl_val = self.dataloaders[1]
@@ -236,7 +236,7 @@ class Pipeline:
             mean_val_loss = []
             mean_val_acc = []
             valloss, valacc = -1, 0
-            data_idx = list(range(len(self.dataloaders[0].dataset)))
+            data_idx = list(range(len(self.dataloaders[0])*self.dataloaders[0].batch_size))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
                 # reset the model weights
@@ -256,8 +256,7 @@ class Pipeline:
                                                      **dataloaders_param,
                                                      sampler=SubsetRandomSampler(val_idx))
                 # print n-th fold
-                if cross_validation and (len(self.dataloaders) == 1 or len(self.dataloaders) == 2):
-                    print("\n\n********** Fold ", fold+1, "**************")
+                print("\n\n********** Fold ", fold+1, "**************")
 
                 # the training and validation
                 for t in range(n_epochs):
