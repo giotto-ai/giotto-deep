@@ -22,8 +22,9 @@ class FFNet(nn.Module):
         self.linears = nn.ModuleList([nn.Linear(arch[i], arch[i+1]) for i in range(len(arch)-1)])
 
     def forward(self, x):
-        for i, l in enumerate(self.linears):
+        for i, l in enumerate(self.linears[:-1]):
             x = F.relu(l(x))
+        x = self.linears[-1](x)
         return x
 
 #    def __init__(self, verbose=0, arch=[2, 3, 3, 2]):

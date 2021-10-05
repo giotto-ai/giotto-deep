@@ -1,5 +1,5 @@
 from gdeep.pipeline import Pipeline
-
+from gdeep.utility import _are_compatible
 
 class Benchmark:
     """This is the generic class that allows
@@ -32,7 +32,7 @@ class Benchmark:
         print("Benchmarking Started")
         for dataloaders in self.dataloaders_dicts:
             for model in self.models_dicts:
-                if Gridsearch._are_compatible(model, dataloaders):
+                if _are_compatible(model, dataloaders):
                     print("*"*40)
                     print("Training on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
                     pipe = Pipeline(model["model"], dataloaders["dataloaders"], self.loss_fn, self.writer)

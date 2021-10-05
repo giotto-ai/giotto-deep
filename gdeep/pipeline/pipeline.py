@@ -191,6 +191,12 @@ class Pipeline:
             cross_validation (bool)
             batch_size (int)
             type (string)
+            
+        Returns:
+            (float, float): the validation loss and accuracy
+                if there is cross validation, the validation data loader
+                is ignored. On the other hand, if there `cross_validation = False`
+                then the test loss and accuracy is returned.
         """
 
         self.optimizer = optimizer(self.model.parameters(), **kwargs)
@@ -199,6 +205,9 @@ class Pipeline:
             dl_val = self.dataloaders[1]
         if cross_validation:
             k_folds = 5
+            mean_val_loss = []
+            mean_val_acc = []
+            valloss, valacc = -1, 0
             data_idx = list(range(len(self.dataloaders[0])*batch_size))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
@@ -220,30 +229,32 @@ class Pipeline:
                     print("\n\n********** Fold ", fold+1, "**************")
 
                 # the training and validation
-                print("TOTAL EPOCHS ", n_epochs)
                 for t in range(n_epochs):
                     print(f"Epoch {t+1}\n-------------------------------")
                     self.val_epoch = t
                     self.train_epoch = t
                     self._train_loop(dl_tr)
-                    self._val_loop(dl_val)
+                    valloss, valacc = self._val_loop(dl_val)
+                mean_val_loss.append(valloss)
+                mean_val_acc.append(valacc)
+                # mean of the validation and loss accuracies over folds
+                valloss = np.mean(mean_val_loss)
+                valacc = np.mean(mean_val_acc)
 
         else:
-            print("TOTAL EPOCHS ", n_epochs)
             for t in range(n_epochs):
                 print(f"Epoch {t+1}\n-------------------------------")
                 # for i in dl_tr:
                 #     print (i)
                 self._train_loop(dl_tr)
                 if len(self.dataloaders) == 3:
-                    self._val_loop(dl_val)
-                    self.val_epoch = t + 1
-                self.train_epoch = t + 1
+                    valloss, valacc = self._val_loop(dl_val)
+                    self.val_epoch = t
+                self.train_epoch = t
             # test the results
             if len(self.dataloaders) == 2:
-                floss, faccuracy = self._test_loop(self.dataloaders[1])
-            if len(self.dataloaders) == 3:
-                floss, faccuracy = self._test_loop(self.dataloaders[2])
-
+                valloss, valacc = self._val_loop(self.dataloaders[1])
+            
         self.writer.flush()
-        return floss, faccuracy
+        # put the mean of the cross_val
+        return valloss, valacc

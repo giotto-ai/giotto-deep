@@ -2,6 +2,7 @@ import torch
 import optuna
 import pandas as pd
 import numpy as np
+from gdeep.utility import _are_compatible
 from optuna.trial import TrialState
 from gdeep.pipeline import Pipeline
 from gdeep.search import Benchmark
@@ -39,10 +40,10 @@ class Gridsearch(Pipeline):
         self.list_res = []
         self.df_res = None
         if (isinstance(obj, Pipeline)):
-            #super().__init__(obj.model,
-            #                 obj.dataloaders,
-            #                 obj.loss_fn,
-            #                 obj.writer)
+            super().__init__(self.obj.model,
+                             self.obj.dataloaders,
+                             self.obj.loss_fn,
+                             self.obj.writer)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
@@ -63,7 +64,7 @@ class Gridsearch(Pipeline):
                    n_epochs,
                    optimizers_params,
                    dataloaders_params,
-                   models_params,
+                   models_hyperparams,
                    writer_tag="",
                    **kwargs):
         """default callback function for optuna's study
@@ -87,9 +88,17 @@ class Gridsearch(Pipeline):
         #print(optimizers_param)
         dataloaders_param = self.suggest_params(trial, dataloaders_params)
         #print(dataloaders_param)
-        models_param = self.suggest_params(trial, models_params)
-        #print(models_param)
-        new_pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        models_hyperparam = self.suggest_params(trial, models_hyperparams)
+        #print(models_hyperparam)
+        #print(self.model)
+        # create a new model instance
+        try:
+            new_model = type(self.model)(**models_hyperparam)
+        except TypeError:
+            new_model = self.model
+
+        #print(new_model)
+        new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
         for t in range(n_epochs):
             loss, accuracy = new_pipe.train(optimizer, n_epochs = 1, **dataloaders_param,
                                 **optimizers_param )
@@ -105,7 +114,8 @@ class Gridsearch(Pipeline):
 
         self.writer.flush()
         print("Done!")
-
+        del(new_pipe)
+        del(new_model)
         if self.search_metric == "loss":
             return loss
         else:
@@ -116,7 +126,7 @@ class Gridsearch(Pipeline):
               n_epochs,
               optimizers_params = None,
               dataloaders_params = None,
-              models_params = None,
+              models_hyperparams = None,
               **kwargs):
         """method to be called when starting the gridsearch
         
@@ -134,16 +144,13 @@ class Gridsearch(Pipeline):
                 self.study = optuna.create_study(direction="minimize")
             else:
                 self.study = optuna.create_study(direction="maximize")
-            super().__init__(self.obj.model,
-                             self.obj.dataloaders,
-                             self.obj.loss_fn,
-                             self.obj.writer)
+            
             self.study.optimize(lambda tr: self._objective(tr,
                                                            optimizers,
                                                            n_epochs,
                                                            optimizers_params,
                                                            dataloaders_params,
-                                                           models_params,
+                                                           models_hyperparams,
                                                            writer_tag = "model",
                                                            **kwargs),
                                 n_trials=self.n_trials,
@@ -153,7 +160,7 @@ class Gridsearch(Pipeline):
         else:
             for dataloaders in self.bench.dataloaders_dicts:
                 for model in self.bench.models_dicts:
-                    if self._are_compatible(model, dataloaders):
+                    if _are_compatible(model, dataloaders):
                         print("*"*40)
                         print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
 
@@ -174,7 +181,7 @@ class Gridsearch(Pipeline):
                                                                        n_epochs,
                                                                        optimizers_params,
                                                                        dataloaders_params,
-                                                                       models_params,
+                                                                       models_hyperparams,
                                                                        writer_tag,
                                                                        **kwargs),
                                             n_trials=self.n_trials,
@@ -194,14 +201,15 @@ class Gridsearch(Pipeline):
         complete_trials = self.study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
         print("Study statistics: ")
-        print("Number of finished trials: ", len(trials))
         print("Number of pruned trials: ", len(pruned_trials))
         print("Number of complete trials: ", len(complete_trials))
+        try:
+            print("Best trial:")
+            trial_best = self.study.best_trial
 
-        print("Best trial:")
-        trial_best = self.study.best_trial
-
-        print("Metric Value for best trial: ", trial_best.value)
+            print("Metric Value for best trial: ", trial_best.value)
+        except ValueError:
+            pass
         
         for tria in trials:
             temp_list = []
@@ -264,24 +272,6 @@ class Gridsearch(Pipeline):
         self.writer.flush()
         
         return self.df_res
-        
-        
-    @staticmethod
-    def _are_compatible(model_dict, dataloaders_dict):
-        """private function to check the compatibility of a model
-        with a set of dataloaders"""
-
-        if "params" in model_dict.keys():
-            model = model_dict["model"](*model_dict["params"])
-        else:
-            model = model_dict["model"]
-        batch = next(iter(dataloaders_dict["dataloaders"][0]))[0]
-        try:
-            model(batch)
-        except RuntimeError:
-            return False
-        else:
-            return True
 
     @staticmethod
     def suggest_params(trial, optimizers_params):
