@@ -15,7 +15,8 @@ from typing import Iterator
 
 class PersistenceGradient():
     '''This class computes the gradient of the persistence
-    diagram with respect to a point cloud.
+    diagram with respect to a point cloud. The algorithms has
+    first been developed in https://arxiv.org/abs/2010.08356 .
 
     Discalimer: this algorithm works well for generic point clouds.
     In case your point cloud has many simplices with same

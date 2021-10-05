@@ -48,7 +48,9 @@ class TorchDataLoader:
     def build_dataloader(self, **kwargs):
         self.build_dataset()
         train_dataloader = DataLoader(self.training_data,
+                                      pin_memory=True,
                                       **kwargs)
         test_dataloader = DataLoader(self.test_data,
+                                     pin_memory=True,
                                      **kwargs)
         return train_dataloader, test_dataloader

@@ -20,7 +20,7 @@ class Benchmark:
         self.loss_fn = loss_fn
         self.writer = writer
 
-    def start(self, optimizer, epochs, batch_size, **kwargs):
+    def start(self, optimizer, n_epochs=10, cross_validation=False, batch_size=32, type="text", **kwargs):
         """method to be called when starting the benchmarking
         """
         if not isinstance(self.models_dicts, list):
@@ -32,7 +32,8 @@ class Benchmark:
         print("Benchmarking Started")
         for dataloaders in self.dataloaders_dicts:
             for model in self.models_dicts:
-                print("*"*30)
-                print("Training on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
-                pipe = Pipeline(model["model"], dataloaders["dataloaders"], self.loss_fn, self.writer)
-                pipe.train(optimizer, epochs, batch_size=batch_size, **kwargs)
+                if Gridsearch._are_compatible(model, dataloaders):
+                    print("*"*40)
+                    print("Training on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
+                    pipe = Pipeline(model["model"], dataloaders["dataloaders"], self.loss_fn, self.writer)
+                    pipe.train(optimizer, n_epochs, cross_validation, batch_size, type, **kwargs)
