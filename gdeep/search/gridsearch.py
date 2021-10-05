@@ -100,7 +100,7 @@ class Gridsearch(Pipeline):
         #print(new_model)
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
         for t in range(n_epochs):
-            loss, accuracy = new_pipe.train(optimizer, n_epochs = 1, cross_validation = False,
+            loss, accuracy = new_pipe.train(optimizer, 1, False,
                                             dataloaders_param,
                                             optimizers_param)
 
