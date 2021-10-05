@@ -20,7 +20,11 @@ class Benchmark:
         self.loss_fn = loss_fn
         self.writer = writer
 
-    def start(self, optimizer, n_epochs=10, cross_validation=False, batch_size=32, type="text", **kwargs):
+    def start(self, optimizer,
+              n_epochs=10,
+              cross_validation=False,
+              optimizer_param=None,
+              dataloaders_param=None):
         """method to be called when starting the benchmarking
         """
         if not isinstance(self.models_dicts, list):
@@ -36,4 +40,7 @@ class Benchmark:
                     print("*"*40)
                     print("Training on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
                     pipe = Pipeline(model["model"], dataloaders["dataloaders"], self.loss_fn, self.writer)
-                    pipe.train(optimizer, n_epochs, cross_validation, batch_size, type, **kwargs)
+                    pipe.train(optimizer, n_epochs,
+                               cross_validation,
+                               optimizer_param,
+                               dataloaders_param)

@@ -47,10 +47,6 @@ class Gridsearch(Pipeline):
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
-            #super().__init__(obj.models_dicts,
-            #                 obj.dataloaders_dicts,
-            #                 obj.loss_fn,
-            #                 obj.writer)
             self.is_pipe = False
 
         self.search_metric = search_metric
@@ -62,6 +58,7 @@ class Gridsearch(Pipeline):
     def _objective(self, trial,
                    optimizers,
                    n_epochs,
+                   cross_validation,
                    optimizers_params,
                    dataloaders_params,
                    models_hyperparams,
@@ -90,7 +87,7 @@ class Gridsearch(Pipeline):
         #print(dataloaders_param)
         models_hyperparam = self.suggest_params(trial, models_hyperparams)
         #print(models_hyperparam)
-        #print(self.model)
+        #print(len(self.dataloaders[0]))
         # create a new model instance
         try:
             new_model = type(self.model)(**models_hyperparam)
@@ -99,10 +96,13 @@ class Gridsearch(Pipeline):
 
         #print(new_model)
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
+        #print("here:", len(new_pipe.dataloaders[0]))
         for t in range(n_epochs):
-            loss, accuracy = new_pipe.train(optimizer, 1, False,
-                                            dataloaders_param,
-                                            optimizers_param)
+            loss, accuracy = new_pipe.train(optimizer, 1,
+                                            cross_validation,
+                                            optimizers_param,
+                                            dataloaders_param
+                                            )
 
             if self.search_metric == "loss":
                 trial.report(loss, t)
@@ -124,17 +124,19 @@ class Gridsearch(Pipeline):
 
     def start(self,
               optimizers,
-              n_epochs,
-              optimizers_params = None,
-              dataloaders_params = None,
-              models_hyperparams = None,
+              n_epochs=1,
+              cross_validation=False,
+              optimizers_params=None,
+              dataloaders_params=None,
+              models_hyperparams=None,
               **kwargs):
         """method to be called when starting the gridsearch
         
         Args:
             trial (optuna.trial): the independent variable
             optimizers (list of torch.optim): list of torch optimizers
-            n_epochhs (int): number of training epochs
+            n_epochs (int): number of training epochs
+            cross_validation (bool): whether or not to use cross-validation
             optimizers_params (dict): number of training epochs
             dataloaders_params (int): batch size for the training
             writer_tag (string): tag to prepend to the ouput
@@ -145,10 +147,12 @@ class Gridsearch(Pipeline):
                 self.study = optuna.create_study(direction="minimize")
             else:
                 self.study = optuna.create_study(direction="maximize")
-            
+            # in the __init__, self.model and self.dataloaders are
+            # initialised. So they exist also in _objective()
             self.study.optimize(lambda tr: self._objective(tr,
                                                            optimizers,
                                                            n_epochs,
+                                                           cross_validation,
                                                            optimizers_params,
                                                            dataloaders_params,
                                                            models_hyperparams,
@@ -180,6 +184,7 @@ class Gridsearch(Pipeline):
                         self.study.optimize(lambda tr: self._objective(tr,
                                                                        optimizers,
                                                                        n_epochs,
+                                                                       cross_validation,
                                                                        optimizers_params,
                                                                        dataloaders_params,
                                                                        models_hyperparams,

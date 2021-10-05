@@ -51,8 +51,10 @@ class Pipeline:
         function is essential for the cross-validation
         procedure.
         """
+
         self.model = copy.deepcopy(self.initial_model)
-        
+
+            
 
     def reset_epoch(self):
         """method to reset global training and validation
@@ -197,17 +199,21 @@ class Pipeline:
 
         return test_loss, 100*correct
 
-    def train(self, optimizer, n_epochs=10, cross_validation=False, dataloaders_param = None, optimizers_param = None):
+    def train(self, optimizer, n_epochs=10, cross_validation=False,
+              optimizers_param=None,
+              dataloaders_param=None):
         """Function to run the trianing cycles.
 
         Args:
-            optimiser (torch.optim)
+            optimizer (torch.optim)
             n_epochs (int)
             cross_validation (bool)
             dataloaders_param (dict): dictionary of the dataloaders
                 parameters, e.g. `{'batch_size': 32}`
             optimizers_param (dict): dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
+            models_param (dict): dictionary of the model
+                parameters
             
         Returns:
             (float, float): the validation loss and accuracy
@@ -222,6 +228,7 @@ class Pipeline:
             dataloaders_param = {}
         
         dl_tr = self.dataloaders[0]
+        #print("here:",len(dl_tr))
         if len(self.dataloaders) == 3:
             dl_val = self.dataloaders[1]
         if cross_validation:
@@ -264,13 +271,15 @@ class Pipeline:
                 # mean of the validation and loss accuracies over folds
                 valloss = np.mean(mean_val_loss)
                 valacc = np.mean(mean_val_acc)
-
         else:
             if not dataloaders_param == {}:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
                                                     pin_memory=True,
+                                                    sampler=range(len(dl_tr)*dl_tr.batch_size),
                                                     **dataloaders_param)
+                print("here:",len(dl_tr), dl_tr.batch_size)
+            self.reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             for t in range(n_epochs):
                 print(f"Epoch {t+1}\n-------------------------------")
