@@ -1,5 +1,7 @@
 import torch.nn.functional as F
 import torch
+import numpy as np
+import copy
 import time
 import warnings
 from sklearn.model_selection import KFold
@@ -30,6 +32,7 @@ class Pipeline:
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model, dataloaders, loss_fn, writer):
         self.model = model.to(DEVICE)
+        self.initial_model = copy.deepcopy(self.model)
         # assert len(dataloaders) == 2 or len(dataloaders) == 3
         # self.dataloaders = dataloaders  # train and test
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
@@ -42,10 +45,18 @@ class Pipeline:
         self.loss_fn = loss_fn
         # integrate tensorboard
         self.writer = writer
+        
+    def reset_model(self):
+        """method to reset the initial model weights. This
+        function is essential for the cross-validation
+        procedure.
+        """
+        self.model = copy.deepcopy(self.initial_model)
+        
 
     def reset_epoch(self):
         """method to reset global training and validation
-        epoch count
+        epoch count.
         """
 
         self.train_epoch = 0
@@ -68,6 +79,7 @@ class Pipeline:
             pred = self.model(X)
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
             loss = self.loss_fn(pred, y)
+            #print("loss fnc: ", loss)
             # Save to tensorboard
             self.writer.add_scalar(writer_tag + "/Loss/train", loss, self.train_epoch*batch + self.train_cycle)
             self.train_cycle += 1
@@ -75,11 +87,12 @@ class Pipeline:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            #print(list(self.model.parameters()))
             if batch % 1 == 0:
-                loss, _ = loss.item(), (batch+1) * len(X)
-                print(f"Training loss: {loss:>7f}  [{batch+1:>2d}/{steps:>2d}]             ",
-                      end="\r")
-
+                t_loss = loss.item()
+                print("Training loss: ", t_loss, " [",batch+1,"/",
+                      steps,"]                     ", end='\r')
+        self.train_cycle = 0
         # accuracy:
         correct /= size
         print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
@@ -126,6 +139,7 @@ class Pipeline:
         self.writer.flush()
 
         # accuracy
+        val_loss /= size
         correct /= size
 
         self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
@@ -177,20 +191,23 @@ class Pipeline:
 
         # accuracy
         correct /= size
+        test_loss /= size
         print(f"Test results: \n Accuracy: {(100*correct):>0.1f}%, \
                 Avg loss: {test_loss:>8f} \n")
 
         return test_loss, 100*correct
 
-    def train(self, optimizer, n_epochs=10, cross_validation=False, batch_size=32, type="text", **kwargs):
+    def train(self, optimizer, n_epochs=10, cross_validation=False, dataloaders_param = None, optimizers_param = None):
         """Function to run the trianing cycles.
 
         Args:
             optimiser (torch.optim)
             n_epochs (int)
             cross_validation (bool)
-            batch_size (int)
-            type (string)
+            dataloaders_param (dict): dictionary of the dataloaders
+                parameters, e.g. `{'batch_size': 32}`
+            optimizers_param (dict): dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
             
         Returns:
             (float, float): the validation loss and accuracy
@@ -199,7 +216,11 @@ class Pipeline:
                 then the test loss and accuracy is returned.
         """
 
-        self.optimizer = optimizer(self.model.parameters(), **kwargs)
+        if optimizers_param is None:
+            optimizers_param = {"lr":0.001}
+        if dataloaders_param is None:
+            dataloaders_param = {}
+        
         dl_tr = self.dataloaders[0]
         if len(self.dataloaders) == 3:
             dl_val = self.dataloaders[1]
@@ -208,21 +229,24 @@ class Pipeline:
             mean_val_loss = []
             mean_val_acc = []
             valloss, valacc = -1, 0
-            data_idx = list(range(len(self.dataloaders[0])*batch_size))
+            data_idx = list(range(len(self.dataloaders[0].dataset)))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
+                # reset the model weights
+                self.reset_model()
+                self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
                 # initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
                                                     pin_memory=True,
-                                                    batch_size=batch_size,
+                                                    **dataloaders_param,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                      shuffle=False,
                                                      pin_memory=True,
-                                                     batch_size=batch_size,
+                                                     **dataloaders_param,
                                                      sampler=SubsetRandomSampler(val_idx))
                 # print n-th fold
                 if cross_validation and (len(self.dataloaders) == 1 or len(self.dataloaders) == 2):
@@ -242,6 +266,12 @@ class Pipeline:
                 valacc = np.mean(mean_val_acc)
 
         else:
+            if not dataloaders_param == {}:
+                dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
+                                                    shuffle=False,
+                                                    pin_memory=True,
+                                                    **dataloaders_param)
+            self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             for t in range(n_epochs):
                 print(f"Epoch {t+1}\n-------------------------------")
                 # for i in dl_tr:
