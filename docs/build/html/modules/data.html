@@ -84,7 +84,10 @@
 <dd><p>This class is used to generate data loaders for the
 family of tori-datasets</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>name (string): name of the torus dataset to generate</p>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>name (string):</dt><dd><p>name of the torus dataset to generate</p>
+</dd>
+</dl>
 </dd>
 </dl>
 <dl class="py method">
@@ -101,14 +104,18 @@ the self.name</p>
 <dt class="sig sig-object py" id="gdeep.data.GenericDataset">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">GenericDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.GenericDataset" title="Permalink to this definition"></a></dt>
 <dd><p>This class is the base class for the tori-datasets</p>
-<dl>
+<dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>data (Tensor): tensor with first dimension</dt><dd><p>the number of samples</p>
+<dt>data (Tensor):</dt><dd><p>tensor with first dimension
+the number of samples</p>
+</dd>
+<dt>taregts (list):</dt><dd><p>list of labels</p>
+</dd>
+<dt>transform (Callable):</dt><dd><p>act on the single images</p>
+</dd>
+<dt>target_transform (Callable):</dt><dd><p>act on the single label</p>
 </dd>
 </dl>
-<p>taregts (list): list of labels
-transform (Callable): act on the single images
-target_transform (Callable): act on the single label</p>
 </dd>
 </dl>
 </dd></dl>
@@ -119,9 +126,11 @@ target_transform (Callable): act on the single label</p>
 <dd><p>Class to preprocess text dataloaders</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>name (string): check the available datasets at</dt><dd><p><a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
+<dt>name (string):</dt><dd><p>check the available datasets at
+<a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
 </dd>
-<dt>n_pts (int): number of points in customly generated</dt><dd><p>point clouds</p>
+<dt>n_pts (int):</dt><dd><p>number of points in customly generated
+point clouds</p>
 </dd>
 </dl>
 </dd>
@@ -133,7 +142,10 @@ target_transform (Callable): act on the single label</p>
 sentences, each converted to a list of integers via the
 vocabulary. Hence, data can thus be treated as point data.</p>
 <dl class="simple">
-<dt>Returns:</dt><dd><p>(tuple): training_dataloader, test_dataloader</p>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(tuple):</dt><dd><p>training_dataloader, test_dataloader</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -150,14 +162,18 @@ vocabulary. Hence, data can thus be treated as point data.</p>
 <dt class="sig sig-object py" id="gdeep.data.TextDataset">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">TextDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.TextDataset" title="Permalink to this definition"></a></dt>
 <dd><p>This class is the base class for the tori-datasets</p>
-<dl>
+<dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>data (Tensor): tensor with first dimension</dt><dd><p>the number of samples</p>
+<dt>data (Tensor):</dt><dd><p>tensor with first dimension
+the number of samples</p>
+</dd>
+<dt>taregts (list):</dt><dd><p>list of labels</p>
+</dd>
+<dt>transform (Callable):</dt><dd><p>act on the single images</p>
+</dd>
+<dt>target_transform (Callable):</dt><dd><p>act on the single label</p>
 </dd>
 </dl>
-<p>taregts (list): list of labels
-transform (Callable): act on the single images
-target_transform (Callable): act on the single label</p>
 </dd>
 </dl>
 </dd></dl>
@@ -169,9 +185,11 @@ target_transform (Callable): act on the single label</p>
 datasets available on pytorch</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>name (string): check the available datasets at</dt><dd><p><a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
+<dt>name (string):</dt><dd><p>check the available datasets at
+<a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
 </dd>
-<dt>n_pts (int): number of points in customly generated</dt><dd><p>point clouds</p>
+<dt>n_pts (int):</dt><dd><p>number of points in customly generated
+point clouds</p>
 </dd>
 </dl>
 </dd>

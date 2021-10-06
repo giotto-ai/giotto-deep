@@ -36,9 +36,12 @@ class SaveLayerOutput(SaveOutput):
         """ Add activation 
 
         Args:
-            module ([type]): [description]
-            module_in ([type]): [description]
-            module_out ([type]): [description]
+            module ([type]):
+                [description]
+            module_in ([type]):
+                [description]
+            module_out ([type]):
+                [description]
         """
         self.outputs.append(module_out.detach())
 
@@ -53,8 +56,10 @@ class PeriodicNeuralNetwork(nn.Module):
     This class can be interpreted as an adapter for periodic neural networks.
 
     Args:
-        nn (nn.Module)
-        boundary_list (list): list of pairs of floats, each
+        nn (nn.Module):
+            the standard torch module, your network
+        boundary_list (list):
+            list of pairs of floats, each
             defining the boundaries of a hypercube
     """
 

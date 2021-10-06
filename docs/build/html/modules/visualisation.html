@@ -95,7 +95,8 @@ boundary the points shall be.</p>
 <dt>n_epochs (int, default 5000):</dt><dd><p>number of epochs needed to push points to the
 decison boundary</p>
 </dd>
-<dt>boundary_tuple (list): list of pairs (left,right).</dt><dd><p>This list defines the boundaries in each coordinates</p>
+<dt>boundary_tuple (list):</dt><dd><p>list of pairs (left,right).
+This list defines the boundaries in each coordinates</p>
 </dd>
 <dt>neural_net (nn.Module):</dt><dd><p>the trained network of which to compute
 the boundary</p>
@@ -204,21 +205,28 @@ version of the boundary</p>
 <span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">persistence_diagrams_of_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activations_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'VR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_edge_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.persistence_diagrams_of_activations" title="Permalink to this definition"></a></dt>
 <dd><p>Returns list of persistence diagrams of the activations of all
 layers of type layer_types</p>
-<dl>
+<dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>activations_list (list): list of activation</dt><dd><p>tensors for each layer</p>
+<dt>activations_list (list):</dt><dd><p>list of activation
+tensors for each layer</p>
 </dd>
-<dt>homology_dimensions (list, optional): list of homology</dt><dd><p>dimensions. Defaults to [0, 1].</p>
+<dt>homology_dimensions (list, optional):</dt><dd><p>list of homology
+dimensions. Defaults to <cite>[0, 1]</cite>.</p>
 </dd>
-<dt>k (optional)<span class="classifier">number of neighbors parameter</span></dt><dd><p>of the k-NN distance .</p>
+<dt>k (optional) :</dt><dd><p>number of neighbors parameter
+of the k-NN distance .</p>
 </dd>
-<dt>mode (optional)<span class="classifier">choose the filtration (‘VR’</span></dt><dd><p>or ‘alpha’) to compute persistence default to ‘VR’.</p>
+<dt>mode (optional) :</dt><dd><p>choose the filtration (‘VR’
+or ‘alpha’) to compute persistence default to ‘VR’.</p>
+</dd>
+<dt>max_edge_length (float):</dt><dd><p>maximum edge length of the simplices forming
+the complex</p>
 </dd>
 </dl>
-<p>max_edge_length (float)</p>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>(list): list of persistence diagrams of activations</dt><dd><p>of the different layers</p>
+<dt>(list):</dt><dd><p>list of persistence diagrams of activations
+of the different layers</p>
 </dd>
 </dl>
 </dd>
@@ -230,9 +238,16 @@ layers of type layer_types</p>
 <span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">plotly2tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.visualisation.plotly2tensor" title="Permalink to this definition"></a></dt>
 <dd><p>convert Plotly fig to an array.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>fig (plotly GraphicObject)</p>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>fig (plotly GraphicObject):</dt><dd><p>figure to convert to tensor</p>
 </dd>
-<dt>Returns:</dt><dd><p>Tensor</p>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Tensor:</dt><dd><p>the tensor discretisation of the
+figure</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>

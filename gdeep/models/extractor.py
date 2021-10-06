@@ -15,7 +15,9 @@ class ModelExtractor:
 
     Args:
         model (nn.Module):
+            standard torch module
         loss_fn (Callable):
+            loss function
     """
 
     def __init__(self, model, loss_fn):
@@ -29,13 +31,16 @@ class ModelExtractor:
         with self.loss_fn
         
         Args:
-            n_epochs (int): number of training cycles to find
+            n_epochs (int):
+                number of training cycles to find
                 the decision boundary
-            input_example (Tensor): an example of a single input,
+            input_example (Tensor):
+                an example of a single input,
                 to extract the dimensions of the feature space
 
         Returns:
-            Tensor: the pointcloud defining the decision
+            Tensor:
+                the pointcloud defining the decision
                 boundary with dimensions `(n_samples, n_features)`
         """
         input_dim = input_example.flatten().shape[0]
@@ -65,11 +70,13 @@ class ModelExtractor:
         `X`
 
         Args:
-            input_example (Tensor): an example of an input or
+            input_example (Tensor):
+                an example of an input or
                 an input batch of which to compute the activation(s)
 
         Returns:
-            list: list of the activation Tensors
+            list:
+                list of the activation Tensors
         """
 
         saved_output_layers = SaveLayerOutput()
@@ -96,7 +103,8 @@ class ModelExtractor:
         """Returns parameters of layers
 
         Returns:
-            dict: dict of tensors, corresponding
+            dict:
+                dict of tensors, corresponding
                 to the layer parameters. The key of
                 the dict is the name of the parameters
         """
@@ -112,10 +120,14 @@ class ModelExtractor:
         use the keywords argument `target=`
 
         Args:
-            x (Tensor): point at which to compute grad
+            x (Tensor):
+                point at which to compute grad
+
         Returns:
-            tensor: the
-            list: list of tensors, corresponding
+            tensor:
+                the gradients
+            list:
+                list of tensors, corresponding
                 to the gradient of the weights.
         """
         

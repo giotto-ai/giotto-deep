@@ -80,13 +80,13 @@
 <span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this headline"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.FFNet">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
 <dd><p>This is the class to build a custom feed
 forward network that is easily built from an array,
 in which the number and dimensions of the layers is specified.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>arch (list): list of int or 1d array, default=[2,3,3,2];</dt><dd><p>this is the list containing the dimension of the layers
+<dt>arch (list of int or 1d array, default=[2,3,3,2]):</dt><dd><p>this is the list containing the dimension of the layers
 inside your network. all laysers have <code class="docutils literal notranslate"><span class="pre">relu</span></code> except for
 the last one which has <code class="docutils literal notranslate"><span class="pre">sigmoid</span></code> as activation function.
 The first number is the dimension of the input! Thhe final
@@ -117,8 +117,12 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>This class wraps nn.Modules to extract
 weights, activations, gradients and decision boundaries</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>model (nn.Module):
-loss_fn (Callable):</p>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>model (nn.Module):</dt><dd><p>standard torch module</p>
+</dd>
+<dt>loss_fn (Callable):</dt><dd><p>loss function</p>
+</dd>
+</dl>
 </dd>
 </dl>
 <dl class="py method">
@@ -128,11 +132,15 @@ loss_fn (Callable):</p>
 <cite>X</cite></p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>input_example (Tensor): an example of an input or</dt><dd><p>an input batch of which to compute the activation(s)</p>
+<dt>input_example (Tensor):</dt><dd><p>an example of an input or
+an input batch of which to compute the activation(s)</p>
 </dd>
 </dl>
 </dd>
-<dt>Returns:</dt><dd><p>list: list of the activation Tensors</p>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>list:</dt><dd><p>list of the activation Tensors</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -144,14 +152,17 @@ loss_fn (Callable):</p>
 with self.loss_fn</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>n_epochs (int): number of training cycles to find</dt><dd><p>the decision boundary</p>
+<dt>n_epochs (int):</dt><dd><p>number of training cycles to find
+the decision boundary</p>
 </dd>
-<dt>input_example (Tensor): an example of a single input,</dt><dd><p>to extract the dimensions of the feature space</p>
+<dt>input_example (Tensor):</dt><dd><p>an example of a single input,
+to extract the dimensions of the feature space</p>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>Tensor: the pointcloud defining the decision</dt><dd><p>boundary with dimensions <cite>(n_samples, n_features)</cite></p>
+<dt>Tensor:</dt><dd><p>the pointcloud defining the decision
+boundary with dimensions <cite>(n_samples, n_features)</cite></p>
 </dd>
 </dl>
 </dd>
@@ -164,14 +175,19 @@ with self.loss_fn</p>
 <dd><p>Returns the <strong>averaged gradient</strong> of the self.loss_fn.
 To specify the target variable (e.g. the true class),
 use the keywords argument <cite>target=</cite></p>
-<dl>
-<dt>Args:</dt><dd><p>x (Tensor): point at which to compute grad</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>x (Tensor):</dt><dd><p>point at which to compute grad</p>
 </dd>
-<dt>Returns:</dt><dd><p>tensor: the
-list: list of tensors, corresponding</p>
-<blockquote>
-<div><p>to the gradient of the weights.</p>
-</div></blockquote>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>tensor:</dt><dd><p>the gradients</p>
+</dd>
+<dt>list:</dt><dd><p>list of tensors, corresponding
+to the gradient of the weights.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -182,7 +198,8 @@ list: list of tensors, corresponding</p>
 <dd><p>Returns parameters of layers</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>dict: dict of tensors, corresponding</dt><dd><p>to the layer parameters. The key of
+<dt>dict:</dt><dd><p>dict of tensors, corresponding
+to the layer parameters. The key of
 the dict is the name of the parameters</p>
 </dd>
 </dl>
@@ -202,12 +219,14 @@ factorized by the orbits of a group effect,
 which is given by reflection at the
 edges of the elementary domain.
 This class can be interpreted as an adapter for periodic neural networks.</p>
-<dl>
-<dt>Args:</dt><dd><p>nn (nn.Module)
-boundary_list (list): list of pairs of floats, each</p>
-<blockquote>
-<div><p>defining the boundaries of a hypercube</p>
-</div></blockquote>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>nn (nn.Module):</dt><dd><p>the standard torch module, your network</p>
+</dd>
+<dt>boundary_list (list):</dt><dd><p>list of pairs of floats, each
+defining the boundaries of a hypercube</p>
+</dd>
+</dl>
 </dd>
 </dl>
 <dl class="py method">

@@ -84,12 +84,14 @@
 <dd><p>Class to visualise the activation maps,
 the attribution maps and salicy maps using
 different techniques.</p>
-<dl>
-<dt>Args:</dt><dd><p>model (nn.Module):
-method (string): the interpretability method. Find</p>
-<blockquote>
-<div><p>more info [here](<a class="reference external" href="https://captum.ai/tutorials/">https://captum.ai/tutorials/</a>)</p>
-</div></blockquote>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>model (nn.Module):</dt><dd><p>the standard pytorch model</p>
+</dd>
+<dt>method (string):</dt><dd><p>the interpretability method. Find
+more info at <a class="reference external" href="https://captum.ai/tutorials/">https://captum.ai/tutorials/</a></p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -104,7 +106,10 @@ a neural network</p>
 <em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Return current state and does not make a step</p>
 <dl class="simple">
-<dt>Returns:</dt><dd><p>torch.tensor: current estimate of the decision boundary</p>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.tensor:</dt><dd><p>current estimate of the decision boundary</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -121,19 +126,19 @@ a neural network</p>
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.decision_boundary.</span></span><span class="sig-name descname"><span class="pre">GradientFlowDecisionBoundaryCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_points</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">torch.optim.optimizer.Optimizer</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator" title="Permalink to this definition"></a></dt>
 <dd><p>Computes Decision Boundary using the gradient flow method</p>
-<dl>
+<dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>model (Callable[[torch.Tensor], torch.Tensor]): Function that maps</dt><dd><p>a <cite>torch.Tensor</cite> of shape (N, D_in) to a tensor either of
+<dt>model (Callable[[torch.Tensor], torch.Tensor]):</dt><dd><p>Function that maps
+a <cite>torch.Tensor</cite> of shape (N, D_in) to a tensor either of
 shape (N) and with values in [0,1] or of shape (N, D_out) with
 values in [0, 1] such that the last axis sums to 1.</p>
 </dd>
-</dl>
-<p>initial_points (torch.Tensor): <cite>torch.Tensor</cite> of shape (N, D_in)
-optimizer (Callable[[torch.Tensor], torch.optim.Optimizer]):</p>
-<blockquote>
-<div><p>Function returning an optimizer for the params given as an
+<dt>initial_points (torch.Tensor):</dt><dd><p><cite>torch.Tensor</cite> of shape (N, D_in)</p>
+</dd>
+<dt>optimizer (Callable[[torch.Tensor], torch.optim.Optimizer]):</dt><dd><p>Function returning an optimizer for the params given as an
 argument.</p>
-</div></blockquote>
+</dd>
+</dl>
 </dd>
 </dl>
 <dl class="py method">
@@ -141,7 +146,10 @@ argument.</p>
 <span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Return current state and does not make a step</p>
 <dl class="simple">
-<dt>Returns:</dt><dd><p>torch.tensor: current estimate of the decision boundary</p>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.tensor:</dt><dd><p>current estimate of the decision boundary</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -163,7 +171,10 @@ argument.</p>
 <span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Return current state and does not make a step</p>
 <dl class="simple">
-<dt>Returns:</dt><dd><p>torch.tensor: current estimate of the decision boundary</p>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.tensor:</dt><dd><p>current estimate of the decision boundary</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>

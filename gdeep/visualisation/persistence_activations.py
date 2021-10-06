@@ -11,8 +11,10 @@ def knn_distance_matrix(X, k=3):
     to the k-NN graph distance of the datasets X
 
     Args:
-        X (ndarray)
-        k (int): the numbers of neighbors for the k-NN graph
+        X (ndarray):
+            the point cloud
+        k (int):
+            the numbers of neighbors for the k-NN graph
 
     """
 
@@ -30,18 +32,25 @@ def persistence_diagrams_of_activations(activations_list,
     layers of type layer_types
 
     Args:
-        activations_list (list): list of activation
+        activations_list (list):
+            list of activation
             tensors for each layer
-        homology_dimensions (list, optional): list of homology
-            dimensions. Defaults to [0, 1].
-        k (optional) : number of neighbors parameter
+        homology_dimensions (list, optional):
+            list of homology
+            dimensions. Defaults to `[0, 1]`.
+        k (optional) :
+            number of neighbors parameter
             of the k-NN distance .
-        mode (optional) : choose the filtration ('VR'
+        mode (optional) :
+            choose the filtration ('VR'
             or 'alpha') to compute persistence default to 'VR'.
-        max_edge_length (float)
+        max_edge_length (float):
+            maximum edge length of the simplices forming
+            the complex
 
     Returns:
-        (list): list of persistence diagrams of activations
+        (list):
+            list of persistence diagrams of activations
             of the different layers
     """
     for i, activ in enumerate(activations_list):

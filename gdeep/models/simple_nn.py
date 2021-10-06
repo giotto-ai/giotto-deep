@@ -9,7 +9,7 @@ class FFNet(nn.Module):
     in which the number and dimensions of the layers is specified.
 
     Args:
-        arch (list): list of int or 1d array, default=[2,3,3,2];
+        arch (list of int or 1d array, default=[2,3,3,2]):
             this is the list containing the dimension of the layers
             inside your network. all laysers have ``relu`` except for
             the last one which has ``sigmoid`` as activation function.
@@ -17,7 +17,7 @@ class FFNet(nn.Module):
             of the output
     """
     
-    def __init__(self, arch=[2, 3, 3, 2]):
+    def __init__(self, arch=(2, 3, 3, 2)):
         super(FFNet, self).__init__()
         self.linears = nn.ModuleList([nn.Linear(arch[i], arch[i+1]) for i in range(len(arch)-1)])
 

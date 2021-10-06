@@ -30,7 +30,8 @@ class Compactification():
         n_epochs (int, default 5000):
             number of epochs needed to push points to the
             decison boundary
-        boundary_tuple (list): list of pairs (left,right).
+        boundary_tuple (list):
+            list of pairs (left,right).
             This list defines the boundaries in each coordinates
         neural_net (nn.Module):
             the trained network of which to compute

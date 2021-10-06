@@ -9,11 +9,15 @@ class TextDataset(Dataset):
     """This class is the base class for the tori-datasets
 
     Args:
-        data (Tensor): tensor with first dimension
+        data (Tensor):
+            tensor with first dimension
             the number of samples
-        taregts (list): list of labels
-        transform (Callable): act on the single images
-        target_transform (Callable): act on the single label
+        taregts (list):
+            list of labels
+        transform (Callable):
+            act on the single images
+        target_transform (Callable):
+            act on the single label
     """
 
     def __init__(self, data, targets,
@@ -41,9 +45,11 @@ class PreprocessText:
     """Class to preprocess text dataloaders
 
     Args:
-        name (string): check the available datasets at
+        name (string):
+            check the available datasets at
             https://pytorch.org/vision/stable/datasets.html
-        n_pts (int): number of points in customly generated
+        n_pts (int):
+            number of points in customly generated
             point clouds
     """
     def __init__(self, dataloaders, tokenizer=None):
@@ -66,7 +72,8 @@ class PreprocessText:
         vocabulary. Hence, data can thus be treated as point data.
 
         Returns:
-            (tuple): training_dataloader, test_dataloader
+            (tuple):
+                training_dataloader, test_dataloader
         """
 
         label_pipeline = lambda x: int(x) - 1

@@ -16,10 +16,12 @@ class Interpreter:
 
     Args:
         model (nn.Module):
-        method (string): the interpretability method. Find
-            more info [here](https://captum.ai/tutorials/)
+            the standard pytorch model
+        method (string):
+            the interpretability method. Find
+            more info at https://captum.ai/tutorials/
 
-        """
+    """
 
     def __init__(self, model,
                  method="IntegratedGradients"):

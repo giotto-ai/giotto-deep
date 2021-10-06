@@ -117,32 +117,33 @@ class Pipeline:
         val_loss, correct = 0, 0
         class_label = []
         class_probs = []
-        with torch.no_grad():
-            pred = 0
+        self.model.eval()
+        pred = 0
 
-            # for X, y in self.dataloaders[1]:
-            for X, y in dl_val:
-                X = X.to(DEVICE)
-                y = y.to(DEVICE)
-                pred = self.model(X)
-                class_probs_batch = [F.softmax(el, dim=0)
-                                     for el in pred]
-                class_probs.append(class_probs_batch)
-                val_loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) ==
-                            y).type(torch.float).sum().item()
-                class_label.append(y)
-            # add data to tensorboard
-            val_probs = torch.cat([torch.stack(batch) for batch in class_probs])
-            val_label = torch.cat(class_label)
+        # for X, y in self.dataloaders[1]:
+        for X, y in dl_val:
+            X = X.to(DEVICE)
+            y = y.to(DEVICE)
+            pred = self.model(X)
+            class_probs_batch = [F.softmax(el, dim=0)
+                                 for el in pred]
+            class_probs.append(class_probs_batch)
+            val_loss += self.loss_fn(pred, y).item()
+            correct += (pred.argmax(1) ==
+                        y).type(torch.float).sum().item()
+            class_label.append(y)
+        # add data to tensorboard
+        val_probs = torch.cat([torch.stack(batch) for batch in class_probs])
+        val_label = torch.cat(class_label)
 
-            for class_index in range(len(pred[0])):
-                tensorboard_truth = val_label == class_index
-                tensorboard_probs = val_probs[:, class_index]
-                self.writer.add_pr_curve(str(class_index),
-                                         tensorboard_truth,
-                                         tensorboard_probs,
-                                         global_step=0)
+        for class_index in range(len(pred[0])):
+            tensorboard_truth = val_label == class_index
+            tensorboard_probs = val_probs[:, class_index]
+            self.writer.add_pr_curve(str(class_index),
+                                     tensorboard_truth,
+                                     tensorboard_probs,
+                                     global_step=0)
+        self.model.train()
         self.writer.flush()
 
         # accuracy
@@ -167,33 +168,34 @@ class Pipeline:
         test_loss, correct = 0, 0
         class_label = []
         class_probs = []
-        with torch.no_grad():
-            pred = 0
+        self.model.eval()
+        pred = 0
 
-            # for X, y in self.dataloaders[1]:
-            for X, y in dl_test:
-                X = X.to(DEVICE)
-                y = y.to(DEVICE)
-                pred = self.model(X)
-                class_probs_batch = [F.softmax(el, dim=0)
-                                     for el in pred]
-                class_probs.append(class_probs_batch)
-                test_loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) ==
-                            y).type(torch.float).sum().item()
-                class_label.append(y)
-            # add data to tensorboard
-            test_probs = torch.cat([torch.stack(batch) for batch in
-                                    class_probs])
-            test_label = torch.cat(class_label)
+        # for X, y in self.dataloaders[1]:
+        for X, y in dl_test:
+            X = X.to(DEVICE)
+            y = y.to(DEVICE)
+            pred = self.model(X)
+            class_probs_batch = [F.softmax(el, dim=0)
+                                 for el in pred]
+            class_probs.append(class_probs_batch)
+            test_loss += self.loss_fn(pred, y).item()
+            correct += (pred.argmax(1) ==
+                        y).type(torch.float).sum().item()
+            class_label.append(y)
+        # add data to tensorboard
+        test_probs = torch.cat([torch.stack(batch) for batch in
+                                class_probs])
+        test_label = torch.cat(class_label)
 
-            for class_index in range(len(pred[0])):
-                tensorboard_truth = test_label == class_index
-                tensorboard_probs = test_probs[:, class_index]
-                self.writer.add_pr_curve(str(class_index),
-                                         tensorboard_truth,
-                                         tensorboard_probs,
-                                         global_step=0)
+        for class_index in range(len(pred[0])):
+            tensorboard_truth = test_label == class_index
+            tensorboard_probs = test_probs[:, class_index]
+            self.writer.add_pr_curve(str(class_index),
+                                     tensorboard_truth,
+                                     tensorboard_probs,
+                                     global_step=0)
+        self.model.train()
         self.writer.flush()
 
         # accuracy
