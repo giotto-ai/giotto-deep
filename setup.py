@@ -75,5 +75,7 @@ setup(name=DISTNAME,
       classifiers=CLASSIFIERS,
       packages=find_packages(),
       keywords=KEYWORDS,
+      dependency_links=["https://download.pytorch.org/whl/torch_stable.html"],
+      find_links=["https://download.pytorch.org/whl/torch_stable.html"],
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE)

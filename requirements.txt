@@ -8,5 +8,15 @@ matplotlib
 matplotlib_venn
 scikit-learn
 scipy
-fastai
+networkx
 torchdiffeq
+transformers
+einops
+tensorboard
+captum
+psutil
+kaleido
+torchtext
+html2image
+optuna
+sphinx_rtd_theme

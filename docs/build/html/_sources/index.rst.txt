@@ -15,19 +15,22 @@ Welcome to giotto-deep's documentation!
 Indices and tables
 ==================
 
-.. automodule:: gdeep.create_nets
+.. automodule:: gdeep.analysis
    :members:
    
-.. automodule:: gdeep.create_data
+.. automodule:: gdeep.data
    :members:
    
-.. automodule:: gdeep.decision_boundary
+.. automodule:: gdeep.models
    :members:
    
-.. automodule:: gdeep.plotting
+.. automodule:: gdeep.pipeline
    :members:
    
-.. automodule:: gdeep.gradcam
+.. automodule:: gdeep.visualisation
+   :members:
+   
+.. automodule:: gdeep.search
    :members:
 
 References
