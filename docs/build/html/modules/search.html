@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search &mdash; giotto-deep 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> giotto-deep
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Search</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">giotto-deep</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Search</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/search.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-gdeep.search">
+<span id="search"></span><h1>Search<a class="headerlink" href="#module-gdeep.search" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.search.Benchmark">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">Benchmark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models_dicts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_dicts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Benchmark" title="Permalink to this definition"></a></dt>
+<dd><p>This is the generic class that allows
+the user to perform benchmarking over different
+datasets and models.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>models_dicts (list of dicts):</dt><dd><p>each dictionary has two items, <cite>“name”:”string”</cite>
+the name of the model and <cite>“model”:nn.Module</cite> a
+standard torch model</p>
+</dd>
+<dt>dataloaders_dicts (utils.DataLoader):</dt><dd><p>each dictionary has two items, <cite>“name”:”string”</cite>
+the name of the model and <cite>“dataloaders”:list</cite> a
+list of standard torch.dataloaders, e.g. <cite>(dl_tr, dl_ts)</cite></p>
+</dd>
+<dt>loss_fn (Callables):</dt><dd><p>loss function</p>
+</dd>
+<dt>wirter (tensorboard SummaryWriter):</dt><dd><p>tensorboard writer</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.Benchmark.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Benchmark.start" title="Permalink to this definition"></a></dt>
+<dd><p>Method to be called when starting the benchmarking</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>optimizer (torch.optim):</dt><dd><p>a torch optimizers</p>
+</dd>
+<dt>n_epochs (int):</dt><dd><p>number of training epochs</p>
+</dd>
+<dt>crossvalidation (bool):</dt><dd><p>whether or not to use cross-validation</p>
+</dd>
+<dt>optimizers_param (dict):</dt><dd><p>dictionary of the optimizers
+parameters, e.g. <cite>{“lr”: 0.001}</cite></p>
+</dd>
+<dt>dataloaders_param (dict):</dt><dd><p>dictionary of the dataloaders
+parameters, e.g. <cite>{“batch_size”: 32}</cite></p>
+</dd>
+<dt>lr_scheduler (torch.optim):</dt><dd><p>a learning rate scheduler</p>
+</dd>
+<dt>scheduler_params (dict):</dt><dd><p>learning rate scheduler parameters</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.search.Gridsearch">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">Gridsearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_trials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch" title="Permalink to this definition"></a></dt>
+<dd><p>This is the generic class that allows
+the user to perform gridsearch over several
+parameters such as learning rate, optimizer.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>obj (either Pipeline or Benchmark object):</dt><dd><p>either a pipeline of a bechmark class</p>
+</dd>
+<dt>search_metric (string):</dt><dd><p>either ‘loss’ or ‘accuracy’</p>
+</dd>
+<dt>n_trials (int):</dt><dd><p>number of total gridsearch trials</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.Gridsearch.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dataset'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.results" title="Permalink to this definition"></a></dt>
+<dd><p>This class returns the dataframe with all the results of
+the gridsearch. It also saves the figures in the writer.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>model_name (str):</dt><dd><p>the model name for the
+tensorboard gridsearch table</p>
+</dd>
+<dt>dataset_name (str)</dt><dd><p>the dataset name for the
+tensorboard gridsearch table</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>pd.DataFrame:</dt><dd><p>the hyperparameter table</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.Gridsearch.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models_hyperparams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.start" title="Permalink to this definition"></a></dt>
+<dd><p>method to be called when starting the gridsearch</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>optimizers (list of torch.optim):</dt><dd><p>list of torch optimizers</p>
+</dd>
+<dt>n_epochs (int):</dt><dd><p>number of training epochs</p>
+</dd>
+<dt>cross_validation (bool):</dt><dd><p>whether or not to use cross-validation</p>
+</dd>
+<dt>optimizers_params (dict):</dt><dd><p>dictionary of optimizers params</p>
+</dd>
+<dt>dataloaders_params (int):</dt><dd><p>dictionary of dataloaders parameters</p>
+</dd>
+<dt>models_hyperparams (dict):</dt><dd><p>dictionary of model parameters</p>
+</dd>
+<dt>lr_scheduler (torch.optim):</dt><dd><p>torch learning rate schduler class</p>
+</dd>
+<dt>scheduler_params (dict):</dt><dd><p>learning rate scheduler parameters</p>
+</dd>
+<dt>writer_tag (string):</dt><dd><p>tag to prepend to the ouput
+on tensorboard</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.Gridsearch.store_to_tensorboard">
+<span class="sig-name descname"><span class="pre">store_to_tensorboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.store_to_tensorboard" title="Permalink to this definition"></a></dt>
+<dd><p>Store the hyperparameters to tensorboard</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.Gridsearch.suggest_params">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">suggest_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.suggest_params" title="Permalink to this definition"></a></dt>
+<dd><p>Utility function to generate the parameters
+for the gridsearch. It is based on optuna <cite>suggest_&lt;type&gt;</cite>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>trial (optuna.trial):</dt><dd><p>optuna trial variable</p>
+</dd>
+<dt>params (dict):</dt><dd><p>dictionary of parameters</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(dict):</dt><dd><p>dictionary of selected parameters values</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, L2F SA.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

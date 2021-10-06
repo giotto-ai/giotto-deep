@@ -30,11 +30,11 @@ class Compactification():
         n_epochs (int, default 5000):
             number of epochs needed to push points to the
             decison boundary
+        boundary_tuple (list): list of pairs (left,right).
+            This list defines the boundaries in each coordinates
         neural_net (nn.Module):
             the trained network of which to compute
             the boundary
-        boundary_tuple (list): list of pairs (left,right).
-            This list defines the boundaries in each coordinates
     '''
 
     def __init__(self, precision=0.4,
@@ -141,7 +141,8 @@ class Compactification():
         '''This functions plots the points in each chart.
 
         Args:
-            i (int): the chart index, from -1 to n_features
+            i (int):
+                the chart index, from `-1` to `n_features`
         '''
         df_plot = pd.DataFrame(self.list_of_pts_in_patches[i], columns =
                                ["x" + str(j) for j in

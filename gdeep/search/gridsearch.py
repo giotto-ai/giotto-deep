@@ -26,8 +26,11 @@ class Gridsearch(Pipeline):
 
     Args:
         obj (either Pipeline or Benchmark object):
-        search_metric (string): either 'loss' or 'accuracy'
-        n_trials (int): number of total gridsearch trials
+            either a pipeline of a bechmark class
+        search_metric (string):
+            either 'loss' or 'accuracy'
+        n_trials (int):
+            number of total gridsearch trials
 
     """
 
@@ -69,16 +72,24 @@ class Gridsearch(Pipeline):
         """default callback function for optuna's study
         
         Args:
-            trial (optuna.trial): the independent variable
-            optimizers (list of torch.optim): list of torch optimizers
-            n_epochs (int): number of training epochs
-            optimizers_param (dict): dictionary of the optimizers
+            trial (optuna.trial):
+                the independent variable
+            optimizers (list of torch.optim):
+                list of torch optimizers
+            n_epochs (int):
+                number of training epochs
+            optimizers_param (dict):
+                dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            models_param (dict): dictionary of the model
+            models_param (dict):
+                dictionary of the model
                 parameters
-            lr_scheduler (torch.optim): a learning rate scheduler
-            scheduler_params (dict): learning rate scheduler parameters
-            writer_tag (string): tag to prepend to the ouput
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler_params (dict):
+                learning rate scheduler parameters
+            writer_tag (string):
+                tag to prepend to the ouput
                 on tensorboard
         """
 
@@ -139,19 +150,29 @@ class Gridsearch(Pipeline):
               models_hyperparams=None,
               lr_scheduler=None,
               scheduler_params=None,
+              writer_tag = "model",
               **kwargs):
         """method to be called when starting the gridsearch
-        
+
         Args:
-            optimizers (list of torch.optim): list of torch optimizers
-            n_epochs (int): number of training epochs
-            cross_validation (bool): whether or not to use cross-validation
-            optimizers_params (dict): number of training epochs
-            dataloaders_params (int): batch size for the training
-            writer_tag (string): tag to prepend to the ouput
-                on tensorboard
-            scheduler_params (dict): learning rate scheduler parameters
-            writer_tag (string): tag to prepend to the ouput
+            optimizers (list of torch.optim):
+                list of torch optimizers
+            n_epochs (int):
+                number of training epochs
+            cross_validation (bool):
+                whether or not to use cross-validation
+            optimizers_params (dict):
+                dictionary of optimizers params
+            dataloaders_params (int):
+                dictionary of dataloaders parameters
+            models_hyperparams (dict):
+                dictionary of model parameters
+            lr_scheduler (torch.optim):
+                torch learning rate schduler class
+            scheduler_params (dict):
+                learning rate scheduler parameters
+            writer_tag (string):
+                tag to prepend to the ouput
                 on tensorboard
         """
         if self.is_pipe:
@@ -170,7 +191,7 @@ class Gridsearch(Pipeline):
                                                            models_hyperparams,
                                                            lr_scheduler,
                                                            scheduler_params,
-                                                           writer_tag = "model",
+                                                           writer_tag=writer_tag,
                                                            **kwargs),
                                 n_trials=self.n_trials,
                                 timeout=None)
@@ -217,13 +238,18 @@ class Gridsearch(Pipeline):
     def results(self, model_name = "model", dataset_name = "dataset"):
         """This class returns the dataframe with all the results of
         the gridsearch. It also saves the figures in the writer.
-        
+
         Args:
-            model_name (str)
+            model_name (str):
+                the model name for the
+                tensorboard gridsearch table
             dataset_name (str)
-            
+                the dataset name for the
+                tensorboard gridsearch table
+
         Returns:
-            pd.DataFrame: the hyperparameter table
+            pd.DataFrame:
+                the hyperparameter table
         """
         self.list_res = []
         trials = self.study.trials
@@ -311,13 +337,16 @@ class Gridsearch(Pipeline):
     def suggest_params(trial, params):
         """Utility function to generate the parameters
         for the gridsearch. It is based on optuna `suggest_<type>`.
-        
+
         Args:
-            trial (optuna.trial)
-            params (dict): dictionary of parameters
-        
+            trial (optuna.trial):
+                optuna trial variable
+            params (dict):
+                dictionary of parameters
+
         Returns:
-            (dict): dictionary of selected parameters values
+            (dict):
+                dictionary of selected parameters values
         """
         if params is None:
             return None

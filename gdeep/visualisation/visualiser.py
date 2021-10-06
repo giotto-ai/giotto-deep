@@ -23,8 +23,10 @@ class Visualiser:
     different kinds to tensors
 
     Args:
-        pipe (Pipeline)
-        writer (tensorboard SummaryWriter)
+        pipe (Pipeline):
+            the pipeline to get info from
+        writer (tensorboard SummaryWriter):
+            the tensorboard writer
     """
 
     def __init__(self, pipe):
@@ -81,7 +83,7 @@ class Visualiser:
 
     def plot_activations(self, example=None):
         """Plot PCA of the activations of all layers of the
-        self.model
+        `self.model`
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
         inputs = []
@@ -138,7 +140,8 @@ class Visualiser:
         hypersurface defined by self.loss_fn == 0.5
 
         Args:
-            copact (bool): if plotting the compactified
+            compact (bool):
+                if plotting the compactified
                 version of the boundary
         """
 
@@ -174,11 +177,13 @@ class Visualiser:
     def betti_plot_layers(self, homology_dimension=(0, 1), example=None):
         """
         Args:
-            homology_dimension (int array, optional): An array of
+            homology_dimension (int array, optional):
+                An array of
                 homology dimensions
 
         Returns:
-           (None): a tuple of figures representing the Betti surfaces
+           (None):
+                a tuple of figures representing the Betti surfaces
                 of the data accross layers of the NN, with one figure
                 per dimension in homology_dimensions. Otherwise, a single
                 figure representing the Betti curve of the single sample

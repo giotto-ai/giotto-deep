@@ -15,23 +15,7 @@ Welcome to giotto-deep's documentation!
 Indices and tables
 ==================
 
-.. automodule:: gdeep.analysis
-   :members:
-   
-.. automodule:: gdeep.data
-   :members:
-   
-.. automodule:: gdeep.models
-   :members:
-   
-.. automodule:: gdeep.pipeline
-   :members:
-   
-.. automodule:: gdeep.visualisation
-   :members:
-   
-.. automodule:: gdeep.search
-   :members:
+   modules/index
 
 References
 ----------

@@ -7,10 +7,18 @@ class Benchmark:
     datasets and models.
 
     Args:
-        model (nn.Module):
-        dataloader (utils.DataLoader)
-        loss_fn (Callables)
-        wirter (tensorboard SummaryWriter)
+        models_dicts (list of dicts):
+            each dictionary has two items, `"name":"string"`
+            the name of the model and `"model":nn.Module` a
+            standard torch model
+        dataloaders_dicts (utils.DataLoader):
+            each dictionary has two items, `"name":"string"`
+            the name of the model and `"dataloaders":list` a
+            list of standard torch.dataloaders, e.g. `(dl_tr, dl_ts)`
+        loss_fn (Callables):
+            loss function
+        wirter (tensorboard SummaryWriter):
+            tensorboard writer
 
     """
 
@@ -27,7 +35,26 @@ class Benchmark:
               dataloaders_param=None,
               lr_scheduler=None,
               scheduler_params=None):
-        """method to be called when starting the benchmarking
+        """Method to be called when starting the benchmarking
+        
+        Args:
+            optimizer (torch.optim):
+                a torch optimizers
+            n_epochs (int):
+                number of training epochs
+            crossvalidation (bool):
+                whether or not to use cross-validation
+            optimizers_param (dict):
+                dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
+            dataloaders_param (dict):
+                dictionary of the dataloaders
+                parameters, e.g. `{"batch_size": 32}`
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler_params (dict):
+                learning rate scheduler parameters
+
         """
         if not isinstance(self.models_dicts, list):
             raise TypeError("The provided models must be a Python list of dictionaries")
