@@ -12,9 +12,11 @@ class TorchDataLoader:
     datasets available on pytorch
 
     Args:
-        name (string): check the available datasets at
+        name (string):
+            check the available datasets at
             https://pytorch.org/vision/stable/datasets.html
-        n_pts (int): number of points in customly generated
+        n_pts (int):
+            number of points in customly generated
             point clouds
 
     """

@@ -27,7 +27,8 @@ class DecisionBoundaryCalculator(ABC):
         """Return current state and does not make a step
 
         Returns:
-            torch.tensor: current estimate of the decision boundary
+            torch.tensor:
+                current estimate of the decision boundary
         """
         pass
 
@@ -58,11 +59,13 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     Computes Decision Boundary using the gradient flow method
 
     Args:
-        model (Callable[[torch.Tensor], torch.Tensor]): Function that maps
+        model (Callable[[torch.Tensor], torch.Tensor]):
+            Function that maps
             a `torch.Tensor` of shape (N, D_in) to a tensor either of
             shape (N) and with values in [0,1] or of shape (N, D_out) with
             values in [0, 1] such that the last axis sums to 1.
-        initial_points (torch.Tensor): `torch.Tensor` of shape (N, D_in)
+        initial_points (torch.Tensor):
+            `torch.Tensor` of shape (N, D_in)
         optimizer (Callable[[torch.Tensor], torch.optim.Optimizer]):
             Function returning an optimizer for the params given as an
             argument.
@@ -120,19 +123,23 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
                  integrator=None):
         """
         Args:
-            model (Callable[[torch.Tensor], torch.Tensor]): Function that maps
+            model (Callable[[torch.Tensor], torch.Tensor]):
+                Function that maps
                 a `torch.Tensor` of shape (N, D_in) to a tensor either of
                 shape (N) and with values in [0,1] or of shape (N, D_out) with
                 values in [0, 1] such that the last axis sums to 1.
 
-            initial_points (torch.Tensor): `torch.Tensor` of shape (N, D_in)
+            initial_points (torch.Tensor):
+                `torch.Tensor` of shape (N, D_in)
                 containing the starting points.
 
-            initial_vectors(torch.Tensor): `torch.Tensor` of shape (N, D_in)
+            initial_vectors(torch.Tensor):
+                `torch.Tensor` of shape (N, D_in)
                 containing the starting tangent vectors (directions).
                 Prefarably normalized.
 
-            integrator: unused
+            integrator:
+                unused
         """
         self.points = initial_points
 
