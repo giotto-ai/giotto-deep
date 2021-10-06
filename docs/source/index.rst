@@ -10,11 +10,6 @@ Welcome to giotto-deep's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-
-Indices and tables
-==================
-
    modules/index
 
 References
