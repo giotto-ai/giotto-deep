@@ -39,7 +39,9 @@ class Benchmark:
               optimizer_param=None,
               dataloaders_param=None,
               lr_scheduler=None,
-              scheduler_params=None):
+              scheduler_params=None,
+              profiling=False,
+              k_folds=5):
         """Method to be called when starting the benchmarking
         
         Args:
@@ -59,7 +61,11 @@ class Benchmark:
                 a learning rate scheduler
             scheduler_params (dict):
                 learning rate scheduler parameters
-
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
         """
 
         print("Benchmarking Started")
@@ -74,4 +80,7 @@ class Benchmark:
                                optimizer_param,
                                dataloaders_param,
                                lr_scheduler,
-                               scheduler_params)
+                               scheduler_params,
+                               None,
+                               profiling,
+                               k_folds)

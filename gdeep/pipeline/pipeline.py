@@ -7,6 +7,7 @@ import warnings
 from sklearn.model_selection import KFold
 from torch.utils.data.sampler import SubsetRandomSampler
 from gdeep.data import PreprocessText
+import optuna
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -200,7 +201,9 @@ class Pipeline:
               dataloaders_param=None,
               lr_scheduler=None,
               scheduler_params=None,
-              optuna_params=None):
+              optuna_params=None,
+              profiling=False,
+              k_folds=5):
         """Function to run all the training cycles.
 
         Args:
@@ -227,6 +230,11 @@ class Pipeline:
                 the parameters `(trial, search_metric)`
                 used in the gridsearch. Saefly ignore for
                 standard trainings
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
             
         Returns:
             (float, float):
@@ -243,8 +251,6 @@ class Pipeline:
             dataloaders_param = {"batch_size":dl_tr.batch_size}
         if scheduler_params is None:
             scheduler_params = {}
-        # CV folds
-        k_folds = 5
         
         # LR scheduler
         scheduler = None
@@ -264,20 +270,21 @@ class Pipeline:
             active = n_epochs-2
         else:
             active = k_folds*(n_epochs-2)
-        try:
-            prof = torch.profiler.profile(
-                    activities=[
-                        torch.profiler.ProfilerActivity.CPU,
-                        torch.profiler.ProfilerActivity.CUDA],
-                    schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
-                    on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
-                                                                            worker_name='worker'),
-                    record_shapes=True,
-                    #profile_memory=True,
-                    with_stack=True
-            )
-        except AssertionError:
-            pass
+        if profiling:
+            try:
+                prof = torch.profiler.profile(
+                        activities=[
+                            torch.profiler.ProfilerActivity.CPU,
+                            torch.profiler.ProfilerActivity.CUDA],
+                        schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
+                        on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
+                                                                                worker_name='worker'),
+                        record_shapes=True,
+                        #profile_memory=True,
+                        with_stack=True
+                )
+            except AssertionError:
+                pass
         
         # validation being the test set for 2
         # dataloders without crossvalidation
@@ -351,6 +358,7 @@ class Pipeline:
                         trial):
         """private method to run the trainign loops
         """
+        valloss, valacc = 100, 0
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.val_epoch = t
