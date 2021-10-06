@@ -62,16 +62,22 @@ class Gridsearch(Pipeline):
                    optimizers_params,
                    dataloaders_params,
                    models_hyperparams,
+                   lr_scheduler,
+                   scheduler_params,
                    writer_tag="",
                    **kwargs):
         """default callback function for optuna's study
         
         Args:
             trial (optuna.trial): the independent variable
-            pipel (Pipeline): a Pipeline
             optimizers (list of torch.optim): list of torch optimizers
             n_epochs (int): number of training epochs
-            batch_size (int): batch size for the training
+            optimizers_param (dict): dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
+            models_param (dict): dictionary of the model
+                parameters
+            lr_scheduler (torch.optim): a learning rate scheduler
+            scheduler_params (dict): learning rate scheduler parameters
             writer_tag (string): tag to prepend to the ouput
                 on tensorboard
         """
@@ -101,7 +107,9 @@ class Gridsearch(Pipeline):
             loss, accuracy = new_pipe.train(optimizer, 1,
                                             cross_validation,
                                             optimizers_param,
-                                            dataloaders_param
+                                            dataloaders_param,
+                                            lr_scheduler,
+                                            scheduler_params
                                             )
 
             if self.search_metric == "loss":
@@ -129,16 +137,20 @@ class Gridsearch(Pipeline):
               optimizers_params=None,
               dataloaders_params=None,
               models_hyperparams=None,
+              lr_scheduler=None,
+              scheduler_params=None,
               **kwargs):
         """method to be called when starting the gridsearch
         
         Args:
-            trial (optuna.trial): the independent variable
             optimizers (list of torch.optim): list of torch optimizers
             n_epochs (int): number of training epochs
             cross_validation (bool): whether or not to use cross-validation
             optimizers_params (dict): number of training epochs
             dataloaders_params (int): batch size for the training
+            writer_tag (string): tag to prepend to the ouput
+                on tensorboard
+            scheduler_params (dict): learning rate scheduler parameters
             writer_tag (string): tag to prepend to the ouput
                 on tensorboard
         """
@@ -156,6 +168,8 @@ class Gridsearch(Pipeline):
                                                            optimizers_params,
                                                            dataloaders_params,
                                                            models_hyperparams,
+                                                           lr_scheduler,
+                                                           scheduler_params,
                                                            writer_tag = "model",
                                                            **kwargs),
                                 n_trials=self.n_trials,
@@ -188,6 +202,8 @@ class Gridsearch(Pipeline):
                                                                        optimizers_params,
                                                                        dataloaders_params,
                                                                        models_hyperparams,
+                                                                       lr_scheduler,
+                                                                       scheduler_params,
                                                                        writer_tag,
                                                                        **kwargs),
                                             n_trials=self.n_trials,
@@ -200,8 +216,16 @@ class Gridsearch(Pipeline):
                         
     def results(self, model_name = "model", dataset_name = "dataset"):
         """This class returns the dataframe with all the results of
-        the gridsearch. It also saves the figures in the writer."""
+        the gridsearch. It also saves the figures in the writer.
         
+        Args:
+            model_name (str)
+            dataset_name (str)
+            
+        Returns:
+            pd.DataFrame: the hyperparameter table
+        """
+        self.list_res = []
         trials = self.study.trials
         pruned_trials = self.study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = self.study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -223,8 +247,10 @@ class Gridsearch(Pipeline):
                 temp_list.append(val)
                 #print("value here:", tria.value)
             self.list_res.append([model_name, dataset_name] + temp_list + [tria.value])
-        # already present in tensorboard
-
+        #print(self.list_res)
+        #print(["model", "dataset"] +
+        #      list(trial_best.params.keys())+[self.metric])
+        #print([tria.params for tria in trials])
         self.df_res = pd.DataFrame(self.list_res, columns=["model", "dataset"] +
                               list(trial_best.params.keys())+[self.metric])
 
@@ -248,28 +274,30 @@ class Gridsearch(Pipeline):
         #print(list_of_arrays)
         corr = np.corrcoef(np.array(list_of_arrays))
         
-        fig2 = px.imshow(corr,
-                labels=dict(x="Parameters", 
-                            y="Parameters", 
-                            color="Correlation"),
-                x=labels,
-                y=labels
-               )
-        fig2.update_xaxes(side="top")
-        fig2.show()
+        try:
+            fig2 = px.imshow(corr,
+                    labels=dict(x="Parameters",
+                                y="Parameters",
+                                color="Correlation"),
+                    x=labels,
+                    y=labels
+                   )
+            fig2.update_xaxes(side="top")
+            fig2.show()
        
-        #img1 = plotly2tensor(fig)
-        img2 = plotly2tensor(fig2)
-            
-        #self.obj.writer.add_images("Gridsearch parallel plot: " + model_name + " " + dataset_name,
-        #                            img1, dataformats="HWC")
-        self.writer.add_images("Gridsearch correlation: " + model_name + " " + dataset_name,
+            img2 = plotly2tensor(fig2)
+                
+
+            self.writer.add_images("Gridsearch correlation: " + model_name + " " + dataset_name,
                                     img2, dataformats="HWC")
-        self.writer.flush()
+            self.writer.flush()
+        except ValueError:
+            pass
         
         return self.df_res
         
     def store_to_tensorboard(self):
+        """Store the hyperparameters to tensorboard"""
         for i in range(len(self.df_res)):
             dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-1]).items()}
             self.writer.add_hparams(dictio,
@@ -280,17 +308,29 @@ class Gridsearch(Pipeline):
         return self.df_res
 
     @staticmethod
-    def suggest_params(trial, optimizers_params):
-        optimizers_param_temp = {k:trial.suggest_float(k,*v) for k,v in
-                                optimizers_params.items() if (type(v) is list or type(v) is tuple)
-                                and (type(v[0]) is float or type(v[1]) is float)}
-        optimizers_param_temp2 = {k:trial.suggest_int(k,*v) for k,v in
-                                 optimizers_params.items() if (type(v) is list or type(v) is tuple)
-                                 and (type(v[0]) is int or type(v[1]) is int)}
-        optimizers_param_temp.update(optimizers_param_temp2)
-        optimizers_param = {k:trial.suggest_categorical(k, v) for k,v in
-                            optimizers_params.items() if (type(v) is list or type(v) is tuple)
-                            and (type(v[0]) is str or type(v[1]) is str)}
-        optimizers_param.update(optimizers_param_temp)
+    def suggest_params(trial, params):
+        """Utility function to generate the parameters
+        for the gridsearch. It is based on optuna `suggest_<type>`.
         
-        return optimizers_param
+        Args:
+            trial (optuna.trial)
+            params (dict): dictionary of parameters
+        
+        Returns:
+            (dict): dictionary of selected parameters values
+        """
+        if params is None:
+            return None
+        param_temp = {k:trial.suggest_float(k,*v) for k,v in
+                      params.items() if (type(v) is list or type(v) is tuple)
+                      and (type(v[0]) is float or type(v[1]) is float)}
+        param_temp2 = {k:trial.suggest_int(k,*v) for k,v in
+                       params.items() if (type(v) is list or type(v) is tuple)
+                       and (type(v[0]) is int or type(v[1]) is int)}
+        param_temp.update(param_temp2)
+        param = {k:trial.suggest_categorical(k, v) for k,v in
+                 params.items() if (type(v) is list or type(v) is tuple)
+                 and (type(v[0]) is str or type(v[1]) is str)}
+        param.update(param_temp)
+        
+        return param

@@ -201,8 +201,10 @@ class Pipeline:
 
     def train(self, optimizer, n_epochs=10, cross_validation=False,
               optimizers_param=None,
-              dataloaders_param=None):
-        """Function to run the trianing cycles.
+              dataloaders_param=None,
+              lr_scheduler=None,
+              scheduler_params=None):
+        """Function to run the training cycles.
 
         Args:
             optimizer (torch.optim)
@@ -214,6 +216,8 @@ class Pipeline:
                 parameters, e.g. `{"lr": 0.001}`
             models_param (dict): dictionary of the model
                 parameters
+            lr_scheduler (torch.optim): a learning rate scheduler
+            scheduler_params (dict): learning rate scheduler parameters
             
         Returns:
             (float, float): the validation loss and accuracy
@@ -227,6 +231,9 @@ class Pipeline:
         dl_tr = self.dataloaders[0]
         if dataloaders_param is None:
             dataloaders_param = {"batch_size":dl_tr.batch_size}
+        if scheduler_params is None:
+            scheduler_params = {}
+        
         
         #print("here:",len(dl_tr))
         if len(self.dataloaders) == 3:
@@ -242,6 +249,8 @@ class Pipeline:
                 # reset the model weights
                 self.reset_model()
                 self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
+                if not lr_scheduler is None:
+                    scheduler = lr_scheduler(self.optimizer, **scheduler_params)
                 # initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
@@ -265,6 +274,8 @@ class Pipeline:
                     self.train_epoch = t
                     self._train_loop(dl_tr)
                     valloss, valacc = self._val_loop(dl_val)
+                if not lr_scheduler is None:
+                    scheduler.step()
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
                 # mean of the validation and loss accuracies over folds
@@ -277,9 +288,10 @@ class Pipeline:
                                                     pin_memory=True,
                                                     sampler=range(len(dl_tr)*dl_tr.batch_size),
                                                     **dataloaders_param)
-                print("here:",len(dl_tr), dl_tr.batch_size)
             self.reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
+            if not lr_scheduler is None:
+                scheduler = lr_scheduler(self.optimizer, **scheduler_params)
             for t in range(n_epochs):
                 print(f"Epoch {t+1}\n-------------------------------")
                 # for i in dl_tr:
@@ -289,6 +301,9 @@ class Pipeline:
                     valloss, valacc = self._val_loop(dl_val)
                     self.val_epoch = t
                 self.train_epoch = t
+                #print(self.optimizer.param_groups[0]["lr"])
+                if not lr_scheduler is None:
+                    scheduler.step()
             # test the results
             if len(self.dataloaders) == 2:
                 valloss, valacc = self._val_loop(self.dataloaders[1])

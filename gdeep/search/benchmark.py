@@ -24,7 +24,9 @@ class Benchmark:
               n_epochs=10,
               cross_validation=False,
               optimizer_param=None,
-              dataloaders_param=None):
+              dataloaders_param=None,
+              lr_scheduler=None,
+              scheduler_params=None):
         """method to be called when starting the benchmarking
         """
         if not isinstance(self.models_dicts, list):
@@ -43,4 +45,6 @@ class Benchmark:
                     pipe.train(optimizer, n_epochs,
                                cross_validation,
                                optimizer_param,
-                               dataloaders_param)
+                               dataloaders_param,
+                               lr_scheduler,
+                               scheduler_params)

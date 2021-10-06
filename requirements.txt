@@ -19,3 +19,4 @@ kaleido
 torchtext
 html2image
 optuna
+sphinx_rtd_theme
