@@ -22,9 +22,14 @@ class Pipeline:
 
     Args:
         model (nn.Module):
-        dataloader (utils.DataLoader)
-        loss_fn (Callables)
-        wirter (tensorboard SummaryWriter)
+            standard torch model
+        dataloaders (list of utils.DataLoader):
+            list of standard torch DtaLoaders, e.g.
+            `[dl_tr, dl_val, dl_ts]`
+        loss_fn (Callables):
+            loss function to average over batches
+        wirter (tensorboard SummaryWriter):
+            tensorboard writer
 
     """
 
@@ -207,20 +212,29 @@ class Pipeline:
         """Function to run the training cycles.
 
         Args:
-            optimizer (torch.optim)
-            n_epochs (int)
-            cross_validation (bool)
-            dataloaders_param (dict): dictionary of the dataloaders
+            optimizer (torch.optim):
+                the torch optimiser class, like `SGD`
+            n_epochs (int):
+                number of training epochs
+            cross_validation (bool):
+                whether or not to perform five-fold cross-validation
+            dataloaders_param (dict):
+                dictionary of the dataloaders
                 parameters, e.g. `{'batch_size': 32}`
-            optimizers_param (dict): dictionary of the optimizers
+            optimizers_param (dict):
+                dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            models_param (dict): dictionary of the model
+            models_param (dict):
+                dictionary of the model
                 parameters
-            lr_scheduler (torch.optim): a learning rate scheduler
-            scheduler_params (dict): learning rate scheduler parameters
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler_params (dict):
+                learning rate scheduler parameters
             
         Returns:
-            (float, float): the validation loss and accuracy
+            (float, float):
+                the validation loss and accuracy
                 if there is cross validation, the validation data loader
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
