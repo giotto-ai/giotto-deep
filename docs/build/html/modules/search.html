@@ -103,7 +103,7 @@ list of standard torch.dataloaders, e.g. <cite>(dl_tr, dl_ts)</cite></p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.search.Benchmark.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Benchmark.start" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Benchmark.start" title="Permalink to this definition"></a></dt>
 <dd><p>Method to be called when starting the benchmarking</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -122,6 +122,11 @@ parameters, e.g. <cite>{“batch_size”: 32}</cite></p>
 <dt>lr_scheduler (torch.optim):</dt><dd><p>a learning rate scheduler</p>
 </dd>
 <dt>scheduler_params (dict):</dt><dd><p>learning rate scheduler parameters</p>
+</dd>
+<dt>profiling (bool, default=False):</dt><dd><p>whether or not you want to activate the
+profiler</p>
+</dd>
+<dt>k_folds (int, default=5):</dt><dd><p>number of folds in cross validation</p>
 </dd>
 </dl>
 </dd>
@@ -148,31 +153,8 @@ parameters such as learning rate, optimizer.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="gdeep.search.Gridsearch.results">
-<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dataset'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.results" title="Permalink to this definition"></a></dt>
-<dd><p>This class returns the dataframe with all the results of
-the gridsearch. It also saves the figures in the writer.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>model_name (str):</dt><dd><p>the model name for the
-tensorboard gridsearch table</p>
-</dd>
-<dt>dataset_name (str)</dt><dd><p>the dataset name for the
-tensorboard gridsearch table</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>pd.DataFrame:</dt><dd><p>the hyperparameter table</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="gdeep.search.Gridsearch.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models_hyperparams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.start" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models_hyperparams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.start" title="Permalink to this definition"></a></dt>
 <dd><p>method to be called when starting the gridsearch</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -195,32 +177,10 @@ tensorboard gridsearch table</p>
 <dt>writer_tag (string):</dt><dd><p>tag to prepend to the ouput
 on tensorboard</p>
 </dd>
-</dl>
+<dt>profiling (bool, default=False):</dt><dd><p>whether or not you want to activate the
+profiler</p>
 </dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gdeep.search.Gridsearch.store_to_tensorboard">
-<span class="sig-name descname"><span class="pre">store_to_tensorboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.store_to_tensorboard" title="Permalink to this definition"></a></dt>
-<dd><p>Store the hyperparameters to tensorboard</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gdeep.search.Gridsearch.suggest_params">
-<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">suggest_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.suggest_params" title="Permalink to this definition"></a></dt>
-<dd><p>Utility function to generate the parameters
-for the gridsearch. It is based on optuna <cite>suggest_&lt;type&gt;</cite>.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>trial (optuna.trial):</dt><dd><p>optuna trial variable</p>
-</dd>
-<dt>params (dict):</dt><dd><p>dictionary of parameters</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>(dict):</dt><dd><p>dictionary of selected parameters values</p>
+<dt>k_folds (int, default=5):</dt><dd><p>number of folds in cross validation</p>
 </dd>
 </dl>
 </dd>

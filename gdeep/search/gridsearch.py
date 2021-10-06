@@ -67,8 +67,9 @@ class Gridsearch(Pipeline):
                    models_hyperparams,
                    lr_scheduler,
                    scheduler_params,
-                   writer_tag="",
-                   **kwargs):
+                   writer_tag,
+                   profiling,
+                   k_folds):
         """default callback function for optuna's study
         
         Args:
@@ -91,49 +92,40 @@ class Gridsearch(Pipeline):
             writer_tag (string):
                 tag to prepend to the ouput
                 on tensorboard
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
         """
 
-        
+        # gegnerate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
         
         # generate all the hyperparameters
-        optimizers_param = self.suggest_params(trial, optimizers_params)
-        #print(optimizers_param)
-        dataloaders_param = self.suggest_params(trial, dataloaders_params)
-        #print(dataloaders_param)
-        models_hyperparam = self.suggest_params(trial, models_hyperparams)
-        #print(models_hyperparam)
-        #print(len(self.dataloaders[0]))
+        optimizers_param = self._suggest_params(trial, optimizers_params)
+        dataloaders_param = self._suggest_params(trial, dataloaders_params)
+        models_hyperparam = self._suggest_params(trial, models_hyperparams)
         # create a new model instance
         try:
             new_model = type(self.model)(**models_hyperparam)
         except TypeError:
             new_model = self.model
-
-        #print(new_model)
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
-        #print("here:", len(new_pipe.dataloaders[0]))
-        for t in range(n_epochs):
-            loss, accuracy = new_pipe.train(optimizer, 1,
-                                            cross_validation,
-                                            optimizers_param,
-                                            dataloaders_param,
-                                            lr_scheduler,
-                                            scheduler_params
-                                            )
 
-            if self.search_metric == "loss":
-                trial.report(loss, t)
-            else:
-                trial.report(accuracy, t)
-
-            # Handle pruning based on the intermediate value.
-            if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
-
+        loss, accuracy = new_pipe.train(optimizer, n_epochs,
+                                        cross_validation,
+                                        optimizers_param,
+                                        dataloaders_param,
+                                        lr_scheduler,
+                                        scheduler_params,
+                                        (trial, self.search_metric),
+                                        profiling,
+                                        k_folds
+                                        )
         self.writer.flush()
-        print("Done!")
+        # release resources
         del(new_pipe)
         del(new_model)
         if self.search_metric == "loss":
@@ -150,8 +142,9 @@ class Gridsearch(Pipeline):
               models_hyperparams=None,
               lr_scheduler=None,
               scheduler_params=None,
-              writer_tag = "model",
-              **kwargs):
+              writer_tag="model",
+              profiling=False,
+              k_folds=5):
         """method to be called when starting the gridsearch
 
         Args:
@@ -174,6 +167,11 @@ class Gridsearch(Pipeline):
             writer_tag (string):
                 tag to prepend to the ouput
                 on tensorboard
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
         """
         if self.is_pipe:
             if self.search_metric == "loss":
@@ -191,26 +189,26 @@ class Gridsearch(Pipeline):
                                                            models_hyperparams,
                                                            lr_scheduler,
                                                            scheduler_params,
-                                                           writer_tag=writer_tag,
-                                                           **kwargs),
+                                                           writer_tag,
+                                                           profiling,
+                                                           k_folds),
                                 n_trials=self.n_trials,
                                 timeout=None)
-            self.results()
+            self._results()
 
         else:
+            if self.search_metric == "loss":
+                self.study = optuna.create_study(direction="minimize")
+            else:
+                self.study = optuna.create_study(direction="maximize")
             for dataloaders in self.bench.dataloaders_dicts:
                 for model in self.bench.models_dicts:
                     if _are_compatible(model, dataloaders):
                         print("*"*40)
-                        print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
-
-                        writer_tag = "Dataset: " + dataloaders["name"] + " | Model: " + model["name"]
-
-                        if self.search_metric == "loss":
-                            self.study = optuna.create_study(direction="minimize")
-                        else:
-                            self.study = optuna.create_study(direction="maximize")
-
+                        print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"],
+                                                                                       model["name"]))
+                        writer_tag = "Dataset: " + dataloaders["name"] + \
+                            " | Model: " + model["name"]
                         super().__init__(model["model"],
                                          dataloaders["dataloaders"],
                                          self.bench.loss_fn,
@@ -226,16 +224,17 @@ class Gridsearch(Pipeline):
                                                                        lr_scheduler,
                                                                        scheduler_params,
                                                                        writer_tag,
-                                                                       **kwargs),
+                                                                       profiling,
+                                                                       k_folds),
                                             n_trials=self.n_trials,
                                             timeout=None)
-                        self.results(model_name = model["name"],
+                        self._results(model_name = model["name"],
                                      dataset_name = dataloaders["name"])
-        self.store_to_tensorboard()
+        self._store_to_tensorboard()
 
                         
                         
-    def results(self, model_name = "model", dataset_name = "dataset"):
+    def _results(self, model_name = "model", dataset_name = "dataset"):
         """This class returns the dataframe with all the results of
         the gridsearch. It also saves the figures in the writer.
 
@@ -262,7 +261,6 @@ class Gridsearch(Pipeline):
         try:
             print("Best trial:")
             trial_best = self.study.best_trial
-
             print("Metric Value for best trial: ", trial_best.value)
         except ValueError:
             pass
@@ -271,21 +269,12 @@ class Gridsearch(Pipeline):
             temp_list = []
             for val in tria.params.values():
                 temp_list.append(val)
-                #print("value here:", tria.value)
             self.list_res.append([model_name, dataset_name] + temp_list + [tria.value])
-        #print(self.list_res)
-        #print(["model", "dataset"] +
-        #      list(trial_best.params.keys())+[self.metric])
-        #print([tria.params for tria in trials])
+
         self.df_res = pd.DataFrame(self.list_res, columns=["model", "dataset"] +
                               list(trial_best.params.keys())+[self.metric])
 
-        fig = px.parallel_coordinates(self.df_res, color=self.metric, labels=self.df_res.columns,
-                             color_continuous_scale=px.colors.diverging.Tealrose,
-                             color_continuous_midpoint=2)
-        
         # correlations of numercal coefficients
-        
         list_of_arrays = []
         labels = []
         for col in self.df_res.columns:
@@ -310,19 +299,18 @@ class Gridsearch(Pipeline):
                    )
             fig2.update_xaxes(side="top")
             fig2.show()
-       
             img2 = plotly2tensor(fig2)
-                
 
-            self.writer.add_images("Gridsearch correlation: " + model_name + " " + dataset_name,
-                                    img2, dataformats="HWC")
+            self.writer.add_images("Gridsearch correlation: " +
+                                   model_name + " " + dataset_name,
+                                   img2, dataformats="HWC")
             self.writer.flush()
         except ValueError:
             pass
         
         return self.df_res
         
-    def store_to_tensorboard(self):
+    def _store_to_tensorboard(self):
         """Store the hyperparameters to tensorboard"""
         for i in range(len(self.df_res)):
             dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-1]).items()}
@@ -334,7 +322,7 @@ class Gridsearch(Pipeline):
         return self.df_res
 
     @staticmethod
-    def suggest_params(trial, params):
+    def _suggest_params(trial, params):
         """Utility function to generate the parameters
         for the gridsearch. It is based on optuna `suggest_<type>`.
 

@@ -27,6 +27,11 @@ class Benchmark:
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
         self.writer = writer
+        if not isinstance(self.models_dicts, list):
+            raise TypeError("The provided models must be a Python list of dictionaries")
+
+        if not isinstance(self.dataloaders_dicts, list):
+            raise TypeError("The provided datasets must be a Python list of dictionaries")
 
     def start(self, optimizer,
               n_epochs=10,
@@ -34,7 +39,9 @@ class Benchmark:
               optimizer_param=None,
               dataloaders_param=None,
               lr_scheduler=None,
-              scheduler_params=None):
+              scheduler_params=None,
+              profiling=False,
+              k_folds=5):
         """Method to be called when starting the benchmarking
         
         Args:
@@ -54,13 +61,12 @@ class Benchmark:
                 a learning rate scheduler
             scheduler_params (dict):
                 learning rate scheduler parameters
-
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
         """
-        if not isinstance(self.models_dicts, list):
-            raise TypeError("The provided models must be a Python list of dictionaries")
-
-        if not isinstance(self.dataloaders_dicts, list):
-            raise TypeError("The provided datasets must be a Python list of dictionaries")
 
         print("Benchmarking Started")
         for dataloaders in self.dataloaders_dicts:
@@ -74,4 +80,7 @@ class Benchmark:
                                optimizer_param,
                                dataloaders_param,
                                lr_scheduler,
-                               scheduler_params)
+                               scheduler_params,
+                               None,
+                               profiling,
+                               k_folds)

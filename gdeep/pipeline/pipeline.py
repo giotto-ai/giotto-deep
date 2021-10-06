@@ -7,6 +7,7 @@ import warnings
 from sklearn.model_selection import KFold
 from torch.utils.data.sampler import SubsetRandomSampler
 from gdeep.data import PreprocessText
+import optuna
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -38,14 +39,10 @@ class Pipeline:
     def __init__(self, model, dataloaders, loss_fn, writer):
         self.model = model.to(DEVICE)
         self.initial_model = copy.deepcopy(self.model)
-        # assert len(dataloaders) == 2 or len(dataloaders) == 3
-        # self.dataloaders = dataloaders  # train and test
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
         self.dataloaders = dataloaders  # train and test
         self.train_epoch = 0
         self.val_epoch = 0
-
-        # else:
         self.loss_fn = loss_fn
         # integrate tensorboard
         self.writer = writer
@@ -86,27 +83,25 @@ class Pipeline:
             pred = self.model(X)
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
             loss = self.loss_fn(pred, y)
-            #print("loss fnc: ", loss)
             # Save to tensorboard
-            self.writer.add_scalar(writer_tag + "/Loss/train", loss, self.train_epoch*dl_tr.batch_size + batch)
+            self.writer.add_scalar(writer_tag + "/Loss/train",
+                                   loss,
+                                   self.train_epoch*dl_tr.batch_size + batch)
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            #print(list(self.model.parameters()))
             if batch % 1 == 0:
                 t_loss = loss.item()
                 print("Training loss: ", t_loss, " [",batch+1,"/",
                       steps,"]                     ", end='\r')
-
+        self.writer.flush()
         # accuracy:
         correct /= size
         print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
-        self.writer.flush()
-
         return loss, correct
 
-    def _val_loop(self, dl_val, writer_tag=""):
+    def _val_loop(self, dl_val, writer_tag="validation"):
         """private method to run a single validation
         loop
         """
@@ -117,31 +112,14 @@ class Pipeline:
         class_label = []
         class_probs = []
         self.model.eval()
-        pred = 0
 
-        # for X, y in self.dataloaders[1]:
-        for X, y in dl_val:
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
-            pred = self.model(X)
-            class_probs_batch = [F.softmax(el, dim=0)
-                                 for el in pred]
-            class_probs.append(class_probs_batch)
-            val_loss += self.loss_fn(pred, y).item()
-            correct += (pred.argmax(1) ==
-                        y).type(torch.float).sum().item()
-            class_label.append(y)
+        pred, val_loss, correct = self._inner_loop(dl_val,
+                                                   class_probs,
+                                                   class_label,
+                                                   val_loss,
+                                                   correct)
         # add data to tensorboard
-        val_probs = torch.cat([torch.stack(batch) for batch in class_probs])
-        val_label = torch.cat(class_label)
-
-        for class_index in range(len(pred[0])):
-            tensorboard_truth = val_label == class_index
-            tensorboard_probs = val_probs[:, class_index]
-            self.writer.add_pr_curve(writer_tag+str(class_index),
-                                     tensorboard_truth,
-                                     tensorboard_probs,
-                                     global_step=0)
+        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
         self.writer.flush()
 
         # accuracy
@@ -156,7 +134,38 @@ class Pipeline:
 
         return val_loss, 100*correct
 
-    def _test_loop(self, dl_test, writer_tag=""):
+    def _add_pr_curve_tb(self, pred, class_label, class_probs, writer_tag=""):
+        """private function to add the PR curve
+        to tensorboard"""
+        probs = torch.cat([torch.stack(batch) for batch in
+                          class_probs])
+        labels = torch.cat(class_label)
+        for class_index in range(len(pred[0])):
+            tensorboard_truth = labels == class_index
+            tensorboard_probs = probs[:, class_index]
+            self.writer.add_pr_curve(writer_tag+str(class_index),
+                                     tensorboard_truth,
+                                     tensorboard_probs,
+                                     global_step=0)
+
+    def _inner_loop(self, dl, class_probs, class_label, loss, correct):
+        """private function used inside the test
+        and validation loops"""
+        pred = 0
+        for X, y in dl:
+            X = X.to(DEVICE)
+            y = y.to(DEVICE)
+            pred = self.model(X)
+            class_probs_batch = [F.softmax(el, dim=0)
+                                 for el in pred]
+            class_probs.append(class_probs_batch)
+            loss += self.loss_fn(pred, y).item()
+            correct += (pred.argmax(1) ==
+                        y).type(torch.float).sum().item()
+            class_label.append(y)
+        return pred, correct, loss
+
+    def _test_loop(self, dl_test, writer_tag="test"):
         """private method to run a single test
         loop
         """
@@ -167,32 +176,16 @@ class Pipeline:
         class_label = []
         class_probs = []
         self.model.eval()
-        pred = 0
 
         # for X, y in self.dataloaders[1]:
-        for X, y in dl_test:
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
-            pred = self.model(X)
-            class_probs_batch = [F.softmax(el, dim=0)
-                                 for el in pred]
-            class_probs.append(class_probs_batch)
-            test_loss += self.loss_fn(pred, y).item()
-            correct += (pred.argmax(1) ==
-                        y).type(torch.float).sum().item()
-            class_label.append(y)
+        pred, test_loss, correct = self._inner_loop(dl_test,
+                                                    class_probs,
+                                                    class_label,
+                                                    test_loss,
+                                                    correct)
         # add data to tensorboard
-        test_probs = torch.cat([torch.stack(batch) for batch in
-                                class_probs])
-        test_label = torch.cat(class_label)
+        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
 
-        for class_index in range(len(pred[0])):
-            tensorboard_truth = test_label == class_index
-            tensorboard_probs = test_probs[:, class_index]
-            self.writer.add_pr_curve(writer_tag+str(class_index),
-                                     tensorboard_truth,
-                                     tensorboard_probs,
-                                     global_step=0)
         self.writer.flush()
 
         # accuracy
@@ -207,7 +200,10 @@ class Pipeline:
               optimizers_param=None,
               dataloaders_param=None,
               lr_scheduler=None,
-              scheduler_params=None):
+              scheduler_params=None,
+              optuna_params=None,
+              profiling=False,
+              k_folds=5):
         """Function to run all the training cycles.
 
         Args:
@@ -230,6 +226,15 @@ class Pipeline:
                 a learning rate scheduler
             scheduler_params (dict):
                 learning rate scheduler parameters
+            optuna_params (tuple, default=None):
+                the parameters `(trial, search_metric)`
+                used in the gridsearch. Saefly ignore for
+                standard trainings
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
             
         Returns:
             (float, float):
@@ -238,42 +243,54 @@ class Pipeline:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
-
+        # train initialisation
+        dl_tr = self.dataloaders[0]
         if optimizers_param is None:
             optimizers_param = {"lr":0.001}
-        dl_tr = self.dataloaders[0]
         if dataloaders_param is None:
             dataloaders_param = {"batch_size":dl_tr.batch_size}
         if scheduler_params is None:
             scheduler_params = {}
-        # CV folds
-        k_folds = 5
+        
+        # LR scheduler
+        scheduler = None
+        
+        # optuna gridsearch
+        search_metric = None
+        trial = None
+        if not optuna_params is None:
+            check_optuna = True
+            trial, search_metric = optuna_params
+        else:
+            check_optuna = False
         
         # profiling
+        prof = None
         if not cross_validation:
             active = n_epochs-2
         else:
             active = k_folds*(n_epochs-2)
-        try:
-            prof = torch.profiler.profile(
-                    activities=[
-                        torch.profiler.ProfilerActivity.CPU,
-                        torch.profiler.ProfilerActivity.CUDA],
-                    schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
-                    on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
-                                                                            worker_name='worker'),
-                    record_shapes=True,
-                    #profile_memory=True,
-                    with_stack=True
-            )
-        except AssertionError:
-            pass
+        if profiling:
+            try:
+                prof = torch.profiler.profile(
+                        activities=[
+                            torch.profiler.ProfilerActivity.CPU,
+                            torch.profiler.ProfilerActivity.CUDA],
+                        schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
+                        on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
+                                                                                worker_name='worker'),
+                        record_shapes=True,
+                        #profile_memory=True,
+                        with_stack=True
+                )
+            except AssertionError:
+                pass
         
-        #print("here:",len(dl_tr))
-        if len(self.dataloaders) == 3:
-            dl_val = self.dataloaders[1]
+        # validation being the test set for 2
+        # dataloders without crossvalidation
+        dl_val = self.dataloaders[1]
+
         if cross_validation:
-            
             mean_val_loss = []
             mean_val_acc = []
             valloss, valacc = -1, 0
@@ -285,7 +302,7 @@ class Pipeline:
                 self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
                 if not lr_scheduler is None:
                     scheduler = lr_scheduler(self.optimizer, **scheduler_params)
-                # initialise data loaders
+                # re-initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
@@ -300,27 +317,18 @@ class Pipeline:
                                                      sampler=SubsetRandomSampler(val_idx))
                 # print n-th fold
                 print("\n\n********** Fold ", fold+1, "**************")
-
-
-                # the training and validation
-                for t in range(n_epochs):
-                    print(f"Epoch {t+1}\n-------------------------------")
-                    self.val_epoch = t
-                    self.train_epoch = t
-                    self._train_loop(dl_tr, "train fold"+str(1+fold))
-                    valloss, valacc = self._val_loop(dl_val, "validation fold"+str(1+fold))
-                if not lr_scheduler is None:
-                    scheduler.step()
-                try:
-                    prof.step()
-                except UnboundLocalError:
-                    pass
+                # the training and validation loop
+                valloss, valacc = self._training_loops(n_epochs, dl_tr,
+                                                       dl_val, lr_scheduler, scheduler,
+                                                       prof, check_optuna, search_metric,
+                                                       trial)
                 
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
                 # mean of the validation and loss accuracies over folds
-                valloss = np.mean(mean_val_loss)
-                valacc = np.mean(mean_val_acc)
+            valloss = np.mean(mean_val_loss)
+            valacc = np.mean(mean_val_acc)
+
 
         else:
             if not dataloaders_param == {}:
@@ -334,27 +342,42 @@ class Pipeline:
             if not lr_scheduler is None:
                 scheduler = lr_scheduler(self.optimizer, **scheduler_params)
 
-            for t in range(n_epochs):
-                print(f"Epoch {t+1}\n-------------------------------")
-                self._train_loop(dl_tr, "train")
-                if len(self.dataloaders) == 3:
-                    valloss, valacc = self._val_loop(dl_val, "validation")
-                    self.val_epoch = t
-                self.train_epoch = t
-                #print(self.optimizer.param_groups[0]["lr"])
-                if not lr_scheduler is None:
-                    scheduler.step()
-                try:
-                    prof.step()
-                except UnboundLocalError:
-                    pass
-                    
+            valloss, valacc = self._training_loops(n_epochs, dl_tr,
+                                                   dl_val, lr_scheduler, scheduler,
+                                                   prof, check_optuna, search_metric,
+                                                   trial)
 
-            # test the results
-            if len(self.dataloaders) == 2:
-                valloss, valacc = self._test_loop(self.dataloaders[1], "test")
-            
         self.writer.flush()
         # put the mean of the cross_val
         
+        return valloss, valacc
+        
+    def _training_loops(self, n_epochs, dl_tr,
+                        dl_val, lr_scheduler, scheduler,
+                        prof, check_optuna, search_metric,
+                        trial):
+        """private method to run the trainign loops
+        """
+        valloss, valacc = 100, 0
+        for t in range(n_epochs):
+            print(f"Epoch {t+1}\n-------------------------------")
+            self.val_epoch = t
+            self.train_epoch = t
+            self._train_loop(dl_tr, "train")
+            valloss, valacc = self._val_loop(dl_val, "validation")
+            
+            #print(self.optimizer.param_groups[0]["lr"])
+            if not lr_scheduler is None:
+                scheduler.step()
+            if not prof is None:
+                prof.step()
+
+            if check_optuna:
+                if search_metric == "loss":
+                    trial.report(valloss, t)
+                else:
+                    trial.report(valacc, t)
+                # Handle pruning based on the intermediate value.
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
         return valloss, valacc
