@@ -27,6 +27,11 @@ class Benchmark:
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
         self.writer = writer
+        if not isinstance(self.models_dicts, list):
+            raise TypeError("The provided models must be a Python list of dictionaries")
+
+        if not isinstance(self.dataloaders_dicts, list):
+            raise TypeError("The provided datasets must be a Python list of dictionaries")
 
     def start(self, optimizer,
               n_epochs=10,
@@ -56,11 +61,6 @@ class Benchmark:
                 learning rate scheduler parameters
 
         """
-        if not isinstance(self.models_dicts, list):
-            raise TypeError("The provided models must be a Python list of dictionaries")
-
-        if not isinstance(self.dataloaders_dicts, list):
-            raise TypeError("The provided datasets must be a Python list of dictionaries")
 
         print("Benchmarking Started")
         for dataloaders in self.dataloaders_dicts:
