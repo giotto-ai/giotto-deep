@@ -13,6 +13,20 @@ from functools import reduce
 from typing import Iterator
 
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+    print("Using GPU!")
+else:
+    DEVICE = torch.device("cpu")
+    
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
+
 class PersistenceGradient():
     '''This class computes the gradient of the persistence
     diagram with respect to a point cloud. The algorithms has
@@ -236,6 +250,7 @@ class PersistenceGradient():
 
         if not type(X) == torch.Tensor:
             X = torch.tensor(X)
+        X.to(DEVICE)
         X.requires_grad = True
         grads = torch.zeros_like(X)
         x = np.array([])

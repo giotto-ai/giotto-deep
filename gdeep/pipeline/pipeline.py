@@ -98,7 +98,10 @@ class Pipeline:
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            if DEVICE.type == "xla":
+                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+            else:
+                self.optimizer.step()
             if batch % 1 == 0:
                 t_loss = loss.item()
                 print("Training loss: ", t_loss, " [",batch+1,"/",
