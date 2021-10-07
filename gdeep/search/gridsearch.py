@@ -18,6 +18,14 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
+
 
 class Gridsearch(Pipeline):
     """This is the generic class that allows

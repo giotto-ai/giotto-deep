@@ -11,9 +11,17 @@ import optuna
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
+    print("Using GPU!")
 else:
     DEVICE = torch.device("cpu")
-
+    
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
 
 class Pipeline:
     """This is the generic class that allows
