@@ -11,14 +11,7 @@ if torch.cuda.is_available():
     print("Using GPU!")
 else:
     DEVICE = torch.device("cpu")
-    
-try:
-    import torch_xla
-    import torch_xla.core.xla_model as xm
-    DEVICE = xm.xla_device()
-    print("Using TPU!")
-except:
-    print("No TPUs...")
+
 
 class DecisionBoundaryCalculator(ABC):
     """
@@ -71,11 +64,11 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     Args:
         model (Callable[[torch.Tensor], torch.Tensor]):
             Function that maps
-            a `torch.Tensor` of shape (N, D_in) to a tensor either of
+            a ``torch.Tensor`` of shape (N, D_in) to a tensor either of
             shape (N) and with values in [0,1] or of shape (N, D_out) with
             values in [0, 1] such that the last axis sums to 1.
         initial_points (torch.Tensor):
-            `torch.Tensor` of shape (N, D_in)
+            ``torch.Tensor`` of shape (N, D_in)
         optimizer (Callable[[torch.Tensor], torch.optim.Optimizer]):
             Function returning an optimizer for the params given as an
             argument.
@@ -106,17 +99,14 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     def step(self, number_of_steps=1):
         """Performs the indicated number of steps towards the decision boundary
         """
-        print("Executing the decison boundary computations:")
+        print("Executing the decision boundary computations:")
         for j in range(number_of_steps):
             print("Step: " + str(j) + "/" + str(number_of_steps),
                   end ='\r')
             self.optimizer.zero_grad()
             loss = torch.sum(self.model(self.sample_points))
             loss.backward()
-            if DEVICE.type == "xla":
-                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
-            else:
-                self.optimizer.step()
+            self.optimizer.step()
 
     def get_decision_boundary(self) -> torch.Tensor:
         return self.sample_points
