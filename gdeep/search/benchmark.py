@@ -69,18 +69,98 @@ class Benchmark:
         """
 
         print("Benchmarking Started")
-        for dataloaders in self.dataloaders_dicts:
-            for model in self.models_dicts:
+        _benchmarking_param(self._inner_function,
+                    [self.models_dicts,
+                     self.dataloaders_dicts])(None, None,
+                                              optimizer, n_epochs,
+                                              cross_validation,
+                                              optimizer_param,
+                                              dataloaders_param,
+                                              lr_scheduler,
+                                              scheduler_params,
+                                              profiling,
+                                              k_folds)
+
+
+    def _inner_function(self, model,
+                        dataloaders,
+                        optimizer, n_epochs,
+                        cross_validation,
+                        optimizer_param,
+                        dataloaders_param,
+                        lr_scheduler,
+                        scheduler_params,
+                        profiling,
+                        k_folds):
+        """private method to run the inner
+        function of the benchmark loops
+        
+        Args:
+            model (dict):
+                dictionary defining the model name
+                and actual nn.Module
+            dataloaders (dict):
+                dictionary defining the dataset name
+                and the actual list of dataloaders, e.g.
+                ``[dl_tr, dl_val, dl_ts]``
+            optimizer (torch.optim):
+                a torch optimizers
+            n_epochs (int):
+                number of training epochs
+            cross_validation (bool):
+                whether or not to use cross-validation
+            optimizers_param (dict):
+                dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
+            dataloaders_param (dict):
+                dictionary of the dataloaders
+                parameters, e.g. `{"batch_size": 32}`
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler_params (dict):
+                learning rate scheduler parameters
+            profiling (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            k_folds (int, default=5):
+                number of folds in cross validation
+        """
+        pipe = Pipeline(model["model"], dataloaders["dataloaders"],
+                        self.loss_fn, self.writer)
+        pipe.train(optimizer, n_epochs,
+                   cross_validation,
+                   optimizer_param,
+                   dataloaders_param,
+                   lr_scheduler,
+                   scheduler_params,
+                   None,
+                   profiling,
+                   k_folds)
+
+def _benchmarking_param(fun, arguments):
+    """Function to be used as pseudo-decorator for
+    benchmarking loops
+    
+    Args:
+        fun (Callable):
+            the function to decorate
+        arguments (list):
+            list of arguments to pass to the inner
+            function of the wrapper. Expected to receive
+            ``models_dicts, dataloaders_dict = arguments``
+            
+    Returns:
+        Callable:
+            wrapper function of the benchmark
+    """
+
+    def wrapper(a, b, *args, **kwargs):
+        models_dicts, dataloaders_dicts = arguments
+        for dataloaders in dataloaders_dicts:
+            for model in models_dicts:
                 if _are_compatible(model, dataloaders):
                     print("*"*40)
-                    print("Training on Dataset: {}, Model: {}".format(dataloaders["name"], model["name"]))
-                    pipe = Pipeline(model["model"], dataloaders["dataloaders"], self.loss_fn, self.writer)
-                    pipe.train(optimizer, n_epochs,
-                               cross_validation,
-                               optimizer_param,
-                               dataloaders_param,
-                               lr_scheduler,
-                               scheduler_params,
-                               None,
-                               profiling,
-                               k_folds)
+                    print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"],
+                                                                                   model["name"]))
+                    fun(model, dataloaders, *args, **kwargs)
+    return wrapper

@@ -5,13 +5,13 @@ import numpy as np
 from gdeep.utility import _are_compatible
 from optuna.trial import TrialState
 from gdeep.pipeline import Pipeline
-from gdeep.search import Benchmark
+from gdeep.search import Benchmark, _benchmarking_param
 from sklearn.model_selection import KFold
 from torch.utils.data.sampler import SubsetRandomSampler
 from gdeep.visualisation import plotly2tensor
 from torch.optim import *
 import plotly.express as px
-
+from functools import partial
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -173,67 +173,104 @@ class Gridsearch(Pipeline):
             k_folds (int, default=5):
                 number of folds in cross validation
         """
+        if self.search_metric == "loss":
+            self.study = optuna.create_study(direction="minimize")
+        else:
+            self.study = optuna.create_study(direction="maximize")
         if self.is_pipe:
-            if self.search_metric == "loss":
-                self.study = optuna.create_study(direction="minimize")
-            else:
-                self.study = optuna.create_study(direction="maximize")
             # in the __init__, self.model and self.dataloaders are
-            # initialised. So they exist also in _objective()
-            self.study.optimize(lambda tr: self._objective(tr,
-                                                           optimizers,
-                                                           n_epochs,
-                                                           cross_validation,
-                                                           optimizers_params,
-                                                           dataloaders_params,
-                                                           models_hyperparams,
-                                                           lr_scheduler,
-                                                           scheduler_params,
-                                                           writer_tag,
-                                                           profiling,
-                                                           k_folds),
-                                n_trials=self.n_trials,
-                                timeout=None)
-            self._results()
+            # already initialised. So they exist also in _objective()
+            self._inner_optimisat_fun(self.model,self.dataloaders,
+                                      optimizers,
+                                      n_epochs,
+                                      cross_validation,
+                                      optimizers_params,
+                                      dataloaders_params,
+                                      models_hyperparams,
+                                      lr_scheduler,
+                                      scheduler_params,
+                                      writer_tag,
+                                      profiling,
+                                      k_folds)
 
         else:
-            if self.search_metric == "loss":
-                self.study = optuna.create_study(direction="minimize")
-            else:
-                self.study = optuna.create_study(direction="maximize")
-            for dataloaders in self.bench.dataloaders_dicts:
-                for model in self.bench.models_dicts:
-                    if _are_compatible(model, dataloaders):
-                        print("*"*40)
-                        print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"],
-                                                                                       model["name"]))
-                        writer_tag = "Dataset: " + dataloaders["name"] + \
-                            " | Model: " + model["name"]
-                        super().__init__(model["model"],
-                                         dataloaders["dataloaders"],
-                                         self.bench.loss_fn,
-                                         self.bench.writer)
+            self._inner_benchmark_fun(self.bench.models_dicts,
+                                      self.bench.dataloaders_dicts,
+                                      optimizers,
+                                      n_epochs,
+                                      cross_validation,
+                                      optimizers_params,
+                                      dataloaders_params,
+                                      models_hyperparams,
+                                      lr_scheduler,
+                                      scheduler_params,
+                                      writer_tag,
+                                      profiling,
+                                      k_folds)
 
-                        self.study.optimize(lambda tr: self._objective(tr,
-                                                                       optimizers,
-                                                                       n_epochs,
-                                                                       cross_validation,
-                                                                       optimizers_params,
-                                                                       dataloaders_params,
-                                                                       models_hyperparams,
-                                                                       lr_scheduler,
-                                                                       scheduler_params,
-                                                                       writer_tag,
-                                                                       profiling,
-                                                                       k_folds),
-                                            n_trials=self.n_trials,
-                                            timeout=None)
-                        self._results(model_name = model["name"],
-                                     dataset_name = dataloaders["name"])
         self._store_to_tensorboard()
 
-                        
-                        
+
+    def _inner_optimisat_fun(self, model, dataloaders,
+                             optimizers,
+                             n_epochs,
+                             cross_validation,
+                             optimizers_params,
+                             dataloaders_params,
+                             models_hyperparams,
+                             lr_scheduler,
+                             scheduler_params,
+                             writer_tag,
+                             profiling,
+                             k_folds):
+        """private method to be decorated with the
+        benchmark decorator to have benchmarking
+        or simply used as is if no benchmarking is
+        needed
+        """
+        
+        writer_tag = "model"
+        try:
+            writer_tag = "Dataset: " + dataloaders["name"] + \
+                " | Model: " + model["name"]
+            super().__init__(model["model"],
+                             dataloaders["dataloaders"],
+                             self.bench.loss_fn,
+                             self.bench.writer)
+        except TypeError:
+            pass
+
+        self.study.optimize(lambda tr: self._objective(tr,
+                                                       optimizers,
+                                                       n_epochs,
+                                                       cross_validation,
+                                                       optimizers_params,
+                                                       dataloaders_params,
+                                                       models_hyperparams,
+                                                       lr_scheduler,
+                                                       scheduler_params,
+                                                       writer_tag,
+                                                       profiling,
+                                                       k_folds),
+                            n_trials=self.n_trials,
+                            timeout=None)
+        try:
+            self._results(model_name = model["name"],
+                     dataset_name = dataloaders["name"])
+        except TypeError:
+            self._results()
+
+
+    def _inner_benchmark_fun(self, models_dicts,
+                             dataloaders_dicts, *args, **kwargs):
+        """Decorated function for benchmarking"""
+        _benchmarking_param(self._inner_optimisat_fun,
+                            [models_dicts,
+                             dataloaders_dicts])(None, None,
+                                                 *args, **kwargs)
+        
+
+
     def _results(self, model_name = "model", dataset_name = "dataset"):
         """This class returns the dataframe with all the results of
         the gridsearch. It also saves the figures in the writer.
@@ -351,3 +388,4 @@ class Gridsearch(Pipeline):
         param.update(param_temp)
         
         return param
+
