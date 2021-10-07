@@ -1,9 +1,10 @@
 
-from .benchmark import Benchmark
+from .benchmark import Benchmark, _benchmarking_param
 from .gridsearch import Gridsearch
 
 
 __all__ = [
     'Benchmark',
-    'Gridsearch'
+    'Gridsearch',
+    '_benchmarking_param'
     ]
