@@ -180,7 +180,7 @@ class Visualiser:
                                            tag="decision_boundary",
                                            global_step=0)
             self.pipe.writer.flush()
-            return db, None, None
+            return db.cpu(), None, None
 
     def betti_plot_layers(self, homology_dimension=(0, 1), example=None):
         """

@@ -44,7 +44,6 @@ class Interpreter:
 
     def interpret_image(self, X, y, **kwargs):
         self.X = X.to(DEVICE)
-        y = y.to(DEVICE)
         occlusion = eval(self.method+"(self.model)")
         att = occlusion.attribute(self.X, target=y, **kwargs)
         self.image = self.X

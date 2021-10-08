@@ -8,9 +8,16 @@ from torchdiffeq import odeint
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
-    print("Using GPU!")
 else:
     DEVICE = torch.device("cpu")
+
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
 
 
 class DecisionBoundaryCalculator(ABC):
@@ -79,8 +86,7 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
 
         self.sample_points = initial_points.to(DEVICE)
         self.sample_points.requires_grad = True
-
-        output = model(self.sample_points)
+        output = model(self.sample_points).to(DEVICE)
         output_shape = output.size()
 
         if not len(output_shape) in [1, 2]:
@@ -89,7 +95,6 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         # to the decision boundary as output.
         new_model = self._convert_to_distance_to_boundary(model, output_shape)
         self.model = lambda x: new_model(x)**2
-
         # Check if self.model has the right output shape
         assert len(self.model(self.sample_points).size()) == 1, \
             f'Output shape is {self.model(self.sample_points).size()}'
@@ -104,9 +109,12 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
             print("Step: " + str(j) + "/" + str(number_of_steps),
                   end ='\r')
             self.optimizer.zero_grad()
-            loss = torch.sum(self.model(self.sample_points))
+            loss = torch.sum(self.model(self.sample_points)).to(DEVICE)
             loss.backward()
-            self.optimizer.step()
+            if DEVICE.type == "xla":
+                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+            else:
+                self.optimizer.step()
 
     def get_decision_boundary(self) -> torch.Tensor:
         return self.sample_points

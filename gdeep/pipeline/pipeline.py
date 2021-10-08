@@ -318,12 +318,12 @@ class Pipeline:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
-                                                    pin_memory=True,
+                                                    #pin_memory=True,
                                                     **dataloaders_param,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                      shuffle=False,
-                                                     pin_memory=True,
+                                                     #pin_memory=True,
                                                      **dataloaders_param,
                                                      sampler=SubsetRandomSampler(val_idx))
                 # print n-th fold
@@ -345,7 +345,7 @@ class Pipeline:
             if not dataloaders_param == {}:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
-                                                    pin_memory=True,
+                                                    #pin_memory=True,
                                                     sampler=range(len(dl_tr)*dl_tr.batch_size),
                                                     **dataloaders_param)
             self.reset_model()
