@@ -202,7 +202,7 @@ class Gridsearch(Pipeline):
                                       k_folds)
 
         else:
-            _benchmarking_param(self._inner_optimisat_fun, None, None,
+            _benchmarking_param(self._inner_optimisat_fun,
                                  [self.bench.models_dicts,
                                   self.bench.dataloaders_dicts],
                                  optimizers,
