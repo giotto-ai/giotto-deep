@@ -46,7 +46,7 @@ class Pipeline:
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model, dataloaders, loss_fn, writer):
         self.model = model.to(DEVICE)
-        self.initial_model = copy.deepcopy(self.model)
+        self.initial_model = copy.deepcopy(self.model).to(DEVICE)
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
         self.dataloaders = dataloaders  # train and test
         self.train_epoch = 0
@@ -61,7 +61,7 @@ class Pipeline:
         procedure.
         """
 
-        self.model = copy.deepcopy(self.initial_model)
+        self.model = copy.deepcopy(self.initial_model).to(DEVICE)
 
             
 
