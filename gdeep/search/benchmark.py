@@ -1,5 +1,19 @@
 from gdeep.pipeline import Pipeline
 from gdeep.utility import _are_compatible
+import torch
+
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
+
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
 
 class Benchmark:
     """This is the generic class that allows
@@ -70,16 +84,16 @@ class Benchmark:
 
         print("Benchmarking Started")
         _benchmarking_param(self._inner_function,
-                    [self.models_dicts,
-                     self.dataloaders_dicts])(None, None,
-                                              optimizer, n_epochs,
-                                              cross_validation,
-                                              optimizer_param,
-                                              dataloaders_param,
-                                              lr_scheduler,
-                                              scheduler_params,
-                                              profiling,
-                                              k_folds)
+                            [self.models_dicts,
+                             self.dataloaders_dicts],
+                            optimizer, n_epochs,
+                            cross_validation,
+                            optimizer_param,
+                            dataloaders_param,
+                            lr_scheduler,
+                            scheduler_params,
+                            profiling,
+                            k_folds)
 
 
     def _inner_function(self, model,
@@ -137,7 +151,7 @@ class Benchmark:
                    profiling,
                    k_folds)
 
-def _benchmarking_param(fun, arguments):
+def _benchmarking_param(fun, arguments, *args, **kwargs):
     """Function to be used as pseudo-decorator for
     benchmarking loops
     
@@ -148,19 +162,19 @@ def _benchmarking_param(fun, arguments):
             list of arguments to pass to the inner
             function of the wrapper. Expected to receive
             ``models_dicts, dataloaders_dict = arguments``
-            
-    Returns:
-        Callable:
-            wrapper function of the benchmark
+        *args (*list):
+            all the args of ``fun``
+        **kwargs (**dict):
+            all teh kwargs of ``fun``
+
     """
 
-    def wrapper(a, b, *args, **kwargs):
-        models_dicts, dataloaders_dicts = arguments
-        for dataloaders in dataloaders_dicts:
-            for model in models_dicts:
-                if _are_compatible(model, dataloaders):
-                    print("*"*40)
-                    print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"],
-                                                                                   model["name"]))
-                    fun(model, dataloaders, *args, **kwargs)
-    return wrapper
+    models_dicts, dataloaders_dicts = arguments
+    for dataloaders in dataloaders_dicts:
+        for model in models_dicts:
+            if _are_compatible(model, dataloaders):
+                print("*"*40)
+                print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"],
+                                                                               model["name"]))
+                fun(model, dataloaders, *args, **kwargs)
+

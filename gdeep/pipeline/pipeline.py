@@ -11,9 +11,17 @@ import optuna
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
+    print("Using GPU!")
 else:
     DEVICE = torch.device("cpu")
-
+    
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
 
 class Pipeline:
     """This is the generic class that allows
@@ -90,7 +98,10 @@ class Pipeline:
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            if DEVICE.type == "xla":
+                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+            else:
+                self.optimizer.step()
             if batch % 1 == 0:
                 t_loss = loss.item()
                 print("Training loss: ", t_loss, " [",batch+1,"/",
@@ -307,12 +318,12 @@ class Pipeline:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
-                                                    pin_memory=True,
+                                                    #pin_memory=True,
                                                     **dataloaders_param,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                      shuffle=False,
-                                                     pin_memory=True,
+                                                     #pin_memory=True,
                                                      **dataloaders_param,
                                                      sampler=SubsetRandomSampler(val_idx))
                 # print n-th fold
@@ -334,7 +345,7 @@ class Pipeline:
             if not dataloaders_param == {}:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
-                                                    pin_memory=True,
+                                                    #pin_memory=True,
                                                     sampler=range(len(dl_tr)*dl_tr.batch_size),
                                                     **dataloaders_param)
             self.reset_model()

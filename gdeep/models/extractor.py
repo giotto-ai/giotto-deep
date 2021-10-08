@@ -9,6 +9,14 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
+
 class ModelExtractor:
     """This class wraps nn.Modules to extract
     weights, activations, gradients and decision boundaries
@@ -50,7 +58,7 @@ class ModelExtractor:
         sample_points_tensor = torch.from_numpy(us()).to(torch.float)
         # reshape points as example
         sample_points_tensor = \
-            sample_points_tensor.reshape(-1, *input_example.shape)
+            sample_points_tensor.reshape(-1, *input_example.shape).to(DEVICE)
         
         sample_points_tensor = sample_points_tensor.to(DEVICE)
         # print(sample_points_tensor.shape)
@@ -88,10 +96,8 @@ class ModelExtractor:
             hook_handles.append(handle)
 
         self.model.eval()
-        if torch.cuda.is_available():
-            self.model(X.cuda())
-        else:
-            self.model(X)
+        self.model(X.to(DEVICE))
+
 
         for handle in hook_handles:
             handle.remove()

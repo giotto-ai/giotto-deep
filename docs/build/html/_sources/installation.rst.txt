@@ -50,7 +50,7 @@ To install:
 .. code-block:: bash
 
    cd giotto-deep
-   python -m pip install -e
+   python -m pip install -e .
 
 This way, you can pull the library's latest changes and make them immediately available on your machine.
 Note: we recommend upgrading ``pip`` and ``setuptools`` to recent versions before installing in this way.

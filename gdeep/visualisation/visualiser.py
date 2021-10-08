@@ -16,6 +16,14 @@ if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
+    
+try:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    DEVICE = xm.xla_device()
+    print("Using TPU!")
+except:
+    print("No TPUs...")
 
 class Visualiser:
     """This class is the bridge to send to the tensorboard
@@ -54,7 +62,7 @@ class Visualiser:
             if index == 1000:
                 break
         max_number = min(1000, len(labels_list))
-        features = torch.cat(features_list)
+        features = torch.cat(features_list).to(DEVICE)
         if len(features.shape) >= 3:
             if len(features.shape) == 3:
                 features = features.reshape(max_number, -1,
@@ -172,7 +180,7 @@ class Visualiser:
                                            tag="decision_boundary",
                                            global_step=0)
             self.pipe.writer.flush()
-            return db, None, None
+            return db.cpu(), None, None
 
     def betti_plot_layers(self, homology_dimension=(0, 1), example=None):
         """
