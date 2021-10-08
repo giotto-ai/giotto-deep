@@ -43,41 +43,41 @@ class Interpreter:
         self.attrib = None
 
     def interpret_image(self, X, y, **kwargs):
-        X = X.to(DEVICE)
+        self.X = X.to(DEVICE)
+        y = y.to(DEVICE)
         occlusion = eval(self.method+"(self.model)")
-        att = occlusion.attribute(X, target=y, **kwargs)
-        self.image = X
+        att = occlusion.attribute(self.X, target=y, **kwargs)
+        self.image = self.X
         self.attrib = att
-        return X, att
+        return self.X, att
 
     def interpret_tabular(self, X_test, y, **kwargs):
-        self.X = X_test  # eeded for plotting functions
+        self.X = X_test.to(DEVICE)  # needed for plotting functions
+        y = y.to(DEVICE)
         ig = IntegratedGradients(self.model)
         ig_nt = NoiseTunnel(ig)
         dl = DeepLift(self.model)
         # gs = GradientShap(self.model)
         fa = FeatureAblation(self.model)
-
-        self.ig_attr_test = ig.attribute(X_test,
+        self.ig_attr_test = ig.attribute(self.X,
                                          n_steps=50,
                                          target=y,
                                          **kwargs)
-        self.ig_nt_attr_test = ig_nt.attribute(X_test,
+        self.ig_nt_attr_test = ig_nt.attribute(self.X,
                                                target=y,
                                                **kwargs)
-        self.dl_attr_test = dl.attribute(X_test,
+        self.dl_attr_test = dl.attribute(self.X,
                                          target=y,
                                          **kwargs)
         # self.gs_attr_test = gs.attribute(X_test, X_train, **kwargs)
-        self.fa_attr_test = fa.attribute(X_test,
+        self.fa_attr_test = fa.attribute(self.X,
                                          **kwargs)
 
     def interpret_text(self, sentence, label, vocab,
                        tokenizer, layer,
                        min_len=7):
         self.sentence = sentence
-        device = torch.device("cuda:0" if torch.cuda.is_available()
-                              else "cpu")
+
         lig = eval(self.method+"(" + ",".join(("self.model", "self.model." +
                    layer)) + ")")
         text = tokenizer(sentence)
@@ -87,7 +87,7 @@ class Interpreter:
 
         self.model.zero_grad()
 
-        input_indices = torch.tensor(indexed)
+        input_indices = torch.tensor(indexed).to(DEVICE)
         input_indices = input_indices.unsqueeze(0)
 
         # input_indices dim: [sequence_length]
@@ -102,7 +102,7 @@ class Interpreter:
         token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
         reference_indices = \
             token_reference.generate_reference(seq_length,
-                                               device).unsqueeze(0)
+                                               DEVICE).unsqueeze(0)
         # compute attributions and approximation
         # delta using layer integrated gradients
         attributions_ig, delta = lig.attribute(input_indices,

@@ -55,8 +55,8 @@ def persistence_diagrams_of_activations(activations_list,
     """
     for i, activ in enumerate(activations_list):
         if len(activ.shape) > 2:  # in caso of non FF layers
-            activations_list[i] = activations_list[i].view(activ.shape[0],
-                                                           -1)
+            activations_list[i] = activ.view(activ.shape[0], -1)
+
     if k > 0 and mode == 'VR':
         VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
                                      metric='precomputed',
@@ -77,6 +77,8 @@ def persistence_diagrams_of_activations(activations_list,
                                      collapse_edges=True)
 
     if k > 0 and mode == 'VR':
+        for i, activ in enumerate(activations_list):
+            activations_list[i] = activ.cpu()
         dist_matrix = knn_distance_matrix(activations_list,
                                           k=k)
         persistence_diagrams = VR.fit_transform(dist_matrix)

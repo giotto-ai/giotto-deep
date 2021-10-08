@@ -62,7 +62,7 @@ class Visualiser:
             if index == 1000:
                 break
         max_number = min(1000, len(labels_list))
-        features = torch.cat(features_list)
+        features = torch.cat(features_list).to(DEVICE)
         if len(features.shape) >= 3:
             if len(features.shape) == 3:
                 features = features.reshape(max_number, -1,
