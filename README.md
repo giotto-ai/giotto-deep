@@ -39,3 +39,14 @@ To run both unit and integration tests on *macOS* or *Linux*, simply run the fol
 ```
 bash local_test.bh
 ```
+
+## TPU support in Google colab
+
+I order to run your analysis on TPU cores, you ca use the following lines:
+```
+!git clone https://username:token@github.com/giotto-ai/giotto-deep
+!ls
+!pip install -e giotto-deep/
+!pip install cloud-tpu-client==0.10 https://storage.googleapis.com/tpu-pytorch/wheels/torch_xla-1.9-cp37-cp37m-linux_x86_64.whl
+```
+The code will automatically detect the TPU core and use it as deffault to run the experiments. GPUs are also automatically supported.

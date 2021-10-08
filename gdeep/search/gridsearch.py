@@ -202,19 +202,20 @@ class Gridsearch(Pipeline):
                                       k_folds)
 
         else:
-            self._inner_benchmark_fun(self.bench.models_dicts,
-                                      self.bench.dataloaders_dicts,
-                                      optimizers,
-                                      n_epochs,
-                                      cross_validation,
-                                      optimizers_params,
-                                      dataloaders_params,
-                                      models_hyperparams,
-                                      lr_scheduler,
-                                      scheduler_params,
-                                      writer_tag,
-                                      profiling,
-                                      k_folds)
+            _benchmarking_param(self._inner_optimisat_fun, None, None,
+                                 [self.bench.models_dicts,
+                                  self.bench.dataloaders_dicts],
+                                 optimizers,
+                                 n_epochs,
+                                 cross_validation,
+                                 optimizers_params,
+                                 dataloaders_params,
+                                 models_hyperparams,
+                                 lr_scheduler,
+                                 scheduler_params,
+                                 writer_tag,
+                                 profiling,
+                                 k_folds)
 
         self._store_to_tensorboard()
 
@@ -267,16 +268,6 @@ class Gridsearch(Pipeline):
                      dataset_name = dataloaders["name"])
         except TypeError:
             self._results()
-
-
-    def _inner_benchmark_fun(self, models_dicts,
-                             dataloaders_dicts, *args, **kwargs):
-        """Decorated function for benchmarking"""
-        _benchmarking_param(self._inner_optimisat_fun,
-                            [models_dicts,
-                             dataloaders_dicts])(None, None,
-                                                 *args, **kwargs)
-        
 
 
     def _results(self, model_name = "model", dataset_name = "dataset"):
