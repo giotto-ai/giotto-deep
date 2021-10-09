@@ -490,29 +490,7 @@ class Pipeline:
             (float, float):
                 the validation loss and validation accuracy
         """
-        valloss, valacc = 100, 0
-        for t in range(n_epochs):
-            print(f"Epoch {t+1}\n-------------------------------")
-            self.val_epoch = t
-            self.train_epoch = t
-            self._train_loop(dl_tr, "train")
-            valloss, valacc = self._val_loop(dl_val, "validation")
-            
-            #print(self.optimizer.param_groups[0]["lr"])
-            if not lr_scheduler is None:
-                scheduler.step()
-            if not prof is None:
-                prof.step()
 
-            if check_optuna:
-                if search_metric == "loss":
-                    trial.report(valloss, t)
-                else:
-                    trial.report(valacc, t)
-                # Handle pruning based on the intermediate value.
-                if trial.should_prune():
-                    raise optuna.exceptions.TrialPruned()
-        
         def map_fun_custom(index, flags):
             """map function for multi-processing"""
             device = xm.xla_device()
@@ -558,7 +536,7 @@ class Pipeline:
 
                 # evaluation
                 self.model.eval()
-
+                
                 # size = len(self.dataloaders[1].dataset)
                 size = len(dl_val.dataset)
                 val_loss, correct = 0, 0
@@ -569,8 +547,6 @@ class Pipeline:
                 para_valid_loader = pl.ParallelLoader(dl_val,
                                                       [device]).per_device_loader(device)
                 for X, y in para_valid_loader:
-                    X = X.to(device)
-                    y = y.to(device)
                     pred = self.model(X)
                     class_probs_batch = [F.softmax(el, dim=0)
                                          for el in pred]
@@ -581,7 +557,6 @@ class Pipeline:
                     class_label.append(y)
                 # add data to tensorboard
                 self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
-                self.writer.flush()
 
                 # validation accuracy
                 loss /= size
@@ -600,9 +575,9 @@ class Pipeline:
 
                 if check_optuna:
                     if search_metric == "loss":
-                        trial.report(valloss, t)
+                        trial.report(loss, t)
                     else:
-                        trial.report(valacc, t)
+                        trial.report(correct, t)
                     # Handle pruning based on the intermediate value.
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
