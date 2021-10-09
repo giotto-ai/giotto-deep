@@ -563,7 +563,7 @@ class Pipeline:
                 loss /= size
                 correct /= size
 
-                self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
+                self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
                 print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
                         Avg loss: {val_loss:>8f} \n")
 
