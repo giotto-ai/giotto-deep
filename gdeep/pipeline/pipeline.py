@@ -18,6 +18,8 @@ else:
 try:
     import torch_xla
     import torch_xla.core.xla_model as xm
+    import torch_xla.distributed.xla_multiprocessing as xmp
+    import torch_xla.distributed.parallel_loader as pl
     DEVICE = xm.xla_device()
     print("Using TPU!")
 except:
@@ -149,8 +151,8 @@ class Pipeline:
         """private function to add the PR curve
         to tensorboard"""
         probs = torch.cat([torch.stack(batch) for batch in
-                          class_probs])
-        labels = torch.cat(class_label)
+                          class_probs]).cpu()
+        labels = torch.cat(class_label).cpu()
         for class_index in range(len(pred[0])):
             tensorboard_truth = labels == class_index
             tensorboard_probs = probs[:, class_index]
@@ -214,7 +216,8 @@ class Pipeline:
               scheduler_params=None,
               optuna_params=None,
               profiling=False,
-              k_folds=5):
+              k_folds=5,
+              parallel_tpu=False):
         """Function to run all the training cycles.
 
         Args:
@@ -246,6 +249,9 @@ class Pipeline:
                 profiler
             k_folds (int, default=5):
                 number of folds in cross validation
+            parallel_tpu (bool):
+                Use or not parallel TPU cores.
+                Still experimental!
             
         Returns:
             (float, float):
@@ -329,7 +335,13 @@ class Pipeline:
                 # print n-th fold
                 print("\n\n********** Fold ", fold+1, "**************")
                 # the training and validation loop
-                valloss, valacc = self._training_loops(n_epochs, dl_tr,
+                if parallel_tpu == False:
+                    valloss, valacc = self._training_loops(n_epochs, dl_tr,
+                                                       dl_val, lr_scheduler, scheduler,
+                                                       prof, check_optuna, search_metric,
+                                                       trial)
+                else:
+                    valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, lr_scheduler, scheduler,
                                                        prof, check_optuna, search_metric,
                                                        trial)
@@ -353,7 +365,13 @@ class Pipeline:
             if not lr_scheduler is None:
                 scheduler = lr_scheduler(self.optimizer, **scheduler_params)
 
-            valloss, valacc = self._training_loops(n_epochs, dl_tr,
+            if parallel_tpu == False:
+                valloss, valacc = self._training_loops(n_epochs, dl_tr,
+                                                   dl_val, lr_scheduler, scheduler,
+                                                   prof, check_optuna, search_metric,
+                                                   trial)
+            else:
+                valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial)
@@ -368,7 +386,42 @@ class Pipeline:
                         prof, check_optuna, search_metric,
                         trial):
         """private method to run the trainign loops
+        
+        Args:
+            n_epochs (int):
+                number of training epochs
+            dl_tr (torch.DataLoader):
+                training dataloader
+            dl_val (torch.DataLoader):
+                validation dataloader
+                parameters, e.g. `{'batch_size': 32}`
+            optimizers_param (dict):
+                dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
+            models_param (dict):
+                dictionary of the model
+                parameters
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler (torch.optim):
+                the actual scheduler
+            prof (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            check_optuna (bool):
+                boolean to store the optuna results of
+                the trial
+            search_metric (string):
+                either ``'loss'`` or ``'accuracy'``, this
+                corresponds to the gridsearch criterion
+            trial (optuna.trial):
+                the optuna trial
+
+        Returns:
+            (float, float):
+                the validation loss and validation accuracy
         """
+
         valloss, valacc = 100, 0
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
@@ -392,3 +445,169 @@ class Pipeline:
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
         return valloss, valacc
+
+
+    def parallel_tpu_training_loops(self, n_epochs, dl_tr,
+                                    dl_val, lr_scheduler, scheduler,
+                                    prof, check_optuna, search_metric,
+                                    trial):
+        """Experimental function to run all the training cycles
+        on colab TPUs in parallel.
+        Note: ``cross_validation`` parameter as well as
+        ``profiling`` are ignored.
+
+        Args:
+            n_epochs (int):
+                number of training epochs
+            dl_tr (torch.DataLoader):
+                training dataloader
+            dl_val (torch.DataLoader):
+                validation dataloader
+                parameters, e.g. `{'batch_size': 32}`
+            optimizers_param (dict):
+                dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
+            models_param (dict):
+                dictionary of the model
+                parameters
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler (torch.optim):
+                the actual scheduler
+            prof (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            check_optuna (bool):
+                boolean to store the optuna results of
+                the trial
+            search_metric (string):
+                either ``'loss'`` or ``'accuracy'``, this
+                corresponds to the gridsearch criterion
+            trial (optuna.trial):
+                the optuna trial
+
+        Returns:
+            (float, float):
+                the validation loss and validation accuracy
+        """
+        valloss, valacc = 100, 0
+        for t in range(n_epochs):
+            print(f"Epoch {t+1}\n-------------------------------")
+            self.val_epoch = t
+            self.train_epoch = t
+            self._train_loop(dl_tr, "train")
+            valloss, valacc = self._val_loop(dl_val, "validation")
+            
+            #print(self.optimizer.param_groups[0]["lr"])
+            if not lr_scheduler is None:
+                scheduler.step()
+            if not prof is None:
+                prof.step()
+
+            if check_optuna:
+                if search_metric == "loss":
+                    trial.report(valloss, t)
+                else:
+                    trial.report(valacc, t)
+                # Handle pruning based on the intermediate value.
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
+        
+        def map_fun_custom(index, flags):
+            """map function for multi-processing"""
+            device = xm.xla_device()
+
+            print("uploading net to device")
+            self.model.to(device)
+
+            #train loop
+            for t in range(flags['num_epochs']):
+                self.model.train()
+                para_train_loader = pl.ParallelLoader(dl_tr,
+                                                      [device]).per_device_loader(device)
+                print(f"Epoch {t+1}\n-------------------------------")
+                self.val_epoch = t
+                self.train_epoch = t
+                # train batch loop
+                
+                size = len(dl_tr.dataset)
+                steps = len(dl_tr)
+                loss = -100    # arbitrary starting value to avoid nan loss
+                correct = 0
+                tik = time.time()
+                # for batch, (X, y) in enumerate(self.dataloaders[0]):
+                for batch, (X, y) in enumerate(para_train_loader):
+                    # Compute prediction and loss
+                    pred = self.model(X)
+                    correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                    loss = self.loss_fn(pred, y)
+                    # Save to tensorboard
+                    self.writer.add_scalar("train" + "/Loss/train",
+                                           loss,
+                                           self.train_epoch*dl_tr.batch_size + batch)
+                    # Backpropagation
+                    self.optimizer.zero_grad()
+                    loss.backward()
+
+                    xm.optimizer_step(self.optimizer)
+
+                self.writer.flush()
+                # train accuracy:
+                correct /= size
+                print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
+
+                # evaluation
+                self.model.eval()
+
+                # size = len(self.dataloaders[1].dataset)
+                size = len(dl_val.dataset)
+                val_loss, correct = 0, 0
+                class_label = []
+                class_probs = []
+
+                pred = 0
+                para_valid_loader = pl.ParallelLoader(dl_val,
+                                                      [device]).per_device_loader(device)
+                for X, y in para_valid_loader:
+                    X = X.to(device)
+                    y = y.to(device)
+                    pred = self.model(X)
+                    class_probs_batch = [F.softmax(el, dim=0)
+                                         for el in pred]
+                    class_probs.append(class_probs_batch)
+                    loss += self.loss_fn(pred, y).item()
+                    correct += (pred.argmax(1) ==
+                                y).type(torch.float).sum().item()
+                    class_label.append(y)
+                # add data to tensorboard
+                self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
+                self.writer.flush()
+
+                # validation accuracy
+                loss /= size
+                correct /= size
+
+                self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
+                print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
+                        Avg loss: {val_loss:>8f} \n")
+
+                self.writer.flush()
+              
+                if not lr_scheduler is None:
+                    scheduler.step()
+                if not prof is None:
+                    prof.step()
+
+                if check_optuna:
+                    if search_metric == "loss":
+                        trial.report(valloss, t)
+                    else:
+                        trial.report(valacc, t)
+                    # Handle pruning based on the intermediate value.
+                    if trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+
+        flags = {}
+
+        xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
+        return loss, correct
