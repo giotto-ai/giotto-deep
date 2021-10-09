@@ -490,7 +490,8 @@ class Pipeline:
             (float, float):
                 the validation loss and validation accuracy
         """
-
+        loss = 0
+        correct = 0
         def map_fun_custom(index, flags):
             """map function for multi-processing"""
             device = xm.xla_device()
