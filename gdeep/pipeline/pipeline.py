@@ -565,7 +565,7 @@ class Pipeline:
 
                 self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
                 print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
-                        Avg loss: {val_loss:>8f} \n")
+                        Avg loss: {loss:>8f} \n")
 
                 self.writer.flush()
               
