@@ -353,7 +353,8 @@ class Pipeline:
                                                        trial)
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
-                                                       dl_val, lr_scheduler, scheduler,
+                                                       dl_val, optimizers_param, lr_scheduler,
+                                                       scheduler,
                                                        prof, check_optuna, search_metric,
                                                        trial)
                 
@@ -383,7 +384,8 @@ class Pipeline:
                                                    trial)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
-                                                   dl_val, lr_scheduler, scheduler,
+                                                   dl_val, optimizers_param, lr_scheduler,
+                                                   scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial)
 
@@ -459,7 +461,8 @@ class Pipeline:
 
 
     def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
-                                    dl_val_old, lr_scheduler, scheduler,
+                                    dl_val_old, optimizers_param,
+                                    lr_scheduler, scheduler,
                                     prof, check_optuna, search_metric,
                                     trial):
         """Experimental function to run all the training cycles
@@ -495,8 +498,8 @@ class Pipeline:
             (float, float):
                 the validation loss and validation accuracy
         """
-        loss = 0
-        correct = 0
+        self.val_loss = 0
+        self.val_acc = 0
         warnings.warn("The tensorboard writer is ignored " +
                       "for multi TPU processing")
         def map_fun_custom(index, flags):
@@ -508,7 +511,7 @@ class Pipeline:
 
             # initialize optimizer
             optimizer_class = type(self.optimizer)
-            optimizer = optimizer_class(model2.parameters())
+            optimizer = optimizer_class(model2.parameters(),**optimizers_param)
 
             # define training and validation
             # distributed samplers and update
@@ -626,8 +629,10 @@ class Pipeline:
                     # Handle pruning based on the intermediate value.
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
+            self.val_loss = loss
+            self.val_acc = 100*correct
 
         flags = {}
 
         xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
-        return loss, 100*correct
+        return self.val_loss, self.val_acc
