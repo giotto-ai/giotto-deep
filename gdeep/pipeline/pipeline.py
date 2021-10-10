@@ -500,7 +500,7 @@ class Pipeline:
             self.model.to(device)
 
             #train loop
-            for t in range(flags['num_epochs']):
+            for t in range(n_epochs):
                 self.model.train()
                 para_train_loader = pl.ParallelLoader(dl_tr,
                                                       [device]).per_device_loader(device)
