@@ -6,7 +6,6 @@ import time
 import warnings
 from sklearn.model_selection import KFold
 from torch.utils.data.sampler import SubsetRandomSampler
-from gdeep.data import PreprocessText
 import optuna
 
 if torch.cuda.is_available():
@@ -20,7 +19,6 @@ try:
     import torch_xla.core.xla_model as xm
     import torch_xla.distributed.xla_multiprocessing as xmp
     import torch_xla.distributed.parallel_loader as pl
-    DEVICE = xm.xla_device()
     print("Using TPU!")
 except:
     print("No TPUs...")
@@ -47,8 +45,8 @@ class Pipeline:
     # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model, dataloaders, loss_fn, writer):
-        self.model = model.to(DEVICE)
-        self.initial_model = copy.deepcopy(self.model).to(DEVICE)
+        self.model = model
+        self.initial_model = copy.deepcopy(self.model).
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
         self.dataloaders = dataloaders  # train and test
         self.train_epoch = 0
@@ -63,7 +61,7 @@ class Pipeline:
         procedure.
         """
 
-        self.model = copy.deepcopy(self.initial_model).to(DEVICE)
+        self.model = copy.deepcopy(self.initial_model)
 
             
 
@@ -79,6 +77,11 @@ class Pipeline:
         """private method to run a single training
         loop
         """
+        try:
+            DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(DEVICE)
         self.model.train()
         size = len(dl_tr.dataset)
         steps = len(dl_tr)
@@ -118,7 +121,11 @@ class Pipeline:
         """private method to run a single validation
         loop
         """
-
+        try:
+            DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_val.dataset)
         val_loss, correct = 0, 0
@@ -182,7 +189,11 @@ class Pipeline:
         """private method to run a single test
         loop
         """
-
+        try:
+            DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_test.dataset)
         test_loss, correct = 0, 0
@@ -464,12 +475,6 @@ class Pipeline:
             dl_val (torch.DataLoader):
                 validation dataloader
                 parameters, e.g. `{'batch_size': 32}`
-            optimizers_param (dict):
-                dictionary of the optimizers
-                parameters, e.g. `{"lr": 0.001}`
-            models_param (dict):
-                dictionary of the model
-                parameters
             lr_scheduler (torch.optim):
                 a learning rate scheduler
             scheduler (torch.optim):
@@ -500,6 +505,10 @@ class Pipeline:
 
             print("uploading model to TPU")
             model2 = self.model.to(device)
+
+            # initialize optimizer
+            optimizer_class = type(self.optimizer)
+            optimizer = optimizer_class(model2.parameters())
 
             # define training and validation
             # distributed samplers and update
