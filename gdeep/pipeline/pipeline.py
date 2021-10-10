@@ -447,8 +447,8 @@ class Pipeline:
         return valloss, valacc
 
 
-    def parallel_tpu_training_loops(self, n_epochs, dl_tr,
-                                    dl_val, lr_scheduler, scheduler,
+    def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
+                                    dl_val_old, lr_scheduler, scheduler,
                                     prof, check_optuna, search_metric,
                                     trial):
         """Experimental function to run all the training cycles
@@ -492,23 +492,57 @@ class Pipeline:
         """
         loss = 0
         correct = 0
+        warnings.warn("The tensorboard writer is ignored " +
+                      "for multi TPU processing")
         def map_fun_custom(index, flags):
             """map function for multi-processing"""
             device = xm.xla_device()
 
-            print("uploading net to device")
-            self.model.to(device)
+            print("uploading model to TPU")
+            model2 = self.model.to(device)
+
+            # define training and validation
+            # distributed samplers and update
+            # the dataloaders
+            train_sampler = torch.utils.data.distributed.DistributedSampler(
+                dl_tr_old.dataset,
+                num_replicas=xm.xrt_world_size(),
+                rank=xm.get_ordinal(),
+                shuffle=True)
+            
+            dl_tr = torch.utils.data.DataLoader(
+                dl_tr_old.dataset,
+                num_workers=dl_tr_old.num_workers,
+                batch_size=dl_tr_old.batch_size,
+                sampler=train_sampler,
+                drop_last=dl_tr_old.drop_last
+            )
+          
+            val_sampler = torch.utils.data.distributed.DistributedSampler(
+                dl_val_old.dataset,
+                num_replicas=xm.xrt_world_size(),
+                rank=xm.get_ordinal(),
+                shuffle=False)
+            
+            dl_val = torch.utils.data.DataLoader(
+                dl_val_old.dataset,
+                num_workers=dl_val_old.num_workers,
+                batch_size=dl_val_old.batch_size,
+                sampler=val_sampler,
+                drop_last=dl_val_old.drop_last
+            )
+
 
             #train loop
             for t in range(n_epochs):
-                self.model.train()
+                model2.train()
                 para_train_loader = pl.ParallelLoader(dl_tr,
                                                       [device]).per_device_loader(device)
                 print(f"Epoch {t+1}\n-------------------------------")
                 self.val_epoch = t
                 self.train_epoch = t
+
                 # train batch loop
-                
                 size = len(dl_tr.dataset)
                 steps = len(dl_tr)
                 loss = -100    # arbitrary starting value to avoid nan loss
@@ -517,38 +551,39 @@ class Pipeline:
                 # for batch, (X, y) in enumerate(self.dataloaders[0]):
                 for batch, (X, y) in enumerate(para_train_loader):
                     # Compute prediction and loss
-                    pred = self.model(X)
+                    pred = model2(X)
                     correct += (pred.argmax(1) == y).type(torch.float).sum().item()
                     loss = self.loss_fn(pred, y)
                     # Save to tensorboard
-                    self.writer.add_scalar("train" + "/Loss/train",
-                                           loss,
-                                           self.train_epoch*dl_tr.batch_size + batch)
+                    #self.writer.add_scalar("Parallel" + "/Loss/train",
+                    #                       loss.cpu(),
+                    #                       self.train_epoch*dl_tr.batch_size + batch)
                     # Backpropagation
                     self.optimizer.zero_grad()
                     loss.backward()
 
                     xm.optimizer_step(self.optimizer)
 
-                self.writer.flush()
+                #self.writer.flush()
                 # train accuracy:
                 correct /= size
                 print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
 
                 # evaluation
-                self.model.eval()
+                model2.eval()
                 
                 # size = len(self.dataloaders[1].dataset)
                 size = len(dl_val.dataset)
-                val_loss, correct = 0, 0
+                loss, correct = 0, 0
                 class_label = []
                 class_probs = []
 
                 pred = 0
                 para_valid_loader = pl.ParallelLoader(dl_val,
                                                       [device]).per_device_loader(device)
+                # per batch!!
                 for X, y in para_valid_loader:
-                    pred = self.model(X)
+                    pred = model2(X)
                     class_probs_batch = [F.softmax(el, dim=0)
                                          for el in pred]
                     class_probs.append(class_probs_batch)
@@ -557,17 +592,17 @@ class Pipeline:
                                 y).type(torch.float).sum().item()
                     class_label.append(y)
                 # add data to tensorboard
-                self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
+                #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
 
                 # validation accuracy
                 loss /= size
                 correct /= size
 
-                self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
+                #self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
                 print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
                         Avg loss: {loss:>8f} \n")
 
-                self.writer.flush()
+                #self.writer.flush()
               
                 if not lr_scheduler is None:
                     scheduler.step()
@@ -586,4 +621,4 @@ class Pipeline:
         flags = {}
 
         xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
-        return loss, correct
+        return loss, 100*correct
