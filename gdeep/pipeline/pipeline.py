@@ -13,7 +13,7 @@ if torch.cuda.is_available():
     print("Using GPU!")
 else:
     DEVICE = torch.device("cpu")
-    
+
 try:
     import torch_xla
     import torch_xla.core.xla_model as xm
@@ -54,6 +54,7 @@ class Pipeline:
         self.loss_fn = loss_fn
         # integrate tensorboard
         self.writer = writer
+        self.DEVICE = DEVICE
         
     def reset_model(self):
         """method to reset the initial model weights. This
@@ -78,10 +79,10 @@ class Pipeline:
         loop
         """
         try:
-            DEVICE = xm.xla_device()
+            self.DEVICE = xm.xla_device()
         except NameError:
             print("No TPUs")
-        self.model = self.model.to(DEVICE)
+        self.model = self.model.to(self.DEVICE)
         self.model.train()
         size = len(dl_tr.dataset)
         steps = len(dl_tr)
@@ -90,8 +91,8 @@ class Pipeline:
         tik = time.time()
         # for batch, (X, y) in enumerate(self.dataloaders[0]):
         for batch, (X, y) in enumerate(dl_tr):
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
+            X = X.to(self.DEVICE)
+            y = y.to(self.DEVICE)
             # Compute prediction and loss
             pred = self.model(X)
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
@@ -103,7 +104,7 @@ class Pipeline:
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
-            if DEVICE.type == "xla":
+            if self.DEVICE.type == "xla":
                 xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
             else:
                 self.optimizer.step()
@@ -122,10 +123,10 @@ class Pipeline:
         loop
         """
         try:
-            DEVICE = xm.xla_device()
+            self.DEVICE = xm.xla_device()
         except NameError:
             print("No TPUs")
-        self.model = self.model.to(DEVICE)
+        self.model = self.model.to(self.DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_val.dataset)
         val_loss, correct = 0, 0
@@ -173,8 +174,8 @@ class Pipeline:
         and validation loops"""
         pred = 0
         for X, y in dl:
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
+            X = X.to(self.DEVICE)
+            y = y.to(self.DEVICE)
             pred = self.model(X)
             class_probs_batch = [F.softmax(el, dim=0)
                                  for el in pred]
@@ -190,10 +191,10 @@ class Pipeline:
         loop
         """
         try:
-            DEVICE = xm.xla_device()
+            self.DEVICE = xm.xla_device()
         except NameError:
             print("No TPUs")
-        self.model = self.model.to(DEVICE)
+        self.model = self.model.to(self.DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_test.dataset)
         test_loss, correct = 0, 0
