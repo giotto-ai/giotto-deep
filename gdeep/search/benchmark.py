@@ -47,7 +47,8 @@ class Benchmark:
               lr_scheduler=None,
               scheduler_params=None,
               profiling=False,
-              k_folds=5):
+              k_folds=5,
+              parallel_tpu=False):
         """Method to be called when starting the benchmarking
         
         Args:
@@ -72,6 +73,9 @@ class Benchmark:
                 profiler
             k_folds (int, default=5):
                 number of folds in cross validation
+            parallel_tpu (bool):
+                boolean value to run the computations
+                on multiple TPUs
         """
 
         print("Benchmarking Started")
@@ -85,7 +89,8 @@ class Benchmark:
                             lr_scheduler,
                             scheduler_params,
                             profiling,
-                            k_folds)
+                            k_folds,
+                            parallel_tpu)
 
 
     def _inner_function(self, model,
@@ -97,7 +102,8 @@ class Benchmark:
                         lr_scheduler,
                         scheduler_params,
                         profiling,
-                        k_folds):
+                        k_folds,
+                        parallel_tpu):
         """private method to run the inner
         function of the benchmark loops
         
@@ -130,6 +136,9 @@ class Benchmark:
                 profiler
             k_folds (int, default=5):
                 number of folds in cross validation
+            parallel_tpu (bool):
+                boolean value to run the computations
+                on multiple TPUs
         """
         pipe = Pipeline(model["model"], dataloaders["dataloaders"],
                         self.loss_fn, self.writer)
@@ -141,7 +150,8 @@ class Benchmark:
                    scheduler_params,
                    None,
                    profiling,
-                   k_folds)
+                   k_folds,
+                   parallel_tpu)
 
 def _benchmarking_param(fun, arguments, *args, **kwargs):
     """Function to be used as pseudo-decorator for
@@ -157,7 +167,7 @@ def _benchmarking_param(fun, arguments, *args, **kwargs):
         *args (*list):
             all the args of ``fun``
         **kwargs (**dict):
-            all teh kwargs of ``fun``
+            all the kwargs of ``fun``
 
     """
 

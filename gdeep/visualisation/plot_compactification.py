@@ -105,7 +105,7 @@ class Compactification():
                                                         optimizer=lambda params:
                                                         torch.optim.Adam(params))
             gf.step(number_of_steps=self.n_epochs)
-            res = gf.get_filtered_decision_boundary(delta=self.precision).detach()
+            res = gf.get_filtered_decision_boundary(delta=self.precision).detach().cpu()
             # back to 0-th patch
             plot_points_tensor = self.transition_to_patch(res, i)
             self.patches.append(plot_points_tensor)
