@@ -6,7 +6,6 @@ import time
 import warnings
 from sklearn.model_selection import KFold
 from torch.utils.data.sampler import SubsetRandomSampler
-from gdeep.data import PreprocessText
 import optuna
 
 if torch.cuda.is_available():
@@ -14,11 +13,12 @@ if torch.cuda.is_available():
     print("Using GPU!")
 else:
     DEVICE = torch.device("cpu")
-    
+
 try:
     import torch_xla
     import torch_xla.core.xla_model as xm
-    DEVICE = xm.xla_device()
+    import torch_xla.distributed.xla_multiprocessing as xmp
+    import torch_xla.distributed.parallel_loader as pl
     print("Using TPU!")
 except:
     print("No TPUs...")
@@ -45,7 +45,7 @@ class Pipeline:
     # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model, dataloaders, loss_fn, writer):
-        self.model = model.to(DEVICE)
+        self.model = model
         self.initial_model = copy.deepcopy(self.model)
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
         self.dataloaders = dataloaders  # train and test
@@ -54,6 +54,7 @@ class Pipeline:
         self.loss_fn = loss_fn
         # integrate tensorboard
         self.writer = writer
+        self.DEVICE = DEVICE
         
     def reset_model(self):
         """method to reset the initial model weights. This
@@ -77,6 +78,11 @@ class Pipeline:
         """private method to run a single training
         loop
         """
+        try:
+            self.DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(self.DEVICE)
         self.model.train()
         size = len(dl_tr.dataset)
         steps = len(dl_tr)
@@ -85,8 +91,8 @@ class Pipeline:
         tik = time.time()
         # for batch, (X, y) in enumerate(self.dataloaders[0]):
         for batch, (X, y) in enumerate(dl_tr):
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
+            X = X.to(self.DEVICE)
+            y = y.to(self.DEVICE)
             # Compute prediction and loss
             pred = self.model(X)
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
@@ -98,7 +104,7 @@ class Pipeline:
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
-            if DEVICE.type == "xla":
+            if self.DEVICE.type == "xla":
                 xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
             else:
                 self.optimizer.step()
@@ -116,7 +122,11 @@ class Pipeline:
         """private method to run a single validation
         loop
         """
-
+        try:
+            self.DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(self.DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_val.dataset)
         val_loss, correct = 0, 0
@@ -149,8 +159,8 @@ class Pipeline:
         """private function to add the PR curve
         to tensorboard"""
         probs = torch.cat([torch.stack(batch) for batch in
-                          class_probs])
-        labels = torch.cat(class_label)
+                          class_probs]).cpu()
+        labels = torch.cat(class_label).cpu()
         for class_index in range(len(pred[0])):
             tensorboard_truth = labels == class_index
             tensorboard_probs = probs[:, class_index]
@@ -164,8 +174,8 @@ class Pipeline:
         and validation loops"""
         pred = 0
         for X, y in dl:
-            X = X.to(DEVICE)
-            y = y.to(DEVICE)
+            X = X.to(self.DEVICE)
+            y = y.to(self.DEVICE)
             pred = self.model(X)
             class_probs_batch = [F.softmax(el, dim=0)
                                  for el in pred]
@@ -180,7 +190,11 @@ class Pipeline:
         """private method to run a single test
         loop
         """
-
+        try:
+            self.DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(self.DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_test.dataset)
         test_loss, correct = 0, 0
@@ -214,7 +228,8 @@ class Pipeline:
               scheduler_params=None,
               optuna_params=None,
               profiling=False,
-              k_folds=5):
+              k_folds=5,
+              parallel_tpu=False):
         """Function to run all the training cycles.
 
         Args:
@@ -246,6 +261,9 @@ class Pipeline:
                 profiler
             k_folds (int, default=5):
                 number of folds in cross validation
+            parallel_tpu (bool):
+                Use or not parallel TPU cores.
+                Still experimental!
             
         Returns:
             (float, float):
@@ -329,8 +347,15 @@ class Pipeline:
                 # print n-th fold
                 print("\n\n********** Fold ", fold+1, "**************")
                 # the training and validation loop
-                valloss, valacc = self._training_loops(n_epochs, dl_tr,
+                if parallel_tpu == False:
+                    valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                        dl_val, lr_scheduler, scheduler,
+                                                       prof, check_optuna, search_metric,
+                                                       trial)
+                else:
+                    valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
+                                                       dl_val, optimizers_param, lr_scheduler,
+                                                       scheduler,
                                                        prof, check_optuna, search_metric,
                                                        trial)
                 
@@ -353,8 +378,15 @@ class Pipeline:
             if not lr_scheduler is None:
                 scheduler = lr_scheduler(self.optimizer, **scheduler_params)
 
-            valloss, valacc = self._training_loops(n_epochs, dl_tr,
+            if parallel_tpu == False:
+                valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, scheduler,
+                                                   prof, check_optuna, search_metric,
+                                                   trial)
+            else:
+                valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
+                                                   dl_val, optimizers_param, lr_scheduler,
+                                                   scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial)
 
@@ -368,7 +400,42 @@ class Pipeline:
                         prof, check_optuna, search_metric,
                         trial):
         """private method to run the trainign loops
+        
+        Args:
+            n_epochs (int):
+                number of training epochs
+            dl_tr (torch.DataLoader):
+                training dataloader
+            dl_val (torch.DataLoader):
+                validation dataloader
+                parameters, e.g. `{'batch_size': 32}`
+            optimizers_param (dict):
+                dictionary of the optimizers
+                parameters, e.g. `{"lr": 0.001}`
+            models_param (dict):
+                dictionary of the model
+                parameters
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler (torch.optim):
+                the actual scheduler
+            prof (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            check_optuna (bool):
+                boolean to store the optuna results of
+                the trial
+            search_metric (string):
+                either ``'loss'`` or ``'accuracy'``, this
+                corresponds to the gridsearch criterion
+            trial (optuna.trial):
+                the optuna trial
+
+        Returns:
+            (float, float):
+                the validation loss and validation accuracy
         """
+
         valloss, valacc = 100, 0
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
@@ -392,3 +459,181 @@ class Pipeline:
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
         return valloss, valacc
+
+
+    def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
+                                    dl_val_old, optimizers_param,
+                                    lr_scheduler, scheduler,
+                                    prof, check_optuna, search_metric,
+                                    trial):
+        """Experimental function to run all the training cycles
+        on colab TPUs in parallel.
+        Note: ``cross_validation`` parameter as well as
+        ``profiling`` are ignored.
+
+        Args:
+            n_epochs (int):
+                number of training epochs
+            dl_tr (torch.DataLoader):
+                training dataloader
+            dl_val (torch.DataLoader):
+                validation dataloader
+                parameters, e.g. `{'batch_size': 32}`
+            lr_scheduler (torch.optim):
+                a learning rate scheduler
+            scheduler (torch.optim):
+                the actual scheduler
+            prof (bool, default=False):
+                whether or not you want to activate the
+                profiler
+            check_optuna (bool):
+                boolean to store the optuna results of
+                the trial
+            search_metric (string):
+                either ``'loss'`` or ``'accuracy'``, this
+                corresponds to the gridsearch criterion
+            trial (optuna.trial):
+                the optuna trial
+
+        Returns:
+            (float, float):
+                the validation loss and validation accuracy
+        """
+        self.val_loss = 0
+        self.val_acc = 0
+        warnings.warn("The tensorboard writer is ignored " +
+                      "for multi TPU processing")
+        def map_fun_custom(index, flags):
+            """map function for multi-processing"""
+            device = xm.xla_device()
+
+            print("uploading model to TPU")
+            model2 = self.model.to(device)
+
+            # initialize optimizer
+            optimizer_class = type(self.optimizer)
+            optimizer = optimizer_class(model2.parameters(),**optimizers_param)
+
+            # define training and validation
+            # distributed samplers and update
+            # the dataloaders
+            train_sampler = torch.utils.data.distributed.DistributedSampler(
+                dl_tr_old.dataset,
+                num_replicas=xm.xrt_world_size(),
+                rank=xm.get_ordinal(),
+                shuffle=True)
+            
+            dl_tr = torch.utils.data.DataLoader(
+                dl_tr_old.dataset,
+                num_workers=dl_tr_old.num_workers,
+                batch_size=dl_tr_old.batch_size,
+                sampler=train_sampler,
+                drop_last=dl_tr_old.drop_last
+            )
+          
+            val_sampler = torch.utils.data.distributed.DistributedSampler(
+                dl_val_old.dataset,
+                num_replicas=xm.xrt_world_size(),
+                rank=xm.get_ordinal(),
+                shuffle=False)
+            
+            dl_val = torch.utils.data.DataLoader(
+                dl_val_old.dataset,
+                num_workers=dl_val_old.num_workers,
+                batch_size=dl_val_old.batch_size,
+                sampler=val_sampler,
+                drop_last=dl_val_old.drop_last
+            )
+
+
+            #train loop
+            for t in range(n_epochs):
+                model2.train()
+                para_train_loader = pl.ParallelLoader(dl_tr,
+                                                      [device]).per_device_loader(device)
+                print(f"Epoch {t+1}\n-------------------------------")
+                self.val_epoch = t
+                self.train_epoch = t
+
+                # train batch loop
+                size = len(dl_tr.dataset)
+                steps = len(dl_tr)
+                loss = -100    # arbitrary starting value to avoid nan loss
+                correct = 0
+                tik = time.time()
+                # for batch, (X, y) in enumerate(self.dataloaders[0]):
+                for batch, (X, y) in enumerate(para_train_loader):
+                    # Compute prediction and loss
+                    pred = model2(X)
+                    correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                    loss = self.loss_fn(pred, y)
+                    # Save to tensorboard
+                    #self.writer.add_scalar("Parallel" + "/Loss/train",
+                    #                       loss.cpu(),
+                    #                       self.train_epoch*dl_tr.batch_size + batch)
+                    # Backpropagation
+                    self.optimizer.zero_grad()
+                    loss.backward()
+
+                    xm.optimizer_step(self.optimizer)
+
+                #self.writer.flush()
+                # train accuracy:
+                correct /= size
+                print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
+
+                # evaluation
+                model2.eval()
+                
+                # size = len(self.dataloaders[1].dataset)
+                size = len(dl_val.dataset)
+                loss, correct = 0, 0
+                class_label = []
+                class_probs = []
+
+                pred = 0
+                para_valid_loader = pl.ParallelLoader(dl_val,
+                                                      [device]).per_device_loader(device)
+                # per batch!!
+                for X, y in para_valid_loader:
+                    pred = model2(X)
+                    class_probs_batch = [F.softmax(el, dim=0)
+                                         for el in pred]
+                    class_probs.append(class_probs_batch)
+                    loss += self.loss_fn(pred, y).item()
+                    correct += (pred.argmax(1) ==
+                                y).type(torch.float).sum().item()
+                    class_label.append(y)
+                # add data to tensorboard
+                #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
+
+                # validation accuracy
+                loss /= size
+                correct /= size
+
+                #self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
+                print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
+                        Avg loss: {loss:>8f} \n")
+
+                #self.writer.flush()
+              
+                if not lr_scheduler is None:
+                    scheduler.step()
+                if not prof is None:
+                    prof.step()
+
+                if check_optuna:
+                    if search_metric == "loss":
+                        trial.report(loss, t)
+                    else:
+                        trial.report(correct, t)
+                    # Handle pruning based on the intermediate value.
+                    if trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+            self.val_loss = loss
+            self.val_acc = 100*correct
+
+        flags = {}
+
+        xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
+        return self.val_loss, self.val_acc

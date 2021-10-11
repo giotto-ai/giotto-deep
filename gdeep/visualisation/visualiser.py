@@ -16,14 +16,7 @@ if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
-    
-try:
-    import torch_xla
-    import torch_xla.core.xla_model as xm
-    DEVICE = xm.xla_device()
-    print("Using TPU!")
-except:
-    print("No TPUs...")
+
 
 class Visualiser:
     """This class is the bridge to send to the tensorboard
@@ -238,9 +231,9 @@ class Visualiser:
                                                          N=256)
 
         fig, _ = visualization.visualize_image_attr_multiple(
-            np.transpose(interpreter.attrib.squeeze().cpu().detach().numpy(),
+            np.transpose(interpreter.attrib.squeeze().detach().cpu().numpy(),
                          (1, 2, 0)),
-            np.transpose(interpreter.image.squeeze().cpu().detach().numpy(),
+            np.transpose(interpreter.image.squeeze().detach().cpu().numpy(),
                           (1, 2, 0)),
             ["original_image", "heat_map"],
             ["all", "positive"],
@@ -257,26 +250,26 @@ class Visualiser:
         x_axis_data_labels = list(map(lambda idx: idx,
                                       x_axis_data))
 
-        ig_attr_test_sum = interpreter.ig_attr_test.detach().numpy().sum(0)
+        ig_attr_test_sum = interpreter.ig_attr_test.detach().cpu().numpy().sum(0)
         ig_attr_test_norm_sum = ig_attr_test_sum / \
             np.linalg.norm(ig_attr_test_sum, ord=1)
 
         ig_nt_attr_test_sum = \
-            interpreter.ig_nt_attr_test.detach().numpy().sum(0)
+            interpreter.ig_nt_attr_test.detach().cpu().numpy().sum(0)
         ig_nt_attr_test_norm_sum = ig_nt_attr_test_sum / \
             np.linalg.norm(ig_nt_attr_test_sum, ord=1)
 
         dl_attr_test_sum = \
-            interpreter.dl_attr_test.detach().numpy().sum(0)
+            interpreter.dl_attr_test.detach().cpu().numpy().sum(0)
         dl_attr_test_norm_sum = dl_attr_test_sum / \
             np.linalg.norm(dl_attr_test_sum, ord=1)
 
         # gs_attr_test_sum = \
-        #     interpreter.gs_attr_test.detach().numpy().sum(0)
+        #     interpreter.gs_attr_test.detach().cpu().numpy().sum(0)
         # gs_attr_test_norm_sum = gs_attr_test_sum / \
         #     np.linalg.norm(gs_attr_test_sum, ord=1)
 
-        fa_attr_test_sum = interpreter.fa_attr_test.detach().numpy().sum(0)
+        fa_attr_test_sum = interpreter.fa_attr_test.detach().cpu().numpy().sum(0)
         fa_attr_test_norm_sum = fa_attr_test_sum / \
             np.linalg.norm(fa_attr_test_sum, ord=1)
 

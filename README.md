@@ -46,8 +46,8 @@ I order to run your analysis on TPU cores, you ca use the following lines:
 ```
 !git clone https://username:token@github.com/giotto-ai/giotto-deep
 !ls
-!pip install -e giotto-deep/
 !pip uninstall -y tensorflow
+!pip install -e giotto-deep/
 !pip install cloud-tpu-client==0.10 https://storage.googleapis.com/tpu-pytorch/wheels/torch_xla-1.9-cp37-cp37m-linux_x86_64.whl
 ```
 Once you have run the lines above, please make sure to restart the runtime.

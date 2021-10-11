@@ -18,14 +18,6 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
-try:
-    import torch_xla
-    import torch_xla.core.xla_model as xm
-    DEVICE = xm.xla_device()
-    print("Using TPU!")
-except:
-    print("No TPUs...")
-
 
 class Gridsearch(Pipeline):
     """This is the generic class that allows
@@ -77,7 +69,8 @@ class Gridsearch(Pipeline):
                    scheduler_params,
                    writer_tag,
                    profiling,
-                   k_folds):
+                   k_folds,
+                   parallel_tpu):
         """default callback function for optuna's study
         
         Args:
@@ -105,6 +98,9 @@ class Gridsearch(Pipeline):
                 profiler
             k_folds (int, default=5):
                 number of folds in cross validation
+            parallel_tpu (bool):
+                boolean value to run the computations
+                on multiple TPUs
         """
 
         # gegnerate optimizer
@@ -130,7 +126,8 @@ class Gridsearch(Pipeline):
                                         scheduler_params,
                                         (trial, self.search_metric),
                                         profiling,
-                                        k_folds
+                                        k_folds,
+                                        parallel_tpu
                                         )
         self.writer.flush()
         # release resources
@@ -152,7 +149,8 @@ class Gridsearch(Pipeline):
               scheduler_params=None,
               writer_tag="model",
               profiling=False,
-              k_folds=5):
+              k_folds=5,
+              parallel_tpu=False):
         """method to be called when starting the gridsearch
 
         Args:
@@ -180,6 +178,9 @@ class Gridsearch(Pipeline):
                 profiler
             k_folds (int, default=5):
                 number of folds in cross validation
+            parallel_tpu (bool):
+                boolean value to run the computations
+                on multiple TPUs
         """
         if self.search_metric == "loss":
             self.study = optuna.create_study(direction="minimize")
@@ -199,7 +200,8 @@ class Gridsearch(Pipeline):
                                       scheduler_params,
                                       writer_tag,
                                       profiling,
-                                      k_folds)
+                                      k_folds,
+                                      parallel_tpu)
 
         else:
             _benchmarking_param(self._inner_optimisat_fun,
@@ -215,7 +217,8 @@ class Gridsearch(Pipeline):
                                  scheduler_params,
                                  writer_tag,
                                  profiling,
-                                 k_folds)
+                                 k_folds,
+                                 parallel_tpu)
 
         self._store_to_tensorboard()
 
@@ -231,7 +234,8 @@ class Gridsearch(Pipeline):
                              scheduler_params,
                              writer_tag,
                              profiling,
-                             k_folds):
+                             k_folds,
+                             parallel_tpu):
         """private method to be decorated with the
         benchmark decorator to have benchmarking
         or simply used as is if no benchmarking is
@@ -260,7 +264,8 @@ class Gridsearch(Pipeline):
                                                        scheduler_params,
                                                        writer_tag,
                                                        profiling,
-                                                       k_folds),
+                                                       k_folds,
+                                                       parallel_tpu),
                             n_trials=self.n_trials,
                             timeout=None)
         try:
