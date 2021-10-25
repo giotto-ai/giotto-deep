@@ -139,10 +139,12 @@ class Pipeline:
                                                    class_label,
                                                    val_loss,
                                                    correct)
-        # add data to tensorboard
-        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
-        self.writer.flush()
-
+        try:
+            # add data to tensorboard
+            self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
+            self.writer.flush()
+        except NotImplementedError:
+            warnings.warn("The PR curve is not being filled because too few data exist")
         # accuracy
         val_loss /= size
         correct /= size
@@ -317,7 +319,17 @@ class Pipeline:
         
         # validation being the test set for 2
         # dataloders without crossvalidation
-        dl_val = self.dataloaders[1]
+        if len(self.dataloaders) == 3:
+            dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
+                                                 shuffle=False,
+                                                 #pin_memory=True,
+                                                 **dataloaders_param)
+        else:
+            dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
+                                                 shuffle=False,
+                                                 #pin_memory=True,
+                                                 **dataloaders_param,
+                                                 sampler=SubsetRandomSampler(list(range(len(dl_tr.dataset)//5))))
 
         if cross_validation:
             mean_val_loss = []
@@ -371,7 +383,6 @@ class Pipeline:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
                                                     #pin_memory=True,
-                                                    sampler=range(len(dl_tr)*dl_tr.batch_size),
                                                     **dataloaders_param)
             self.reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
