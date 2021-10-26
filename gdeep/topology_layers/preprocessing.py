@@ -4,6 +4,8 @@ from sklearn.preprocessing import LabelEncoder  # type: ignore
 from os.path import join, isfile
 
 import h5py  # type: ignore
+import os
+
 
 import torch
 from torch import Tensor
@@ -130,6 +132,96 @@ def load_data(
             torch.tensor(x_features, dtype=torch.float),
             torch.tensor(y))
 
+def load_data_as_tensor(
+        dataset_name: str = "PROTEINS",
+        path_dataset: str = "graph_data",
+        verbose: bool = False
+        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    x_pds_dict, x_features, y = load_data(dataset_name)
+
+    # Compute the max number of points in the persistence diagrams
+    max_number_of_points = max([x_pd.shape[0]
+                                for _, x_pd in x_pds_dict.items()])  # type: ignore
+
+    x_pds = pad_pds(x_pds_dict, max_number_of_points)
+
+    return x_pds, x_features, y
+
+def load_augmented_data_as_tensor(
+        dataset_name: str = "PROTEINS",
+        path_dataset: str = "graph_data",
+        verbose: bool = False
+        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    if dataset_name not in ["PROTEINS", "MUTAG"]:
+        raise NotImplementedError()
+    x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)
+
+    original_data_size = x_pds.shape[0]
+    
+    # Indices of graphs that are used for the graph generation per class
+    idx_class = {}
+
+    for class_ in ['1', '2']:
+        with open(os.path.join('graph_data', dataset_name + '_' + class_, 'gid.txt')) as f:
+            lines = f.readlines()
+            idx_class[class_] = [int(idx) for idx in lines[0].split(', ')]
+
+        # load the augmented training data for class_
+        x_pds_dict_aug, x_features_aug, y_aug = load_data(dataset_name + "_" + class_)
+        # load_data only encodes a single class
+        if class_ == '2':
+            y_aug += 1
+        max_number_of_points = x_pds.shape[1]
+        x_pds_aug = pad_pds(x_pds_dict_aug, max_number_of_points)
+
+
+        # Catch the case where x_pds_aug and x_pds have not the same length (i.e. 1-component)
+        if x_pds_aug.shape[1] > x_pds.shape[1]:
+            x_pds = pad_pds_tensor(x_pds, x_pds_aug.shape[1])
+        x_pds = torch.cat([x_pds, x_pds_aug], axis=0)
+        # here might be a problem
+        min_feature_size = min(x_features.shape[1], x_features_aug.shape[1])
+        x_features = torch.cat([x_features[:, :min_feature_size], x_features_aug[:, :min_feature_size]], axis=0)
+        y = torch.cat([y, y_aug], axis=0)
+
+    return x_pds, x_features, y, original_data_size, idx_class
+
+def pad_pds_tensor(x, s):
+    """
+    Pad to a tensor of 1-component of size s
+    """
+    assert x.shape[1] <= s, "x.shape[1] has to be less of equal s"
+    x_out = torch.zeros((x.shape[0], s, x.shape[2]))
+    x_out[:, :x.shape[1], :] = x
+    return x_out
+
+def pad_pds(x_pds_dict, max_number_of_points):
+    """Pad persistence diagrams to make them the same size
+
+    Args:
+        x_pds_dict (dict): dictionary of persistence diagrams. The
+            keys must be from 0 to size of x_pds_dict.
+        max_number_of_points (int): padding size. If one of the persistence
+            diagrams in x_pds_dict has more than max_number_of_points points,
+            a runtime error will be thrown.
+
+    Returns:
+        torch.Tensor: padded persistence diagrams
+    """
+    # transform x_pds to a single tensor with tailing zeros
+    num_types = x_pds_dict[0].shape[1] - 2
+    num_graphs = len(x_pds_dict.keys())  # type: ignore
+
+    m_n_pts = max(max_number_of_points, max([x_pd.shape[0] for _, x_pd in x_pds_dict.items()]))
+    x_pds = torch.zeros((num_graphs, m_n_pts, num_types + 2))
+
+    for idx, x_pd in x_pds_dict.items():  # type: ignore
+        #if x_pd.shape[0] > max_number_of_points:
+        #    raise RuntimeError("max_number_of_points is smaller than points in x_pd")
+        n_pts = x_pd.shape[0]
+        x_pds[idx, :n_pts, :] = x_pd[:, :]
+
+    return x_pds
 
 def diagram_to_tensor(
     tensor_dict_per_type: Dict[str, torch.Tensor]

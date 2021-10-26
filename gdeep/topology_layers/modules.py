@@ -8,7 +8,7 @@ import math
 
 class MAB(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False):
-        super(MAB, self).__init__()
+        super().__init__()
         self.dim_V = dim_V
         self.num_heads = num_heads
         self.fc_q = nn.Linear(dim_Q, dim_V)
@@ -38,7 +38,7 @@ class MAB(nn.Module):
 
 class SAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, ln=False):
-        super(SAB, self).__init__()
+        super().__init__()
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln)
 
     def forward(self, X):
@@ -47,7 +47,7 @@ class SAB(nn.Module):
 
 class ISAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False):
-        super(ISAB, self).__init__()
+        super().__init__()
         self.I = nn.Parameter(torch.Tensor(1, num_inds, dim_out))
         nn.init.xavier_uniform_(self.I)
         self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln)
@@ -60,7 +60,7 @@ class ISAB(nn.Module):
 
 class PMA(nn.Module):
     def __init__(self, dim, num_heads, num_seeds, ln=False):
-        super(PMA, self).__init__()
+        super().__init__()
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
         nn.init.xavier_uniform_(self.S)
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln)
