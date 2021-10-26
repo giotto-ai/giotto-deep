@@ -16,7 +16,7 @@ from gtda.diagrams import PairwiseDistance  # type: ignore
 from gdeep.topology_layers import load_data
 
 # %%
-dataset_name = "PROTEINS"
+dataset_name = "MUTAG"
 
 x_pds_dict, x_features, y = load_data(dataset_name)
 
