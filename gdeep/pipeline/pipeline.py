@@ -171,21 +171,23 @@ class Pipeline:
                                      tensorboard_probs,
                                      global_step=0)
 
-    def _inner_loop(self, dl, class_probs, class_label, loss, correct):
+    def _inner_loop(self, dl, class_probs, class_label,
+                    loss, correct):
         """private function used inside the test
         and validation loops"""
         pred = 0
-        for X, y in dl:
-            X = X.to(self.DEVICE)
-            y = y.to(self.DEVICE)
-            pred = self.model(X)
-            class_probs_batch = [F.softmax(el, dim=0)
-                                 for el in pred]
-            class_probs.append(class_probs_batch)
-            loss += self.loss_fn(pred, y).item()
-            correct += (pred.argmax(1) ==
-                        y).type(torch.float).sum().item()
-            class_label.append(y)
+        with torch.no_grad():
+            for X, y in dl:
+                X = X.to(self.DEVICE)
+                y = y.to(self.DEVICE)
+                pred = self.model(X)
+                class_probs_batch = [F.softmax(el, dim=0)
+                                     for el in pred]
+                class_probs.append(class_probs_batch)
+                loss += self.loss_fn(pred, y).item()
+                correct += (pred.argmax(1) ==
+                            y).type(torch.float).sum().item()
+                class_label.append(y)
         return pred, correct, loss
 
     def _test_loop(self, dl_test, writer_tag="test"):
