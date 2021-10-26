@@ -607,18 +607,19 @@ class Pipeline:
                 pred = 0
                 para_valid_loader = pl.ParallelLoader(dl_val,
                                                       [device]).per_device_loader(device)
-                # per batch!!
-                for X, y in para_valid_loader:
-                    pred = model2(X)
-                    class_probs_batch = [F.softmax(el, dim=0)
-                                         for el in pred]
-                    class_probs.append(class_probs_batch)
-                    loss += self.loss_fn(pred, y).item()
-                    correct += (pred.argmax(1) ==
-                                y).type(torch.float).sum().item()
-                    class_label.append(y)
-                # add data to tensorboard
-                #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
+                with torch.no_grad():
+                    # per batch!!
+                    for X, y in para_valid_loader:
+                        pred = model2(X)
+                        class_probs_batch = [F.softmax(el, dim=0)
+                                             for el in pred]
+                        class_probs.append(class_probs_batch)
+                        loss += self.loss_fn(pred, y).item()
+                        correct += (pred.argmax(1) ==
+                                    y).type(torch.float).sum().item()
+                        class_label.append(y)
+                    # add data to tensorboard
+                    #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
 
                 # validation accuracy
                 loss /= size
