@@ -1,7 +1,8 @@
-from captum.attr import TokenReferenceBase, \
-    visualization, FeatureAblation, \
-    DeepLift, NoiseTunnel, IntegratedGradients, \
-    LayerIntegratedGradients, Occlusion
+from captum.attr import * # TokenReferenceBase, \
+    # visualization, FeatureAblation, \
+    # DeepLift, NoiseTunnel, IntegratedGradients, \
+    # LayerIntegratedGradients, Occlusion, \
+    # GuidedGradCam, Saliency, InputXGradient
 import torch
 
 if torch.cuda.is_available():
@@ -34,17 +35,65 @@ class Interpreter:
         self.sentence = None
         self.attrib = None
 
-    def interpret_image(self, X, y, **kwargs):
+    def interpret_image(self, X, y, layer = None, **kwargs):
+        """This method creates an image interpreter. This class
+        is based on captum.
+
+        Args:
+            X (tensor):
+                the tensor corresponding to the input image.
+                It is expected to be of size ``(b, c, h, w)``
+            y (int or float or str)
+                the label we want to check the interpretability
+                of.
+            layer (nn.Module, optional):
+                some methods will require to specify a layer
+                of self.model
+
+        Returns
+            (torch.Tensor, torch.Tensor):
+                the input image and the attribution
+                image respectively.
+        """
         self.X = X.to(DEVICE)
-        occlusion = eval(self.method+"(self.model)")
+        if self.method in ("GuidedGradCam",
+                           "LayerConductance",
+                           "LayerActivation",
+                           "LayerGradCam",
+                           "LayerDeepLift",
+                           "LayerFeatureAblation",
+                           "LayerIntegratedGradients",
+                           "LayerGradientShap",
+                           "LayerDeepLiftShap"):
+            occlusion = eval(self.method+"(self.model, layer)")
+        else:
+            occlusion = eval(self.method+"(self.model)")
+        self.model.eval()
         att = occlusion.attribute(self.X, target=y, **kwargs)
         self.image = self.X
         self.attrib = att
         return self.X, att
 
     def interpret_tabular(self, X_test, y, **kwargs):
+        """This method creates an image interpreter. This class
+        is based on captum.
+
+        Args:
+            X (tensor):
+                the tensor corresponding to the input image.
+                It is expected to be of size ``(b, c, h, w)``
+            y (int or float or str)
+                the label we want to check the interpretability
+                of.
+
+        Returns
+            (torch.Tensor, torch.Tensor):
+                the input image and the attribution
+                image respectively.
+        """
         self.X = X_test.to(DEVICE)  # needed for plotting functions
         y = y.to(DEVICE)
+        self.model.eval()
         ig = IntegratedGradients(self.model)
         ig_nt = NoiseTunnel(ig)
         dl = DeepLift(self.model)
@@ -67,10 +116,34 @@ class Interpreter:
     def interpret_text(self, sentence, label, vocab,
                        tokenizer, layer,
                        min_len=7):
-        self.sentence = sentence
+        """This method creates an image interpreter. This class
+        is based on captum.
 
-        lig = eval(self.method+"(" + ",".join(("self.model", "self.model." +
-                   layer)) + ")")
+        Args:
+            sentence (string):
+                the input sentence
+            label (int or float or str)
+                the label we want to check the interpretability
+                of.
+            vocab (vocabulary):
+                a ``gdeep.data.PreprocessText`` vocabulary. Can
+                be extracted via the ``vocabulary``attribute.
+            tokenizer (tokenizer):
+                a ``gdeep.data.PreprocessText`` tokenizer. Can
+                be extracted via the ``tokenizer``attribute.
+            layer (nn.Module):
+                torch module correspondign to the layer belonging to
+                ``self.model``.
+
+        Returns
+            (torch.Tensor, torch.Tensor):
+                the input image and the attribution
+                image respectively.
+        """
+        self.model.eval()
+        self.sentence = sentence
+        lig = eval(self.method+"(" + ",".join(("self.model", #"self.model." +
+                   "layer")) + ")")
         text = tokenizer(sentence)
         if len(text) < min_len:
             text += ['.'] * (min_len - len(text))

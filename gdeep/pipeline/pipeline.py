@@ -327,10 +327,16 @@ class Pipeline:
                                                  #pin_memory=True,
                                                  **dataloaders_param)
         else:
+            # remove sampler to avoid conflicts with validation
+            dataloaders_param_val = dataloaders_param.copy()
+            try:
+                dataloaders_param_val.pop("sampler")
+            except KeyError:
+                pass
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                  shuffle=False,
                                                  #pin_memory=True,
-                                                 **dataloaders_param,
+                                                 **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(list(range(len(dl_tr.dataset)//5))))
 
         if cross_validation:
