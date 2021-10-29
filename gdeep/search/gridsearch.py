@@ -103,7 +103,7 @@ class Gridsearch(Pipeline):
                 on multiple TPUs
         """
 
-        # gegnerate optimizer
+        # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
         
@@ -116,6 +116,7 @@ class Gridsearch(Pipeline):
             new_model = type(self.model)(**models_hyperparam)
         except TypeError:
             new_model = self.model
+
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
 
         loss, accuracy = new_pipe.train(optimizer, n_epochs,
@@ -379,6 +380,7 @@ class Gridsearch(Pipeline):
         """
         if params is None:
             return None
+        param_temp = {}
         param_temp = {k:trial.suggest_float(k,*v) for k,v in
                       params.items() if (type(v) is list or type(v) is tuple)
                       and (type(v[0]) is float or type(v[1]) is float)}
@@ -390,6 +392,6 @@ class Gridsearch(Pipeline):
                  params.items() if (type(v) is list or type(v) is tuple)
                  and (type(v[0]) is str or type(v[1]) is str)}
         param.update(param_temp)
-        
+        #print(param)
         return param
 

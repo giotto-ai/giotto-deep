@@ -3,8 +3,9 @@ import torch
 import numpy as np
 import copy
 import time
+from tqdm import tqdm
 import warnings
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data.sampler import SubsetRandomSampler
 import optuna
 
@@ -64,8 +65,6 @@ class Pipeline:
 
         self.model = copy.deepcopy(self.initial_model)
 
-            
-
     def reset_epoch(self):
         """method to reset global training and validation
         epoch count.
@@ -112,11 +111,11 @@ class Pipeline:
             if batch % 1 == 0:
                 t_loss += loss.item()
                 print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
-                      correct/(batch+1),
+                      correct/((batch+1)*dl_tr.batch_size)*100,
                       " \t[",batch+1,"/", steps,"]                     ", end='\r')
         self.writer.flush()
         # accuracy:
-        correct /= size
+        correct /= len(dl_tr)*dl_tr.batch_size
         t_loss /= len(dl_tr)
         print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
         return t_loss, correct*100
@@ -149,10 +148,10 @@ class Pipeline:
         except NotImplementedError:
             warnings.warn("The PR curve is not being filled because too few data exist")
         # accuracy
-        correct /= size
+        correct /= len(dl_val)*dl_val.batch_size
         val_loss /= len(dl_val)
         self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
-        print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
+        print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
                 Avg loss: {val_loss:>8f} \n")
 
         self.writer.flush()
@@ -190,7 +189,7 @@ class Pipeline:
                 correct += (pred.argmax(1) ==
                             y).type(torch.float).sum().item()
                 class_label.append(y)
-        return pred, correct, loss
+        return pred, loss, correct
 
     def _test_loop(self, dl_test, writer_tag="test"):
         """private method to run a single test
@@ -220,7 +219,7 @@ class Pipeline:
         self.writer.flush()
 
         # accuracy
-        correct /= size
+        correct /= len(dl_test)*dl_test.batch_size
         test_loss /= len(dl_test)
         print(f"Test results: \n Accuracy: {(100*correct):>0.1f}%, \
                 Avg loss: {test_loss:>8f} \n")
@@ -321,30 +320,47 @@ class Pipeline:
             except AssertionError:
                 pass
         
-        # validation being the test set for 2
+        # remove sampler to avoid conflicts with validation
+        dataloaders_param_val = dataloaders_param.copy()
+        try:
+            dataloaders_param_val.pop("sampler")
+        except KeyError:
+            pass
+        
+        # validation being the 20% in the case of 2
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:
+            val_idx = list(range(len(self.dataloaders[1])*self.dataloaders[1].batch_size))
             dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
                                                  shuffle=False,
                                                  #pin_memory=True,
-                                                 **dataloaders_param)
+                                                 **dataloaders_param_val,
+                                                 sampler=SubsetRandomSampler(val_idx))
+            tr_idx = list(range(len(dl_tr)*dl_tr.batch_size))
+            dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
+                                                shuffle=False,
+                                                #pin_memory=True,
+                                                **dataloaders_param_val,
+                                                sampler=SubsetRandomSampler(tr_idx))
         else:
-            # remove sampler to avoid conflicts with validation
-            dataloaders_param_val = dataloaders_param.copy()
-            try:
-                dataloaders_param_val.pop("sampler")
-            except KeyError:
-                pass
+            
+            data_idx = list(range(len(dl_tr)*dl_tr.batch_size))
+            tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                  shuffle=False,
                                                  #pin_memory=True,
                                                  **dataloaders_param_val,
-                                                 sampler=SubsetRandomSampler(list(range(len(dl_tr.dataset)//5))))
+                                                 sampler=SubsetRandomSampler(val_idx))
+            dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
+                                                shuffle=False,
+                                                #pin_memory=True,
+                                                **dataloaders_param_val,
+                                                sampler=SubsetRandomSampler(tr_idx))
 
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
-            valloss, valacc = -1, 0
+            valloss, valacc = 0, 0
             data_idx = list(range(len(self.dataloaders[0])*self.dataloaders[0].batch_size))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
@@ -359,12 +375,12 @@ class Pipeline:
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     shuffle=False,
                                                     #pin_memory=True,
-                                                    **dataloaders_param,
+                                                    **dataloaders_param_val,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                      shuffle=False,
                                                      #pin_memory=True,
-                                                     **dataloaders_param,
+                                                     **dataloaders_param_val,
                                                      sampler=SubsetRandomSampler(val_idx))
                 # print n-th fold
                 print("\n\n********** Fold ", fold+1, "**************")
@@ -389,11 +405,6 @@ class Pipeline:
 
 
         else:
-            if not dataloaders_param == {}:
-                dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                    shuffle=False,
-                                                    #pin_memory=True,
-                                                    **dataloaders_param)
             self.reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             if not lr_scheduler is None:
@@ -579,7 +590,7 @@ class Pipeline:
                 # train batch loop
                 size = len(dl_tr.dataset)
                 steps = len(dl_tr)
-                loss = -100    # arbitrary starting value to avoid nan loss
+                loss = 0    # arbitrary starting value to avoid nan loss
                 correct = 0
                 tik = time.time()
                 # for batch, (X, y) in enumerate(self.dataloaders[0]):
@@ -600,7 +611,8 @@ class Pipeline:
 
                 #self.writer.flush()
                 # train accuracy:
-                correct /= size
+                correct /= len(dl_tr)*dl_tr.batch_size
+                print("Train accuracy at epoch ",t," : ", correct)
                 print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
 
                 # evaluation
@@ -629,10 +641,6 @@ class Pipeline:
                     # add data to tensorboard
                     #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
 
-                # validation accuracy
-                loss /= size
-                correct /= size
-
                 #self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
                 print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
                         Avg loss: {loss:>8f} \n")
@@ -652,11 +660,12 @@ class Pipeline:
                     # Handle pruning based on the intermediate value.
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
-            self.val_loss = loss
-            self.val_acc = 100*correct
+            self.val_loss += loss
+            self.val_acc += correct*100
 
         flags = {}
-
+        self.val_acc /= len(dl_val_old)*dl_val_old.batch_size
+        self.val_loss /= len(dl_val_old)
         xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
         return self.val_loss, self.val_acc
 
@@ -697,7 +706,7 @@ class Pipeline:
                 for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
 
-        correct /= len(dl.dataset)
+        correct /= len(dl)*dl.batch_size
         loss /= len(dl)
         return 100*correct, loss, confusion_matrix
 

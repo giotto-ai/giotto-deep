@@ -266,9 +266,9 @@ class Visualiser:
         fig, _ = visualization.visualize_image_attr_multiple(
             attrib,
             img,
-            ["original_image", "heat_map"],
-            ["all", "positive"],
-            cmap=default_cmap) #, show_colorbar=True)
+            ["original_image", "heat_map", "blended_heat_map"],
+            ["all", "all", "all"],
+            show_colorbar=True)
         self.pipe.writer.add_figure(interpreter.method,
                                     fig)
         return fig
