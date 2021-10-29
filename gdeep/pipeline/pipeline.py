@@ -86,8 +86,9 @@ class Pipeline:
         self.model.train()
         size = len(dl_tr.dataset)
         steps = len(dl_tr)
-        loss = -100    # arbitrary starting value to avoid nan loss
+        loss = 0
         correct = 0
+        t_loss = 0
         tik = time.time()
         # for batch, (X, y) in enumerate(self.dataloaders[0]):
         for batch, (X, y) in enumerate(dl_tr):
@@ -99,7 +100,7 @@ class Pipeline:
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             self.writer.add_scalar(writer_tag + "/Loss/train",
-                                   loss,
+                                   loss.item(),
                                    self.train_epoch*dl_tr.batch_size + batch)
             # Backpropagation
             self.optimizer.zero_grad()
@@ -109,14 +110,16 @@ class Pipeline:
             else:
                 self.optimizer.step()
             if batch % 1 == 0:
-                t_loss = loss.item()
-                print("Training loss: ", t_loss, " [",batch+1,"/",
-                      steps,"]                     ", end='\r')
+                t_loss += loss.item()
+                print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
+                      correct/(batch+1),
+                      " \t[",batch+1,"/", steps,"]                     ", end='\r')
         self.writer.flush()
         # accuracy:
         correct /= size
+        t_loss /= len(dl_tr)
         print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
-        return loss, correct*100
+        return t_loss, correct*100
 
     def _val_loop(self, dl_val, writer_tag="validation"):
         """private method to run a single validation
@@ -146,9 +149,8 @@ class Pipeline:
         except NotImplementedError:
             warnings.warn("The PR curve is not being filled because too few data exist")
         # accuracy
-        val_loss /= size
         correct /= size
-
+        val_loss /= len(dl_val)
         self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
         print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
                 Avg loss: {val_loss:>8f} \n")
@@ -219,7 +221,7 @@ class Pipeline:
 
         # accuracy
         correct /= size
-        test_loss /= size
+        test_loss /= len(dl_test)
         print(f"Test results: \n Accuracy: {(100*correct):>0.1f}%, \
                 Avg loss: {test_loss:>8f} \n")
 
@@ -657,3 +659,45 @@ class Pipeline:
 
         xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
         return self.val_loss, self.val_acc
+
+    def evaluate_classification(self, num_class=None, dl=None):
+        """Method to evaluate the performance of the model.
+        
+        Args:
+            num_class (int):
+                number of classes
+            dl (torch.DataLoader, default None):
+                the Dataloader to evaluate. If ``None``,
+                we use the training dataloader in ``self``
+                
+        Returns:
+            (float, float, 2darray):
+                the accuracy, loss and confusion matrix.
+        """
+        if dl is None:
+            dl = self.dataloaders[0]
+        class_probs = []
+        class_label = []
+        loss = 0
+        correct = 0
+        confusion_matrix = np.zeros((num_class, num_class))
+        self.model.eval()
+        with torch.no_grad():
+            for X, y in tqdm(dl):
+                X = X.to(DEVICE)
+                y = y.to(DEVICE)
+                pred = self.model(X)
+                class_probs_batch = [F.softmax(el, dim=0)
+                                     for el in pred]
+                class_probs.append(class_probs_batch)
+                loss += self.loss_fn(pred, y).item()
+                correct += (pred.argmax(1) ==
+                            y).type(torch.float).sum().item()
+                class_label.append(y)
+                for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
+                    confusion_matrix[t.long(), p.long()] += 1
+
+        correct /= len(dl.dataset)
+        loss /= len(dl)
+        return 100*correct, loss, confusion_matrix
+
