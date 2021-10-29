@@ -116,7 +116,7 @@ class Pipeline:
         # accuracy:
         correct /= size
         print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
-        return loss, correct
+        return loss, correct*100
 
     def _val_loop(self, dl_val, writer_tag="validation"):
         """private method to run a single validation
