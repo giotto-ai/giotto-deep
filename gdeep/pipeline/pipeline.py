@@ -34,7 +34,7 @@ class Pipeline:
         model (nn.Module):
             standard torch model
         dataloaders (list of utils.DataLoader):
-            list of standard torch DtaLoaders, e.g.
+            list of standard torch DataLoaders, e.g.
             `[dl_tr, dl_val, dl_ts]`
         loss_fn (Callables):
             loss function to average over batches
@@ -330,13 +330,13 @@ class Pipeline:
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:
-            val_idx = list(range(len(self.dataloaders[1])*self.dataloaders[1].batch_size))
+            val_idx = list(range(len(self.dataloaders[1])*(self.dataloaders[1].batch_size-1)))
             dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
                                                  shuffle=False,
                                                  #pin_memory=True,
                                                  **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(val_idx))
-            tr_idx = list(range(len(dl_tr)*dl_tr.batch_size))
+            tr_idx = list(range(len(dl_tr)*(dl_tr.batch_size-1)))
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                 shuffle=False,
                                                 #pin_memory=True,
@@ -344,7 +344,7 @@ class Pipeline:
                                                 sampler=SubsetRandomSampler(tr_idx))
         else:
             
-            data_idx = list(range(len(dl_tr)*dl_tr.batch_size))
+            data_idx = list(range(len(dl_tr)*(dl_tr.batch_size-1)))
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                  shuffle=False,
@@ -361,7 +361,7 @@ class Pipeline:
             mean_val_loss = []
             mean_val_acc = []
             valloss, valacc = 0, 0
-            data_idx = list(range(len(self.dataloaders[0])*self.dataloaders[0].batch_size))
+            data_idx = list(range(len(self.dataloaders[0])*(self.dataloaders[0].batch_size-1)))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
                 # reset the model weights
