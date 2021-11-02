@@ -1,4 +1,3 @@
-import warnings
 from typing import List, Sequence, Tuple
 import numpy as np  # type: ignore
 import multiprocessing
@@ -74,6 +73,8 @@ class OrbitsGenerator(object):
         self._test_idcs = None
             
     def _generate_orbits(self) -> None:
+        """Generate the orbits for the dynamical system.
+        """
         
         # If orbits are already computed do nothing
         if self._orbits is not None:
@@ -181,6 +182,8 @@ class OrbitsGenerator(object):
         return self._persistence_diagrams
     
     def _split_data_idcs(self) -> None:
+        """Split the data indices into training, validation and testing data.
+        """
         idcs = np.arange(self._num_classes
                             * self._num_orbits_per_class)
 
@@ -192,8 +195,16 @@ class OrbitsGenerator(object):
                                                 / (1.0 - self._test_percentage))
                                                 )
     
-    def _get_data_loaders(self, list_of_arrays, *args, **kwargs
+    def _get_data_loaders(self, list_of_arrays: List[np.ndarray], *args, **kwargs
                           ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+        """Generates a DataLoader for the given list of arrays.
+
+        Args:
+            list_of_arrays ([List[np.ndarray]]): List of arrays to load.
+
+        Returns:
+            Tuple[DataLoader, DataLoader, DataLoader]: train, val, test data loaders.
+        """
         assert ((self._train_idcs is not None) and 
                 (self._val_idcs is not None) and
                 (self._test_idcs is not None)),\
@@ -221,7 +232,7 @@ class OrbitsGenerator(object):
             self._generate_orbits()
         if self._train_idcs is None:
             self._split_data_idcs()
-        return self._get_data_loaders((self._orbits, self._labels),
+        return self._get_data_loaders((self._orbits, self._labels), # type: ignore
                                         *args, **kwargs)
     
     def get_dataloader_persistence_diagrams(self, *args, **kwargs
@@ -237,7 +248,7 @@ class OrbitsGenerator(object):
         if self._train_idcs is None:
             self._split_data_idcs()
 
-        return self._get_data_loaders((self._persistence_diagrams, self._labels),
+        return self._get_data_loaders((self._persistence_diagrams, self._labels), # type: ignore
                                         *args, **kwargs)
     
     def get_dataloader_combined(self, *args, **kwargs
@@ -251,7 +262,7 @@ class OrbitsGenerator(object):
             self._compute_persistence_diagrams()
         if self._train_idcs is None:
             self._split_data_idcs()
-        return self._get_data_loaders((self._orbits,
+        return self._get_data_loaders((self._orbits,  # type: ignore
                                        self._persistence_diagrams,
                                        self._labels),
                                        *args, **kwargs)

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.dropout import Dropout
-from gdeep.topology_layers.modules import ISAB, PMA, SAB  # type: ignore
+from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
 
 
 class SmallDeepSet(nn.Module):
@@ -53,7 +53,7 @@ class SetTransformer(nn.Module):
         num_heads=4,
         ln=False,  # use layer norm
         n_layers=1,
-        use_induced_attention=False,
+        attention_type="self_attention",
         dropout=0.0
     ):
         """Init of SetTransformer.
@@ -78,7 +78,7 @@ class SetTransformer(nn.Module):
         self.emb = SAB(dim_input, dim_hidden, num_heads, ln=ln)
 
         self.n_layers = n_layers
-        if use_induced_attention:
+        if attention_type == "induced_attention":
             self.enc_list = nn.ModuleList([
                 nn.Sequential(
                 ISAB(dim_hidden, dim_hidden, num_heads, ln=ln),
@@ -86,11 +86,21 @@ class SetTransformer(nn.Module):
                 )
                 for _ in range(n_layers)
             ])
-        else:
+        elif attention_type == "self_attention":
             self.enc_list = nn.ModuleList([
                 SAB(dim_hidden, dim_hidden, num_heads, ln=ln)
                 for _ in range(n_layers)
             ])
+        elif attention_type == "fast_attention":
+            self.enc_list = nn.ModuleList([
+                nn.Sequential(
+                    FastAttention(dim_hidden, heads=num_heads, dim_head=64),
+                    nn.Dropout(p=dropout),
+                )
+                for _ in range(n_layers)
+            ])
+        else:
+            raise ValueError("Unknown attention type:", attention_type)
         self.dec = nn.Sequential(
             nn.Dropout(p=dropout),
             PMA(dim_hidden, num_heads, num_outputs, ln=ln),
