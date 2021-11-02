@@ -7,19 +7,18 @@ get_ipython().magic('autoreload 2')
 
 
 # %%
-import torch
 from gdeep.data import OrbitsGenerator
 # %%
-from sklearn.model_selection import train_test_split
-
-ds_size = 10
-val_size = 0.2
-test_size = 0.2
-
-idcs = torch.arange(10)
-
-rest_idcs, test_idcs = train_test_split(idcs, test_size=test_size)
-train_idcs, val_idcs = train_test_split(rest_idcs,
-                                        test_size =
-                                        val_size / (1.0 - test_size))
+og = OrbitsGenerator(num_orbits_per_class=10,
+                     validation_percentage=0.2,
+                     test_percentage=0.2)
+# %%
+dl_train, dl_val, dl_test = og.get_dataloader_combined(batch_size=32)
+# %%
+for x, p, y in dl_train:
+    print(x.shape)
+    print(y.shape)
+    break
+# %%
+og.get_persistence_diagrams().shape
 # %%

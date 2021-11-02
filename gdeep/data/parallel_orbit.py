@@ -1,8 +1,9 @@
+import warnings
 from typing import List, Sequence, Tuple
 import numpy as np  # type: ignore
 import multiprocessing
 import torch  # type: ignore
-from torch.utils.data import DataLoader  # type: ignore
+from torch.utils.data import DataLoader, TensorDataset  # type: ignore
 from sklearn.model_selection import train_test_split  # type: ignore
 from einops import rearrange  # type: ignore
 from gtda.homology import WeakAlphaPersistence  # type: ignore
@@ -130,15 +131,31 @@ class OrbitsGenerator(object):
                             )
         # c: class, o: orbit, p: point, d: dimension
         #orbits_stack = rearrange(self._orbits, 'c o p d -> (c o) p d')  # stack classes
-        self._persistence_diagrams = wap.fit_transform(self._orbits)
+        persistence_diagrams_categorical = wap.fit_transform(self._orbits)
         # shape: (num_classes * n_samples, n_features, 3)
 
-        # combine class and orbit dimensions
-        # self._persistence_diagrams = rearrange(
-        #                         diagrams,
-        #                         '(c o) p d -> c o p d',
-        #                         c=self._num_classes  # type: ignore
-        #                     )
+        # Convert persistence diagram to one-hot homological dimension encoding
+        self._persistence_diagrams = self._persistence_diagrams_to_one_hot(
+                                        persistence_diagrams_categorical
+                                        )
+      
+    def _persistence_diagrams_to_one_hot(self, persistence_diagrams):
+        """ Convert homology dimension to one-hot encoding
+
+        Args:
+            persistence_diagrams ([np.array]): persistence diagram with categorical
+                homology dimension.
+
+        Returns:
+            [np.array]: persistent diagram with one-hot encoded homology dimension.
+        """
+        return np.concatenate(
+            (
+                persistence_diagrams[:, :, :2],  # point coordinates
+                (np.eye(self._num_homology_dimensions)  # type: ignore
+                [persistence_diagrams[:, :, -1].astype(np.int32)]),
+            ),
+            axis=-1)
     
     def get_orbits(self) -> np.ndarray:
         """Returns the orbits as an ndarrays of shape
@@ -164,8 +181,8 @@ class OrbitsGenerator(object):
         return self._persistence_diagrams
     
     def _split_data_idcs(self) -> None:
-        idcs = np.arange(self._num_orbits_per_class
-                            * self._num_pts_per_orbit)
+        idcs = np.arange(self._num_classes
+                            * self._num_orbits_per_class)
 
         rest_idcs, self._test_idcs = train_test_split(idcs,
                                                       test_size=self._test_percentage)
@@ -174,6 +191,24 @@ class OrbitsGenerator(object):
                                                 self._validation_percentage
                                                 / (1.0 - self._test_percentage))
                                                 )
+    
+    def _get_data_loaders(self, list_of_arrays, *args, **kwargs
+                          ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+        assert ((self._train_idcs is not None) and 
+                (self._val_idcs is not None) and
+                (self._test_idcs is not None)),\
+                "Train, validation, and test data must be initialized"
+        
+        dl_train = DataLoader(TensorDataset(*(torch.tensor(a[self._train_idcs])
+                                              for a in list_of_arrays)),
+                                *args, **kwargs)
+        dl_val = DataLoader(TensorDataset(*(torch.tensor(a[self._val_idcs])
+                                            for a in list_of_arrays)),
+                                *args, **kwargs)
+        dl_test = DataLoader(TensorDataset(*(torch.tensor(a[self._train_idcs])
+                                             for a in list_of_arrays)),
+                                *args, **kwargs)
+        return dl_train, dl_val, dl_test
     
     def get_dataloader_orbits(self, *args, **kwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
@@ -184,20 +219,26 @@ class OrbitsGenerator(object):
         """
         if self._orbits is None:
             self._generate_orbits()
-        dl = DataLoader(self._orbits, self._labels, *args, **kwargs)
-        return dl
+        if self._train_idcs is None:
+            self._split_data_idcs()
+        return self._get_data_loaders((self._orbits, self._labels),
+                                        *args, **kwargs)
     
     def get_dataloader_persistence_diagrams(self, *args, **kwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the persistence diagrams dataset 
 
         Returns:
-            DataLoader: Dataloader of persistence diagrams
+            Tuple[DataLoader, DataLoader, DataLoader]:
+                Dataloaders of persistence diagrams
         """
         if self._persistence_diagrams is None:
             self._compute_persistence_diagrams()
-        dl = DataLoader(self._persistence_diagrams, self._labels, *args, **kwargs)
-        return dl
+        if self._train_idcs is None:
+            self._split_data_idcs()
+
+        return self._get_data_loaders((self._persistence_diagrams, self._labels),
+                                        *args, **kwargs)
     
     def get_dataloader_combined(self, *args, **kwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
@@ -206,11 +247,14 @@ class OrbitsGenerator(object):
         Returns:
             DataLoader: Dataloader of orbits and persistence diagrams
         """
-        if self._orbits is None:
-            self._generate_orbits()
-        dl = DataLoader(self._orbits, self._persistence_diagrams,
-                        self._labels, *args, **kwargs)
-        return dl
+        if self._persistence_diagrams is None:
+            self._compute_persistence_diagrams()
+        if self._train_idcs is None:
+            self._split_data_idcs()
+        return self._get_data_loaders((self._orbits,
+                                       self._persistence_diagrams,
+                                       self._labels),
+                                       *args, **kwargs)
         
 
 
