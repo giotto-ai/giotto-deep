@@ -1,89 +1,114 @@
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 import numpy as np  # type: ignore
-import torch
 import multiprocessing
-import torch
+import torch  # type: ignore
+from torch.utils.data import DataLoader  # type: ignore
+from sklearn.model_selection import train_test_split  # type: ignore
 from einops import rearrange  # type: ignore
 from gtda.homology import WeakAlphaPersistence  # type: ignore
 
 
-class orbits_generator(object):
-    """Generate
+class OrbitsGenerator(object):
+    """Generate Orbit dataset consistent of orbits defined by the dynamical system
+    x[n+1] = x[n] + r * y[n] * (1  - y[n]) % 1
+    y[n+1] = y[n] + r * x[n+1] * (1 - x[n+1]) % 1
+    Note that there is an x[n+1] value in the second dimension.
+    The parameter r is an hyperparameter and the classification task is to predict
+    it given the orbit.
+    By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).
 
     Args:
-        parameters ([type]): [description]
-        num_classes ([type]): [description]
-        num_orbits_per_class ([type]): number of orbits per class
-        num_pts_per_orbit ([type]): [description]
-        homology_dimensions ([type]): [description]
-        validation_percentage (float, optional): [description]. Defaults to 0.
-        test_percentage (float, optional): [description]. Defaults to 0.
+        parameters (Tuple[float]): Hyperparameter of the dynamical systems.
+        num_orbits_per_class (int): number of orbits per class.
+        num_pts_per_orbit (int): number of points per orbit.
+        homology_dimensions (Sequence[int]): homology dimension of the persistence
+            diagrams.
+        validation_percentage (float, optional): Percentage of the validation dataset.
+            Defaults to 0.0.
+        test_percentage (float, optional): Percentage of the test dataset. Defaults to 0.0.
         dynamical_system (str, optional): either use persistence paths
             convention ´pp_convention´ or the classical convention
             ´classical_convention´. Defaults to '´classical_convention´'.
+        n_jobs (int, optional): number of cpus to run the computation on. Defaults to 1.
     """
     def __init__(self,
-             parameters: Tuple[float] = (2.5, 3.5, 4.0, 4.1, 4.3),
-             num_classes: int = 5,
+             parameters: Sequence[float] = (2.5, 3.5, 4.0, 4.1, 4.3),
              num_orbits_per_class: int = 1_000,
              num_pts_per_orbit: int = 1_000,
-             homology_dimensions = (0, 1),
-             validation_percentage: float=0,
-             test_percentage: float=0,
+             homology_dimensions: Sequence[int] = (0, 1),
+             validation_percentage: float=0.0,
+             test_percentage: float=0.0,
              dynamical_system: str='classical_convention',
              n_jobs: int=1,
              ) -> None:
 
-        self.parameters = parameters
-        self.num_classes = num_classes
-        self.num_orbits_per_class = num_orbits_per_class
-        self.num_pts_per_orbit = num_pts_per_orbit
-        self.homology_dimension = homology_dimensions
-        self.validation_percentage = validation_percentage
-        self.test_percentage = test_percentage
-        self.num_homology_dimensions = len(self.homology_dimensions)
+        # Initialize member variables.
+        self._parameters = parameters
+        self._num_classes = len(self._parameters)
+        self._num_orbits_per_class = num_orbits_per_class
+        self._num_pts_per_orbit = num_pts_per_orbit
+        self._homology_dimensions = homology_dimensions
+        self._num_homology_dimensions = len(self._homology_dimensions)
+        self._n_jobs = n_jobs
+
+        # Assert that validation and testing parameters are valid
+        assert (test_percentage >= 0.0 and validation_percentage >= 0.0
+                and test_percentage + validation_percentage < 1.0)
+        self._validation_percentage = validation_percentage
+        self._test_percentage = test_percentage
         
+        # Assert that convention for the dynamical system is valid
         assert dynamical_system in ('classical_convention', 'pp_convention'),\
             f'{dynamical_system} is not supported'
         self.dynamical_system = dynamical_system
         
-        # Initalize orbits array and persistence diagrams array with None.
-        self.orbits = None
-        self.labels = None
-        self.persistence_diagrams = None
+        # Initialize orbits array and persistence diagrams array with None.
+        self._orbits = None
+        self._labels = None
+        self._persistence_diagrams = None
+        
+        # Initialize the train, val, and test indices with None.
+        self._train_idcs = None
+        self._val_idcs = None
+        self._test_idcs = None
             
     def _generate_orbits(self) -> None:
-        if self.orbits != None:
+        
+        # If orbits are already computed do nothing
+        if self._orbits is not None:
             return
         else:
+            # Initialize the orbits array with zeros.
             x = np.zeros((
-                self.num_classes,  # type: ignore
-                self.num_orbits,
-                self.num_pts_per_orbit,
+                self._num_classes,  # type: ignore
+                self._num_orbits_per_class,
+                self._num_pts_per_orbit,
                 2
             ))
 
-            y = np.array([self.num_orbits * [c] for c in range(self.num_classes)])
+            # Initialize the labels array with the hyperparameter indices.
+            y = np.array([self._num_orbits_per_class * [c]
+                          for c in range(self._num_classes)])
             
-            self.labels = y.reshape(-1)
+            self._labels = y.reshape(-1)
 
             # generate dataset
-            for cidx, p in enumerate(self.parameters):  # type: ignore
-                x[cidx, :, 0, :] = np.random.rand(self.num_orbits, 2)  # type: ignore
+            for class_idx, p in enumerate(self._parameters):  # type: ignore
+                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore
 
-                for i in range(1, self.num_pts_per_orbit):  # type: ignore
-                    x_cur = x[cidx, :, i - 1, 0]
-                    y_cur = x[cidx, :, i - 1, 1]
+                for i in range(1, self._num_pts_per_orbit):  # type: ignore
+                    x_cur = x[class_idx, :, i - 1, 0]
+                    y_cur = x[class_idx, :, i - 1, 1]
 
                     if self.dynamical_system == 'pp_convention':
-                        x[cidx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
-                        x[cidx, :, i, 1] = (y_cur + p * x_cur * (1. - x_cur)) % 1
+                        x[class_idx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
+                        x[class_idx, :, i, 1] = (y_cur + p * x_cur * (1. - x_cur)) % 1
                     else:
-                        x[cidx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
-                        x_next = x[cidx, :, i, 0]
-                        x[cidx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
+                        x[class_idx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
+                        x_next = x[class_idx, :, i, 0]
+                        x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
                         
-            self.orbits = x.reshape((-1, self.num_pts_per_orbit, 2))
+            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))
     
     def _compute_persistence_diagrams(self) -> None:
         """ Computes the weak alpha persistence of the orbit data clouds.
@@ -95,46 +120,98 @@ class orbits_generator(object):
             the points in the persistence diagrams and the third is the
             homology dimension.
         """
-        if self.orbit == None:
+        if self._orbits is None:
             self._generate_orbits()
         
         # compute weak alpha persistence
         wap = WeakAlphaPersistence(
-                            homology_dimensions=self.homology_dimensions,
-                            n_jobs=self.n_jobs
+                            homology_dimensions=self._homology_dimensions,
+                            n_jobs=self._n_jobs
                             )
         # c: class, o: orbit, p: point, d: dimension
-        orbits_stack = rearrange(self.orbits, 'c o p d -> (c o) p d')  # stack classes
-        diagrams = wap.fit_transform(orbits_stack)
+        #orbits_stack = rearrange(self._orbits, 'c o p d -> (c o) p d')  # stack classes
+        self._persistence_diagrams = wap.fit_transform(self._orbits)
         # shape: (num_classes * n_samples, n_features, 3)
 
         # combine class and orbit dimensions
-        self.persistence_diagrams = rearrange(
-                                diagrams,
-                                '(c o) p d -> c o p d',
-                                c=num_classes  # type: ignore
-                            )
+        # self._persistence_diagrams = rearrange(
+        #                         diagrams,
+        #                         '(c o) p d -> c o p d',
+        #                         c=self._num_classes  # type: ignore
+        #                     )
     
-    def get_point_cloud(self) -> np.ndarray:
-        if self.orbits == None:
+    def get_orbits(self) -> np.ndarray:
+        """Returns the orbits as an ndarrays of shape
+        (num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
+
+        Returns:
+            np.ndarray: Orbits
+        """
+        if self._orbits is None:
             self._generate_orbits()
-        return self.orbits
+        return self._orbits
     
     def get_persistence_diagrams(self) -> np.ndarray:
-        if self.persistence_diagrams is None:
-            _compute_persistence_diagrams()
-            
-        return self.persistence_diagrams
-    
-    def _split_data(self, validation_size, test_size) -> None:
-        X_train, X_test, y_train, y_test 
-            = train_test_split(, self.labels, test_size=test_size, random_state=1)
+        """Returns the orbits as an ndarrays of shape
+        (num_classes * num_orbits_per_class, num_topological_features, 3)
 
-        X_train, X_val, y_train, y_val 
-            = train_test_split(X_train, y_train, test_size=, random_state=1)
+        Returns:
+            np.ndarray: Persistence diagrams
+        """
+        if self._persistence_diagrams is None:
+            self._compute_persistence_diagrams()
+            
+        return self._persistence_diagrams
     
-    def get_point_cloud_dataset(self):
-        pass
+    def _split_data_idcs(self) -> None:
+        idcs = np.arange(self._num_orbits_per_class
+                            * self._num_pts_per_orbit)
+
+        rest_idcs, self._test_idcs = train_test_split(idcs,
+                                                      test_size=self._test_percentage)
+        self._train_idcs, self._val_idcs = train_test_split(rest_idcs,
+                                                test_size =(
+                                                self._validation_percentage
+                                                / (1.0 - self._test_percentage))
+                                                )
+    
+    def get_dataloader_orbits(self, *args, **kwargs
+                              )-> Tuple[DataLoader, DataLoader, DataLoader]:
+        """Generates a Dataloader from the orbits dataset 
+
+        Returns:
+            DataLoader: Dataloader of orbits
+        """
+        if self._orbits is None:
+            self._generate_orbits()
+        dl = DataLoader(self._orbits, self._labels, *args, **kwargs)
+        return dl
+    
+    def get_dataloader_persistence_diagrams(self, *args, **kwargs
+                              )-> Tuple[DataLoader, DataLoader, DataLoader]:
+        """Generates a Dataloader from the persistence diagrams dataset 
+
+        Returns:
+            DataLoader: Dataloader of persistence diagrams
+        """
+        if self._persistence_diagrams is None:
+            self._compute_persistence_diagrams()
+        dl = DataLoader(self._persistence_diagrams, self._labels, *args, **kwargs)
+        return dl
+    
+    def get_dataloader_combined(self, *args, **kwargs
+                              )-> Tuple[DataLoader, DataLoader, DataLoader]:
+        """Generates a Dataloader from the orbits dataset and the persistence diagrams
+
+        Returns:
+            DataLoader: Dataloader of orbits and persistence diagrams
+        """
+        if self._orbits is None:
+            self._generate_orbits()
+        dl = DataLoader(self._orbits, self._persistence_diagrams,
+                        self._labels, *args, **kwargs)
+        return dl
+        
 
 
 def generate_orbit_parallel(
