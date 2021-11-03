@@ -13,7 +13,7 @@ from torch import nn  # type: ignore
 from torch.optim import SGD, Adam, RMSprop  # type: ignore
 
 # Import Tensorflow writer
-#from torch.utils.tensorboard import SummaryWriter  # type: ignore
+from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
@@ -45,7 +45,7 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 model = SetTransformer(
             dim_input=len(homology_dimensions),
             dim_output=5,
-            attention_type="fast_attention").double()
+            attention_type="self_attention").double()
 # %%
 for x, y in dl_train:
     print(x.shape)
@@ -59,7 +59,7 @@ for x, y in dl_train:
 loss_fn = nn.CrossEntropyLoss()
 
 # initialise pipeline class
-pipe = Pipeline(model, [dl_train, dl_test], loss_fn, None)
+pipe = Pipeline(model, [dl_train, dl_test], loss_fn, writer)
 # %%
 pipe.train(Adam, 3, True, {"lr": 0.001})
 # %%
