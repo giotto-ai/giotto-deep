@@ -8,6 +8,23 @@ from einops import rearrange  # type: ignore
 from gtda.homology import WeakAlphaPersistence  # type: ignore
 
 
+class DataLoaderKwargs(object):
+    """Object to store keyword arguments for train, val, and test dataloaders
+    """
+    def __init__(self, *, train_kwargs, val_kwargs, test_kwargs):
+        self.train_kwargs = train_kwargs
+        self.val_kwargs = val_kwargs
+        self.test_kwargs = test_kwargs
+        
+    def get_train_args(self):
+        return self.train_kwargs
+    
+    def get_val_args(self):
+        return self.val_kwargs
+    
+    def get_test_args(self):
+        return self.test_kwargs
+
 class OrbitsGenerator(object):
     """Generate Orbit dataset consistent of orbits defined by the dynamical system
     x[n+1] = x[n] + r * y[n] * (1  - y[n]) % 1
@@ -195,7 +212,8 @@ class OrbitsGenerator(object):
                                                 / (1.0 - self._test_percentage))
                                                 )
     
-    def _get_data_loaders(self, list_of_arrays: List[np.ndarray], *args, **kwargs
+    def _get_data_loaders(self, list_of_arrays: List[np.ndarray],
+                          dataloaders_kwargs: DataLoaderKwargs
                           ) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a DataLoader for the given list of arrays.
 
@@ -212,16 +230,17 @@ class OrbitsGenerator(object):
         
         dl_train = DataLoader(TensorDataset(*(torch.tensor(a[self._train_idcs])
                                               for a in list_of_arrays)),
-                                *args, **kwargs)
+                                **dataloaders_kwargs.get_train_args())
         dl_val = DataLoader(TensorDataset(*(torch.tensor(a[self._val_idcs])
                                             for a in list_of_arrays)),
-                                *args, **kwargs)
+                                **dataloaders_kwargs.get_val_args())
         dl_test = DataLoader(TensorDataset(*(torch.tensor(a[self._train_idcs])
                                              for a in list_of_arrays)),
-                                *args, **kwargs)
+                                **dataloaders_kwargs.get_test_args())
         return dl_train, dl_val, dl_test
     
-    def get_dataloader_orbits(self, *args, **kwargs
+    def get_dataloader_orbits(self,
+                              dataloaders_kwargs: DataLoaderKwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the orbits dataset 
 
@@ -232,10 +251,10 @@ class OrbitsGenerator(object):
             self._generate_orbits()
         if self._train_idcs is None:
             self._split_data_idcs()
-        return self._get_data_loaders((self._orbits, self._labels), # type: ignore
-                                        *args, **kwargs)
+        return self._get_data_loaders([self._orbits, self._labels], # type: ignore
+                                        dataloaders_kwargs)
     
-    def get_dataloader_persistence_diagrams(self, *args, **kwargs
+    def get_dataloader_persistence_diagrams(self, dataloaders_kwargs: DataLoaderKwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the persistence diagrams dataset 
 
@@ -248,10 +267,10 @@ class OrbitsGenerator(object):
         if self._train_idcs is None:
             self._split_data_idcs()
 
-        return self._get_data_loaders((self._persistence_diagrams, self._labels), # type: ignore
-                                        *args, **kwargs)
+        return self._get_data_loaders([self._persistence_diagrams, self._labels], # type: ignore
+                                        dataloaders_kwargs)
     
-    def get_dataloader_combined(self, *args, **kwargs
+    def get_dataloader_combined(self, dataloaders_kwargs: DataLoaderKwargs,
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the orbits dataset and the persistence diagrams
 
@@ -262,10 +281,10 @@ class OrbitsGenerator(object):
             self._compute_persistence_diagrams()
         if self._train_idcs is None:
             self._split_data_idcs()
-        return self._get_data_loaders((self._orbits,  # type: ignore
+        return self._get_data_loaders([self._orbits,  # type: ignore
                                        self._persistence_diagrams,
-                                       self._labels),
-                                       *args, **kwargs)
+                                       self._labels],
+                                       dataloaders_kwargs)
         
 
 

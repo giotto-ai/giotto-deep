@@ -7,17 +7,21 @@ get_ipython().magic('autoreload 2')
 
 
 # %%
-from gdeep.data import OrbitsGenerator
+from gdeep.data import OrbitsGenerator, DataLoaderKwargs
 from gdeep.topology_layers import SetTransformer
 # %%
 homology_dimensions = (0, 1)
+
+dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 32},
+                                     val_kwargs = {"batch_size": 4},
+                                     test_kwargs = {"batch_size": 3})
 
 og = OrbitsGenerator(num_orbits_per_class=10,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.2,
                      test_percentage=0.2)
 
-dl_train, dl_val, dl_test = og.get_dataloader_orbits(batch_size=32)
+dl_train, dl_val, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 
 # %%
 
@@ -27,9 +31,6 @@ model = SetTransformer(
             attention_type="induced_attention").double()
 
 # %%
-for x, y in dl_train:
-    print(x.dtype)
+for x, y in dl_test:
     print(model(x).shape)
-# %%
-model.num_params
 # %%
