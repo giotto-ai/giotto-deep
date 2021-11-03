@@ -55,6 +55,8 @@ class Pipeline:
         self.loss_fn = loss_fn
         # integrate tensorboard
         self.writer = writer
+        if self.writer is None:
+            warnings.warn("No writer detected")
         self.DEVICE = DEVICE
         
     def reset_model(self):
@@ -99,9 +101,12 @@ class Pipeline:
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
-            self.writer.add_scalar(writer_tag + "/Loss/train",
-                                   loss.item(),
-                                   self.train_epoch*dl_tr.batch_size + batch)
+            try:
+                self.writer.add_scalar(writer_tag + "/Loss/train",
+                                       loss.item(),
+                                       self.train_epoch*dl_tr.batch_size + batch)
+            except AttributeError:
+                pass
             # Backpropagation
             self.optimizer.zero_grad()
             loss.backward()
@@ -114,7 +119,10 @@ class Pipeline:
                 print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
                       correct/((batch+1)*dl_tr.batch_size)*100,
                       " \t[",batch+1,"/", steps,"]                     ", end='\r')
-        self.writer.flush()
+        try:
+            self.writer.flush()
+        except AttributeError:
+            pass
         # accuracy:
         correct /= len(dl_tr)*dl_tr.batch_size
         t_loss /= len(dl_tr)
@@ -145,18 +153,25 @@ class Pipeline:
         try:
             # add data to tensorboard
             self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
-            self.writer.flush()
+            try:
+                self.writer.flush()
+            except AttributeError:
+                pass
         except NotImplementedError:
             warnings.warn("The PR curve is not being filled because too few data exist")
         # accuracy
         correct /= len(dl_val)*dl_val.batch_size
         val_loss /= len(dl_val)
-        self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
+        try:
+            self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
+        except AttributeError:
+            pass
         print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
                 Avg loss: {val_loss:>8f} \n")
-
-        self.writer.flush()
-
+        try:
+            self.writer.flush()
+        except AttributeError:
+            pass
         return val_loss, 100*correct
 
     def _add_pr_curve_tb(self, pred, class_label, class_probs, writer_tag=""):
@@ -168,11 +183,13 @@ class Pipeline:
         for class_index in range(len(pred[0])):
             tensorboard_truth = labels == class_index
             tensorboard_probs = probs[:, class_index]
-            self.writer.add_pr_curve(writer_tag+str(class_index),
-                                     tensorboard_truth,
-                                     tensorboard_probs,
-                                     global_step=0)
-
+            try:
+                self.writer.add_pr_curve(writer_tag+str(class_index),
+                                         tensorboard_truth,
+                                         tensorboard_probs,
+                                         global_step=0)
+            except AttributeError:
+                pass
     def _inner_loop(self, dl, class_probs, class_label,
                     loss, correct):
         """private function used inside the test
@@ -216,8 +233,10 @@ class Pipeline:
                                                     correct)
         # add data to tensorboard
         self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
-
-        self.writer.flush()
+        try:
+            self.writer.flush()
+        except AttributeError:
+            pass
 
         # accuracy
         correct /= len(dl_test)*dl_test.batch_size
@@ -422,8 +441,10 @@ class Pipeline:
                                                    scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial)
-
-        self.writer.flush()
+        try:
+            self.writer.flush()
+        except AttributeError:
+            pass
         # put the mean of the cross_val
         
         return valloss, valacc
