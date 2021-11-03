@@ -8,7 +8,7 @@ import torch
 
 def test_gfdbc_2_dim():
 
-    circle_detect_nn = FFNet(0, [2, 2])
+    circle_detect_nn = FFNet([2, 2])
 
     g = GradientFlowDecisionBoundaryCalculator(
             model=circle_detect_nn,
@@ -22,7 +22,7 @@ def test_gfdbc_2_dim():
 
 def test_gfdbc_multiclass():
 
-    circle_nn_3d = FFNet(0, [3, 3])
+    circle_nn_3d = FFNet([3, 3])
 
     g = GradientFlowDecisionBoundaryCalculator(model=
                                                circle_nn_3d,

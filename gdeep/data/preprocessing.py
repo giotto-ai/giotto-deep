@@ -4,16 +4,25 @@ from torchtext.data.utils import get_tokenizer
 from collections import Counter
 from torchtext.vocab import Vocab
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
+
 
 class TextDataset(Dataset):
     """This class is the base class for the tori-datasets
 
     Args:
-        data (Tensor): tensor with first dimension
+        data (Tensor):
+            tensor with first dimension
             the number of samples
-        taregts (list): list of labels
-        transform (Callable): act on the single images
-        target_transform (Callable): act on the single label
+        taregts (list):
+            list of labels
+        transform (Callable):
+            act on the single images
+        target_transform (Callable):
+            act on the single label
     """
 
     def __init__(self, data, targets,
@@ -41,9 +50,11 @@ class PreprocessText:
     """Class to preprocess text dataloaders
 
     Args:
-        name (string): check the available datasets at
+        name (string):
+            check the available datasets at
             https://pytorch.org/vision/stable/datasets.html
-        n_pts (int): number of points in customly generated
+        n_pts (int):
+            number of points in customly generated
             point clouds
     """
     def __init__(self, dataloaders, tokenizer=None):
@@ -54,7 +65,7 @@ class PreprocessText:
             self.tokenizer = tokenizer
         counter = Counter()
         for (label, text) in self.dataloaders[0]:
-            if type(text) is tuple:
+            if type(text) is tuple or type(text) is list:
                 text = text[0]
             counter.update(self.tokenizer(text))
         # self.vocabulary = Vocab(counter, min_freq=1)
@@ -66,7 +77,8 @@ class PreprocessText:
         vocabulary. Hence, data can thus be treated as point data.
 
         Returns:
-            (tuple): training_dataloader, test_dataloader
+            (tuple):
+                training_dataloader, test_dataloader
         """
 
         label_pipeline = lambda x: int(x) - 1
@@ -79,39 +91,42 @@ class PreprocessText:
         
         for (_label, _text) in self.dataloaders[0]:
             label_list.append(label_pipeline(_label))
-            if type(_text) is tuple:
+            if type(_text) is tuple or type(_text) is list:
                 _text = _text[0]
             processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64)
+                                          dtype=torch.int64).to(DEVICE)
             MAX_LENGTH = max(MAX_LENGTH, processed_text.shape[0])
             text_list.append(processed_text)
             # offset_list.append(processed_text.size(0))
 
-        label_list = torch.tensor(label_list)
+        label_list = torch.tensor(label_list).to(DEVICE)
         text_list = torch.stack([torch.cat([item,
                                             pad_item *
                                             torch.ones(MAX_LENGTH -
-                                                       item.shape[0])])
-                                 for item in text_list])
+                                                       item.shape[0]
+                                            ).to(DEVICE)])
+                                 for item in text_list]).to(DEVICE)
 
         # offset_list = torch.tensor(offset_list[:-1]).cumsum(dim=0)
         training_data = TextDataset(text_list, label_list)
         label_list, text_list = [], []
 
         for (_label, _text) in self.dataloaders[1]:
-            if type(_text) is tuple:
+            if type(_text) is tuple or type(_text) is list:
                 _text = _text[0]
             label_list.append(label_pipeline(_label))
             processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64)
-            text_list.append(processed_text)
+                                          dtype=torch.int64).to(DEVICE)
+            text_list.append(processed_text.to(DEVICE))
             # offset_list.append(processed_text.size(0))
-        label_list = torch.tensor(label_list)
+        label_list = torch.tensor(label_list).to(DEVICE)
         text_list = torch.stack([torch.cat([item,
                                             pad_item *
                                             torch.ones(MAX_LENGTH -
-                                            item.shape[0])])
-                                            for item in text_list])
+                                            item.shape[0]).to(DEVICE)
+                                            ]).to(DEVICE)
+                                            for item in text_list]
+                                            ).to(DEVICE)
 
         test_data = TextDataset(text_list, label_list)
         train_dataloader = DataLoader(training_data,
@@ -128,11 +143,11 @@ class PreprocessText:
         for (_label, _text) in batch:
             label_list.append(label_pipeline(_label))
             processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64)
+                                          dtype=torch.int64).to(DEVICE)
             text_list.append(processed_text)
             offsets.append(processed_text.size(0))
-        label_list = torch.tensor(label_list, dtype=torch.int64)
-        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
-        text_list = torch.cat(text_list)
+        label_list = torch.tensor(label_list, dtype=torch.int64).to(DEVICE)
+        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0).to(DEVICE)
+        text_list = torch.cat(text_list).to(DEVICE)
         return text_list, label_list, offsets
 

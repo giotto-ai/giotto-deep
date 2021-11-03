@@ -20,3 +20,7 @@ torchtext
 html2image
 optuna
 h5py
+sphinx_rtd_theme
+torch_tb_profiler
+giotto-ph
+Pillow

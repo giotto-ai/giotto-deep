@@ -1,6 +1,8 @@
 import torch
 from torch import optim
-from gtda.homology import VietorisRipsPersistence as vrp
+#from gtda.homology import VietorisRipsPersistence as vrp
+#from gtda.homology import FlagserPersistence as flp
+from gph.python import ripser_parallel
 from gtda.homology import FlagserPersistence as flp
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -13,9 +15,17 @@ from functools import reduce
 from typing import Iterator
 
 
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+    print("Using GPU!")
+else:
+    DEVICE = torch.device("cpu")
+
+
 class PersistenceGradient():
     '''This class computes the gradient of the persistence
-    diagram with respect to a point cloud.
+    diagram with respect to a point cloud. The algorithms has
+    first been developed in https://arxiv.org/abs/2010.08356 .
 
     Discalimer: this algorithm works well for generic point clouds.
     In case your point cloud has many simplices with same
@@ -23,23 +33,30 @@ class PersistenceGradient():
     features may fail to disambiguate.
 
     Args:
-        zeta (float): the relative weight of the regularisation part
+        zeta (float): 
+            the relative weight of the regularisation part
             of the `persistence_function`
-        homology_dimensions (tuple): tuple of homology dimensions
-        collapse_edges (bool): whether to use Collapse or not
-        max_edge_length (float or np.inf): the maximum edge length
+        homology_dimensions (tuple): 
+            tuple of homology dimensions
+        collapse_edges (bool, default: False): 
+            whether to use Collapse or not. Not implemented yet.
+        max_edge_length (float or np.inf): 
+            the maximum edge length
             to be consider not infinity
-        approx_digits (int): digits after which to trunc floats for
+        approx_digits (int): 
+            digits after which to trunc floats for
             list comparison
-        metric (string): either `"euclidean"` or `"precomputed"`. The
-            second one is in case of X being the pairwise-distance matrix or
+        metric (string): either `"euclidean"` or `"precomputed"`. 
+            The second one is in case of X being 
+            the pairwise-distance matrix or
             the adjaceny matrix of a graph.
         directed (bool): whether the input graph is a directed graph
             or not. Relevant only if `metric = "precomputed"`
+        
     '''
 
     def __init__(self, zeta: float = 0.5, homology_dimensions: tuple = (0, 1),
-                 collapse_edges: bool = True, max_edge_length: float = np.inf,
+                 collapse_edges: bool = False, max_edge_length: float = np.inf,
                  approx_digits: int = 6, metric: str = "euclidean",
                  directed: bool = False):
 
@@ -84,7 +101,7 @@ class PersistenceGradient():
         return np.concatenate(individual_results)
 
     def _simplicial_pairs_of_indices(self, X):
-        '''Private function to compute the pair of indice in X to
+        '''Private function to compute the pair of indices in X to
         matching the simplices.'''
         simplices = list(self.powerset(list(range(0, len(X))),
                          max(self.homology_dimensions) + 2))[1:]
@@ -105,7 +122,7 @@ class PersistenceGradient():
     def phi(self, X: torch.Tensor) -> torch.Tensor:
         '''This function is from $(R^d)^n$ to $R^{|K|}$,
         where K is the top simplicial complex of the VR filtration.
-        It is ddefined as:
+        It is defined as:
         $\Phi_{\sigma}(X)=max_{i,j \in \sigma}||x_i-x_j||.$ '''
 
         if self.metric == "precomputed":
@@ -140,21 +157,13 @@ class PersistenceGradient():
             homology_dim (tensor): this 1d tensor contains the homology
                 group index'''
 
-        if self.directed and self.metric == "precomputed":
-            dgms = flp().fit_transform([X.detach().numpy()])
-            pairs = dgms[0]
-        else:
-            vr = vrp(metric=self.metric,
-                     homology_dimensions=self.homology_dimensions,
-                     max_edge_length=self.max_edge_length,
-                     collapse_edges=self.collapse_edges)
-            dgms = vr.fit_transform([X.detach().numpy()])
-            pairs = dgms[0]
+        dgms = flp().fit_transform([X.detach().numpy()])
+        pairs = dgms[0]
         return pairs[:, :2], pairs[:, 2]
 
     def _persistence(self, X):
         '''This function computess the persistence permutation.
-        Thi permutation permutes the filtration values and matches
+        This permutation permutes the filtration values and matches
         them as follows:
         $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
         \times \mathbb R^q, \Phi(X) \mapsto D = \cup_i^p
@@ -162,8 +171,7 @@ class PersistenceGradient():
         \times \cup_j^q (\Phi_{\sigma_j}(X),+\infty).$
 
         Args:
-            phi (list): this is the the list of all the ordered filtration
-                values
+            X (np.array): this is the point cloud
 
         Returns:
             persistence_pairs (2darray): this is an array of pairs (i,j). `i`
@@ -200,6 +208,48 @@ class PersistenceGradient():
             except ValueError:
                 pass
         return persistence_pairs_array, phi, homology_dims
+    
+    def _computing_persistence_with_gph(self, X):
+        """This method accepts the pointcloud and returns the
+        persistence diagram in the following form
+        $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
+        \times \mathbb R^q, \Phi(X) \mapsto D = \cup_i^p
+        (\Phi_{\sigma_i1}(X) ,\Phi_{\sigma_i2}(X) )
+        \times \cup_j^q (\Phi_{\sigma_j}(X),+\infty).$
+        The persstence diagram ca be readily used for 
+        gradient descent.
+
+        Args:
+            X (np.array): 
+                point cloud
+
+        Returns:
+            list of shape (n, 3):
+                Persistence pairs (correspondig to the
+                first 2 dimensions) where the last dimension 
+                contains the homology dimension
+        """
+        output = ripser_parallel(X.detach().numpy(),
+                                 maxdim=max(self.homology_dimensions),
+                                 thresh=self.max_edge_length,
+                                 coeff=2,
+                                 metric=self.metric,
+                                 collapse_edges=self.collapse_edges,
+                                 n_threads=-1,
+                                 ret_representative_simplices=True)
+        
+        persistence_pairs = []
+        #print(output["rpsm"])
+        for dim in self.homology_dimensions:
+            if dim == 0:
+                persistence_pairs += [(0, torch.norm(X[x[1]]-X[x[2]]),
+                                      0) for x in output["rpsm"][dim]]
+            else:
+                persistence_pairs += [(torch.norm(X[x[1]]-X[x[0]]), 
+                                      torch.norm(X[x[3]]-X[x[2]]), 
+                                      dim) for x in output["rpsm"][1][dim-1]]
+        return persistence_pairs
+        
 
     def persistence_function(self, X: torch.Tensor) -> torch.Tensor:
         '''This is the Loss functon to optimise.
@@ -209,10 +259,16 @@ class PersistenceGradient():
         function on the filtration values that is (p,q)-permutation
         invariant.'''
         out = 0
-        persistence_array, phi, _ = self._persistence(X)
-        for item in persistence_array:
-            if item[1] != -1:
-                out += (phi[item[1]]-phi[item[0]])
+        # this is much slower
+        if self.directed and self.metric == "precomputed":
+            persistence_array, phi, _ = self._persistence(X)
+            for item in persistence_array:
+                if item[1] != -1:
+                    out += (phi[item[1]]-phi[item[0]])
+        else:
+            persistence_array = self._computing_persistence_with_gph(X)
+            for item in persistence_array:
+                out += item[1]-item[0]
         reg = (X**2).sum()  # regularisation term
         return -out + self.zeta*reg  # maximise persistence
 
@@ -235,6 +291,7 @@ class PersistenceGradient():
 
         if not type(X) == torch.Tensor:
             X = torch.tensor(X)
+        X.to(DEVICE)
         X.requires_grad = True
         grads = torch.zeros_like(X)
         x = np.array([])

@@ -11,8 +11,10 @@ def knn_distance_matrix(X, k=3):
     to the k-NN graph distance of the datasets X
 
     Args:
-        X (ndarray)
-        k (int): the numbers of neighbors for the k-NN graph
+        X (ndarray):
+            the point cloud
+        k (int):
+            the numbers of neighbors for the k-NN graph
 
     """
 
@@ -30,24 +32,31 @@ def persistence_diagrams_of_activations(activations_list,
     layers of type layer_types
 
     Args:
-        activations_list (list): list of activation
+        activations_list (list):
+            list of activation
             tensors for each layer
-        homology_dimensions (list, optional): list of homology
-            dimensions. Defaults to [0, 1].
-        k (optional) : number of neighbors parameter
+        homology_dimensions (list, optional):
+            list of homology
+            dimensions. Defaults to `[0, 1]`.
+        k (optional) :
+            number of neighbors parameter
             of the k-NN distance .
-        mode (optional) : choose the filtration ('VR'
+        mode (optional) :
+            choose the filtration ('VR'
             or 'alpha') to compute persistence default to 'VR'.
-        max_edge_length (float)
+        max_edge_length (float):
+            maximum edge length of the simplices forming
+            the complex
 
     Returns:
-        (list): list of persistence diagrams of activations
+        (list):
+            list of persistence diagrams of activations
             of the different layers
     """
     for i, activ in enumerate(activations_list):
         if len(activ.shape) > 2:  # in caso of non FF layers
-            activations_list[i] = activations_list[i].view(activ.shape[0],
-                                                           -1)
+            activations_list[i] = activ.view(activ.shape[0], -1)
+
     if k > 0 and mode == 'VR':
         VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
                                      metric='precomputed',
@@ -68,6 +77,8 @@ def persistence_diagrams_of_activations(activations_list,
                                      collapse_edges=True)
 
     if k > 0 and mode == 'VR':
+        for i, activ in enumerate(activations_list):
+            activations_list[i] = activ.cpu()
         dist_matrix = knn_distance_matrix(activations_list,
                                           k=k)
         persistence_diagrams = VR.fit_transform(dist_matrix)

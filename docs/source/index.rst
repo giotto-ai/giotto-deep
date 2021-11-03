@@ -10,29 +10,11 @@ Welcome to giotto-deep's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-
-Indices and tables
-==================
-
-.. automodule:: gdeep.create_nets
-   :members:
-   
-.. automodule:: gdeep.create_data
-   :members:
-   
-.. automodule:: gdeep.decision_boundary
-   :members:
-   
-.. automodule:: gdeep.plotting
-   :members:
-   
-.. automodule:: gdeep.gradcam
-   :members:
+   installation
+   modules/index
 
 References
 ----------
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

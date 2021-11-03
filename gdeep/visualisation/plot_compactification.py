@@ -30,11 +30,12 @@ class Compactification():
         n_epochs (int, default 5000):
             number of epochs needed to push points to the
             decison boundary
+        boundary_tuple (list):
+            list of pairs (left,right).
+            This list defines the boundaries in each coordinates
         neural_net (nn.Module):
             the trained network of which to compute
             the boundary
-        boundary_tuple (list): list of pairs (left,right).
-            This list defines the boundaries in each coordinates
     '''
 
     def __init__(self, precision=0.4,
@@ -104,7 +105,7 @@ class Compactification():
                                                         optimizer=lambda params:
                                                         torch.optim.Adam(params))
             gf.step(number_of_steps=self.n_epochs)
-            res = gf.get_filtered_decision_boundary(delta=self.precision).detach()
+            res = gf.get_filtered_decision_boundary(delta=self.precision).detach().cpu()
             # back to 0-th patch
             plot_points_tensor = self.transition_to_patch(res, i)
             self.patches.append(plot_points_tensor)
@@ -141,7 +142,8 @@ class Compactification():
         '''This functions plots the points in each chart.
 
         Args:
-            i (int): the chart index, from -1 to n_features
+            i (int):
+                the chart index, from `-1` to `n_features`
         '''
         df_plot = pd.DataFrame(self.list_of_pts_in_patches[i], columns =
                                ["x" + str(j) for j in

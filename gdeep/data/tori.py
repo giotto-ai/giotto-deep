@@ -36,11 +36,15 @@ class GenericDataset(Dataset):
     """This class is the base class for the tori-datasets
 
     Args:
-        data (Tensor): tensor with first dimension
+        data (Tensor):
+            tensor with first dimension
             the number of samples
-        taregts (list): list of labels
-        transform (Callable): act on the single images
-        target_transform (Callable): act on the single label
+        taregts (list):
+            list of labels
+        transform (Callable):
+            act on the single images
+        target_transform (Callable):
+            act on the single label
     """
 
     def __init__(self, data, targets,
@@ -69,7 +73,8 @@ class CreateToriDataset:
     family of tori-datasets
 
     Args:
-        name (string): name of the torus dataset to generate
+        name (string):
+            name of the torus dataset to generate
     """
     def __init__(self, name):
         self.name = name
@@ -97,15 +102,22 @@ class CreateToriDataset:
         """Generate point cloud of a single torus
 
         Args:
-            label (int): label of the data points
-            n_points (int): number of sample points for each direction
-            noise (float): noise
-            rotation (Rotation): rotation class
-            base_point (np.array): center of the torus
-            radius (float)
+            label (int):
+                label of the data points
+            n_points (int):
+                number of sample points for each direction
+            noise (float):
+                noise
+            rotation (Rotation):
+                rotation class
+            base_point (np.array):
+                center of the torus
+            radius (float):
+                radius of the torus
 
         Returns:
-            (np.array, np.array): data_points, labels
+            (np.array, np.array):
+                data_points, labels
         """
         torus_point_clouds = \
             np.asarray(
@@ -138,16 +150,24 @@ class CreateToriDataset:
         2 radii for its definition
 
         Args:
-            label (int): label of the data points
-            n_points (int): number of sample points for each direction
-            noise (float): noise
-            rotation: Rotation
-            base_point (np.array): center of the torus
-            radius1 (float)
-            radius2 (float)
+            label (int):
+                label of the data points
+            n_points (int):
+                number of sample points for each direction
+            noise (float):
+                noise
+            rotation:
+                Rotation
+            base_point (np.array):
+                center of the torus
+            radius1 (float):
+                radius of torus 1
+            radius2 (float):
+                radius of torus 2
 
         Returns:
-            (np.array, np.array): data_points, labels
+            (np.array, np.array):
+                data_points, labels
         """
         torus_point_clouds = np.asarray(
             [
@@ -179,10 +199,12 @@ class CreateToriDataset:
         the different Tori.
 
         Args:
-            entangled (bool, optional): Either entangled or unentangled tori. Defaults to True.
+            entangled (bool, optional):
+                Either entangled or unentangled tori. Defaults to True.
 
         Returns:
-            (tuple): the tuple for data and labels
+            (tuple):
+                the tuple for data and labels
         """
         torus_point_cloud = {}
         torus_labels = {}
@@ -225,11 +247,14 @@ class CreateToriDataset:
         The labels correspond to the different Tori.
 
         Args:
-            m (int, defalut=2): Number of entangled tori per axis
-            n_pts (int): Number of points per torus
+            m (int, defalut=2):
+                Number of entangled tori per axis
+            n_pts (int):
+                Number of points per torus
 
         Returns:
-            (tuple): the tuple for data and labels
+            (tuple):
+                the tuple for data and labels
         """
         data1, labels1 = self._make_torus_point_cloud2(0, n_pts,
                                                        0.1, Rotation(0, 1, 0),
@@ -257,11 +282,14 @@ class CreateToriDataset:
         The labels correspond to the different blob.
 
         Args:
-            m (int, defalut=2): Number of entangled tori per axis
-            n_pts (int): Number of points per torus
+            m (int, defalut=2):
+                Number of entangled tori per axis
+            n_pts (int):
+                Number of points per torus
 
         Returns:
-            (tuple): the tuple for data and labels
+            (tuple):
+                the tuple for data and labels
         """
         data, lab = make_blobs(n_samples=n_pts, centers=m,
                                n_features=3, random_state=42)

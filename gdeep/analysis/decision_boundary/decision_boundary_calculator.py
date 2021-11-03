@@ -81,8 +81,7 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
                  optimizer: Callable[[list], torch.optim.Optimizer]):
         self.sample_points = initial_points
         self.sample_points.requires_grad = True
-
-        output = model(self.sample_points)
+        output = model(self.sample_points).to(DEVICE)
         output_shape = output.size()
 
         if not len(output_shape) in [1, 2]:
@@ -123,16 +122,23 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
                  integrator=None):
         """
         Args:
-            model (Callable[[torch.Tensor], torch.Tensor]): Function that maps
+            model (Callable[[torch.Tensor], torch.Tensor]):
+                Function that maps
                 a `torch.Tensor` of shape (N, D_in) to a tensor either of
                 shape (N) and with values in [0,1] or of shape (N, D_out) with
                 values in [0, 1] such that the last axis sums to 1.
-            initial_points (torch.Tensor): `torch.Tensor` of shape (N, D_in)
+
+            initial_points (torch.Tensor):
+                `torch.Tensor` of shape (N, D_in)
                 containing the starting points.
-            initial_vectors(torch.Tensor): `torch.Tensor` of shape (N, D_in)
+
+            initial_vectors(torch.Tensor):
+                `torch.Tensor` of shape (N, D_in)
                 containing the starting tangent vectors (directions).
                 Prefarably normalized.
-            integrator: unused
+
+            integrator:
+                unused
         """
         self.points = initial_points
 

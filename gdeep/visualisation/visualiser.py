@@ -11,11 +11,13 @@ from captum.attr import visualization
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import matplotlib.pyplot as plt
+from captum.attr import LayerAttribution
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
+
 
 class Visualiser:
     """This class is the bridge to send to the tensorboard
@@ -23,8 +25,10 @@ class Visualiser:
     different kinds to tensors
 
     Args:
-        pipe (Pipeline)
-        writer (tensorboard SummaryWriter)
+        pipe (Pipeline):
+            the pipeline to get info from
+        writer (tensorboard SummaryWriter):
+            the tensorboard writer
     """
 
     def __init__(self, pipe):
@@ -52,7 +56,7 @@ class Visualiser:
             if index == 1000:
                 break
         max_number = min(1000, len(labels_list))
-        features = torch.cat(features_list)
+        features = torch.cat(features_list).to(DEVICE)
         if len(features.shape) >= 3:
             if len(features.shape) == 3:
                 features = features.reshape(max_number, -1,
@@ -81,7 +85,7 @@ class Visualiser:
 
     def plot_activations(self, example=None):
         """Plot PCA of the activations of all layers of the
-        self.model
+        `self.model`
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
         inputs = []
@@ -138,7 +142,8 @@ class Visualiser:
         hypersurface defined by self.loss_fn == 0.5
 
         Args:
-            copact (bool): if plotting the compactified
+            compact (bool):
+                if plotting the compactified
                 version of the boundary
         """
 
@@ -169,16 +174,18 @@ class Visualiser:
                                            tag="decision_boundary",
                                            global_step=0)
             self.pipe.writer.flush()
-            return db, None, None
+            return db.cpu(), None, None
 
     def betti_plot_layers(self, homology_dimension=(0, 1), example=None):
         """
         Args:
-            homology_dimension (int array, optional): An array of
+            homology_dimension (int array, optional):
+                An array of
                 homology dimensions
 
         Returns:
-           (None): a tuple of figures representing the Betti surfaces
+           (None):
+                a tuple of figures representing the Betti surfaces
                 of the data accross layers of the NN, with one figure
                 per dimension in homology_dimensions. Otherwise, a single
                 figure representing the Betti curve of the single sample
@@ -203,6 +210,17 @@ class Visualiser:
             plots[i].show()
 
     def plot_interpreter_text(self, interpreter):
+        """This method allows to plot the results of an
+        Interpreter for text data.
+
+        Args:
+            interpreter (Interpreter):
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+                
+        Returns:
+            matplotlib.figure
+        """
         viz = interpreter.stored_visualisations
         fig = visualization.visualize_text(viz)
         name = "out.png"
@@ -218,52 +236,81 @@ class Visualiser:
         return fig
 
     def plot_interpreter_image(self, interpreter):
+        """This method allows to plot the results of an
+        Interpreter for image data.
+
+        Args:
+            interpreter (Interpreter):
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+                
+        Returns:
+            matplotlib.figure
+        """
         default_cmap = LinearSegmentedColormap.from_list('custom blue',
                                                          [(0, '#ffffff'),
                                                           (0.25, '#000000'),
                                                           (1, '#000000')],
                                                          N=256)
+        try:
+            attrib = np.transpose(interpreter.attrib.squeeze().detach().cpu().numpy(),
+                                  (1, 2, 0))
+        except ValueError:
+            attrib = np.transpose(LayerAttribution.interpolate(interpreter.attrib.detach().cpu(),
+                                                               tuple(interpreter.image.squeeze().detach().cpu().shape[-2:])).squeeze(0),
+                                  (1, 2, 0))
+            attrib = torch.stack((attrib, attrib, attrib),axis=2).squeeze(-1).detach().cpu().numpy()
+        img = np.transpose(interpreter.image.squeeze().detach().cpu().numpy(),
+                           (1, 2, 0))
 
         fig, _ = visualization.visualize_image_attr_multiple(
-            np.transpose(interpreter.attrib.squeeze().cpu().detach().numpy(),
-                         (1, 2, 0)),
-            np.transpose(interpreter.image.squeeze().cpu().detach().numpy(),
-                          (1, 2, 0)),
-            ["original_image", "heat_map"],
-            ["all", "positive"],
-            cmap=default_cmap,
+            attrib,
+            img,
+            ["original_image", "heat_map", "blended_heat_map"],
+            ["all", "all", "all"],
             show_colorbar=True)
         self.pipe.writer.add_figure(interpreter.method,
                                     fig)
         return fig
 
     def plot_interpreter_tabular(self, interpreter):
+        """This method allows to plot the results of an
+        Interpreter for tabular data.
+
+        Args:
+            interpreter (Interpreter):
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+                
+        Returns:
+            matplotlib.figure
+        """
         # prepare attributions for visualization
         X_test = interpreter.X
         x_axis_data = np.arange(X_test.shape[1])
         x_axis_data_labels = list(map(lambda idx: idx,
                                       x_axis_data))
 
-        ig_attr_test_sum = interpreter.ig_attr_test.detach().numpy().sum(0)
+        ig_attr_test_sum = interpreter.ig_attr_test.detach().cpu().numpy().sum(0)
         ig_attr_test_norm_sum = ig_attr_test_sum / \
             np.linalg.norm(ig_attr_test_sum, ord=1)
 
         ig_nt_attr_test_sum = \
-            interpreter.ig_nt_attr_test.detach().numpy().sum(0)
+            interpreter.ig_nt_attr_test.detach().cpu().numpy().sum(0)
         ig_nt_attr_test_norm_sum = ig_nt_attr_test_sum / \
             np.linalg.norm(ig_nt_attr_test_sum, ord=1)
 
         dl_attr_test_sum = \
-            interpreter.dl_attr_test.detach().numpy().sum(0)
+            interpreter.dl_attr_test.detach().cpu().numpy().sum(0)
         dl_attr_test_norm_sum = dl_attr_test_sum / \
             np.linalg.norm(dl_attr_test_sum, ord=1)
 
         # gs_attr_test_sum = \
-        #     interpreter.gs_attr_test.detach().numpy().sum(0)
+        #     interpreter.gs_attr_test.detach().cpu().numpy().sum(0)
         # gs_attr_test_norm_sum = gs_attr_test_sum / \
         #     np.linalg.norm(gs_attr_test_sum, ord=1)
 
-        fa_attr_test_sum = interpreter.fa_attr_test.detach().numpy().sum(0)
+        fa_attr_test_sum = interpreter.fa_attr_test.detach().cpu().numpy().sum(0)
         fa_attr_test_norm_sum = fa_attr_test_sum / \
             np.linalg.norm(fa_attr_test_sum, ord=1)
 
