@@ -19,6 +19,6 @@ __all__ = [
     'generate_orbit_parallel',
     'create_pd_orbits',
     'OrbitsGenerator',
-    "DataLoaderKwargs"
+    'DataLoaderKwargs',
     'DataLoaderFromImages'
     ]

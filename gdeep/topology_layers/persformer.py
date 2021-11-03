@@ -47,10 +47,11 @@ class SetTransformer(nn.Module):
     def __init__(
         self,
         dim_input=3,
-        num_outputs=1,
+        num_outputs=1,  # for classification tasks this should be 1
         dim_output=40,  # number of classes
         dim_hidden=128,
         num_heads=4,
+        num_inds=32,
         ln=False,  # use layer norm
         n_layers=1,
         attention_type="self_attention",
@@ -79,22 +80,25 @@ class SetTransformer(nn.Module):
 
         self.n_layers = n_layers
         if attention_type == "induced_attention":
+            self.emb = ISAB(dim_input, dim_hidden, num_heads, num_inds=num_inds, ln=ln)
             self.enc_list = nn.ModuleList([
                 nn.Sequential(
-                ISAB(dim_hidden, dim_hidden, num_heads, ln=ln),
+                ISAB(dim_hidden, dim_hidden, num_heads, num_inds=num_inds, ln=ln),
                 nn.Dropout(p=dropout)
                 )
-                for _ in range(n_layers)
+                for _ in range(n_layers - 1)
             ])
         elif attention_type == "self_attention":
+            self.emb = SAB(dim_input, dim_hidden, num_heads, ln=ln)
             self.enc_list = nn.ModuleList([
                 SAB(dim_hidden, dim_hidden, num_heads, ln=ln)
-                for _ in range(n_layers)
+                for _ in range(n_layers - 1)
             ])
         elif attention_type == "fast_attention":
+            self.emb = FastAttention(dim_input, dim_hidden, heads=num_heads)
             self.enc_list = nn.ModuleList([
                 nn.Sequential(
-                    FastAttention(dim_hidden, heads=num_heads, dim_head=64),
+                    FastAttention(dim_hidden, dim_hidden, heads=num_heads, dim_head=64),
                     nn.Dropout(p=dropout),
                 )
                 for _ in range(n_layers)
@@ -121,8 +125,9 @@ class SetTransformer(nn.Module):
         x = self.emb(x)
         for l in self.enc_list:
             x = l(x)
+        print("output size encoder:", x.size())
         x = self.dec(x)
-        return x.squeeze()
+        return x.squeeze()  # squeeze all dimensions of size 1
 
     @property
     def num_params(self) -> int:

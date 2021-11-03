@@ -1,11 +1,11 @@
 # from https://github.com/juho-lee/set_transformer/blob/master/modules.py
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch import einsum
+import torch  # type: ignore
+import torch.nn as nn  # type: ignore
+import torch.nn.functional as F  # type: ignore
+from torch import einsum  # type: ignore
 import math
-from einops import rearrange, reduce
+from einops import rearrange, reduce  # type: ignore
 
 
 class MAB(nn.Module):
@@ -74,7 +74,8 @@ class FastAttention(nn.Module):
     """https://github.com/lucidrains/fast-transformer-pytorch/blob/main/fast_transformer_pytorch/fast_transformer_pytorch.py"""
     def __init__(
         self,
-        dim,
+        input_dim,
+        output_dim,
         *,
         heads = 8,
         dim_head = 64
@@ -84,7 +85,7 @@ class FastAttention(nn.Module):
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
+        self.to_qkv = nn.Linear(input_dim, inner_dim * 3, bias = False)
 
 
 
@@ -95,7 +96,7 @@ class FastAttention(nn.Module):
 
         self.to_r = nn.Linear(dim_head, dim_head)
 
-        self.to_out = nn.Linear(inner_dim, dim)
+        self.to_out = nn.Linear(inner_dim, output_dim)
 
     def forward(self, x):
         h = self.heads

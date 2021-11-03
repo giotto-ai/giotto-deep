@@ -204,13 +204,20 @@ class OrbitsGenerator(object):
         idcs = np.arange(self._num_classes
                             * self._num_orbits_per_class)
 
-        rest_idcs, self._test_idcs = train_test_split(idcs,
-                                                      test_size=self._test_percentage)
-        self._train_idcs, self._val_idcs = train_test_split(rest_idcs,
-                                                test_size =(
-                                                self._validation_percentage
-                                                / (1.0 - self._test_percentage))
-                                                )
+        if self._test_percentage > 0.0:
+            rest_idcs, self._test_idcs = train_test_split(idcs,
+                                                        test_size=self._test_percentage)
+        else:
+            rest_idcs, self._test_idcs = idcs, []  # type: ignore
+            
+        if self._validation_percentage > 0.0:
+            self._train_idcs, self._val_idcs = train_test_split(rest_idcs,
+                                                    test_size =(
+                                                    self._validation_percentage
+                                                    / (1.0 - self._test_percentage))
+                                                    )
+        else:
+            self._train_idcs, self._val_idcs = rest_idcs, []  # type: ignore
     
     def _get_data_loaders(self, list_of_arrays: List[np.ndarray],
                           dataloaders_kwargs: DataLoaderKwargs

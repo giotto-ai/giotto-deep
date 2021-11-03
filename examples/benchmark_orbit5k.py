@@ -42,11 +42,10 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 
 # %%
 # Define the model
-from gdeep.topology_layers import SetTransformer
 model = SetTransformer(
             dim_input=len(homology_dimensions),
             dim_output=5,
-            attention_type="induced_attention").double()
+            attention_type="fast_attention").double()
 # %%
 for x, y in dl_train:
     print(x.shape)
@@ -66,17 +65,3 @@ pipe.train(Adam, 3, True, {"lr": 0.001})
 # %%
 for batch, (X, y) in enumerate(dl_train):
     print(X.shape)
-# %%
-from torch.utils.data.sampler import SubsetRandomSampler
-tr_idx = list(range(len(dl_train)))
-dl_tr = torch.utils.data.DataLoader(dl_train.dataset,
-                                    shuffle=False,
-                                    #pin_memory=True,
-                                    batch_size=32,
-                                    sampler=SubsetRandomSampler(tr_idx))
-# %%
-for batch, (X, y) in enumerate(dl_tr):
-    print(X.shape)
-# %%
-tr_idx
-# %%

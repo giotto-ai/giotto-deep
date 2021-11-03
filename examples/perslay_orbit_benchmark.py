@@ -1,6 +1,12 @@
 # %%
-%load_ext autoreload
-%autoreload 2
+from IPython import get_ipython  # type: ignore
+
+# %% 
+get_ipython().magic('load_ext autoreload')
+get_ipython().magic('autoreload 2')
+
+
+# %%
 import random
 import time
 import pprint

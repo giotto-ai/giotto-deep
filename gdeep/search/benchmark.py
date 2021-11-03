@@ -1,6 +1,6 @@
 from gdeep.pipeline import Pipeline
 from gdeep.utility import _are_compatible
-import torch
+import torch  # type: ignore
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
