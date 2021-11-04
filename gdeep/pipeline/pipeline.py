@@ -52,6 +52,8 @@ class Pipeline:
         self.dataloaders = dataloaders  # train and test
         self.train_epoch = 0
         self.val_epoch = 0
+        self.best_val_loss = np.inf
+        self.best_val_acc = 0
         self.loss_fn = loss_fn
         # integrate tensorboard
         self.writer = writer
@@ -101,9 +103,9 @@ class Pipeline:
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
-                self.writer.add_scalar(writer_tag + "/Loss/train",
+                self.writer.add_scalar(writer_tag + "/loss/train",
                                        loss.item(),
-                                       self.train_epoch*dl_tr.batch_size + batch)
+                                       self.train_epoch*len(dl_tr) + batch)
             except AttributeError:
                 pass
             # Backpropagation
@@ -128,7 +130,7 @@ class Pipeline:
         print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
         return t_loss, correct*100
 
-    def _val_loop(self, dl_val, writer_tag="validation"):
+    def _val_loop(self, dl_val, writer_tag=""):
         """private method to run a single validation
         loop
         """
@@ -151,7 +153,7 @@ class Pipeline:
                                                    correct)
         try:
             # add data to tensorboard
-            self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
+            self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag + "/validation")
             try:
                 self.writer.flush()
             except AttributeError:
@@ -162,7 +164,7 @@ class Pipeline:
         correct /= len(dl_val)*dl_val.batch_size
         val_loss /= len(dl_val)
         try:
-            self.writer.add_scalar(writer_tag + "/Accuracy/validation", correct, self.val_epoch)
+            self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
         except AttributeError:
             pass
         print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
@@ -171,6 +173,9 @@ class Pipeline:
             self.writer.flush()
         except AttributeError:
             pass
+        # store the best results
+        self.best_val_acc = max(self.best_val_acc,100*correct)
+        self.best_val_loss = min(self.best_val_loss,100*correct)
         return val_loss, 100*correct
 
     def _add_pr_curve_tb(self, pred, class_label, class_probs, writer_tag=""):
@@ -183,7 +188,7 @@ class Pipeline:
             tensorboard_truth = labels == class_index
             tensorboard_probs = probs[:, class_index]
             try:
-                self.writer.add_pr_curve(writer_tag+str(class_index),
+                self.writer.add_pr_curve(writer_tag+"/class = "+str(class_index),
                                          tensorboard_truth,
                                          tensorboard_probs,
                                          global_step=0)
@@ -208,7 +213,7 @@ class Pipeline:
                 class_label.append(y)
         return pred, loss, correct
 
-    def _test_loop(self, dl_test, writer_tag="test"):
+    def _test_loop(self, dl_test, writer_tag=""):
         """private method to run a single test
         loop
         """
@@ -231,7 +236,7 @@ class Pipeline:
                                                     test_loss,
                                                     correct)
         # add data to tensorboard
-        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag)
+        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag + "/test")
         try:
             self.writer.flush()
         except AttributeError:
@@ -253,7 +258,8 @@ class Pipeline:
               optuna_params=None,
               profiling=False,
               k_folds=5,
-              parallel_tpu=False):
+              parallel_tpu=False,
+              writer_tag=""):
         """Function to run all the training cycles.
 
         Args:
@@ -288,7 +294,9 @@ class Pipeline:
             parallel_tpu (bool):
                 Use or not parallel TPU cores.
                 Still experimental!
-            
+            writer_tag (str):
+                the tensorboard writer tag
+
         Returns:
             (float, float):
                 the validation loss and accuracy
@@ -408,7 +416,7 @@ class Pipeline:
                     valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                        dl_val, lr_scheduler, scheduler,
                                                        prof, check_optuna, search_metric,
-                                                       trial)
+                                                       trial, writer_tag + "/fold = " + str(fold+1))
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, optimizers_param, lr_scheduler,
@@ -433,7 +441,7 @@ class Pipeline:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, scheduler,
                                                    prof, check_optuna, search_metric,
-                                                   trial)
+                                                   trial, writer_tag)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, optimizers_param, lr_scheduler,
@@ -451,7 +459,7 @@ class Pipeline:
     def _training_loops(self, n_epochs, dl_tr,
                         dl_val, lr_scheduler, scheduler,
                         prof, check_optuna, search_metric,
-                        trial):
+                        trial, writer_tag=""):
         """private method to run the trainign loops
         
         Args:
@@ -483,19 +491,21 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
+            writer_tag (str):
+                the tensorboard writer tag
 
         Returns:
             (float, float):
                 the validation loss and validation accuracy
         """
 
-        valloss, valacc = 100, 0
+        valloss, valacc = 0, 0
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.val_epoch = t
             self.train_epoch = t
-            self._train_loop(dl_tr, "train")
-            valloss, valacc = self._val_loop(dl_val, "validation")
+            self._train_loop(dl_tr, writer_tag)
+            valloss, valacc = self._val_loop(dl_val, writer_tag)
             
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
