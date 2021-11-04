@@ -95,13 +95,15 @@ class SetTransformer(nn.Module):
                 for _ in range(n_layers - 1)
             ])
         elif attention_type == "fast_attention":
-            self.emb = FastAttention(dim_input, dim_hidden, heads=num_heads)
+            self.emb = FastAttention(dim_input, dim_hidden,
+                                     heads=num_heads, dim_head=64)
             self.enc_list = nn.ModuleList([
                 nn.Sequential(
-                    FastAttention(dim_hidden, dim_hidden, heads=num_heads, dim_head=64),
+                    FastAttention(dim_hidden, dim_hidden,
+                                  heads=num_heads, dim_head=64),
                     nn.Dropout(p=dropout),
                 )
-                for _ in range(n_layers)
+                for _ in range(n_layers - 1)
             ])
         else:
             raise ValueError("Unknown attention type:", attention_type)
