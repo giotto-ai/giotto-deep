@@ -127,7 +127,6 @@ class SetTransformer(nn.Module):
         x = self.emb(x)
         for l in self.enc_list:
             x = l(x)
-        print("output size encoder:", x.size())
         x = self.dec(x)
         return x.squeeze()  # squeeze all dimensions of size 1
 
