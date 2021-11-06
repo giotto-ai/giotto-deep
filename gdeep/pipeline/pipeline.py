@@ -105,7 +105,7 @@ class Pipeline:
                                        loss.item(),
                                        self.train_epoch*len(dl_tr) + batch)
                 self.writer.add_histogram(writer_tag + "/predictions/train",
-                                          pred,
+                                          pred[:, 0] - pred[:, 1],
                                           self.train_epoch*len(dl_tr) + batch)
             except AttributeError:
                 pass
