@@ -7,6 +7,7 @@ from tqdm import tqdm
 import warnings
 from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data.sampler import SubsetRandomSampler
+from gdeep.models import ModelExtractor
 import optuna
 
 if torch.cuda.is_available():
@@ -60,22 +61,19 @@ class Pipeline:
         if self.writer is None:
             warnings.warn("No writer detected")
         self.DEVICE = DEVICE
+        self.check_has_trained = False
         
-    def reset_model(self):
-        """method to reset the initial model weights. This
-        function is essential for the cross-validation
+    def _set_initial_model(self):
+        """This private method is used to set
+        the initial_model"""
+        self.initial_model = copy.deepcopy(self.model)
+
+    def _reset_model(self):
+        """Private method to reset the initial model weights.
+        This function is essential for the cross-validation
         procedure.
         """
-
         self.model = copy.deepcopy(self.initial_model)
-
-    def reset_epoch(self):
-        """method to reset global training and validation
-        epoch count.
-        """
-
-        self.train_epoch = 0
-        self.val_epoch = 0
 
     def _train_loop(self, dl_tr, writer_tag=""):
         """private method to run a single training
@@ -106,6 +104,9 @@ class Pipeline:
                 self.writer.add_scalar(writer_tag + "/loss/train",
                                        loss.item(),
                                        self.train_epoch*len(dl_tr) + batch)
+                self.writer.add_histogram(writer_tag + "/predictions/train",
+                                          pred,
+                                          self.train_epoch*len(dl_tr) + batch)
             except AttributeError:
                 pass
             # Backpropagation
@@ -165,6 +166,7 @@ class Pipeline:
         val_loss /= len(dl_val)
         try:
             self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
+            self.writer.add_histogram(writer_tag + "/predictions/validation", torch.stack(pred), self.val_epoch)
         except AttributeError:
             pass
         print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
@@ -198,12 +200,13 @@ class Pipeline:
                     loss, correct):
         """private function used inside the test
         and validation loops"""
-        pred = 0
+        pred_list = []
         with torch.no_grad():
             for X, y in dl:
                 X = X.to(self.DEVICE)
                 y = y.to(self.DEVICE)
                 pred = self.model(X)
+                pred_list.append(pred)
                 class_probs_batch = [F.softmax(el, dim=0)
                                      for el in pred]
                 class_probs.append(class_probs_batch)
@@ -211,7 +214,8 @@ class Pipeline:
                 correct += (pred.argmax(1) ==
                             y).type(torch.float).sum().item()
                 class_label.append(y)
-        return pred, loss, correct
+
+        return pred_list, loss, correct
 
     def _test_loop(self, dl_test, writer_tag=""):
         """private method to run a single test
@@ -259,6 +263,8 @@ class Pipeline:
               profiling=False,
               k_folds=5,
               parallel_tpu=False,
+              keep_training=False,
+              store_grad_layer_hist=False,
               writer_tag=""):
         """Function to run all the training cycles.
 
@@ -279,7 +285,7 @@ class Pipeline:
                 dictionary of the model
                 parameters
             lr_scheduler (torch.optim):
-                a learning rate scheduler
+                a learning rate scheduler class
             scheduler_params (dict):
                 learning rate scheduler parameters
             optuna_params (tuple, default=None):
@@ -294,6 +300,14 @@ class Pipeline:
             parallel_tpu (bool):
                 Use or not parallel TPU cores.
                 Still experimental!
+            keep_training (bool):
+                This flag allows to restart a training from
+                the existing optimizer as well as the
+                existing model
+            store_grad_layer_hist (bool):
+                This flag allows to store the gradients
+                and the layer values in tensorboard for
+                each epoch
             writer_tag (str):
                 the tensorboard writer tag
 
@@ -304,6 +318,12 @@ class Pipeline:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
+        self.store_grad_layer_hist = store_grad_layer_hist
+        # to start the training from where we left
+        if self.check_has_trained and keep_training:
+            self._set_initial_model()
+        self.check_has_trained = True
+
         # train initialisation
         dl_tr = self.dataloaders[0]
         if optimizers_param is None:
@@ -312,10 +332,11 @@ class Pipeline:
             dataloaders_param = {"batch_size":dl_tr.batch_size}
         if scheduler_params is None:
             scheduler_params = {}
-        
+
         # LR scheduler
-        scheduler = None
-        
+        if not (self.check_has_trained and keep_training):
+            self.scheduler = None
+
         # optuna gridsearch
         search_metric = None
         trial = None
@@ -324,7 +345,7 @@ class Pipeline:
             trial, search_metric = optuna_params
         else:
             check_optuna = False
-        
+
         # profiling
         prof = None
         if not cross_validation:
@@ -346,14 +367,14 @@ class Pipeline:
                 )
             except AssertionError:
                 pass
-        
+
         # remove sampler to avoid conflicts with validation
         dataloaders_param_val = dataloaders_param.copy()
         try:
             dataloaders_param_val.pop("sampler")
         except KeyError:
             pass
-        
+
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:
@@ -370,7 +391,7 @@ class Pipeline:
                                                 **dataloaders_param_val,
                                                 sampler=SubsetRandomSampler(tr_idx))
         else:
-            
+
             data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
@@ -392,10 +413,12 @@ class Pipeline:
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
                 # reset the model weights
-                self.reset_model()
-                self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
-                if not lr_scheduler is None:
-                    scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                self._reset_model()
+                if not (self.check_has_trained and keep_training):
+                # do not re-initialise the optimiser if keep-training
+                    self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
+                    if not lr_scheduler is None:
+                        self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
@@ -414,38 +437,40 @@ class Pipeline:
                 # the training and validation loop
                 if parallel_tpu == False:
                     valloss, valacc = self._training_loops(n_epochs, dl_tr,
-                                                       dl_val, lr_scheduler, scheduler,
+                                                       dl_val, lr_scheduler, self.scheduler,
                                                        prof, check_optuna, search_metric,
                                                        trial, writer_tag + "/fold = " + str(fold+1))
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, optimizers_param, lr_scheduler,
-                                                       scheduler,
+                                                       self.scheduler,
                                                        prof, check_optuna, search_metric,
                                                        trial)
-                
+
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
-                # mean of the validation and loss accuracies over folds
+            # mean of the validation and loss accuracies over folds
             valloss = np.mean(mean_val_loss)
             valacc = np.mean(mean_val_acc)
 
 
         else:
-            self.reset_model()
-            self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
-            if not lr_scheduler is None:
-                scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+            self._reset_model()
+            if not (self.check_has_trained and keep_training):
+            # do not re-initialise the optimiser if keep-training
+                self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
+                if not lr_scheduler is None:
+                    self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
 
             if parallel_tpu == False:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
-                                                   dl_val, lr_scheduler, scheduler,
+                                                   dl_val, lr_scheduler, self.scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial, writer_tag)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, optimizers_param, lr_scheduler,
-                                                   scheduler,
+                                                   self.scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial)
         try:
@@ -477,9 +502,9 @@ class Pipeline:
                 dictionary of the model
                 parameters
             lr_scheduler (torch.optim):
-                a learning rate scheduler
+                a learning rate scheduler class
             scheduler (torch.optim):
-                the actual scheduler
+                the actual scheduler instance
             prof (bool, default=False):
                 whether or not you want to activate the
                 profiler
@@ -506,7 +531,16 @@ class Pipeline:
             self.train_epoch = t
             self._train_loop(dl_tr, writer_tag)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
-            
+            if self.store_grad_layer_hist:
+                try:
+                    me = ModelExtractor(self.model, self.loss_fn)
+                    lista = me.get_layers_param()
+                    for k, item in lista.items():
+                        self.writer.add_histogram(writer_tag + "/weights&biases/train/"+k,item,t)
+                    self.writer.flush()
+
+                except AttributeError:
+                    pass
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
                 scheduler.step()
@@ -723,7 +757,7 @@ class Pipeline:
         confusion_matrix = np.zeros((num_class, num_class))
         self.model.eval()
         with torch.no_grad():
-            for X, y in tqdm(dl):
+            for batch, (X, y) in tqdm(enumerate(dl)):
                 X = X.to(DEVICE)
                 y = y.to(DEVICE)
                 pred = self.model(X)
@@ -736,7 +770,6 @@ class Pipeline:
                 class_label.append(y)
                 for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
-
         correct /= len(dl)*dl.batch_size
         loss /= len(dl)
         return 100*correct, loss, confusion_matrix
