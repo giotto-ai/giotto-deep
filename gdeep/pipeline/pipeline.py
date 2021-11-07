@@ -167,7 +167,11 @@ class Pipeline:
         val_loss /= len(dl_val)
         try:
             self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
-            self.writer.add_histogram(writer_tag + "/predictions/validation", torch.stack(pred), self.val_epoch)
+
+            top2_pred = torch.topk(torch.vstack(pred), 2, -1).values
+            self.writer.add_histogram(writer_tag + "/predictions/validation",
+                                      torch.abs(torch.diff(top2_pred, dim=-1)),
+                                      self.val_epoch)
         except AttributeError:
             pass
         print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
@@ -531,17 +535,20 @@ class Pipeline:
             self.val_epoch = t
             self.train_epoch = t
             self._train_loop(dl_tr, writer_tag)
-            valloss, valacc = self._val_loop(dl_val, writer_tag)
             if self.store_grad_layer_hist:
                 try:
                     me = ModelExtractor(self.model, self.loss_fn)
                     lista = me.get_layers_param()
                     for k, item in lista.items():
-                        self.writer.add_histogram(writer_tag + "/weights&biases/train/"+k,item,t)
+                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
+                    lista_grad = me.get_layers_grads()
+                    for k, item in zip(lista.keys(),lista_grad):
+                        self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
                     self.writer.flush()
 
                 except AttributeError:
                     pass
+            valloss, valacc = self._val_loop(dl_val, writer_tag)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
                 scheduler.step()
