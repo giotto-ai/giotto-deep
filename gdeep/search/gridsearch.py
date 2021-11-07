@@ -28,7 +28,7 @@ class Gridsearch(Pipeline):
         obj (either Pipeline or Benchmark object):
             either a pipeline of a bechmark class
         search_metric (string):
-            either 'loss' or 'accuracy'
+            either ``'loss'`` or ``'accuracy'``
         n_trials (int):
             number of total gridsearch trials
 
@@ -39,6 +39,8 @@ class Gridsearch(Pipeline):
         self.obj = obj
         self.bench = obj
         self.study = None
+        self.best_val_acc_gs = 0
+        self.best_val_loss_gs = np.inf
         self.metric = search_metric
         self.list_res = []
         self.df_res = None
@@ -67,10 +69,10 @@ class Gridsearch(Pipeline):
                    models_hyperparams,
                    lr_scheduler,
                    scheduler_params,
-                   writer_tag,
                    profiling,
                    k_folds,
-                   parallel_tpu):
+                   parallel_tpu,
+                   writer_tag=""):
         """default callback function for optuna's study
         
         Args:
@@ -90,9 +92,6 @@ class Gridsearch(Pipeline):
                 a learning rate scheduler
             scheduler_params (dict):
                 learning rate scheduler parameters
-            writer_tag (string):
-                tag to prepend to the ouput
-                on tensorboard
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
@@ -101,16 +100,23 @@ class Gridsearch(Pipeline):
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
+            writer_tag (string):
+                tag to prepend to the ouput
+                on tensorboard
         """
 
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
-        
+
         # generate all the hyperparameters
         optimizers_param = self._suggest_params(trial, optimizers_params)
         dataloaders_param = self._suggest_params(trial, dataloaders_params)
         models_hyperparam = self._suggest_params(trial, models_hyperparams)
+
+        # tag for storing the results
+        writer_tag += "/" + str(optimizers_param) + \
+            str(dataloaders_param) + str(models_hyperparam)
         # create a new model instance
         try:
             new_model = type(self.model)(**models_hyperparam)
@@ -128,8 +134,11 @@ class Gridsearch(Pipeline):
                                         (trial, self.search_metric),
                                         profiling,
                                         k_folds,
-                                        parallel_tpu
+                                        parallel_tpu,
+                                        writer_tag
                                         )
+        self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
+        self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
         self.writer.flush()
         # release resources
         del(new_pipe)
@@ -148,10 +157,10 @@ class Gridsearch(Pipeline):
               models_hyperparams=None,
               lr_scheduler=None,
               scheduler_params=None,
-              writer_tag="model",
               profiling=False,
               k_folds=5,
-              parallel_tpu=False):
+              parallel_tpu=False,
+              writer_tag=""):
         """method to be called when starting the gridsearch
 
         Args:
@@ -171,9 +180,6 @@ class Gridsearch(Pipeline):
                 torch learning rate schduler class
             scheduler_params (dict):
                 learning rate scheduler parameters
-            writer_tag (string):
-                tag to prepend to the ouput
-                on tensorboard
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
@@ -182,6 +188,9 @@ class Gridsearch(Pipeline):
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
+            writer_tag (str):
+                tag to prepend to the ouput
+                on tensorboard
         """
         if self.search_metric == "loss":
             self.study = optuna.create_study(direction="minimize")
@@ -199,10 +208,10 @@ class Gridsearch(Pipeline):
                                       models_hyperparams,
                                       lr_scheduler,
                                       scheduler_params,
-                                      writer_tag,
                                       profiling,
                                       k_folds,
-                                      parallel_tpu)
+                                      parallel_tpu,
+                                      writer_tag)
 
         else:
             _benchmarking_param(self._inner_optimisat_fun,
@@ -216,10 +225,10 @@ class Gridsearch(Pipeline):
                                  models_hyperparams,
                                  lr_scheduler,
                                  scheduler_params,
-                                 writer_tag,
                                  profiling,
                                  k_folds,
-                                 parallel_tpu)
+                                 parallel_tpu,
+                                 writer_tag="")
 
         self._store_to_tensorboard()
 
@@ -233,20 +242,20 @@ class Gridsearch(Pipeline):
                              models_hyperparams,
                              lr_scheduler,
                              scheduler_params,
-                             writer_tag,
                              profiling,
                              k_folds,
-                             parallel_tpu):
+                             parallel_tpu,
+                             writer_tag=""):
         """private method to be decorated with the
         benchmark decorator to have benchmarking
         or simply used as is if no benchmarking is
         needed
         """
         
-        writer_tag = "model"
+        
         try:
-            writer_tag = "Dataset: " + dataloaders["name"] + \
-                " | Model: " + model["name"]
+            writer_tag = "Dataset:" + dataloaders["name"] + \
+                "|Model:" + model["name"]
             super().__init__(model["model"],
                              dataloaders["dataloaders"],
                              self.bench.loss_fn,
@@ -263,10 +272,10 @@ class Gridsearch(Pipeline):
                                                        models_hyperparams,
                                                        lr_scheduler,
                                                        scheduler_params,
-                                                       writer_tag,
                                                        profiling,
                                                        k_folds,
-                                                       parallel_tpu),
+                                                       parallel_tpu,
+                                                       writer_tag),
                             n_trials=self.n_trials,
                             timeout=None)
         try:

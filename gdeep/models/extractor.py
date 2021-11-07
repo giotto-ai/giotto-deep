@@ -111,6 +111,24 @@ class ModelExtractor:
         # for name, layer_param in self.model.named_parameters():
         #    layer_data[name]=layer_param.data
         return self.model.state_dict()
+        
+    def get_layers_grads(self) -> dict:
+        """Returns the gradients of each layer
+
+        Returns:
+            list:
+                list of tensors, corresponding
+                to the layer gradients (weights and biases!).
+        """
+
+        # layer_data = dict()
+        # for name, layer_param in self.model.named_parameters():
+        #    layer_data[name]=layer_param.data
+        sdict = self.model.parameters()
+        output = []
+        for v in sdict:
+            output.append(v.grad)
+        return output
 
     def get_gradients(self, x, **kwargs) -> tuple:
         """Returns the **averaged gradient** of the self.loss_fn.
