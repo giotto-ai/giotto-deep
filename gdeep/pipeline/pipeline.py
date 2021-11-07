@@ -104,8 +104,9 @@ class Pipeline:
                 self.writer.add_scalar(writer_tag + "/loss/train",
                                        loss.item(),
                                        self.train_epoch*len(dl_tr) + batch)
+                top2_pred = torch.topk(pred, 2, -1).values
                 self.writer.add_histogram(writer_tag + "/predictions/train",
-                                          pred[:, 0] - pred[:, 1],
+                                          torch.abs(torch.diff(top2_pred, dim=-1)),
                                           self.train_epoch*len(dl_tr) + batch)
             except AttributeError:
                 pass
