@@ -4,9 +4,12 @@
 import torch  # type: ignore
 import torch.nn as nn  # type: ignore
 from torch import Tensor  # type: ignore
-from torch.nn.modules.dropout import Dropout  # type: ignore
-from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
+from torch.nn import (Module, Linear,
+                      Sequential, ModuleList)
 
+
+from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
+from gdeep.topology_layers.attention_modules import AttentionLayer, InducedAttention, AttentionPooling
 
 class SmallDeepSet(nn.Module):
     def __init__(self, pool="max"):
@@ -37,6 +40,108 @@ class SmallDeepSet(nn.Module):
             x = x.sum(dim=1)
         x = self.dec(x)
         return x
+
+class PersFormer(Module):
+    """ SetTransformer from
+    with either induced attention or classical self attention or fast attention.
+    """
+    def __init__(
+        self,
+        dim_input=2,
+        dim_output=5,
+        dim_hidden=32,
+        num_heads=4,
+        num_inds=32,
+        ln=False,
+        pre_layer_norm=True,
+        n_layers=1,
+        attention_type="self_attention",
+        self_attention_type="self_attention",
+        dropout=0.0,
+    ):
+        """Init of SetTransformer.
+
+        Args:
+            dim_input (int, optional): Dimension of input data for each
+            element in the set. Defaults to 3.
+            dim_output (int, optional): Number of classes. Defaults to 4.
+            dim_hidden (int, optional): Number of induced points, see  Set
+                Transformer paper. Defaults to 128.
+            num_heads (int, optional): Number of attention heads. Defaults
+                to 4.
+            ln (bool, optional): If `True` layer norm will not be applied.
+                Defaults to False.
+        """
+        super(PersFormer).__init__()
+
+        assert dim_hidden % num_heads == 0, \
+            "Number of hidden dimensions must be divisible by number of heads."
+
+        self.emb = self.emb = Linear(dim_input, dim_hidden)
+
+        self.n_layers = n_layers
+        if attention_type == "induced_attention":
+            self.enc_list = ModuleList([
+                InducedAttention(hidden_size=dim_hidden,
+                               filter_size=dim_hidden,
+                               n_heads=num_heads,
+                               layer_norm=ln,
+                               pre_layer_norm=pre_layer_norm,
+                               dropout=dropout,
+                               activation=None,
+                               attention_type=self_attention_type,
+                               induced_points=num_inds
+                               )
+                for _ in range(n_layers)
+            ])
+        elif attention_type == "self_attention":
+            self.enc_list = ModuleList([
+                AttentionLayer(hidden_size=dim_hidden,
+                               filter_size=dim_hidden,
+                               n_heads=num_heads,
+                               layer_norm=ln,
+                               pre_layer_norm=pre_layer_norm,
+                               dropout=dropout,
+                               activation=None,
+                               attention_type=self_attention_type,
+                               )
+                for _ in range(n_layers)
+            ])
+        else:
+            raise ValueError("Unknown attention type:", attention_type)
+
+        self.pool = Sequential(
+            AttentionPooling(dim_hidden, q_length=1, num_heads=num_heads, ln=ln),
+            Linear(dim_hidden, dim_output),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass
+
+        Args:
+            x (torch.Tensor): Batch tensor of shape
+                [batch, sequence_length, dim_in]
+
+        Returns:
+            torch.Tensor: Tensor with predictions of the `dim_output` classes.
+        """
+        x = self.emb(x)
+        for attention_layer in self.enc_list:
+            x = attention_layer(x)
+        x = self.pool(x)
+        return x.squeeze()  # squeeze all dimensions of size 1
+
+    @property
+    def num_params(self) -> int:
+        """Returns number of trainable parameters.
+
+        Returns:
+            int: Number of trainable parameters.
+        """
+        total_params = 0
+        for parameter in self.parameters():
+            total_params += parameter.nelement()
+        return total_params
 
 
 class SetTransformer(nn.Module):
@@ -101,7 +206,6 @@ class SetTransformer(nn.Module):
                 nn.Sequential(
                     FastAttention(dim_hidden, dim_hidden,
                                   heads=num_heads, dim_head=64),
-                    nn.Dropout(p=dropout),
                 )
                 for _ in range(n_layers - 1)
             ])
