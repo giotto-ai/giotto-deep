@@ -155,7 +155,7 @@ class Pipeline:
                                                    correct)
         try:
             # add data to tensorboard
-            self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag + "/validation")
+            self._add_pr_curve_tb(torch.vstack(pred), class_label, class_probs, writer_tag + "/validation")
             try:
                 self.writer.flush()
             except AttributeError:
@@ -245,7 +245,7 @@ class Pipeline:
                                                     test_loss,
                                                     correct)
         # add data to tensorboard
-        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag + "/test")
+        self._add_pr_curve_tb(torch.vstack(pred), class_label, class_probs, writer_tag + "/test")
         try:
             self.writer.flush()
         except AttributeError:
