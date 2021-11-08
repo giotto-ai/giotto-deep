@@ -7,13 +7,15 @@ import torch
 from torch import Tensor, randn
 from torch.nn import (Module, MultiheadAttention, Linear,
                       Sequential, LayerNorm, ReLU, Softmax, Dropout,
-                      Parameter)
+                      Parameter, ModuleList)
 from torch.nn.init import xavier_uniform_
 
 pre_layer_norm: bool = True
 dropout: float = 0.1
 
 # %%
+# FastFormer attention block modified from
+# https://github.com/wuch15/Fastformer/blob/main/Fastformer.ipynb
 
 class FastSelfAttention(Module):
     def __init__(self,
@@ -170,11 +172,16 @@ class AttentionLayer(Module):
         return x
 
 class InducedAttention(Module):
+    """http://proceedings.mlr.press/v97/lee19d/lee19d.pdf
+
+    Args:
+        dim_hidden (int, optional): [description]. Defaults to 32.
+        num_induced_points (int, optional): [description]. Defaults to 32.
+    """
     def __init__(self,
                  dim_hidden: int=32,
                  num_induced_points: int=32,
-                 *args, **kwargs):
-        
+                 *args, **kwargs):        
         self.induced_points = Parameter(Tensor(1, num_induced_points, dim_hidden))
         xavier_uniform_(self.induced_points)
         self.attention_layer_1 = AttentionLayer(dim_hidden, *args, **kwargs)
@@ -198,7 +205,108 @@ class AttentionPooling(Module):
         return self.attention_layer(self.q.repeat(batch_size, 1, 1), x, x)
     
     
-      
+class PersFormer(Module):
+    """ SetTransformer from
+    https://github.com/juho-lee/set_transformer/blob/master/main_pointcloud.py
+    with either induced attention or classical self attention.
+    """
+    def __init__(
+        self,
+        dim_input=2,
+        dim_output=5,  # number of classes
+        dim_hidden=32,
+        num_heads=4,
+        num_inds=32,
+        q_length=32,
+        ln=False,  # use layer norm
+        pre_layer_norm=True,
+        n_layers=1,
+        attention_type="self_attention",
+        self_attention_type="self_attention",
+        dropout=0.0,
+    ):
+        """Init of SetTransformer.
+
+        Args:
+            dim_input (int, optional): Dimension of input data for each
+            element in the set. Defaults to 3.
+            dim_output (int, optional): Number of classes. Defaults to 4.
+            dim_hidden (int, optional): Number of induced points, see  Set
+                Transformer paper. Defaults to 128.
+            num_heads (int, optional): Number of attention heads. Defaults
+                to 4.
+            ln (bool, optional): If `True` layer norm will not be applied.
+                Defaults to False.
+        """
+        super(PersFormer).__init__()
+
+        assert dim_hidden % num_heads == 0, \
+            "Number of hidden dimensions must be divisible by number of heads."
+
+        self.emb = self.emb = Linear(dim_input, dim_hidden)
+
+        self.n_layers = n_layers
+        if attention_type == "induced_attention":
+            self.enc_list = ModuleList([
+                InducedAttention(hidden_size=dim_hidden,
+                               filter_size=dim_hidden,
+                               int=num_heads,
+                               layer_norm=ln,
+                               pre_layer_norm=pre_layer_norm,
+                               dropout=dropout,
+                               activation=None,
+                               attention_type=self_attention_type,
+                               )
+                for _ in range(n_layers)
+            ])
+        elif attention_type == "self_attention":
+            self.enc_list = ModuleList([
+                AttentionLayer(hidden_size=dim_hidden,
+                               filter_size=dim_hidden,
+                               int=num_heads,
+                               layer_norm=ln,
+                               pre_layer_norm=pre_layer_norm,
+                               dropout=dropout,
+                               activation=None,
+                               attention_type=self_attention_type,
+                               )
+                for _ in range(n_layers)
+            ])
+        else:
+            raise ValueError("Unknown attention type:", attention_type)
+
+        self.pool = Sequential(
+            AttentionPooling(dim_hidden, q_length=1, num_heads=num_heads, ln=ln),
+            Linear(dim_hidden, dim_output),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass
+
+        Args:
+            x (torch.Tensor): Batch tensor of shape
+                [batch, sequence_length, dim_in]
+
+        Returns:
+            torch.Tensor: Tensor with predictions of the `dim_output` classes.
+        """
+        x = self.emb(x)
+        for attention_layer in self.enc_list:
+            x = attention_layer(x)
+        x = self.pool(x)
+        return x.squeeze()  # squeeze all dimensions of size 1
+
+    @property
+    def num_params(self) -> int:
+        """Returns number of trainable parameters.
+
+        Returns:
+            int: Number of trainable parameters.
+        """
+        total_params = 0
+        for parameter in self.parameters():
+            total_params += parameter.nelement()
+        return total_params
 
 # %%
 # %%
