@@ -25,10 +25,6 @@ from gdeep.pipeline import Pipeline
 # Initialize the Tensorflow writer
 writer = SummaryWriter()
 
-#%%
-%load_ext tensorboard
-# %%
-%tensorboard --logdir=examples/runs --port 6060
 
 # %%
 # Define the data loader
@@ -39,7 +35,7 @@ dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 32},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
-og = OrbitsGenerator(num_orbits_per_class=5000,
+og = OrbitsGenerator(num_orbits_per_class=1000,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
                      test_percentage=0.2)
@@ -49,17 +45,12 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 # %%
 # Define the model
 model = PersFormer(
-            dim_input=len(homology_dimensions),
+            dim_input=2,
             dim_output=5,
-            dropout=0.05,
+            dropout=0.0,
             n_layers=3,
-            ln=True,
-            attention_type="induced_attention").double()
-# %%
-for x, y in dl_train:
-    print(x.shape)
-    print(model(x).shape)
-
+            layer_norm=False,
+            attention_type="self_attention").double()
 
 # %%
 # Do training and validation
@@ -75,3 +66,10 @@ pipe.train(Adam, 100, cross_validation=False, optimizers_param={"lr": 0.001})
 
 for batch, (X, y) in enumerate(dl_train):
     print(X.shape)
+    print(model(X).shape)
+    print(y)
+    break
+
+# %%
+
+# %%

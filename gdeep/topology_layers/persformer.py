@@ -49,10 +49,10 @@ class PersFormer(Module):
         self,
         dim_input=2,
         dim_output=5,
-        dim_hidden=32,
-        num_heads=4,
+        hidden_size=32,
+        n_heads=4,
         num_inds=32,
-        ln=False,
+        layer_norm=False,
         pre_layer_norm=True,
         n_layers=1,
         attention_type="self_attention",
@@ -72,20 +72,20 @@ class PersFormer(Module):
             ln (bool, optional): If `True` layer norm will not be applied.
                 Defaults to False.
         """
-        super(PersFormer).__init__()
+        super().__init__()
 
-        assert dim_hidden % num_heads == 0, \
+        assert hidden_size % n_heads == 0, \
             "Number of hidden dimensions must be divisible by number of heads."
 
-        self.emb = self.emb = Linear(dim_input, dim_hidden)
+        self.emb = Linear(dim_input, hidden_size)
 
         self.n_layers = n_layers
         if attention_type == "induced_attention":
             self.enc_list = ModuleList([
-                InducedAttention(hidden_size=dim_hidden,
-                               filter_size=dim_hidden,
-                               n_heads=num_heads,
-                               layer_norm=ln,
+                InducedAttention(hidden_size=hidden_size,
+                               filter_size=hidden_size,
+                               n_heads=n_heads,
+                               layer_norm=layer_norm,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
                                activation=None,
@@ -96,10 +96,10 @@ class PersFormer(Module):
             ])
         elif attention_type == "self_attention":
             self.enc_list = ModuleList([
-                AttentionLayer(hidden_size=dim_hidden,
-                               filter_size=dim_hidden,
-                               n_heads=num_heads,
-                               layer_norm=ln,
+                AttentionLayer(hidden_size=hidden_size,
+                               filter_size=hidden_size,
+                               n_heads=n_heads,
+                               layer_norm=layer_norm,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
                                activation=None,
@@ -111,8 +111,8 @@ class PersFormer(Module):
             raise ValueError("Unknown attention type:", attention_type)
 
         self.pool = Sequential(
-            AttentionPooling(dim_hidden, q_length=1, num_heads=num_heads, ln=ln),
-            Linear(dim_hidden, dim_output),
+            AttentionPooling(hidden_size, q_length=1, layer_norm=layer_norm),
+            Linear(hidden_size, dim_output),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -127,7 +127,7 @@ class PersFormer(Module):
         """
         x = self.emb(x)
         for attention_layer in self.enc_list:
-            x = attention_layer(x)
+            x = attention_layer(x, x, x)
         x = self.pool(x)
         return x.squeeze()  # squeeze all dimensions of size 1
 

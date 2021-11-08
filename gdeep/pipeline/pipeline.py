@@ -192,7 +192,7 @@ class Pipeline:
         probs = torch.cat([torch.stack(batch) for batch in
                           class_probs]).cpu()
         labels = torch.cat(class_label).cpu()
-        for class_index in range(len(pred[0])):
+        for class_index in range(pred[0].shape[-1]):
             tensorboard_truth = labels == class_index
             tensorboard_probs = probs[:, class_index]
             try:
