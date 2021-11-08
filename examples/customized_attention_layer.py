@@ -20,13 +20,15 @@ dropout: float = 0.1
 class FastSelfAttention(Module):
     def __init__(self,
                 hidden_size: int=32,
-                n_heads: int=8):
+                n_heads: int=8,
+                start_method=0.2):
         super(FastSelfAttention, self).__init__()
         if hidden_size % n_heads != 0:
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
                 "heads (%d)" %
                 (hidden_size, n_heads))
+        self.initializer_range = initializer_range
         self.attention_head_size = int(hidden_size % n_heads)
         self.num_attention_heads = n_heads
         self.all_head_size = self.num_attention_heads * self.attention_head_size
@@ -44,7 +46,7 @@ class FastSelfAttention(Module):
 
     def init_weights(self, module):
         if isinstance(module, Linear):
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            module.weight.data.normal_(mean=0.0, std=self.initializer_range)
         if isinstance(module, Linear) and module.bias is not None:
             module.bias.data.zero_()
                 
@@ -86,7 +88,7 @@ class FastSelfAttention(Module):
         key_layer = self.transpose_for_scores(mixed_query_key_layer)
         pooled_key = torch.matmul(query_key_weight, key_layer)
 
-        #query = value
+        # query = value
         weighted_value =(pooled_key * query_layer).transpose(1, 2)
         weighted_value = weighted_value.reshape(
             weighted_value.size()[:-2] + (self.num_attention_heads * self.attention_head_size,))
@@ -213,12 +215,11 @@ class PersFormer(Module):
     def __init__(
         self,
         dim_input=2,
-        dim_output=5,  # number of classes
+        dim_output=5,
         dim_hidden=32,
         num_heads=4,
         num_inds=32,
-        q_length=32,
-        ln=False,  # use layer norm
+        ln=False,
         pre_layer_norm=True,
         n_layers=1,
         attention_type="self_attention",
@@ -250,12 +251,13 @@ class PersFormer(Module):
             self.enc_list = ModuleList([
                 InducedAttention(hidden_size=dim_hidden,
                                filter_size=dim_hidden,
-                               int=num_heads,
+                               n_heads=num_heads,
                                layer_norm=ln,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
                                activation=None,
                                attention_type=self_attention_type,
+                               induced_points=num_inds
                                )
                 for _ in range(n_layers)
             ])
@@ -263,7 +265,7 @@ class PersFormer(Module):
             self.enc_list = ModuleList([
                 AttentionLayer(hidden_size=dim_hidden,
                                filter_size=dim_hidden,
-                               int=num_heads,
+                               n_heads=num_heads,
                                layer_norm=ln,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
@@ -311,12 +313,4 @@ class PersFormer(Module):
 # %%
 # %%
 x = torch.rand(2, 10, 32)
-
-mhsa = MultiheadAttention(32, 2)
-model = LambdaLayer(lambda x: mhsa(x, x, x)[0]),
-    
-
-model(x)
-# %%
-mhsa(x, x, x)[0].shape
 # %%
