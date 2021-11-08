@@ -109,9 +109,6 @@ class AttentionLayer(Module):
         self.layer_norm = layer_norm
         
         # attention part
-        self.fc_q = Linear(hidden_size, hidden_size, bias=False)
-        self.fc_k = Linear(hidden_size, hidden_size, bias=False)
-        self.fc_v = Linear(hidden_size, hidden_size, bias=False)
         if attention_type == 'self_attention':
             self.attention_block = MultiheadAttention(hidden_size, n_heads,
                 batch_first=True)
@@ -139,9 +136,6 @@ class AttentionLayer(Module):
             self.eff_ln = LayerNorm(hidden_size)
         
     def forward(self, q: Tensor, k: Tensor, v: Tensor):
-        q = self.fc_v(q)
-        k = self.fc_k(k)
-        v = self.fc_v(v)
         if self.pre_layer_norm:
             # Layer norm of query, key and value
             # if they are the same, the three lines will compute the same
@@ -156,7 +150,7 @@ class AttentionLayer(Module):
             x_ln = self.eff_ln(x) if self.layer_norm else x
             x = x + self.eff(x_ln)
         else:
-            x = q + self.attention_block(q, k, v)
+            x = q + self.attention_block(q, k, v, need_weights=False)[0]
             if self.layer_norm:
                 x = self.attention_ln(x)
             x = x + self.eff(x)

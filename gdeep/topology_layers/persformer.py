@@ -12,10 +12,13 @@ from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type:
 from gdeep.topology_layers.attention_modules import AttentionLayer, InducedAttention, AttentionPooling
 
 class SmallDeepSet(nn.Module):
-    def __init__(self, pool="max"):
+    def __init__(self,
+        pool="max",
+        dim_input=2,
+        dim_output=5,):
         super().__init__()
         self.enc = nn.Sequential(
-            nn.Linear(in_features=1, out_features=64),
+            nn.Linear(in_features=dim_input, out_features=64),
             nn.ReLU(),
             nn.Linear(in_features=64, out_features=64),
             nn.ReLU(),
@@ -26,7 +29,7 @@ class SmallDeepSet(nn.Module):
         self.dec = nn.Sequential(
             nn.Linear(in_features=64, out_features=64),
             nn.ReLU(),
-            nn.Linear(in_features=64, out_features=1),
+            nn.Linear(in_features=64, out_features=dim_output),
         )
         self.pool = pool
 
@@ -52,11 +55,11 @@ class PersFormer(Module):
         hidden_size=32,
         n_heads=4,
         num_inds=32,
-        layer_norm=False,
+        layer_norm=True,
         pre_layer_norm=True,
         n_layers=1,
-        attention_type="self_attention",
-        self_attention_type="self_attention",
+        attention_layer_type="self_attention",
+        attention_block_type="self_attention",
         dropout=0.0,
     ):
         """Init of SetTransformer.
@@ -80,7 +83,7 @@ class PersFormer(Module):
         self.emb = Linear(dim_input, hidden_size)
 
         self.n_layers = n_layers
-        if attention_type == "induced_attention":
+        if attention_layer_type == "induced_attention":
             self.enc_list = ModuleList([
                 InducedAttention(hidden_size=hidden_size,
                                filter_size=hidden_size,
@@ -89,12 +92,12 @@ class PersFormer(Module):
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
                                activation=None,
-                               attention_type=self_attention_type,
+                               attention_type=attention_block_type,
                                induced_points=num_inds
                                )
                 for _ in range(n_layers)
             ])
-        elif attention_type == "self_attention":
+        elif attention_layer_type == "self_attention":
             self.enc_list = ModuleList([
                 AttentionLayer(hidden_size=hidden_size,
                                filter_size=hidden_size,
@@ -103,15 +106,23 @@ class PersFormer(Module):
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
                                activation=None,
-                               attention_type=self_attention_type,
+                               attention_type=attention_block_type,
                                )
                 for _ in range(n_layers)
             ])
         else:
-            raise ValueError("Unknown attention type:", attention_type)
+            raise ValueError("Unknown attention type:", attention_layer_type)
 
         self.pool = Sequential(
-            AttentionPooling(hidden_size, q_length=1, layer_norm=layer_norm),
+            AttentionPooling(hidden_size,
+                             q_length=1,
+                             filter_size=hidden_size,
+                             n_heads=n_heads,
+                             layer_norm=layer_norm,
+                             pre_layer_norm=pre_layer_norm,
+                             dropout=dropout,
+                             activation=None,
+                             attention_type=attention_block_type),
             Linear(hidden_size, dim_output),
         )
 
