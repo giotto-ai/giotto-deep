@@ -1,10 +1,10 @@
 # from https://github.com/juho-lee/set_transformer/blob/master/max_regression_demo.ipynb  # noqa: E501
 #### Author: Raphael Reinauer
 
-import torch
-import torch.nn as nn
-from torch import Tensor
-from torch.nn.modules.dropout import Dropout
+import torch  # type: ignore
+import torch.nn as nn  # type: ignore
+from torch import Tensor  # type: ignore
+from torch.nn.modules.dropout import Dropout  # type: ignore
 from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
 
 
