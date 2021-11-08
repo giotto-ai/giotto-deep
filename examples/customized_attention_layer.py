@@ -42,9 +42,9 @@ class AttentionLayer(Module):
         self.layer_norm = layer_norm
         
         # attention part
-        self.fc_q = Linear(hidden_size, hidden_size)
-        self.fc_k = Linear(hidden_size, hidden_size)
-        self.fc_v = Linear(hidden_size, hidden_size)
+        self.fc_q = Linear(hidden_size, hidden_size, bias=False)
+        self.fc_k = Linear(hidden_size, hidden_size, bias=False)
+        self.fc_v = Linear(hidden_size, hidden_size, bias=False)
         if attention_type == 'self_attention':
             self.attention_block = MultiheadAttention(hidden_size, n_heads)
         if attention_type == 'fast_attention':
