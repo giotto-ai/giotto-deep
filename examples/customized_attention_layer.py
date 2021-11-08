@@ -8,13 +8,15 @@ from torch import Tensor, randn
 from torch.nn import (Module, MultiheadAttention, Linear,
                       Sequential, LayerNorm, ReLU, Dropout,
                       Parameter)
+from torch.nn.init import xavier_uniform_
 
 pre_layer_norm: bool = True
 dropout: float = 0.1
 
 # %%
 
-
+class FastAttention(Module):
+    pass
 
 
 class AttentionLayer(Module):
@@ -35,7 +37,8 @@ class AttentionLayer(Module):
         else:
             self.activation = activation
         self.dropout = dropout
-        
+
+        self.pre_layer_norm = pre_layer_norm
         self.layer_norm = layer_norm
         
         # attention part
@@ -111,10 +114,10 @@ class PMA(nn.Module):
         return self.mab(self.S.repeat(X.size(0), 1, 1), X)
     
 class AttentionPooling(Module):
-    def __init__(self, hidden_dim, num_heads, num_seeds, ):
+    def __init__(self, hidden_dim, num_heads, q_length, ):
         super().__init__()
-        self.Q = nn.Parameter(torch.Tensor(1, num_seeds, hidden_dim))
-        nn.init.xavier_uniform_(self.S)
+        self.q = Parameter(torch.Tensor(1, q_length, hidden_dim))
+        xavier_uniform_(self.q)
     
     
       

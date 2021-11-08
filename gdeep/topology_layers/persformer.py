@@ -101,7 +101,6 @@ class SetTransformer(nn.Module):
                 nn.Sequential(
                     FastAttention(dim_hidden, dim_hidden,
                                   heads=num_heads, dim_head=64),
-                    nn.Dropout(p=dropout),
                 )
                 for _ in range(n_layers - 1)
             ])
