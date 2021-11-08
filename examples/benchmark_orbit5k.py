@@ -13,16 +13,21 @@ from torch import nn  # type: ignore
 from torch.optim import SGD, Adam, RMSprop  # type: ignore
 
 # Import Tensorflow writer
-#from torch.utils.tensorboard import SummaryWriter  # type: ignore
+from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer
+from gdeep.topology_layers import SetTransformer, PersFormer
 from gdeep.pipeline import Pipeline
 from gdeep.search import Gridsearch
 # %%
 # Initialize the Tensorflow writer
-#writer = SummaryWriter()
+writer = SummaryWriter()
+
+#%%
+%load_ext tensorboard
+# %%
+%tensorboard --logdir=examples/runs --port 6060
 
 # %%
 # Define the data loader
@@ -42,7 +47,7 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 
 # %%
 # Define the model
-model = SetTransformer(
+model = PersFormer(
             dim_input=len(homology_dimensions),
             dim_output=5,
             attention_type="induced_attention").double()
