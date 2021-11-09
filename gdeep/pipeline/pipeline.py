@@ -327,7 +327,6 @@ class Pipeline:
         # to start the training from where we left
         if self.check_has_trained and keep_training:
             self._set_initial_model()
-        self.check_has_trained = True
 
         # train initialisation
         dl_tr = self.dataloaders[0]
@@ -341,7 +340,7 @@ class Pipeline:
         # LR scheduler
         if not (self.check_has_trained and keep_training):
             self.scheduler = None
-
+        
         # optuna gridsearch
         search_metric = None
         trial = None
@@ -482,8 +481,10 @@ class Pipeline:
             self.writer.flush()
         except AttributeError:
             pass
+        # check for training
+        self.check_has_trained = True
+
         # put the mean of the cross_val
-        
         return valloss, valacc
         
     def _training_loops(self, n_epochs, dl_tr,
