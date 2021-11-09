@@ -6,6 +6,7 @@ import torch.nn as nn  # type: ignore
 from torch import Tensor  # type: ignore
 from torch.nn import (Module, Linear,
                       Sequential, ModuleList)
+from torch.nn.modules.activation import GELU
 
 
 from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
@@ -44,6 +45,49 @@ class SmallDeepSet(nn.Module):
         x = self.dec(x)
         return x
 
+
+class PytorchTransformer(Module):
+    def __init__(
+        self,
+        dim_input=2,
+        dim_output=5,
+        hidden_size=32,
+        nhead=4,
+        activation='gelu',
+        norm_first=True,
+        num_layers=1,
+        dropout=0.0,
+    ):
+        super().__init__()
+        self.emb = Linear(dim_input, hidden_size)
+
+        encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_size,
+                                                   nhead=nhead,
+                                                   dropout=dropout,
+                                                   activation=activation,
+                                                   norm_first=norm_first,
+                                                   batch_first=True)
+        self.encoder = nn.TransformerEncoder(encoder_layer,
+                                             num_layers=num_layers)
+        self.pool = Sequential(
+            AttentionPooling(hidden_size,
+                             q_length=1,
+                             filter_size=hidden_size,
+                             n_heads=nhead,
+                             layer_norm=True,
+                             pre_layer_norm=norm_first,
+                             dropout=dropout,
+                             attention_type='self_attention'),
+            Linear(hidden_size, hidden_size),
+            Linear(hidden_size, dim_output),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.emb(x)
+        x = self.encoder(x)
+        x = self.pool(x)
+        return x.squeeze()
+
 class PersFormer(Module):
     """ SetTransformer from
     with either induced attention or classical self attention or fast attention.
@@ -61,6 +105,7 @@ class PersFormer(Module):
         attention_layer_type="self_attention",
         attention_block_type="self_attention",
         dropout=0.0,
+        activation=None,
     ):
         """Init of SetTransformer.
 
@@ -91,7 +136,7 @@ class PersFormer(Module):
                                layer_norm=layer_norm,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
-                               activation=None,
+                               activation=activation,
                                attention_type=attention_block_type,
                                induced_points=num_inds
                                )
@@ -105,7 +150,7 @@ class PersFormer(Module):
                                layer_norm=layer_norm,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
-                               activation=None,
+                               activation=activation,
                                attention_type=attention_block_type,
                                )
                 for _ in range(n_layers)
@@ -121,8 +166,9 @@ class PersFormer(Module):
                              layer_norm=layer_norm,
                              pre_layer_norm=pre_layer_norm,
                              dropout=dropout,
-                             activation=None,
+                             activation=activation,
                              attention_type=attention_block_type),
+            Linear(hidden_size, hidden_size),
             Linear(hidden_size, dim_output),
         )
 

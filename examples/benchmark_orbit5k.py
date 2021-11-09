@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer, PersFormer, SmallDeepSet
+from gdeep.topology_layers import SetTransformer, PersFormer, SmallDeepSet, PytorchTransformer
 from gdeep.pipeline import Pipeline
 #from gdeep.search import Gridsearch
 # %%
@@ -30,30 +30,44 @@ from gdeep.pipeline import Pipeline
 
 homology_dimensions = (0, 1)
 
-dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 32},
+dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 12},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
 og = OrbitsGenerator(num_orbits_per_class=1_000,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
-                     test_percentage=0.2)
+                     test_percentage=0.0)
 
-dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
+dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
 
 # %%
 # Define the model
 model = PersFormer(
-            dim_input=2,
+            dim_input=4,
             dim_output=5,
-            dropout=0.0,
             n_layers=3,
+            hidden_size=64,
+            n_heads=8,
+            dropout=0.0,
             layer_norm=True,
-            pre_layer_norm=False,
+            pre_layer_norm=True,
+            activation=nn.GELU,
             attention_layer_type="self_attention").double()
 
+# model = PytorchTransformer(
+#         dim_input=2,
+#         dim_output=5,
+#         hidden_size=64,
+#         nhead=8,
+#         activation='gelu',
+#         norm_first=True,
+#         num_layers=3,
+#         dropout=0.0,
+# ).double()
+
 # %%
-#small_model = SmallDeepSet().double()
+#small_model = SmallDeepSet(dim_input=4).double()
 
 # %%
 # Do training and validation
@@ -65,16 +79,17 @@ loss_fn = nn.CrossEntropyLoss()
 writer = SummaryWriter()
 
 # initialise pipeline class
-pipe = Pipeline(model, [dl_train, dl_test], loss_fn, writer)
+pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 # %%
 
 
 # train the model
-pipe.train(Adam, 500, cross_validation=False, optimizers_param={"lr": 0.0001})
+pipe.train(Adam, 200, cross_validation=False, optimizers_param={"lr": 1e-4},
+        writer_tag="persistence_diagrams_only")
 
 # %%
 # keep training
-pipe.train(Adam, 100, False, keep_training=True)
+# pipe.train(Adam, 100, False, keep_training=True)
 
 # %%
 # For debugging
@@ -92,3 +107,5 @@ mhsa = nn.MultiheadAttention(embed_dim=16, num_heads=4, batch_first=True)
 
 mhsa(x, x, x, need_weights=False)[0].shape
 # %%
+
+
