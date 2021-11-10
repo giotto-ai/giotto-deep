@@ -148,7 +148,7 @@ parameters such as learning rate, optimizer.</p>
 <dt>Args:</dt><dd><dl class="simple">
 <dt>obj (either Pipeline or Benchmark object):</dt><dd><p>either a pipeline of a bechmark class</p>
 </dd>
-<dt>search_metric (string):</dt><dd><p>either ‘loss’ or ‘accuracy’</p>
+<dt>search_metric (string):</dt><dd><p>either <code class="docutils literal notranslate"><span class="pre">'loss'</span></code> or <code class="docutils literal notranslate"><span class="pre">'accuracy'</span></code></p>
 </dd>
 <dt>n_trials (int):</dt><dd><p>number of total gridsearch trials</p>
 </dd>
@@ -157,7 +157,7 @@ parameters such as learning rate, optimizer.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.search.Gridsearch.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models_hyperparams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel_tpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.start" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models_hyperparams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel_tpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch.start" title="Permalink to this definition"></a></dt>
 <dd><p>method to be called when starting the gridsearch</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -177,9 +177,6 @@ parameters such as learning rate, optimizer.</p>
 </dd>
 <dt>scheduler_params (dict):</dt><dd><p>learning rate scheduler parameters</p>
 </dd>
-<dt>writer_tag (string):</dt><dd><p>tag to prepend to the ouput
-on tensorboard</p>
-</dd>
 <dt>profiling (bool, default=False):</dt><dd><p>whether or not you want to activate the
 profiler</p>
 </dd>
@@ -187,6 +184,9 @@ profiler</p>
 </dd>
 <dt>parallel_tpu (bool):</dt><dd><p>boolean value to run the computations
 on multiple TPUs</p>
+</dd>
+<dt>writer_tag (str):</dt><dd><p>tag to prepend to the ouput
+on tensorboard</p>
 </dd>
 </dl>
 </dd>

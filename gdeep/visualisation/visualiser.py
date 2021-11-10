@@ -11,6 +11,7 @@ from captum.attr import visualization
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import matplotlib.pyplot as plt
+from captum.attr import LayerAttribution
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -209,6 +210,17 @@ class Visualiser:
             plots[i].show()
 
     def plot_interpreter_text(self, interpreter):
+        """This method allows to plot the results of an
+        Interpreter for text data.
+
+        Args:
+            interpreter (Interpreter):
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+                
+        Returns:
+            matplotlib.figure
+        """
         viz = interpreter.stored_visualisations
         fig = visualization.visualize_text(viz)
         name = "out.png"
@@ -224,26 +236,55 @@ class Visualiser:
         return fig
 
     def plot_interpreter_image(self, interpreter):
+        """This method allows to plot the results of an
+        Interpreter for image data.
+
+        Args:
+            interpreter (Interpreter):
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+                
+        Returns:
+            matplotlib.figure
+        """
         default_cmap = LinearSegmentedColormap.from_list('custom blue',
                                                          [(0, '#ffffff'),
                                                           (0.25, '#000000'),
                                                           (1, '#000000')],
                                                          N=256)
+        try:
+            attrib = np.transpose(interpreter.attrib.squeeze().detach().cpu().numpy(),
+                                  (1, 2, 0))
+        except ValueError:
+            attrib = np.transpose(LayerAttribution.interpolate(interpreter.attrib.detach().cpu(),
+                                                               tuple(interpreter.image.squeeze().detach().cpu().shape[-2:])).squeeze(0),
+                                  (1, 2, 0))
+            attrib = torch.stack((attrib, attrib, attrib),axis=2).squeeze(-1).detach().cpu().numpy()
+        img = np.transpose(interpreter.image.squeeze().detach().cpu().numpy(),
+                           (1, 2, 0))
 
         fig, _ = visualization.visualize_image_attr_multiple(
-            np.transpose(interpreter.attrib.squeeze().detach().cpu().numpy(),
-                         (1, 2, 0)),
-            np.transpose(interpreter.image.squeeze().detach().cpu().numpy(),
-                          (1, 2, 0)),
-            ["original_image", "heat_map"],
-            ["all", "positive"],
-            cmap=default_cmap,
+            attrib,
+            img,
+            ["original_image", "heat_map", "blended_heat_map"],
+            ["all", "all", "all"],
             show_colorbar=True)
         self.pipe.writer.add_figure(interpreter.method,
                                     fig)
         return fig
 
     def plot_interpreter_tabular(self, interpreter):
+        """This method allows to plot the results of an
+        Interpreter for tabular data.
+
+        Args:
+            interpreter (Interpreter):
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+                
+        Returns:
+            matplotlib.figure
+        """
         # prepare attributions for visualization
         X_test = interpreter.X
         x_axis_data = np.arange(X_test.shape[1])

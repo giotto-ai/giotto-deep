@@ -90,7 +90,8 @@ class Benchmark:
                             scheduler_params,
                             profiling,
                             k_folds,
-                            parallel_tpu)
+                            parallel_tpu,
+                            writer_tag="")
 
 
     def _inner_function(self, model,
@@ -103,7 +104,8 @@ class Benchmark:
                         scheduler_params,
                         profiling,
                         k_folds,
-                        parallel_tpu):
+                        parallel_tpu,
+                        writer_tag=""):
         """private method to run the inner
         function of the benchmark loops
         
@@ -139,9 +141,12 @@ class Benchmark:
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
+            writer_tag (str):
+                the tensorboard writer tag
         """
         pipe = Pipeline(model["model"], dataloaders["dataloaders"],
                         self.loss_fn, self.writer)
+        writer_tag += "Dataset:" + dataloaders["name"] +"|Model:" + model["name"]
         pipe.train(optimizer, n_epochs,
                    cross_validation,
                    optimizer_param,
@@ -151,7 +156,8 @@ class Benchmark:
                    None,
                    profiling,
                    k_folds,
-                   parallel_tpu)
+                   parallel_tpu,
+                   writer_tag)
 
 def _benchmarking_param(fun, arguments, *args, **kwargs):
     """Function to be used as pseudo-decorator for

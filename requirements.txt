@@ -21,3 +21,5 @@ html2image
 optuna
 sphinx_rtd_theme
 torch_tb_profiler
+giotto-ph
+Pillow

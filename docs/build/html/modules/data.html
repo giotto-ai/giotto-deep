@@ -102,6 +102,54 @@ the self.name</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.DataLoaderFromImages">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">DataLoaderFromImages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'labels.csv'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.DataLoaderFromImages" title="Permalink to this definition"></a></dt>
+<dd><p>This class is useful to build dataloaders
+from different images you have in a folder</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>training_folder (string):</dt><dd><p>The path to the folder where the training
+images are located</p>
+</dd>
+<dt>test_folder (string):</dt><dd><p>The path to the folder where the
+test images are located</p>
+</dd>
+<dt>labels_file (string):</dt><dd><p>The path and file name of the labels.
+It shall be a csv file with two columns.
+The first columns contains the name of the
+image and the second one contains the
+label value</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.DataLoaderFromImages.create">
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(128,</span> <span class="pre">128)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.DataLoaderFromImages.create" title="Permalink to this definition"></a></dt>
+<dd><p>This function builds the dataloader.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>size (tuple):</dt><dd><p>a tuple (h,w) to convert all images
+to the same size</p>
+</dd>
+<dt>kwargs (dict):</dt><dd><p>additional arguments to pass to the
+DataLoaders</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>tuple of torch.DataLoader:</dt><dd><p>the tuple with thhe training and
+test dataloader directly useble in
+the pipeline class</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.GenericDataset">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">GenericDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.GenericDataset" title="Permalink to this definition"></a></dt>
 <dd><p>This class is the base class for the tori-datasets</p>

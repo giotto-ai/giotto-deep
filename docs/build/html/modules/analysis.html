@@ -95,6 +95,89 @@ more info at <a class="reference external" href="https://captum.ai/tutorials/">h
 </dl>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter.interpret_image">
+<span class="sig-name descname"><span class="pre">interpret_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_image" title="Permalink to this definition"></a></dt>
+<dd><p>This method creates an image interpreter. This class
+is based on captum.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (tensor):</dt><dd><p>the tensor corresponding to the input image.
+It is expected to be of size <code class="docutils literal notranslate"><span class="pre">(b,</span> <span class="pre">c,</span> <span class="pre">h,</span> <span class="pre">w)</span></code></p>
+</dd>
+<dt>y (int or float or str)</dt><dd><p>the label we want to check the interpretability
+of.</p>
+</dd>
+<dt>layer (nn.Module, optional):</dt><dd><p>some methods will require to specify a layer
+of self.model</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns</dt><dd><dl class="simple">
+<dt>(torch.Tensor, torch.Tensor):</dt><dd><p>the input image and the attribution
+image respectively.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter.interpret_tabular">
+<span class="sig-name descname"><span class="pre">interpret_tabular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_tabular" title="Permalink to this definition"></a></dt>
+<dd><p>This method creates an image interpreter. This class
+is based on captum.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (tensor):</dt><dd><p>the tensor corresponding to the input image.
+It is expected to be of size <code class="docutils literal notranslate"><span class="pre">(b,</span> <span class="pre">c,</span> <span class="pre">h,</span> <span class="pre">w)</span></code></p>
+</dd>
+<dt>y (int or float or str)</dt><dd><p>the label we want to check the interpretability
+of.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns</dt><dd><dl class="simple">
+<dt>(torch.Tensor, torch.Tensor):</dt><dd><p>the input image and the attribution
+image respectively.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter.interpret_text">
+<span class="sig-name descname"><span class="pre">interpret_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_text" title="Permalink to this definition"></a></dt>
+<dd><p>This method creates an image interpreter. This class
+is based on captum.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>sentence (string):</dt><dd><p>the input sentence</p>
+</dd>
+<dt>label (int or float or str)</dt><dd><p>the label we want to check the interpretability
+of.</p>
+</dd>
+<dt>vocab (vocabulary):</dt><dd><p>a <code class="docutils literal notranslate"><span class="pre">gdeep.data.PreprocessText</span></code> vocabulary. Can
+be extracted via the <a href="#id1"><span class="problematic" id="id2">``</span></a>vocabulary``attribute.</p>
+</dd>
+<dt>tokenizer (tokenizer):</dt><dd><p>a <code class="docutils literal notranslate"><span class="pre">gdeep.data.PreprocessText</span></code> tokenizer. Can
+be extracted via the <a href="#id3"><span class="problematic" id="id4">``</span></a>tokenizer``attribute.</p>
+</dd>
+<dt>layer (nn.Module):</dt><dd><p>torch module correspondign to the layer belonging to
+<code class="docutils literal notranslate"><span class="pre">self.model</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns</dt><dd><dl class="simple">
+<dt>(torch.Tensor, torch.Tensor):</dt><dd><p>the input image and the attribution
+image respectively.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <span class="target" id="module-gdeep.analysis.decision_boundary"></span><dl class="py class">
