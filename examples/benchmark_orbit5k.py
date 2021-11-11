@@ -30,14 +30,17 @@ from gdeep.pipeline import Pipeline
 
 homology_dimensions = (0, 1)
 
-dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 12},
+dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 8},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
-og = OrbitsGenerator(num_orbits_per_class=1_000,
+og = OrbitsGenerator(num_orbits_per_class=20_000,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
-                     test_percentage=0.0)
+                     test_percentage=0.0,
+                     n_jobs=12
+                     #dynamical_system = 'pp_convention'
+                     )
 
 dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
 
@@ -46,10 +49,10 @@ dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
 model = PersFormer(
             dim_input=4,
             dim_output=5,
-            n_layers=3,
-            hidden_size=64,
-            n_heads=8,
-            dropout=0.0,
+            n_layers=5,
+            hidden_size=32,
+            n_heads=4,
+            dropout=0.2,
             layer_norm=True,
             pre_layer_norm=True,
             activation=nn.GELU,
@@ -67,7 +70,7 @@ model = PersFormer(
 # ).double()
 
 # %%
-#small_model = SmallDeepSet(dim_input=4).double()
+#small_model = SmallDeepSet(dim_input=2).double()
 
 # %%
 # Do training and validation

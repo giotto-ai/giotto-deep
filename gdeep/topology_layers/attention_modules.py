@@ -126,7 +126,7 @@ class AttentionLayer(Module):
         # elementwise feed forward network
         self.eff = Sequential(
                               Linear(hidden_size, filter_size),
-                              self.activation(inplace=True),
+                              self.activation(),
                               Dropout(self.dropout),
                               Linear(filter_size, hidden_size),
                               Dropout(dropout)
