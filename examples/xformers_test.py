@@ -29,6 +29,7 @@ class SetTransformer(pl.LightningModule):
         weight_decay=0.0001,
         image_size=32,
         num_classes=10,
+        input_dim=2,
         patch_size=4,
         dim=256,
         n_layer=12,
@@ -80,7 +81,7 @@ class SetTransformer(pl.LightningModule):
         config = xFormerConfig(xformer_config)
         self.transformer = xFormer.from_config(config)
 
-        self.patch_emb = nn.Linear(2, dim)
+        self.patch_emb = nn.Linear(input_dim, dim)
 
         if classifier == Classifier.TOKEN:
             self.clf_token = nn.Parameter(torch.zeros(dim))

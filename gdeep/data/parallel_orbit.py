@@ -109,7 +109,7 @@ class OrbitsGenerator(object):
             y = np.array([self._num_orbits_per_class * [c]
                           for c in range(self._num_classes)])
             
-            self._labels = y.reshape(-1).astype('int32')
+            self._labels = y.reshape(-1)
 
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
@@ -230,8 +230,6 @@ class OrbitsGenerator(object):
         Returns:
             Tuple[DataLoader, DataLoader, DataLoader]: train, val, test data loaders.
         """
-        print([a.dtype for a in list_of_arrays])
-        print([torch.tensor(a[self._train_idcs]).dtype for a in list_of_arrays])
         assert ((self._train_idcs is not None) and 
                 (self._val_idcs is not None) and
                 (self._test_idcs is not None)),\

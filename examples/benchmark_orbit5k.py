@@ -30,11 +30,11 @@ from gdeep.pipeline import Pipeline
 
 homology_dimensions = (0, 1)
 
-dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 8},
+dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 32},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
-og = OrbitsGenerator(num_orbits_per_class=1_00,
+og = OrbitsGenerator(num_orbits_per_class=1_000,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
                      test_percentage=0.0,
@@ -43,26 +43,36 @@ og = OrbitsGenerator(num_orbits_per_class=1_00,
                      )
 
 
-dl_train, _, _ = og.get_dataloader_combined(dataloaders_dicts)
-
-for x1, x2, y in dl_train:
-    print(x1.dtype)
-    print(x2.dtype)
-    break
+dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
 
 # %%
 # Define the model
-model = PersFormer(
-            dim_input=4,
-            dim_output=5,
-            n_layers=5,
-            hidden_size=32,
-            n_heads=4,
-            dropout=0.2,
-            layer_norm=True,
-            pre_layer_norm=True,
-            activation=nn.GELU,
-            attention_layer_type="self_attention").double()
+model = SetTransformer(
+        dim_input=2,
+        num_outputs=1,  # for classification tasks this should be 1
+        dim_output=5,  # number of classes
+        dim_hidden=64,
+        num_heads=4,
+        num_inds=32,
+        ln=False,  # use layer norm
+        n_layers_encoder=2,
+        n_layers_decoder=2,
+        attention_type="self_attention",
+        dropout=0.0
+)
+
+
+#model = PersFormer(
+#            dim_input=2,
+#            dim_output=5,
+#            n_layers=5,
+#            hidden_size=32,
+#            n_heads=4,
+#            dropout=0.1,
+#            layer_norm=True,
+#            pre_layer_norm=False,
+#            activation=nn.GELU,
+#            attention_layer_type="self_attention")
 
 # model = PytorchTransformer(
 #         dim_input=2,
@@ -93,8 +103,7 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 
 
 # train the model
-pipe.train(Adam, 200, cross_validation=False, optimizers_param={"lr": 1e-4},
-        writer_tag="persistence_diagrams_only")
+pipe.train(Adam, 200, cross_validation=False, optimizers_param={"lr": 1e-4})
 
 # %%
 # keep training
@@ -109,12 +118,6 @@ for batch, (X, y) in enumerate(dl_train):
     break
 
 # %%
-
-# %%
-x = torch.rand(32, 10, 16)
-mhsa = nn.MultiheadAttention(embed_dim=16, num_heads=4, batch_first=True)
-
-mhsa(x, x, x, need_weights=False)[0].shape
 # %%
 
 
