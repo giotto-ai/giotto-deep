@@ -41,9 +41,9 @@ dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 32},
 og = OrbitsGenerator(num_orbits_per_class=10,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
-                     test_percentage=0.2)
+                     test_percentage=0.0)
 
-dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
+dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
 
 # %%
 # Define the model
@@ -64,7 +64,7 @@ for x, y in dl_train:
 loss_fn = nn.CrossEntropyLoss()
 
 # initialise pipeline class
-pipe = Pipeline(model, [dl_train, dl_test], loss_fn, None)
+pipe = Pipeline(model, [dl_train, None], loss_fn, None)
 # %%
 pipe.train(Adam, 10, True, {"lr": 0.001})
 # %%
