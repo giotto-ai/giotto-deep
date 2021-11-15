@@ -156,7 +156,7 @@ class Pipeline:
                                                    correct)
         try:
             # add data to tensorboard
-            self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag + "/validation")
+            self._add_pr_curve_tb(torch.vstack(pred), class_label, class_probs, writer_tag + "/validation")
             try:
                 self.writer.flush()
             except AttributeError:
@@ -192,7 +192,7 @@ class Pipeline:
         probs = torch.cat([torch.stack(batch) for batch in
                           class_probs]).cpu()
         labels = torch.cat(class_label).cpu()
-        for class_index in range(len(pred[0])):
+        for class_index in range(pred[0].shape[-1]):
             tensorboard_truth = labels == class_index
             tensorboard_probs = probs[:, class_index]
             try:
@@ -246,7 +246,7 @@ class Pipeline:
                                                     test_loss,
                                                     correct)
         # add data to tensorboard
-        self._add_pr_curve_tb(pred, class_label, class_probs, writer_tag + "/test")
+        self._add_pr_curve_tb(torch.vstack(pred), class_label, class_probs, writer_tag + "/test")
         try:
             self.writer.flush()
         except AttributeError:

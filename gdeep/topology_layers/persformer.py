@@ -6,16 +6,20 @@ import torch.nn as nn  # type: ignore
 from torch import Tensor  # type: ignore
 from torch.nn import (Module, Linear,
                       Sequential, ModuleList)
+from torch.nn.modules.activation import GELU
 
 
 from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
 from gdeep.topology_layers.attention_modules import AttentionLayer, InducedAttention, AttentionPooling
 
 class SmallDeepSet(nn.Module):
-    def __init__(self, pool="max"):
+    def __init__(self,
+        pool="max",
+        dim_input=2,
+        dim_output=5,):
         super().__init__()
         self.enc = nn.Sequential(
-            nn.Linear(in_features=1, out_features=64),
+            nn.Linear(in_features=dim_input, out_features=64),
             nn.ReLU(),
             nn.Linear(in_features=64, out_features=64),
             nn.ReLU(),
@@ -26,7 +30,7 @@ class SmallDeepSet(nn.Module):
         self.dec = nn.Sequential(
             nn.Linear(in_features=64, out_features=64),
             nn.ReLU(),
-            nn.Linear(in_features=64, out_features=1),
+            nn.Linear(in_features=64, out_features=dim_output),
         )
         self.pool = pool
 
@@ -41,6 +45,49 @@ class SmallDeepSet(nn.Module):
         x = self.dec(x)
         return x
 
+
+class PytorchTransformer(Module):
+    def __init__(
+        self,
+        dim_input=2,
+        dim_output=5,
+        hidden_size=32,
+        nhead=4,
+        activation='gelu',
+        norm_first=True,
+        num_layers=1,
+        dropout=0.0,
+    ):
+        super().__init__()
+        self.emb = Linear(dim_input, hidden_size)
+
+        encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_size,
+                                                   nhead=nhead,
+                                                   dropout=dropout,
+                                                   activation=activation,
+                                                   norm_first=norm_first,
+                                                   batch_first=True)
+        self.encoder = nn.TransformerEncoder(encoder_layer,
+                                             num_layers=num_layers)
+        self.pool = Sequential(
+            AttentionPooling(hidden_size,
+                             q_length=1,
+                             filter_size=hidden_size,
+                             n_heads=nhead,
+                             layer_norm=True,
+                             pre_layer_norm=norm_first,
+                             dropout=dropout,
+                             attention_type='self_attention'),
+            Linear(hidden_size, hidden_size),
+            Linear(hidden_size, dim_output),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.emb(x)
+        x = self.encoder(x)
+        x = self.pool(x)
+        return x.squeeze()
+
 class PersFormer(Module):
     """ SetTransformer from
     with either induced attention or classical self attention or fast attention.
@@ -49,15 +96,16 @@ class PersFormer(Module):
         self,
         dim_input=2,
         dim_output=5,
-        dim_hidden=32,
-        num_heads=4,
+        hidden_size=32,
+        n_heads=4,
         num_inds=32,
-        ln=False,
+        layer_norm=True,
         pre_layer_norm=True,
         n_layers=1,
-        attention_type="self_attention",
-        self_attention_type="self_attention",
+        attention_layer_type="self_attention",
+        attention_block_type="self_attention",
         dropout=0.0,
+        activation=None,
     ):
         """Init of SetTransformer.
 
@@ -72,47 +120,56 @@ class PersFormer(Module):
             ln (bool, optional): If `True` layer norm will not be applied.
                 Defaults to False.
         """
-        super(PersFormer).__init__()
+        super().__init__()
 
-        assert dim_hidden % num_heads == 0, \
+        assert hidden_size % n_heads == 0, \
             "Number of hidden dimensions must be divisible by number of heads."
 
-        self.emb = self.emb = Linear(dim_input, dim_hidden)
+        self.emb = Linear(dim_input, hidden_size)
 
         self.n_layers = n_layers
-        if attention_type == "induced_attention":
+        if attention_layer_type == "induced_attention":
             self.enc_list = ModuleList([
-                InducedAttention(hidden_size=dim_hidden,
-                               filter_size=dim_hidden,
-                               n_heads=num_heads,
-                               layer_norm=ln,
+                InducedAttention(hidden_size=hidden_size,
+                               filter_size=hidden_size,
+                               n_heads=n_heads,
+                               layer_norm=layer_norm,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
-                               activation=None,
-                               attention_type=self_attention_type,
+                               activation=activation,
+                               attention_type=attention_block_type,
                                induced_points=num_inds
                                )
                 for _ in range(n_layers)
             ])
-        elif attention_type == "self_attention":
+        elif attention_layer_type == "self_attention":
             self.enc_list = ModuleList([
-                AttentionLayer(hidden_size=dim_hidden,
-                               filter_size=dim_hidden,
-                               n_heads=num_heads,
-                               layer_norm=ln,
+                AttentionLayer(hidden_size=hidden_size,
+                               filter_size=hidden_size,
+                               n_heads=n_heads,
+                               layer_norm=layer_norm,
                                pre_layer_norm=pre_layer_norm,
                                dropout=dropout,
-                               activation=None,
-                               attention_type=self_attention_type,
+                               activation=activation,
+                               attention_type=attention_block_type,
                                )
                 for _ in range(n_layers)
             ])
         else:
-            raise ValueError("Unknown attention type:", attention_type)
+            raise ValueError("Unknown attention type:", attention_layer_type)
 
         self.pool = Sequential(
-            AttentionPooling(dim_hidden, q_length=1, num_heads=num_heads, ln=ln),
-            Linear(dim_hidden, dim_output),
+            AttentionPooling(hidden_size,
+                             q_length=1,
+                             filter_size=hidden_size,
+                             n_heads=n_heads,
+                             layer_norm=layer_norm,
+                             pre_layer_norm=pre_layer_norm,
+                             dropout=dropout,
+                             activation=activation,
+                             attention_type=attention_block_type),
+            Linear(hidden_size, hidden_size),
+            Linear(hidden_size, dim_output),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -127,7 +184,7 @@ class PersFormer(Module):
         """
         x = self.emb(x)
         for attention_layer in self.enc_list:
-            x = attention_layer(x)
+            x = attention_layer(x, x, x)
         x = self.pool(x)
         return x.squeeze()  # squeeze all dimensions of size 1
 
@@ -231,7 +288,6 @@ class SetTransformer(nn.Module):
         x = self.emb(x)
         for l in self.enc_list:
             x = l(x)
-        print("output size encoder:", x.size())
         x = self.dec(x)
         return x.squeeze()  # squeeze all dimensions of size 1
 
