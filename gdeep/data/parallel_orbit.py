@@ -109,11 +109,11 @@ class OrbitsGenerator(object):
             y = np.array([self._num_orbits_per_class * [c]
                           for c in range(self._num_classes)])
             
-            self._labels = y.reshape(-1)
+            self._labels = y.reshape(-1).astype('int32')
 
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
-                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore
+                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2).astype('f')  # type: ignore
 
                 for i in range(1, self._num_pts_per_orbit):  # type: ignore
                     x_cur = x[class_idx, :, i - 1, 0]
@@ -127,7 +127,7 @@ class OrbitsGenerator(object):
                         x_next = x[class_idx, :, i, 0]
                         x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
                         
-            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))
+            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2)).astype('f')
     
     def _compute_persistence_diagrams(self) -> None:
         """ Computes the weak alpha persistence of the orbit data clouds.
@@ -155,7 +155,7 @@ class OrbitsGenerator(object):
         # Convert persistence diagram to one-hot homological dimension encoding
         self._persistence_diagrams = self._persistence_diagrams_to_one_hot(
                                         persistence_diagrams_categorical
-                                        )
+                                        ).astype('f')
       
     def _persistence_diagrams_to_one_hot(self, persistence_diagrams):
         """ Convert homology dimension to one-hot encoding
@@ -230,6 +230,8 @@ class OrbitsGenerator(object):
         Returns:
             Tuple[DataLoader, DataLoader, DataLoader]: train, val, test data loaders.
         """
+        print([a.dtype for a in list_of_arrays])
+        print([torch.tensor(a[self._train_idcs]).dtype for a in list_of_arrays])
         assert ((self._train_idcs is not None) and 
                 (self._val_idcs is not None) and
                 (self._test_idcs is not None)),\

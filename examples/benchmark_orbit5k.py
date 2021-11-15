@@ -34,7 +34,7 @@ dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 8},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
-og = OrbitsGenerator(num_orbits_per_class=20_000,
+og = OrbitsGenerator(num_orbits_per_class=1_00,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
                      test_percentage=0.0,
@@ -42,7 +42,13 @@ og = OrbitsGenerator(num_orbits_per_class=20_000,
                      #dynamical_system = 'pp_convention'
                      )
 
-dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
+
+dl_train, _, _ = og.get_dataloader_combined(dataloaders_dicts)
+
+for x1, x2, y in dl_train:
+    print(x1.dtype)
+    print(x2.dtype)
+    break
 
 # %%
 # Define the model
