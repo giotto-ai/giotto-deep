@@ -157,6 +157,7 @@ model = SetTransformer(steps=100,
                        dim=64,
                        n_layer=2,
                        n_head=4,
+                       learning_rate=1e-5,
                        attention="scaled_dot_product").double()
 
 # %%
