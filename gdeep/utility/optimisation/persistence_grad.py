@@ -162,7 +162,7 @@ class PersistenceGradient():
         return pairs[:, :2], pairs[:, 2]
 
     def _persistence(self, X):
-        '''This function computess the persistence permutation.
+        '''This function computes the persistence permutation.
         This permutation permutes the filtration values and matches
         them as follows:
         $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
@@ -236,7 +236,7 @@ class PersistenceGradient():
                                  metric=self.metric,
                                  collapse_edges=self.collapse_edges,
                                  n_threads=-1,
-                                 ret_representative_simplices=True)
+                                 return_generators=True)
         
         persistence_pairs = []
         #print(output["gens"])
