@@ -215,7 +215,8 @@ class SetTransformer(nn.Module):
         num_heads=4,
         num_inds=32,
         ln=False,  # use layer norm
-        n_layers=1,
+        n_layers_encoder=1,
+        n_layers_decoder=1,
         attention_type="self_attention",
         dropout=0.0
     ):
@@ -238,9 +239,6 @@ class SetTransformer(nn.Module):
         assert dim_hidden % num_heads == 0, \
             "Number of hidden dimensions must be divisible by number of heads."
 
-        self.emb = SAB(dim_input, dim_hidden, num_heads, ln=ln)
-
-        self.n_layers = n_layers
         if attention_type == "induced_attention":
             self.emb = ISAB(dim_input, dim_hidden, num_heads, num_inds=num_inds, ln=ln)
             self.enc_list = nn.ModuleList([
@@ -248,13 +246,13 @@ class SetTransformer(nn.Module):
                 ISAB(dim_hidden, dim_hidden, num_heads, num_inds=num_inds, ln=ln),
                 nn.Dropout(p=dropout)
                 )
-                for _ in range(n_layers - 1)
+                for _ in range(n_layers_decoder - 1)
             ])
         elif attention_type == "self_attention":
             self.emb = SAB(dim_input, dim_hidden, num_heads, ln=ln)
             self.enc_list = nn.ModuleList([
                 SAB(dim_hidden, dim_hidden, num_heads, ln=ln)
-                for _ in range(n_layers - 1)
+                for _ in range(n_layers_decoder - 1)
             ])
         elif attention_type == "fast_attention":
             self.emb = FastAttention(dim_input, dim_hidden,
@@ -264,7 +262,7 @@ class SetTransformer(nn.Module):
                     FastAttention(dim_hidden, dim_hidden,
                                   heads=num_heads, dim_head=64),
                 )
-                for _ in range(n_layers - 1)
+                for _ in range(n_layers_decoder)
             ])
         else:
             raise ValueError("Unknown attention type:", attention_type)
@@ -272,6 +270,7 @@ class SetTransformer(nn.Module):
             nn.Dropout(p=dropout),
             PMA(dim_hidden, num_heads, num_outputs, ln=ln),
             nn.Dropout(p=dropout),
+            *[nn.Linear(dim_hidden, dim_hidden) for _ in range(n_layers_decoder)],
             nn.Linear(dim_hidden, dim_output),
         )
 
