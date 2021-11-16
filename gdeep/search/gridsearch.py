@@ -31,10 +31,14 @@ class Gridsearch(Pipeline):
             either ``'loss'`` or ``'accuracy'``
         n_trials (int):
             number of total gridsearch trials
+        best_not_last (bool):
+            A flag to use the best validation accuracy over the
+            epochs or the validation accuracy of the last epoch
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10):
+    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False):
+        self.best_not_last = best_not_last
         self.is_pipe = None
         self.obj = obj
         self.bench = obj
@@ -137,6 +141,8 @@ class Gridsearch(Pipeline):
                                         parallel_tpu,
                                         writer_tag
                                         )
+        best_loss = new_pipe.best_val_loss
+        best_accuracy = new_pipe.best_val_acc
         self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
         self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
         self.writer.flush()
@@ -144,8 +150,12 @@ class Gridsearch(Pipeline):
         del(new_pipe)
         del(new_model)
         if self.search_metric == "loss":
+            if self.best_not_last:
+                return best_loss
             return loss
         else:
+            if self.best_not_last:
+                return best_accuracy
             return accuracy
 
     def start(self,

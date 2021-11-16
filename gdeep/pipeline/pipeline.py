@@ -182,7 +182,7 @@ class Pipeline:
             pass
         # store the best results
         self.best_val_acc = max(self.best_val_acc,100*correct)
-        self.best_val_loss = min(self.best_val_loss,100*correct)
+        self.best_val_loss = min(self.best_val_loss,val_loss)
         return val_loss, 100*correct
 
     def _add_pr_curve_tb(self, pred, class_label, class_probs, writer_tag=""):
