@@ -12,6 +12,7 @@ from gdeep.visualisation import plotly2tensor
 from torch.optim import *
 import plotly.express as px
 from functools import partial
+import warnings
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -125,8 +126,8 @@ class Gridsearch(Pipeline):
         try:
             new_model = type(self.model)(**models_hyperparam)
         except TypeError:
+            warings.warn("Model cannot be re-initialised. Using exisitng one.")
             new_model = self.model
-
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
 
         loss, accuracy = new_pipe.train(optimizer, n_epochs,
@@ -143,19 +144,25 @@ class Gridsearch(Pipeline):
                                         )
         best_loss = new_pipe.best_val_loss
         best_accuracy = new_pipe.best_val_acc
-        self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
-        self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
         self.writer.flush()
         # release resources
         del(new_pipe)
         del(new_model)
         if self.search_metric == "loss":
             if self.best_not_last:
+                self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
+                self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
                 return best_loss
+            self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
+            self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return loss
         else:
             if self.best_not_last:
+                self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
+                self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
                 return best_accuracy
+            self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
+            self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return accuracy
 
     def start(self,
