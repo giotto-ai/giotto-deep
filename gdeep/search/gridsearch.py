@@ -126,7 +126,7 @@ class Gridsearch(Pipeline):
         try:
             new_model = type(self.model)(**models_hyperparam)
         except TypeError:
-            warings.warn("Model cannot be re-initialised. Using exisitng one.")
+            warnings.warn("Model cannot be re-initialised. Using exisitng one.")
             new_model = self.model
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
 
