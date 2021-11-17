@@ -94,9 +94,9 @@ class TransformerWrapper(nn.Module):
 # %%
 model = TransformerWrapper(
     attn_layers = Encoder(
-        dim = 512,
-        depth = 12,
-        heads = 8
+        dim = 64,
+        depth = 3,
+        heads = 4
     )
 ).cuda()
 
