@@ -100,3 +100,24 @@ def test_PersistenceGradient_matrix_2():
     assert pg.persistence_function(dist).item() > -23.
     fig, fig3d, loss_val = pg.SGD(dist, n_epochs=1,
                                   lr=0.002)
+                                  
+
+def test_PersistenceGradient_pts():
+    # test explicit gradients
+    pts = torch.tensor([[0., 0.],
+                        [0., 1.],
+                        [1., 0.]])
+    pg = PersistenceGradient(homology_dimensions=(0, 1),
+                             zeta=0.0,
+                             collapse_edges=False,
+                             metric="euclidean")
+
+    assert all(pg.phi(pts)[:5] == torch.tensor([0., 0., 0.,
+                                                1., 1.]))
+
+    fig, fig3d, loss_val = pg.SGD(pts, n_epochs=1,
+                                  lr=0.002)
+
+    assert (pts.grad == torch.tensor([[ 1.,  1.],
+                                      [ 0., -1.],
+                                      [-1.,  0.]])).all().item()

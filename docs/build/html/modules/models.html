@@ -81,7 +81,7 @@
 <span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this headline"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.FFNet">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
 <dd><p>This is the class to build a custom feed
 forward network that is easily built from an array,
 in which the number and dimensions of the layers is specified.</p>
@@ -114,7 +114,7 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">ModelExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.ModelExtractor" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">ModelExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.ModelExtractor" title="Permalink to this definition"></a></dt>
 <dd><p>This class wraps nn.Modules to extract
 weights, activations, gradients and decision boundaries</p>
 <dl class="simple">
@@ -226,7 +226,7 @@ the dict is the name of the parameters</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.PeriodicNeuralNetwork">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">PeriodicNeuralNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.PeriodicNeuralNetwork" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">PeriodicNeuralNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.PeriodicNeuralNetwork" title="Permalink to this definition"></a></dt>
 <dd><p>Makes a periodic <cite>nn.Module</cite> of <cite>nn</cite>. <cite>boundary_list</cite> specifies
 the elementary region the periodic neural network is supported on.
 This creates neural networks
@@ -262,19 +262,19 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.SaveLayerOutput">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveLayerOutput</span></span><a class="headerlink" href="#gdeep.models.SaveLayerOutput" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveLayerOutput</span></span><a class="headerlink" href="#gdeep.models.SaveLayerOutput" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.SaveNodeOutput">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveNodeOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.SaveNodeOutput" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveNodeOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.SaveNodeOutput" title="Permalink to this definition"></a></dt>
 <dd><p>Class for saving activations of a node in
 a neural network.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.SaveOutput">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveOutput</span></span><a class="headerlink" href="#gdeep.models.SaveOutput" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveOutput</span></span><a class="headerlink" href="#gdeep.models.SaveOutput" title="Permalink to this definition"></a></dt>
 <dd><p>General class for saving outputs
 outputs will be stored in a list ‘outputs’</p>
 </dd></dl>

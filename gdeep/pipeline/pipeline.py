@@ -92,6 +92,8 @@ class Pipeline:
         t_loss = 0
         tik = time.time()
         # for batch, (X, y) in enumerate(self.dataloaders[0]):
+        assert self.n_accumulated_grads <= len(dl_tr), "The number of" + \
+                                                      " accumulated gradients shall be diminished!"
         for batch, (X, y) in enumerate(dl_tr):
             X = X.to(self.DEVICE)
             y = y.to(self.DEVICE)
@@ -111,12 +113,21 @@ class Pipeline:
             except AttributeError:
                 pass
             # Backpropagation
-            self.optimizer.zero_grad()
-            loss.backward()
-            if self.DEVICE.type == "xla":
-                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
-            else:
-                self.optimizer.step()
+            if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
+                self.optimizer.zero_grad()
+                loss.backward()
+                if self.DEVICE.type == "xla":
+                    xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+                else:
+                    self.optimizer.step()
+            else:  # if we use gradient accumulation techniques
+                (loss / self.n_accumulated_grads).backward()
+                if (batch + 1) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
+                    if self.DEVICE.type == "xla":
+                        xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+                    else:
+                        self.optimizer.step()
+                    self.optimizer.zero_grad()
             if batch % 1 == 0:
                 t_loss += loss.item()
                 print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
@@ -182,7 +193,7 @@ class Pipeline:
             pass
         # store the best results
         self.best_val_acc = max(self.best_val_acc,100*correct)
-        self.best_val_loss = min(self.best_val_loss,100*correct)
+        self.best_val_loss = min(self.best_val_loss,val_loss)
         return val_loss, 100*correct
 
     def _add_pr_curve_tb(self, pred, class_label, class_probs, writer_tag=""):
@@ -222,43 +233,6 @@ class Pipeline:
 
         return pred_list, loss, correct
 
-    def _test_loop(self, dl_test, writer_tag=""):
-        """private method to run a single test
-        loop
-        """
-        try:
-            self.DEVICE = xm.xla_device()
-        except NameError:
-            print("No TPUs")
-        self.model = self.model.to(self.DEVICE)
-        # size = len(self.dataloaders[1].dataset)
-        size = len(dl_test.dataset)
-        test_loss, correct = 0, 0
-        class_label = []
-        class_probs = []
-        self.model.eval()
-
-        # for X, y in self.dataloaders[1]:
-        pred, test_loss, correct = self._inner_loop(dl_test,
-                                                    class_probs,
-                                                    class_label,
-                                                    test_loss,
-                                                    correct)
-        # add data to tensorboard
-        self._add_pr_curve_tb(torch.vstack(pred), class_label, class_probs, writer_tag + "/test")
-        try:
-            self.writer.flush()
-        except AttributeError:
-            pass
-
-        # accuracy
-        correct /= len(dl_test)*dl_test.batch_size
-        test_loss /= len(dl_test)
-        print(f"Test results: \n Accuracy: {(100*correct):>0.1f}%, \
-                Avg loss: {test_loss:>8f} \n")
-
-        return test_loss, 100*correct
-
     def train(self, optimizer, n_epochs=10, cross_validation=False,
               optimizers_param=None,
               dataloaders_param=None,
@@ -270,6 +244,7 @@ class Pipeline:
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
+              n_accumulated_grads:int=0,
               writer_tag=""):
         """Function to run all the training cycles.
 
@@ -313,6 +288,9 @@ class Pipeline:
                 This flag allows to store the gradients
                 and the layer values in tensorboard for
                 each epoch
+            n_accumulated_grads (int, default 0):
+                this is the number of accumulated gradients.
+                Only a positive number will be taken into account
             writer_tag (str):
                 the tensorboard writer tag
 
@@ -323,6 +301,7 @@ class Pipeline:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
+        self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
         # to start the training from where we left
         if self.check_has_trained and keep_training:
