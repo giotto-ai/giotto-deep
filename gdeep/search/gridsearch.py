@@ -61,7 +61,11 @@ class Gridsearch(Pipeline):
         elif (isinstance(obj, Benchmark)):
             self.is_pipe = False
 
-        self.search_metric = search_metric
+        self.search_metric = (search_metric if search_metric in ("loss", "accuracy")
+                              else None)
+        if self.search_metric is None:
+            raise ValueError("Wrong search_metric! "
+                             "Either `loss` or `accuracy`")
         self.n_trials = n_trials
         self.val_epoch = 0
         self.train_epoch = 0
@@ -388,10 +392,13 @@ class Gridsearch(Pipeline):
             temp_list = []
             for val in tria.params.values():
                 temp_list.append(val)
-            self.list_res.append([model_name, dataset_name] + temp_list + [tria.value])
+            if self.search_metric == "loss":
+                self.list_res.append([model_name, dataset_name] + temp_list + [tria.value, -1])
+            else:
+                self.list_res.append([model_name, dataset_name] + temp_list + [np.inf, tria.value])
 
         self.df_res = pd.DataFrame(self.list_res, columns=["model", "dataset"] +
-                              list(trial_best.params.keys())+[self.metric])
+                              list(trial_best.params.keys())+["loss", "accuracy"])
 
         # correlations of numercal coefficients
         list_of_arrays = []
@@ -432,9 +439,10 @@ class Gridsearch(Pipeline):
     def _store_to_tensorboard(self):
         """Store the hyperparameters to tensorboard"""
         for i in range(len(self.df_res)):
-            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-1]).items()}
+            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-2]).items()}
             self.writer.add_hparams(dictio,
-                                    {self.df_res.columns[-1]: self.df_res.iloc[i][-1]})
+                                    {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
+                                     self.df_res.columns[-1]: self.df_res.iloc[i][-1]})
         
         self.writer.flush()
         
