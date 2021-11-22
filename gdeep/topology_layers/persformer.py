@@ -12,27 +12,36 @@ from torch.nn.modules.activation import GELU
 from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
 from gdeep.topology_layers.attention_modules import AttentionLayer, InducedAttention, AttentionPooling
 
-class SmallDeepSet(nn.Module):
+class DeepSet(nn.Module):
     def __init__(self,
-        pool="max",
         dim_input=2,
-        dim_output=5,):
+        dim_output=5,
+        dim_hidden=32,
+        n_layers_encoder=2,
+        n_layers_decoder=2,
+        pool="max",
+        ):
         super().__init__()
+        assert pool in ["max", "mean", "sum" "attention"], "Unknown Pooling type"
+
+        self.dim_hidden=dim_hidden
+
         self.enc = nn.Sequential(
-            nn.Linear(in_features=dim_input, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=64),
+            nn.Linear(in_features=dim_input, out_features=dim_hidden),
+            nn.Sequential(*[nn.Sequential(
+                    nn.ReLU(),
+                    nn.Linear(dim_hidden, dim_hidden))
+                for _ in range(n_layers_encoder)])
         )
         self.dec = nn.Sequential(
-            nn.Linear(in_features=64, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=dim_output),
+            nn.Sequential(*[nn.Sequential(nn.Linear(dim_hidden, dim_hidden),
+                            nn.ReLU())
+                for _ in range(n_layers_decoder)]),
+            nn.Linear(in_features=dim_hidden, out_features=dim_output),
         )
         self.pool = pool
+        if pool == "attention":
+            self.pooling_layer = AttentionPooling(hidden_dim = self.dim_hidden, q_length=1)
 
     def forward(self, x):
         x = self.enc(x)
@@ -42,6 +51,8 @@ class SmallDeepSet(nn.Module):
             x = x.mean(dim=1)
         elif self.pool == "sum":
             x = x.sum(dim=1)
+        else:
+            x = self.pooling_layer(x).squeeze()
         x = self.dec(x)
         return x
 

@@ -186,10 +186,11 @@ class InducedAttention(Module):
 class AttentionPooling(Module):
     def __init__(self, hidden_dim: int=32, q_length: int=1, *args, **kwargs):
         super().__init__()
+        self.q_length = q_length
         self.q = Parameter(Tensor(1, q_length, hidden_dim))
         xavier_uniform_(self.q)
         self.attention_layer = AttentionLayer(hidden_dim, *args, **kwargs)
         
     def forward(self, x: Tensor):
         batch_size = x.shape[0]
-        return self.attention_layer(self.q.repeat(batch_size, 1, 1), x, x)
+        return self.attention_layer(self.q.repeat(batch_size, 1, 1), x, x).squeeze()
