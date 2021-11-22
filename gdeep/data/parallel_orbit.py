@@ -96,6 +96,14 @@ class OrbitsGenerator(object):
 
         self.arbitrary_precision = arbitrary_precision
 
+
+    def _orbits_from_array(self, orbits):
+        assert (orbits.shape[0] == self._num_orbits_per_class * self._num_classes and
+                orbits.shape[1] == self._num_pts_per_orbit and
+                orbits.shape[2] == 2), "Array does not have the right shape."
+
+        self._orbits = orbits
+
     def _generate_orbits(self) -> None:
         """Generate the orbits for the dynamical system.
         """
