@@ -30,6 +30,7 @@ from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 import json
 #from gdeep.search import Gridsearch
+
 # %%
 
 #Configs
@@ -47,7 +48,7 @@ config_data = DotMap({
 
 
 config_model = DotMap({
-    'implementation': 'DeepSet', #SetTransformer, PersFormer,
+    'implementation': 'DeepSet', # SetTransformer, PersFormer,
     # PytorchTransformer, DeepSet, X-Transformer
     'dim_input': 2,
     'num_outputs': 1,  # for classification tasks this should be 1
@@ -95,6 +96,11 @@ og = OrbitsGenerator(num_orbits_per_class=config_data.num_orbits_per_class,
 dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
 
 # %%
+import numpy as np
+orbits = og.get_orbits()
+
+np.save('orbit5k_arbitrary_precision.npy', orbits)
+#%%
 
 
 
