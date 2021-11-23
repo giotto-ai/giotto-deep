@@ -14,7 +14,7 @@ import plotly.express as px
 from functools import partial
 import warnings
 from itertools import chain, combinations
-
+from optuna.pruners import MedianPruner
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -37,10 +37,12 @@ class Gridsearch(Pipeline):
         best_not_last (bool):
             A flag to use the best validation accuracy over the
             epochs or the validation accuracy of the last epoch
+        pruner (optuna.Pruners, default MedianPruner):
+            Instance of an optuna pruner, can be user-defined
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False):
+    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None):
         self.best_not_last = best_not_last
         self.is_pipe = None
         self.obj = obj
@@ -69,6 +71,13 @@ class Gridsearch(Pipeline):
         self.n_trials = n_trials
         self.val_epoch = 0
         self.train_epoch = 0
+        if pruner is None:
+            self.pruner = pruner
+        else:
+            self.pruner = MedianPruner(n_startup_trials=5,
+                                       n_warmup_steps=0,
+                                       interval_steps=1,
+                                       n_min_trials=1)
 
 
     def _objective(self, trial,
@@ -253,9 +262,11 @@ class Gridsearch(Pipeline):
                 on tensorboard
         """
         if self.search_metric == "loss":
-            self.study = optuna.create_study(direction="minimize")
+            self.study = optuna.create_study(direction="minimize",
+                                             pruner=self.pruner)
         else:
-            self.study = optuna.create_study(direction="maximize")
+            self.study = optuna.create_study(direction="maximize",
+                                             pruner=self.pruner)
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
             # already initialised. So they exist also in _objective()
