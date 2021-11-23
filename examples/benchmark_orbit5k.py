@@ -1,4 +1,9 @@
 # %%
+# for gridsearch
+
+#!pip install pyyaml==5.4.1
+
+# %%
 from IPython import get_ipython  # type: ignore
 
 # %% 
@@ -31,6 +36,7 @@ from gdeep.data import OrbitsGenerator, DataLoaderKwargs
 from gdeep.topology_layers import SetTransformer, PersFormer, DeepSet, PytorchTransformer
 from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
+from gdeep.search import Gridsearch
 import json
 #from gdeep.search import Gridsearch
 
@@ -46,12 +52,12 @@ config_data = DotMap({
     'dynamical_system': 'classical_convention',
     'homology_dimensions': (0, 1),
     'dtype': 'float32',
-    'arbitrary_precision': False
+    'arbitrary_precision': True
 })
 
 
 config_model = DotMap({
-    'implementation': 'DeepSet', # SetTransformer, PersFormer,
+    'implementation': 'SetTransformer', # SetTransformer, PersFormer,
     # PytorchTransformer, DeepSet, X-Transformer
     'dim_input': 2,
     'num_outputs': 1,  # for classification tasks this should be 1
@@ -60,7 +66,7 @@ config_model = DotMap({
     'num_heads': 4,
     'num_induced_points': 32,
     'layer_norm': False,  # use layer norm
-    'pre_layer_norm': True,
+    'pre_layer_norm': False,
     'num_layers_encoder': 3,
     'num_layers_decoder': 3,
     'attention_type': "self_attention",
@@ -126,7 +132,7 @@ if config_model.implementation == 'SetTransformer':
             n_layers_decoder=config_model.num_layers_decoder,
             attention_type=config_model.attention_type,
             dropout=config_model.dropout
-    ).double()
+    )
 
 elif config_model.implementation == 'PersFormer':
     model = PersFormer(
@@ -241,10 +247,10 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 
 
 # train the model
-pipe.train(config_model.optimizer,
-           config_model.num_epochs,
-           cross_validation=False,
-           optimizers_param={"lr": config_model.learning_rate})
+# pipe.train(config_model.optimizer,
+#            config_model.num_epochs,
+#            cross_validation=False,
+#            optimizers_param={"lr": config_model.learning_rate})
 
 # %%
 # keep training
@@ -252,5 +258,33 @@ pipe.train(config_model.optimizer,
 
 # %%
 # %%
+# Gridsearch
+
+# initialise gridsearch
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=10, best_not_last=True)
+
+# dictionaries of hyperparameters
+optimizers_params = {"lr": [1e-6, 1e-3]}
+dataloaders_params = {"batch_size": [32, 64, 16]}
+models_hyperparams = {"n_layer_enc": [2, 5],
+                      "n_layer_dec": [2, 4],
+                      "num_heads": ["2", "4", "8"],
+                      "hidden_dim": ["16", "32", "64"],
+                      "dropout": [0.0, 0.2],
+                      "layer_norm": ["True", "False"],
+                      'pre_layer_norm': ["True", "False"]}
+
+# starting the gridsearch
+search.start((Adam,), n_epochs=300, cross_validation=False,
+             optimizers_params=optimizers_params,
+             dataloaders_params=dataloaders_params,
+             models_hyperparams=models_hyperparams, lr_scheduler=None,
+             scheduler_params=None)
 
 
+# %%
+print(search.best_val_acc_gs, search.best_val_loss_gs)
+# %%
+df_res = search._results()
+df_res
+# %%
