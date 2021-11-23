@@ -138,3 +138,80 @@ class DataLoaderFromImages:
                                      **kwargs)
         os.chdir(CWD)
         return train_dataloader, test_dataloader
+
+
+class DataLoaderFromArray:
+    """This class is useful to build dataloaders
+    from a array of X and y
+
+    Args:
+        X_train (np.array):
+            The training data
+        y_train (np.array):
+            The training labels
+        X_val (np.array):
+            The validation data
+        y_val (np.array):
+            The validation labels
+        X_test (np.array):
+            The test data
+        labels_file (string):
+            The path and file name of the labels.
+            It shall be a csv file with two columns.
+            The first columns contains the name of the
+            image and the second one contains the
+            label value
+    """
+
+    def __init__(self, X_train, y_train, X_val=None, y_val=None, X_test=None):
+        self.X_train = X_train
+        if len(y_train.shape) == 1:
+            self.y_train = y_train.reshape(-1, 1)
+        else:
+            self.y_train = y_train
+        self.X_val = X_val
+        if len(y_train.shape) == 1:
+            self.y_val = y_val.reshape(-1, 1)
+        else:
+            self.y_val = y_val
+        self.X_test = X_test
+
+    def create(self, **kwargs):
+        """This function builds the dataloader.
+
+        Args:
+            kwargs (dict):
+                additional arguments to pass to the
+                DataLoaders
+
+        Returns:
+            tuple of torch.DataLoader:
+                the tuple with the training, validation and
+                test dataloader directly useble in
+                the pipeline class
+        """
+        tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
+                    torch.tensor(y).float()) for
+                    x, y in zip(self.X_train, self.y_train)]
+        try:
+            val_data = [(torch.from_numpy(x).float(),
+                         y if isinstance(y, int) else
+                         torch.tensor(y).float()) for x, y in zip(self.X_val,
+                                                                  self.y_val)]
+        except TypeError:
+            val_data = None
+        try:
+            ts_data = [torch.from_numpy(x).float() for x in self.X_test]
+        except TypeError:
+            ts_data = None
+
+        train_dataloader = DataLoader(tr_data,
+                                      pin_memory=True,
+                                      **kwargs)
+        val_dataloader = DataLoader(val_data,
+                                     pin_memory=True,
+                                     **kwargs)
+        test_dataloader = DataLoader(ts_data,
+                                     pin_memory=True,
+                                     **kwargs)
+        return train_dataloader, val_dataloader, test_dataloader
