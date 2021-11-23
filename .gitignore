@@ -67,3 +67,5 @@ examples/*.js
 examples/perslay_orbit_benchmark.py
 
 init_environment.sh
+examples/curvatures.npy
+examples/diagrams_curvature.npy
