@@ -143,7 +143,7 @@ class Pipeline:
         # accuracy:
         correct /= len(dl_tr)*dl_tr.batch_size
         t_loss /= len(dl_tr)
-        print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
+        print(f"\nTime taken for this epoch: {round(time.time()-tik):.2f}s")
         return t_loss, correct*100
 
     def _val_loop(self, dl_val, writer_tag=""):
@@ -317,9 +317,9 @@ class Pipeline:
         # train initialisation
         dl_tr = self.dataloaders[0]
         if optimizers_param is None:
-            optimizers_param = {"lr":0.001}
+            optimizers_param = {"lr": 0.001}
         if dataloaders_param is None:
-            dataloaders_param = {"batch_size":dl_tr.batch_size}
+            dataloaders_param = {"batch_size": dl_tr.batch_size}
         if scheduler_params is None:
             scheduler_params = {}
 
@@ -402,12 +402,21 @@ class Pipeline:
             data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
-                # reset the model weights
-                self._reset_model()
                 if not (self.check_has_trained and keep_training):
-                # do not re-initialise the optimiser if keep-training
+                    # reset the model weights
+                    self._reset_model()
                     self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
                     if not lr_scheduler is None:
+                        self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                else:
+                    # reset the model weights
+                    self._reset_model()
+                    # do not re-initialise the optimizer if keep-training
+                    dict_param = self.optimizer.param_groups[0]
+                    dict_param.pop("params", None)  # model.parameters()
+                    dict_param.pop("initial_lr", None)
+                    self.optimizer.__init__(self.model.parameters(), **dict_param)
+                    if not lr_scheduler is None:  # reset scheduler
                         self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
@@ -445,9 +454,10 @@ class Pipeline:
 
 
         else:
-            self._reset_model()
+
             if not (self.check_has_trained and keep_training):
-            # do not re-initialise the optimiser if keep-training
+                # do not re-initialise the optimiser if keep-training
+                self._reset_model()
                 self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
                 if not lr_scheduler is None:
                     self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
@@ -673,7 +683,7 @@ class Pipeline:
                 # train accuracy:
                 correct /= len(dl_tr)*dl_tr.batch_size
                 print("Train accuracy at epoch ",t," : ", correct)
-                print("\nTime taken for this epoch: {}s".format(round(time.time()-tik), 2))
+                print(f"\nTime taken for this epoch: {round(time.time()-tik):.2f}s")
 
                 # evaluation
                 model2.eval()
