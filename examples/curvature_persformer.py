@@ -29,8 +29,8 @@ from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 import json
 # %%
-cg = CurvatureSamplingGenerator(num_samplings=24,
-                        num_points_per_sampling=100)
+cg = CurvatureSamplingGenerator(num_samplings=1000,
+                        num_points_per_sampling=1000)
 curvatures = cg.get_curvatures()
 diagrams = cg.get_diagrams()
 np.save('curvatures.npy', curvatures)

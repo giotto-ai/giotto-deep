@@ -107,10 +107,13 @@ class Pipeline:
                 self.writer.add_scalar(writer_tag + "/loss/train",
                                        loss.item(),
                                        self.train_epoch*len(dl_tr) + batch)
-                top2_pred = torch.topk(pred, 2, -1).values
-                self.writer.add_histogram(writer_tag + "/predictions/train",
-                                          torch.abs(torch.diff(top2_pred, dim=-1)),
-                                          self.train_epoch*len(dl_tr) + batch)
+                try:
+                    top2_pred = torch.topk(pred, 2, -1).values
+                    self.writer.add_histogram(writer_tag + "/predictions/train",
+                                              torch.abs(torch.diff(top2_pred, dim=-1)),
+                                              self.train_epoch*len(dl_tr) + batch)
+                except RuntimeError:
+                    pass
             except AttributeError:
                 pass
             # Backpropagation
@@ -179,11 +182,13 @@ class Pipeline:
         val_loss /= len(dl_val)
         try:
             self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
-
-            top2_pred = torch.topk(torch.vstack(pred), 2, -1).values
-            self.writer.add_histogram(writer_tag + "/predictions/validation",
-                                      torch.abs(torch.diff(top2_pred, dim=-1)),
-                                      self.val_epoch)
+            try:
+                top2_pred = torch.topk(torch.vstack(pred), 2, -1).values
+                self.writer.add_histogram(writer_tag + "/predictions/validation",
+                                          torch.abs(torch.diff(top2_pred, dim=-1)),
+                                          self.val_epoch)
+            except RuntimeError:
+                pass
         except AttributeError:
             pass
         print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
@@ -203,9 +208,11 @@ class Pipeline:
         probs = torch.cat([torch.stack(batch) for batch in
                           class_probs]).cpu()
         labels = torch.cat(class_label).cpu()
-        for class_index in range(pred[0].shape[-1]):
-            tensorboard_truth = labels == class_index
+        for class_index in range(len(pred[0])):
+            tensorboard_truth = 1*(labels == class_index).flatten()
             tensorboard_probs = probs[:, class_index]
+            #print(tensorboard_truth)
+            #print(tensorboard_probs)
             try:
                 self.writer.add_pr_curve(writer_tag+"/class = "+str(class_index),
                                          tensorboard_truth,

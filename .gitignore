@@ -60,6 +60,7 @@ test-output.xml
 *.pdf
 *.synctex.gz
 *.toc
+*.npy
 
 # JavaScript for plots display
 examples/*.js

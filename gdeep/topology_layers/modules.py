@@ -13,7 +13,7 @@ class MAB(nn.Module):
         super().__init__()
         self.dim_V = dim_V
         self.num_heads = num_heads
-        self.fc_q = nn.Linear(dim_Q, dim_V)  # bias is true
+        self.fc_q = nn.Linear(dim_Q, dim_V)
         self.fc_k = nn.Linear(dim_K, dim_V)
         self.fc_v = nn.Linear(dim_K, dim_V)
         if ln:
