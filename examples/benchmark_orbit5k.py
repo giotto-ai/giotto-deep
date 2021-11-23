@@ -40,6 +40,8 @@ from gdeep.search import Gridsearch
 import json
 #from gdeep.search import Gridsearch
 
+from optuna.pruners import MedianPruner, NopPruner
+
 # %%
 
 #Configs
@@ -75,7 +77,7 @@ config_model = DotMap({
     'batch_size_train': 32,
     'optimizer': torch.optim.Adam,
     'learning_rate': 5e-4,
-    'num_epochs': 300,
+    'num_epochs': 10,
     'pooling_type': "max"
 })
 
@@ -261,7 +263,7 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 # Gridsearch
 
 # initialise gridsearch
-search = Gridsearch(pipe, search_metric="accuracy", n_trials=10, best_not_last=True)
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=10, best_not_last=True, pruner=NopPruner)
 
 # dictionaries of hyperparameters
 optimizers_params = {"lr": [1e-6, 1e-3]}
