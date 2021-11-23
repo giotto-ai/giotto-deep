@@ -10,6 +10,9 @@ get_ipython().magic('autoreload 2')
 
 from dotmap import DotMap
 import json
+import os
+
+import numpy as np
 
 # Import the PyTorch modules
 import torch  # type: ignore
@@ -42,7 +45,7 @@ config_data = DotMap({
     'dynamical_system': 'classical_convention',
     'homology_dimensions': (0, 1),
     'dtype': 'float32',
-    'arbitrary_precision': True
+    'arbitrary_precision': False
 })
 
 
@@ -65,15 +68,17 @@ config_model = DotMap({
     'batch_size_train': 32,
     'optimizer': torch.optim.Adam,
     'learning_rate': 5e-4,
-    'num_epochs': 200,
+    'num_epochs': 300,
     'pooling_type': "max"
 })
 
+
+
 # %%
+
+
+
 # Define the data loader
-
-
-
 
 
 dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size":
@@ -91,6 +96,9 @@ og = OrbitsGenerator(num_orbits_per_class=config_data.num_orbits_per_class,
                      arbitrary_precision=config_data.arbitrary_precision,
                      )
 
+if config_data.arbitrary_precision:
+    orbits = np.load(os.path.join('data', 'orbit5k_arbitrary_precision.npy'))
+    og.orbits_from_array(orbits)
 
 dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
 
@@ -204,6 +212,7 @@ class SmallDeepSet(nn.Module):
         return x
 
 if config_data.dtype == "float64":
+    print("Use float64 model")
     model = SmallDeepSet().double()
 else:
     print("use float32 model")
@@ -233,7 +242,7 @@ pipe.train(config_model.optimizer,
 
 # %%
 # keep training
-# pipe.train(Adam, 100, False, keep_training=True)
+#pipe.train(Adam, 300, False, keep_training=True)
 
 # %%
 # %%
