@@ -123,7 +123,7 @@ class OrbitsGenerator(object):
                 self._num_orbits_per_class,
                 self._num_pts_per_orbit,
                 2
-            )).astype('float128')
+            ))
 
             # Initialize the labels array with the hyperparameter indices.
             y = np.array([self._num_orbits_per_class * [c]
@@ -133,7 +133,7 @@ class OrbitsGenerator(object):
 
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
-                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2).astype('float128')  # type: ignore
+                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore
 
                 if self.arbitrary_precision:
                     assert self.dynamical_system == 'classical_convention', "Only classical_convention implemented yet"
@@ -143,7 +143,7 @@ class OrbitsGenerator(object):
                                                         x_init=x[class_idx, orbit, 0, :],
                                                         rho=p,
                                                         num_points=self._num_pts_per_orbit,
-                                                        precision=300)
+                                                        precision=600)
 
                 else:
 
