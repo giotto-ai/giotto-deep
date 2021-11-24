@@ -71,7 +71,7 @@ class Gridsearch(Pipeline):
         self.n_trials = n_trials
         self.val_epoch = 0
         self.train_epoch = 0
-        if pruner is None:
+        if pruner is not None:
             self.pruner = pruner
         else:
             self.pruner = MedianPruner(n_startup_trials=5,

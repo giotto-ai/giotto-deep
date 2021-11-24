@@ -1,11 +1,11 @@
-
-from .persformer import SetTransformer,\
-    GraphClassifier
+from .persformer import SetTransformer, PersFormer,\
+    GraphClassifier, DeepSet, PytorchTransformer
 from .modules import ISAB, PMA, SAB, FastAttention
 from .preprocessing import load_data, load_augmented_data_as_tensor,\
     load_data_as_tensor, pad_pds
 from .sam import SAM
 from .training import compute_accuracy, train, sam_train, train_vec
+from .attention_modules import AttentionLayer, InducedAttention, AttentionPooling
 
 __all__ = [
     'SetTransformer',
@@ -22,5 +22,11 @@ __all__ = [
     'compute_accuracy',
     'train',
     'sam_train',
-    'train_vec'
+    'train_vec',
+    'AttentionLayer',
+    'InducedAttention',
+    'AttentionPooling',
+    'PersFormer',
+    'DeepSet',
+    'PytorchTransformer'
     ]
