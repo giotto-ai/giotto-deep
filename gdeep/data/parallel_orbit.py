@@ -35,18 +35,26 @@ class OrbitsGenerator(object):
     By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).
 
     Args:
-        parameters (Tuple[float]): Hyperparameter of the dynamical systems.
-        num_orbits_per_class (int): number of orbits per class.
-        num_pts_per_orbit (int): number of points per orbit.
-        homology_dimensions (Sequence[int]): homology dimension of the persistence
+        parameters (Tuple[float]): 
+            Hyperparameter of the dynamical systems.
+        num_orbits_per_class (int): 
+            number of orbits per class.
+        num_pts_per_orbit (int): 
+            number of points per orbit.
+        homology_dimensions (Sequence[int]): 
+            homology dimension of the persistence
             diagrams.
-        validation_percentage (float, optional): Percentage of the validation dataset.
+        validation_percentage (float, optional): 
+            Percentage of the validation dataset.
             Defaults to 0.0.
-        test_percentage (float, optional): Percentage of the test dataset. Defaults to 0.0.
-        dynamical_system (str, optional): either use persistence paths
+        test_percentage (float, optional): 
+            Percentage of the test dataset. Defaults to 0.0.
+        dynamical_system (str, optional): 
+            either use persistence paths
             convention ´pp_convention´ or the classical convention
             ´classical_convention´. Defaults to '´classical_convention´'.
-        n_jobs (int, optional): number of cpus to run the computation on. Defaults to 1.
+        n_jobs (int, optional): 
+            number of cpus to run the computation on. Defaults to 1.
     """
     def __init__(self,
              parameters: Sequence[float] = (2.5, 3.5, 4.0, 4.1, 4.3),
@@ -161,11 +169,13 @@ class OrbitsGenerator(object):
         """ Convert homology dimension to one-hot encoding
 
         Args:
-            persistence_diagrams ([np.array]): persistence diagram with categorical
+            persistence_diagrams ([np.array]): 
+                persistence diagram with categorical
                 homology dimension.
 
         Returns:
-            [np.array]: persistent diagram with one-hot encoded homology dimension.
+            [np.array]: 
+                persistent diagram with one-hot encoded homology dimension.
         """
         return np.concatenate(
             (
@@ -180,7 +190,8 @@ class OrbitsGenerator(object):
         (num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
 
         Returns:
-            np.ndarray: Orbits
+            np.ndarray: 
+                Orbits
         """
         if self._orbits is None:
             self._generate_orbits()
@@ -191,7 +202,8 @@ class OrbitsGenerator(object):
         (num_classes * num_orbits_per_class, num_topological_features, 3)
 
         Returns:
-            np.ndarray: Persistence diagrams
+            np.ndarray: 
+                Persistence diagrams
         """
         if self._persistence_diagrams is None:
             self._compute_persistence_diagrams()
@@ -225,10 +237,12 @@ class OrbitsGenerator(object):
         """Generates a DataLoader for the given list of arrays.
 
         Args:
-            list_of_arrays ([List[np.ndarray]]): List of arrays to load.
+            list_of_arrays ([List[np.ndarray]]): 
+                List of arrays to load.
 
         Returns:
-            Tuple[DataLoader, DataLoader, DataLoader]: train, val, test data loaders.
+            Tuple[DataLoader, DataLoader, DataLoader]: 
+                train, val, test data loaders.
         """
         assert ((self._train_idcs is not None) and 
                 (self._val_idcs is not None) and
@@ -252,7 +266,8 @@ class OrbitsGenerator(object):
         """Generates a Dataloader from the orbits dataset 
 
         Returns:
-            DataLoader: Dataloader of orbits
+            DataLoader: 
+                Dataloader of orbits
         """
         if self._orbits is None:
             self._generate_orbits()
@@ -282,7 +297,8 @@ class OrbitsGenerator(object):
         """Generates a Dataloader from the orbits dataset and the persistence diagrams
 
         Returns:
-            DataLoader: Dataloader of orbits and persistence diagrams
+            DataLoader: 
+                Dataloader of orbits and persistence diagrams
         """
         if self._persistence_diagrams is None:
             self._compute_persistence_diagrams()
@@ -305,16 +321,21 @@ def generate_orbit_parallel(
     in a parallel manner.
 
     Args:
-        num_classes (int): number of classes of dynamical systems.
-        num_orbits (int): number of orbits of dynamical system per class.
-        num_pts_per_orbit (int, optional): Number of points to generate.
+        num_classes (int): 
+            number of classes of dynamical systems.
+        num_orbits (int): 
+            number of orbits of dynamical system per class.
+        num_pts_per_orbit (int, optional): 
+            Number of points to generate.
             Defaults to 100.
-        parameter (List[float], optional): List of parameters of the dynamical
+        parameter (List[float], optional): 
+            List of parameters of the dynamical
             system.
             Defaults to [1.0].
 
     Returns:
-        np.ndarray: Array of sampled points of the dynamical system.
+        np.ndarray: 
+            Array of sampled points of the dynamical system.
     """
     try:
         for parameter in parameters:
@@ -357,15 +378,19 @@ def create_pd_orbits(
     """ Computes the weak alpha persistence of the orbit data clouds.
 
     Args:
-        orbits (np.array): Orbits of shape [n_points, 2]
-        homology_dimensions (tuple, optional): Dimensions to compute the
+        orbits (np.array): 
+            Orbits of shape [n_points, 2]
+        homology_dimensions (tuple, optional): 
+            Dimensions to compute the
             persistence diagrams.
             Defaults to (0, 1).
-        n_jobs (int, optional): Number of cpus to use for parallel computation.
+        n_jobs (int, optional): 
+            Number of cpus to use for parallel computation.
             Defaults to multiprocessing.cpu_count().
 
     Returns:
-        np.array: Array of persistence diagrams of shape
+        np.array: 
+            Array of persistence diagrams of shape
             [num_classes, num_orbits, num_persistence_points, 3].
             In the last dimension the first two values are the coordinates of
             the points in the persistence diagrams and the third is the
@@ -398,13 +423,18 @@ def convert_pd_orbits_to_tensor(
     """[summary]
 
     Args:
-        diagrams (np.ndarray): [description]
-        num_classes (int): [description]
-        num_orbits (int): [description]
-        num_homology_dimensions (int, optional): [description]. Defaults to 2.
+        diagrams (np.ndarray): 
+            [description]
+        num_classes (int): 
+            [description]
+        num_orbits (int): 
+            [description]
+        num_homology_dimensions (int, optional): 
+            [description]. Defaults to 2.
 
     Returns:
-        torch.tensor: tuple of
+        torch.tensor: 
+            tuple of
             1.
             2. label tensor.
     """
