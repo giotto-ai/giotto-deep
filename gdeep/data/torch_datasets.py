@@ -9,11 +9,18 @@ import pandas as pd
 import os
 from PIL import Image
 from tqdm import tqdm
+import numpy as np
+
+
+class DatasetNameError(Exception):
+    """Exception for the improper dataset
+    name"""
+    pass
 
 
 class TorchDataLoader:
     """Class to obtain DataLoaders from the classical
-    datasets available on pytorch
+    datasets available on pytorch.
 
     Args:
         name (string):
@@ -24,10 +31,13 @@ class TorchDataLoader:
             point clouds
 
     """
-    def __init__(self, name="MNIST"):
+    def __init__(self, name: str="MNIST") -> None:
         self.name = name
 
-    def build_dataset(self):
+    def _build_datasets(self) -> None:
+        """Private method to build the dataset from
+        the name of the dataset.
+        """
         if self.name in ["DoubleTori", "EntangledTori", "Blobs"]:
             ctd = CreateToriDataset(self.name)
             self.training_data = ctd.generate_dataset()
@@ -48,11 +58,23 @@ class TorchDataLoader:
                         '(split=("train","test"))'
                     self.training_data, self.test_data = eval(string_data)
                 except AttributeError:
-                    warnings.warn("The dataset name is neither in the" +
-                                  "text nor images datasets")
+                    raise DatasetNameError(f"The dataset {self.name} is neither in the"
+                                           f" texts nor images datasets")
 
-    def build_dataloader(self, **kwargs):
-        self.build_dataset()
+    def build_dataloaders(self, **kwargs) -> tuple:
+        """This method is to be called once the class
+        has been initialised with the dataset name
+        
+        Args:
+            kwargs (dict):
+                The keyword arguments for the torch.DataLoader
+                
+        Returns:
+            tuple:
+                The first element is the train DataLoader
+                while the second the test DataLoader
+        """
+        self._build_datasets()
         train_dataloader = DataLoader(self.training_data,
                                       pin_memory=True,
                                       **kwargs)
@@ -87,7 +109,7 @@ class DataLoaderFromImages:
         self.test_folder = test_folder
         self.labels_file = labels_file
         
-    def create(self, size = (128, 128), **kwargs):
+    def build_dataloaders(self, size: tuple=(128, 128), **kwargs) -> tuple:
         """This function builds the dataloader.
 
         Args:
@@ -138,3 +160,81 @@ class DataLoaderFromImages:
                                      **kwargs)
         os.chdir(CWD)
         return train_dataloader, test_dataloader
+
+
+class DataLoaderFromArray:
+    """This class is useful to build dataloaders
+    from a array of X and y
+
+    Args:
+        X_train (np.array):
+            The training data
+        y_train (np.array):
+            The training labels
+        X_val (np.array):
+            The validation data
+        y_val (np.array):
+            The validation labels
+        X_test (np.array):
+            The test data
+        labels_file (string):
+            The path and file name of the labels.
+            It shall be a csv file with two columns.
+            The first columns contains the name of the
+            image and the second one contains the
+            label value
+    """
+    def __init__(self, X_train: np.ndarray, y_train: np.ndarray, 
+                 X_val: np.ndarray=None, y_val: np.ndarray=None, 
+                 X_test: np.ndarray=None) -> None:
+        self.X_train = X_train
+        if len(y_train.shape) == 1:
+            self.y_train = y_train.reshape(-1, 1)
+        else:
+            self.y_train = y_train
+        self.X_val = X_val
+        if len(y_train.shape) == 1:
+            self.y_val = y_val.reshape(-1, 1)
+        else:
+            self.y_val = y_val
+        self.X_test = X_test
+
+    def build_dataloaders(self, **kwargs) -> tuple:
+        """This function builds the dataloader.
+
+        Args:
+            kwargs (dict):
+                additional arguments to pass to the
+                DataLoaders
+
+        Returns:
+            tuple of torch.DataLoader:
+                the tuple with the training, validation and
+                test dataloader directly useble in
+                the pipeline class
+        """
+        tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
+                    torch.tensor(y).float()) for
+                    x, y in zip(self.X_train, self.y_train)]
+        try:
+            val_data = [(torch.from_numpy(x).float(),
+                         y if isinstance(y, int) else
+                         torch.tensor(y).float()) for x, y in zip(self.X_val,
+                                                                  self.y_val)]
+        except TypeError:
+            val_data = None
+        try:
+            ts_data = [torch.from_numpy(x).float() for x in self.X_test]
+        except TypeError:
+            ts_data = None
+
+        train_dataloader = DataLoader(tr_data,
+                                      pin_memory=True,
+                                      **kwargs)
+        val_dataloader = DataLoader(val_data,
+                                     pin_memory=True,
+                                     **kwargs)
+        test_dataloader = DataLoader(ts_data,
+                                     pin_memory=True,
+                                     **kwargs)
+        return train_dataloader, val_dataloader, test_dataloader

@@ -151,7 +151,7 @@ considered only if a positive integer</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.search.Gridsearch">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">Gridsearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_trials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_not_last</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">Gridsearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_trials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_not_last</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pruner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch" title="Permalink to this definition"></a></dt>
 <dd><p>This is the generic class that allows
 the user to perform gridsearch over several
 parameters such as learning rate, optimizer.</p>
@@ -165,6 +165,8 @@ parameters such as learning rate, optimizer.</p>
 </dd>
 <dt>best_not_last (bool):</dt><dd><p>A flag to use the best validation accuracy over the
 epochs or the validation accuracy of the last epoch</p>
+</dd>
+<dt>pruner (optuna.Pruners, default MedianPruner):</dt><dd><p>Instance of an optuna pruner, can be user-defined</p>
 </dd>
 </dl>
 </dd>

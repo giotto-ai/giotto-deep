@@ -14,7 +14,7 @@ import plotly.express as px
 from functools import partial
 import warnings
 from itertools import chain, combinations
-
+from optuna.pruners import MedianPruner
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -37,10 +37,12 @@ class Gridsearch(Pipeline):
         best_not_last (bool):
             A flag to use the best validation accuracy over the
             epochs or the validation accuracy of the last epoch
+        pruner (optuna.Pruners, default MedianPruner):
+            Instance of an optuna pruner, can be user-defined
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False):
+    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None):
         self.best_not_last = best_not_last
         self.is_pipe = None
         self.obj = obj
@@ -48,7 +50,6 @@ class Gridsearch(Pipeline):
         self.study = None
         self.best_val_acc_gs = 0
         self.best_val_loss_gs = np.inf
-        self.metric = search_metric
         self.list_res = []
         self.df_res = None
         if (isinstance(obj, Pipeline)):
@@ -61,10 +62,55 @@ class Gridsearch(Pipeline):
         elif (isinstance(obj, Benchmark)):
             self.is_pipe = False
 
-        self.search_metric = search_metric
+        self.search_metric = (search_metric if search_metric in ("loss", "accuracy")
+                              else None)
+        if self.search_metric is None:
+            raise ValueError("Wrong search_metric! "
+                             "Either `loss` or `accuracy`")
         self.n_trials = n_trials
         self.val_epoch = 0
         self.train_epoch = 0
+        if pruner is not None:
+            self.pruner = pruner
+        else:
+            self.pruner = MedianPruner(n_startup_trials=5,
+                                       n_warmup_steps=0,
+                                       interval_steps=1,
+                                       n_min_trials=1)
+
+    def _initialise_new_model(self, models_hyperparam):
+        """private method to find the maximal compatible set
+        between models and parameters
+        
+        Args:
+            models_hyperparam (dict):
+                model selected hyperparameters
+        
+        Returns:
+            nn.Module
+                torch nn.Module
+        """
+        
+        list_of_params_keys = Gridsearch._powerset(list(models_hyperparam.keys()))
+        list_of_params_keys.reverse()
+        for params_keys in list_of_params_keys:
+            sub_models_hyperparam = {k:models_hyperparam[k] for k in models_hyperparam.keys() if k in params_keys}
+            try:
+                #print(sub_models_hyperparam)
+                new_model = type(self.model)(**sub_models_hyperparam)
+                #print(new_model.state_dict())
+                raise ValueError
+            except TypeError:  # when the parameters do not match the model
+                pass
+            except ValueError:  # when the parameters match the model
+                break
+
+        try:
+            new_model
+        except NameError:
+            warnings.warn("Model cannot be re-initialised. Using existing one.")
+            new_model = self.model
+        return new_model
 
 
     def _objective(self, trial,
@@ -134,30 +180,12 @@ class Gridsearch(Pipeline):
         optimizers_param = Gridsearch._suggest_params(trial, optimizers_params)
         dataloaders_param = Gridsearch._suggest_params(trial, dataloaders_params)
         models_hyperparam = Gridsearch._suggest_params(trial, models_hyperparams)
+        
         # tag for storing the results
         writer_tag += "/" + str(optimizers_param) + \
             str(dataloaders_param) + str(models_hyperparam)
         # create a new model instance
-        # in case of more incompatible model, find the maximal compatible set
-        list_of_params_keys = Gridsearch._powerset(list(models_hyperparam.keys()))
-        list_of_params_keys.reverse()
-        for params_keys in list_of_params_keys:
-            sub_models_hyperparam = {k:models_hyperparam[k] for k in models_hyperparam.keys() if k in params_keys}
-            try:
-                #print(sub_models_hyperparam)
-                new_model = type(self.model)(**sub_models_hyperparam)
-                #print(new_model.state_dict())
-                raise ValueError
-            except TypeError:  # when the parameters do not match the model
-                pass
-            except ValueError:  # when the parameters match the model
-                break
-
-        try:
-            new_model
-        except NameError:
-            warnings.warn("Model cannot be re-initialised. Using existing one.")
-            new_model = self.model
+        new_model = self._initialise_new_model(models_hyperparam)
         new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
 
         loss, accuracy = new_pipe.train(optimizer, n_epochs,
@@ -181,6 +209,7 @@ class Gridsearch(Pipeline):
         # release resources
         del(new_pipe)
         del(new_model)
+        # returns
         if self.search_metric == "loss":
             if self.best_not_last:
                 self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
@@ -249,9 +278,11 @@ class Gridsearch(Pipeline):
                 on tensorboard
         """
         if self.search_metric == "loss":
-            self.study = optuna.create_study(direction="minimize")
+            self.study = optuna.create_study(direction="minimize",
+                                             pruner=self.pruner)
         else:
-            self.study = optuna.create_study(direction="maximize")
+            self.study = optuna.create_study(direction="maximize",
+                                             pruner=self.pruner)
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
             # already initialised. So they exist also in _objective()
@@ -350,11 +381,15 @@ class Gridsearch(Pipeline):
             self._results(model_name = model["name"],
                      dataset_name = dataloaders["name"])
         except TypeError:
-            self._results()
+            try: 
+                self._results(model_name = self.obj.model.__class__.__name__,
+                     dataset_name = self.obj.dataloaders[0].dataset.__class__.__name__)
+            except AttributeError:
+                self._results()
 
 
-    def _results(self, model_name = "model", dataset_name = "dataset"):
-        """This class returns the dataframe with all the results of
+    def _results(self, model_name="model", dataset_name="dataset"):
+        """This method returns the dataframe with all the results of
         the gridsearch. It also saves the figures in the writer.
 
         Args:
@@ -388,25 +423,15 @@ class Gridsearch(Pipeline):
             temp_list = []
             for val in tria.params.values():
                 temp_list.append(val)
-            self.list_res.append([model_name, dataset_name] + temp_list + [tria.value])
+            if self.search_metric == "loss":
+                self.list_res.append([model_name, dataset_name] + temp_list + [tria.value, -1])
+            else:
+                self.list_res.append([model_name, dataset_name] + temp_list + [np.inf, tria.value])
 
         self.df_res = pd.DataFrame(self.list_res, columns=["model", "dataset"] +
-                              list(trial_best.params.keys())+[self.metric])
-
-        # correlations of numercal coefficients
-        list_of_arrays = []
-        labels = []
-        for col in self.df_res.columns:
-            vals = self.df_res[col].values
-            #print("type here", vals.dtype)
-            if vals.dtype in [np.float16, np.float64, 
-                              np.float32,
-                              np.int32, np.int64,
-                              np.int16]:
-                list_of_arrays.append(vals)
-                labels.append(col)
-        #print(list_of_arrays)
-        corr = np.corrcoef(np.array(list_of_arrays))
+                              list(trial_best.params.keys())+["loss", "accuracy"])
+        # compute hyperparams correlaton
+        corr, labels = self._correlation_of_hyperparams()
         
         try:
             fig2 = px.imshow(corr,
@@ -425,16 +450,35 @@ class Gridsearch(Pipeline):
                                    img2, dataformats="HWC")
             self.writer.flush()
         except ValueError:
-            pass
+            warnings.warn("Cannot send the picture of the correlation" +
+                          " matrix to tensorboard")
         
         return self.df_res
-        
+
+    def _correlation_of_hyperparams(self):
+        """Correlations of numerical hyperparameters"""
+        list_of_arrays = []
+        labels = []
+        for col in self.df_res.columns:
+            vals = self.df_res[col].values
+            #print("type here", vals.dtype)
+            if vals.dtype in [np.float16, np.float64, 
+                              np.float32,
+                              np.int32, np.int64,
+                              np.int16]:
+                list_of_arrays.append(vals)
+                labels.append(col)
+        #print(list_of_arrays)
+        corr = np.corrcoef(np.array(list_of_arrays))
+        return corr, labels
+
     def _store_to_tensorboard(self):
         """Store the hyperparameters to tensorboard"""
         for i in range(len(self.df_res)):
-            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-1]).items()}
+            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-2]).items()}
             self.writer.add_hparams(dictio,
-                                    {self.df_res.columns[-1]: self.df_res.iloc[i][-1]})
+                                    {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
+                                     self.df_res.columns[-1]: self.df_res.iloc[i][-1]})
         
         self.writer.flush()
         

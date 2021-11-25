@@ -75,6 +75,7 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -89,12 +90,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/search.html#gdeep.search.Benchmark">Benchmark (class in gdeep.search)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.betti_plot_layers">betti_plot_layers() (gdeep.visualisation.Visualiser method)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.PreprocessText.build_new_dataloaders">build_new_dataloaders() (gdeep.data.PreprocessText method)</a>
+      <li><a href="modules/data.html#gdeep.data.DataLoaderFromArray.build_dataloaders">build_dataloaders() (gdeep.data.DataLoaderFromArray method)</a>
+
+      <ul>
+        <li><a href="modules/data.html#gdeep.data.DataLoaderFromImages.build_dataloaders">(gdeep.data.DataLoaderFromImages method)</a>
 </li>
+        <li><a href="modules/data.html#gdeep.data.PreprocessText.build_dataloaders">(gdeep.data.PreprocessText method)</a>
+</li>
+        <li><a href="modules/data.html#gdeep.data.TorchDataLoader.build_dataloaders">(gdeep.data.TorchDataLoader method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -103,11 +110,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification">Compactification (class in gdeep.visualisation)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.DataLoaderFromImages.create">create() (gdeep.data.DataLoaderFromImages method)</a>
+      <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification.create_final_distance_matrix">create_final_distance_matrix() (gdeep.visualisation.Compactification method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification.create_final_distance_matrix">create_final_distance_matrix() (gdeep.visualisation.Compactification method)</a>
+      <li><a href="modules/data.html#gdeep.data.create_pd_orbits">create_pd_orbits() (in module gdeep.data)</a>
 </li>
       <li><a href="modules/data.html#gdeep.data.CreateToriDataset">CreateToriDataset (class in gdeep.data)</a>
 </li>
@@ -117,10 +124,14 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.DataLoaderFromArray">DataLoaderFromArray (class in gdeep.data)</a>
+</li>
       <li><a href="modules/data.html#gdeep.data.DataLoaderFromImages">DataLoaderFromImages (class in gdeep.data)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.DataLoaderKwargs">DataLoaderKwargs (class in gdeep.data)</a>
+</li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator">DecisionBoundaryCalculator (class in gdeep.analysis.decision_boundary)</a>
 </li>
   </ul></td>
@@ -202,13 +213,21 @@
         <li><a href="modules/visualisation.html#module-gdeep.visualisation">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/data.html#gdeep.data.CreateToriDataset.generate_dataset">generate_dataset() (gdeep.data.CreateToriDataset method)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.generate_orbit_parallel">generate_orbit_parallel() (in module gdeep.data)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/data.html#gdeep.data.GenericDataset">GenericDataset (class in gdeep.data)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_activations">get_activations() (gdeep.models.ModelExtractor method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_dataloader_combined">get_dataloader_combined() (gdeep.data.OrbitsGenerator method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_dataloader_orbits">get_dataloader_orbits() (gdeep.data.OrbitsGenerator method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_dataloader_persistence_diagrams">get_dataloader_persistence_diagrams() (gdeep.data.OrbitsGenerator method)</a>
 </li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.get_decision_boundary">get_decision_boundary() (gdeep.analysis.decision_boundary.DecisionBoundaryCalculator method)</a>
 
@@ -227,6 +246,10 @@
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_layers_grads">get_layers_grads() (gdeep.models.ModelExtractor method)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_layers_param">get_layers_param() (gdeep.models.ModelExtractor method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_orbits">get_orbits() (gdeep.data.OrbitsGenerator method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_persistence_diagrams">get_persistence_diagrams() (gdeep.data.OrbitsGenerator method)</a>
 </li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator">GradientFlowDecisionBoundaryCalculator (class in gdeep.analysis.decision_boundary)</a>
 </li>
@@ -275,6 +298,14 @@
         <li><a href="modules/visualisation.html#module-gdeep.visualisation">gdeep.visualisation</a>
 </li>
       </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator">OrbitsGenerator (class in gdeep.data)</a>
+</li>
   </ul></td>
 </tr></table>
 
