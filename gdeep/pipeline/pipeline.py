@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import copy
 import time
+from functools import wraps
 from tqdm import tqdm
 import warnings
 from sklearn.model_selection import KFold, train_test_split
@@ -25,6 +26,27 @@ try:
 except:
     print("No TPUs...")
 
+
+def _add_data_to_tb(func):
+    """decorator to store data to tensorboard"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        pred, val_loss, correct = func(*args, **kwargs)
+        try:
+            # add data to tensorboard
+            Pipeline._add_pr_curve_tb(torch.vstack(pred), kwargs["class_label"], 
+                                      kwargs["class_probs"], kwargs["writer"],
+                                      kwargs["writer_tag"] + "/validation")
+            try:
+                kwargs["writer"].flush()
+            except AttributeError:
+                pass
+        except NotImplementedError:
+            warnings.warn("The PR curve is not being filled because too few data exist")
+        return pred, val_loss, correct
+    return wrapper
+    
+    
 class Pipeline:
     """This is the generic class that allows
     the user to benchhmark models over architectures
@@ -75,25 +97,40 @@ class Pipeline:
         """
         self.model = copy.deepcopy(self.initial_model)
 
-    def _train_loop(self, dl_tr, writer_tag=""):
-        """private method to run a single training
-        loop
-        """
-        try:
-            self.DEVICE = xm.xla_device()
-        except NameError:
-            print("No TPUs")
-        self.model = self.model.to(self.DEVICE)
-        self.model.train()
-        size = len(dl_tr.dataset)
-        steps = len(dl_tr)
-        loss = 0
-        correct = 0
-        t_loss = 0
-        tik = time.time()
-        # for batch, (X, y) in enumerate(self.dataloaders[0]):
-        assert self.n_accumulated_grads <= len(dl_tr), "The number of" + \
-                                                      " accumulated gradients shall be diminished!"
+    def _optimisation_step(self, dl_tr, steps, loss, 
+                           t_loss, correct, batch):
+        """Backpropagation"""
+        if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
+            self.optimizer.zero_grad()
+            loss.backward()
+            if self.DEVICE.type == "xla":
+                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+            else:
+                self.optimizer.step()
+        else:  # if we use gradient accumulation techniques
+            (loss / self.n_accumulated_grads).backward()
+            if (batch + 1) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
+                if self.DEVICE.type == "xla":
+                    xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+                else:
+                    self.optimizer.step()
+                self.optimizer.zero_grad()
+        if batch % 1 == 0:
+            t_loss += loss.item()
+            print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
+                  correct/((batch+1)*dl_tr.batch_size)*100,
+                  " \t[",batch+1,"/", steps,"]                     ", end='\r')
+        return t_loss
+        
+    def _inner_train_loop(self, 
+                            dl_tr, 
+                            writer_tag, 
+                            steps, 
+                            loss,
+                            t_loss,
+                            correct):
+        """Private method to run the loop
+        over the batches for the optimisation"""
         for batch, (X, y) in enumerate(dl_tr):
             X = X.to(self.DEVICE)
             y = y.to(self.DEVICE)
@@ -110,42 +147,50 @@ class Pipeline:
                     top2_pred = torch.topk(pred, 2, -1).values
                     self.writer.add_histogram(writer_tag + "/predictions/train",
                                               torch.abs(torch.diff(top2_pred, dim=-1)),
-                                              self.train_epoch*len(dl_tr) + batch)
+                                              self.train_epoch*steps + batch)
                 except RuntimeError:
                     pass
             except AttributeError:
                 pass
-            # Backpropagation
-            if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
-                self.optimizer.zero_grad()
-                loss.backward()
-                if self.DEVICE.type == "xla":
-                    xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
-                else:
-                    self.optimizer.step()
-            else:  # if we use gradient accumulation techniques
-                (loss / self.n_accumulated_grads).backward()
-                if (batch + 1) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
-                    if self.DEVICE.type == "xla":
-                        xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
-                    else:
-                        self.optimizer.step()
-                    self.optimizer.zero_grad()
-            if batch % 1 == 0:
-                t_loss += loss.item()
-                print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
-                      correct/((batch+1)*dl_tr.batch_size)*100,
-                      " \t[",batch+1,"/", steps,"]                     ", end='\r')
+            t_loss = self._optimisation_step(dl_tr, steps, loss, 
+                                    t_loss, correct, batch)
+        # accuracy:
+        correct /= steps*dl_tr.batch_size
+        t_loss /= steps
+        return correct, t_loss
+
+
+    def _train_loop(self, dl_tr, writer_tag=""):
+        """private method to run a single training
+        loop
+        """
+        try:
+            self.DEVICE = xm.xla_device()
+        except NameError:
+            print("No TPUs")
+        self.model = self.model.to(self.DEVICE)
+        self.model.train()
+        size = len(dl_tr.dataset)
+        steps = len(dl_tr)
+        loss = 0
+        correct = 0
+        t_loss = 0
+        tik = time.time()
+        assert self.n_accumulated_grads <= steps, "The number of" + \
+                                                      " accumulated gradients shall be diminished!"
+        correct, t_loss = self._inner_train_loop(dl_tr, 
+                                                   writer_tag, 
+                                                   steps,
+                                                   loss,
+                                                   t_loss,
+                                                   correct)
         try:
             self.writer.flush()
         except AttributeError:
             pass
-        # accuracy:
-        correct /= len(dl_tr)*dl_tr.batch_size
-        t_loss /= len(dl_tr)
         print(f"\nTime taken for this epoch: {round(time.time()-tik):.2f}s")
         return t_loss, correct*100
-
+    
     def _val_loop(self, dl_val, writer_tag=""):
         """private method to run a single validation
         loop
@@ -162,20 +207,13 @@ class Pipeline:
         class_probs = []
         self.model.eval()
 
-        pred, val_loss, correct = self._inner_loop(dl_val,
-                                                   class_probs,
-                                                   class_label,
-                                                   val_loss,
-                                                   correct)
-        try:
-            # add data to tensorboard
-            self._add_pr_curve_tb(torch.vstack(pred), class_label, class_probs, writer_tag + "/validation")
-            try:
-                self.writer.flush()
-            except AttributeError:
-                pass
-        except NotImplementedError:
-            warnings.warn("The PR curve is not being filled because too few data exist")
+        pred, val_loss, correct = self._inner_loop(dl=dl_val,
+                                                   class_probs=class_probs,
+                                                   class_label= class_label,
+                                                   loss=val_loss,
+                                                   correct=correct,
+                                                   writer=self.writer,
+                                                   writer_tag=writer_tag)
         # accuracy
         correct /= len(dl_val)*dl_val.batch_size
         val_loss /= len(dl_val)
@@ -201,7 +239,8 @@ class Pipeline:
         self.best_val_loss = min(self.best_val_loss,val_loss)
         return val_loss, 100*correct
 
-    def _add_pr_curve_tb(self, pred, class_label, class_probs, writer_tag=""):
+    @staticmethod
+    def _add_pr_curve_tb(pred, class_label, class_probs, writer, writer_tag=""):
         """private function to add the PR curve
         to tensorboard"""
         probs = torch.cat([torch.stack(batch) for batch in
@@ -213,14 +252,16 @@ class Pipeline:
             #print(tensorboard_truth)
             #print(tensorboard_probs)
             try:
-                self.writer.add_pr_curve(writer_tag+"/class = "+str(class_index),
+                writer.add_pr_curve(writer_tag+"/class = "+str(class_index),
                                          tensorboard_truth,
                                          tensorboard_probs,
                                          global_step=0)
             except AttributeError:
                 pass
+
+    @_add_data_to_tb
     def _inner_loop(self, dl, class_probs, class_label,
-                    loss, correct):
+                    loss, correct, writer, writer_tag):
         """private function used inside the test
         and validation loops"""
         pred_list = []
@@ -240,6 +281,53 @@ class Pipeline:
 
         return pred_list, loss, correct
 
+    def _init_profiler(self, profiling, cross_validation, n_epochs, k_folds):
+        """initialise the profler for profiling"""
+        # profiling
+        prof = None
+        if not cross_validation:
+            active = n_epochs-2
+        else:
+            active = k_folds*(n_epochs-2)
+        if profiling:
+            try:
+                prof = torch.profiler.profile(
+                        activities=[
+                            torch.profiler.ProfilerActivity.CPU,
+                            torch.profiler.ProfilerActivity.CUDA],
+                        schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
+                        on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
+                                                                                worker_name='worker'),
+                        record_shapes=True,
+                        #profile_memory=True,
+                        with_stack=True
+                )
+            except AssertionError:
+                pass
+        return prof
+    
+    def _init_optimizer_and_scheduler(self, keep_training, cross_validation,
+                                      optimizer, optimizers_param,
+                                      lr_scheduler, scheduler_params):
+        """Reset or maintain the LR scheduler and the 
+        optimizer depending on the training"""
+        if not (self.check_has_trained and keep_training):
+            # reset the model weights
+            self._reset_model()
+            self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
+            if lr_scheduler is not None:
+                self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+        elif cross_validation:
+            # reset the model weights
+            self._reset_model()
+            # do not re-initialise the optimizer if keep-training
+            dict_param = self.optimizer.param_groups[0]
+            dict_param.pop("params", None)  # model.parameters()
+            dict_param.pop("initial_lr", None)
+            self.optimizer.__init__(self.model.parameters(), **dict_param)
+            if lr_scheduler is not None:  # reset scheduler
+                self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+    
     def train(self, optimizer, n_epochs=10, cross_validation=False,
               optimizers_param=None,
               dataloaders_param=None,
@@ -337,27 +425,10 @@ class Pipeline:
             check_optuna = False
 
         # profiling
-        prof = None
-        if not cross_validation:
-            active = n_epochs-2
-        else:
-            active = k_folds*(n_epochs-2)
-        if profiling:
-            try:
-                prof = torch.profiler.profile(
-                        activities=[
-                            torch.profiler.ProfilerActivity.CPU,
-                            torch.profiler.ProfilerActivity.CUDA],
-                        schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
-                        on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
-                                                                                worker_name='worker'),
-                        record_shapes=True,
-                        #profile_memory=True,
-                        with_stack=True
-                )
-            except AssertionError:
-                pass
-
+        prof = self._init_profiler(profiling, 
+                                   cross_validation, 
+                                   n_epochs, k_folds)
+        
         # remove sampler to avoid conflicts with validation
         dataloaders_param_val = dataloaders_param.copy()
         try:
@@ -402,22 +473,10 @@ class Pipeline:
             data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
-                if not (self.check_has_trained and keep_training):
-                    # reset the model weights
-                    self._reset_model()
-                    self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
-                    if not lr_scheduler is None:
-                        self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
-                else:
-                    # reset the model weights
-                    self._reset_model()
-                    # do not re-initialise the optimizer if keep-training
-                    dict_param = self.optimizer.param_groups[0]
-                    dict_param.pop("params", None)  # model.parameters()
-                    dict_param.pop("initial_lr", None)
-                    self.optimizer.__init__(self.model.parameters(), **dict_param)
-                    if not lr_scheduler is None:  # reset scheduler
-                        self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                self._init_optimizer_and_scheduler(keep_training, cross_validation,
+                                                   optimizer, optimizers_param,
+                                                   lr_scheduler, scheduler_params)
+                
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
@@ -454,13 +513,9 @@ class Pipeline:
 
 
         else:
-
-            if not (self.check_has_trained and keep_training):
-                # do not re-initialise the optimiser if keep-training
-                self._reset_model()
-                self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
-                if not lr_scheduler is None:
-                    self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+            self._init_optimizer_and_scheduler(keep_training, cross_validation,
+                                               optimizer, optimizers_param,
+                                               lr_scheduler, scheduler_params)
 
             if parallel_tpu == False:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
