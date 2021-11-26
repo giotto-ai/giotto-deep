@@ -242,7 +242,7 @@ dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size": 32},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
-og = OrbitsGenerator(num_orbits_per_class=10,
+og = OrbitsGenerator(num_orbits_per_class=1000,
                      homology_dimensions = homology_dimensions,
                      validation_percentage=0.0,
                      test_percentage=0.2)
@@ -251,17 +251,11 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 
 
 # %%
-pipe = Pipeline(fast_model, [dl_train, dl_test], fast_model.criterion, None)
+pipe = Pipeline(fast_model.double(), [dl_train, dl_test], fast_model.criterion, writer)
 # %%
 # Train the model
-pipe.train(Adam, 10, True, {"lr": 0.001})
-
-
+pipe.train(Adam, 10, cross_validation=False,
+            lr_scheduler=ExponentialLR, scheduler_params={"gamma": 0.9})
 # %%
-nn.TransformerEncoderLayer(d_model=16,
-                          nhead=2,
-                          dropout=0.1,
-                          activation=nn.ReLU,
-                          norm_first=True,
-                          batch_first=True)
-# %%
+from transformers import get_cosine_schedule_with_warmup
+lr_scheduler = get_cosine_schedule_with_warmup()
