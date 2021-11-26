@@ -155,7 +155,7 @@ class OrbitsGenerator(object):
                             x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
 
 
-            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2)).astype(self._dtype)
+            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))
 
     def _orbit_high_precision(self, x_init, rho, num_points=1_000, precision=600):
         x_precise = np.zeros((1_000, 2))

@@ -3,6 +3,7 @@
 *.pyo
 *.pyd
 **/__pycache__
+*.pth
 
 # Setuptools distribution folder.
 /dist/
