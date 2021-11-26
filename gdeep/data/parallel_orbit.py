@@ -128,7 +128,7 @@ class OrbitsGenerator(object):
             self._labels = y.reshape(-1)
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
-                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2).astype('float128')  # type: ignore
+                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore
 
                 if self.arbitrary_precision:
                     assert self.dynamical_system == 'classical_convention', "Only classical_convention implemented yet"
@@ -155,7 +155,7 @@ class OrbitsGenerator(object):
                             x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
 
 
-            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2)).astype(self._dtype)
+            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))
 
     def _orbit_high_precision(self, x_init, rho, num_points=1_000, precision=600):
         x_precise = np.zeros((1_000, 2))
