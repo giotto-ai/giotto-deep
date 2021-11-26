@@ -286,7 +286,7 @@ class SetTransformer(nn.Module):
         for l in self.enc_list:
             x = l(x)
         x = self.dec(x)
-        return x.squeeze()  # squeeze all dimensions of size 1
+        return x.squeeze(dim=1)  # squeeze dimension 1 that is of size 1
 
     @property
     def num_params(self) -> int:
