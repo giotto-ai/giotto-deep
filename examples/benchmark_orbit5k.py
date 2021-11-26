@@ -227,10 +227,9 @@ class SmallDeepSet(nn.Module):
 
 if config_data.dtype == "float64":
     print("Use float64 model")
-    model = SmallDeepSet().double()
+    model = model.double()
 else:
     print("use float32 model")
-    model = SmallDeepSet()
 
 # %%
 # Do training and validation
