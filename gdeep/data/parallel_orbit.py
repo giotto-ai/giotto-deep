@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset  # type: ignore
 from sklearn.model_selection import train_test_split  # type: ignore
 from einops import rearrange  # type: ignore
 from gtda.homology import WeakAlphaPersistence  # type: ignore
-
+from sympy import N, S
 
 class DataLoaderKwargs(object):
     """Object to store keyword arguments for train, val, and test dataloaders
@@ -24,7 +24,6 @@ class DataLoaderKwargs(object):
     
     def get_test_args(self):
         return self.test_kwargs
-
 class OrbitsGenerator(object):
     """Generate Orbit dataset consistent of orbits defined by the dynamical system
     x[n+1] = x[n] + r * y[n] * (1  - y[n]) % 1
@@ -33,7 +32,6 @@ class OrbitsGenerator(object):
     The parameter r is an hyperparameter and the classification task is to predict
     it given the orbit.
     By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).
-
     Args:
         parameters (Tuple[float]): Hyperparameter of the dynamical systems.
         num_orbits_per_class (int): number of orbits per class.
@@ -57,6 +55,8 @@ class OrbitsGenerator(object):
              test_percentage: float=0.0,
              dynamical_system: str='classical_convention',
              n_jobs: int=1,
+             dtype: str = 'float32',
+             arbitrary_precision=False,
              ) -> None:
 
         # Initialize member variables.
@@ -67,7 +67,6 @@ class OrbitsGenerator(object):
         self._homology_dimensions = homology_dimensions
         self._num_homology_dimensions = len(self._homology_dimensions)
         self._n_jobs = n_jobs
-
         # Assert that validation and testing parameters are valid
         assert (test_percentage >= 0.0 and validation_percentage >= 0.0
                 and test_percentage + validation_percentage < 1.0)
@@ -88,7 +87,25 @@ class OrbitsGenerator(object):
         self._train_idcs = None
         self._val_idcs = None
         self._test_idcs = None
-            
+
+        assert dtype in ('float32', 'float64', 'float128'), f"Type {dtype} is not supported."
+        self._dtype = dtype
+
+        self.arbitrary_precision = arbitrary_precision
+
+
+    def orbits_from_array(self, orbits):
+        assert (orbits.shape[0] == self._num_orbits_per_class * self._num_classes and
+                orbits.shape[1] == self._num_pts_per_orbit and
+                orbits.shape[2] == 2), "Array does not have the right shape."
+
+        self._orbits = orbits
+
+        y = np.array([self._num_orbits_per_class * [c]
+                          for c in range(self._num_classes)])
+
+        self._labels = y.reshape(-1)
+
     def _generate_orbits(self) -> None:
         """Generate the orbits for the dynamical system.
         """
@@ -103,35 +120,61 @@ class OrbitsGenerator(object):
                 self._num_orbits_per_class,
                 self._num_pts_per_orbit,
                 2
-            ))
-
+            )).astype('float128')
             # Initialize the labels array with the hyperparameter indices.
             y = np.array([self._num_orbits_per_class * [c]
                           for c in range(self._num_classes)])
             
             self._labels = y.reshape(-1)
-
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
-                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore
+                x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2).astype('float128')  # type: ignore
 
-                for i in range(1, self._num_pts_per_orbit):  # type: ignore
-                    x_cur = x[class_idx, :, i - 1, 0]
-                    y_cur = x[class_idx, :, i - 1, 1]
+                if self.arbitrary_precision:
+                    assert self.dynamical_system == 'classical_convention', "Only classical_convention implemented yet"
+                    for orbit in range(self._num_orbits_per_class):
+                        print(orbit)
+                        x[class_idx, orbit, :, :] = self._orbit_high_precision(
+                                                        x_init=x[class_idx, orbit, 0, :],
+                                                        rho=p,
+                                                        num_points=self._num_pts_per_orbit,
+                                                        precision=600)
 
-                    if self.dynamical_system == 'pp_convention':
-                        x[class_idx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
-                        x[class_idx, :, i, 1] = (y_cur + p * x_cur * (1. - x_cur)) % 1
-                    else:
-                        x[class_idx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
-                        x_next = x[class_idx, :, i, 0]
-                        x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
-                        
-            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))
-    
+                else:
+
+                    for i in range(1, self._num_pts_per_orbit):  # type: ignore
+                        x_cur = x[class_idx, :, i - 1, 0]
+                        y_cur = x[class_idx, :, i - 1, 1]
+
+                        if self.dynamical_system == 'pp_convention':
+                            x[class_idx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
+                            x[class_idx, :, i, 1] = (y_cur + p * x_cur * (1. - x_cur)) % 1
+                        else:
+                            x[class_idx, :, i, 0] = (x_cur + p * y_cur * (1. - y_cur)) % 1
+                            x_next = x[class_idx, :, i, 0]
+                            x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
+
+
+            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2)).astype(self._dtype)
+
+    def _orbit_high_precision(self, x_init, rho, num_points=1_000, precision=600):
+        x_precise = np.zeros((1_000, 2))
+
+
+        x0 = S(x_init[0])
+        y0 = S(x_init[1])
+
+        for i in range(0, num_points):
+            x_precise[i, 0] = x0
+            x_precise[i, 1] = y0
+
+            x0 = N((x0 + rho * y0 * (1.0 - y0)) % 1, precision)
+            y0 = N((y0 + rho * x0 * (1.0 - x0)) % 1, precision)
+
+        return x_precise
+
     def _compute_persistence_diagrams(self) -> None:
         """ Computes the weak alpha persistence of the orbit data clouds.
-
             The result is stored in member variable ´persistence_diagrams´.
             It has the shape
             [num_classes, num_orbits, num_persistence_points, 3].
@@ -151,19 +194,16 @@ class OrbitsGenerator(object):
         #orbits_stack = rearrange(self._orbits, 'c o p d -> (c o) p d')  # stack classes
         persistence_diagrams_categorical = wap.fit_transform(self._orbits)
         # shape: (num_classes * n_samples, n_features, 3)
-
         # Convert persistence diagram to one-hot homological dimension encoding
         self._persistence_diagrams = self._persistence_diagrams_to_one_hot(
                                         persistence_diagrams_categorical
-                                        )
-      
+                                        ).astype(self._dtype)
+
     def _persistence_diagrams_to_one_hot(self, persistence_diagrams):
         """ Convert homology dimension to one-hot encoding
-
         Args:
             persistence_diagrams ([np.array]): persistence diagram with categorical
                 homology dimension.
-
         Returns:
             [np.array]: persistent diagram with one-hot encoded homology dimension.
         """
@@ -178,7 +218,6 @@ class OrbitsGenerator(object):
     def get_orbits(self) -> np.ndarray:
         """Returns the orbits as an ndarrays of shape
         (num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
-
         Returns:
             np.ndarray: Orbits
         """
@@ -189,7 +228,6 @@ class OrbitsGenerator(object):
     def get_persistence_diagrams(self) -> np.ndarray:
         """Returns the orbits as an ndarrays of shape
         (num_classes * num_orbits_per_class, num_topological_features, 3)
-
         Returns:
             np.ndarray: Persistence diagrams
         """
@@ -223,10 +261,8 @@ class OrbitsGenerator(object):
                           dataloaders_kwargs: DataLoaderKwargs
                           ) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a DataLoader for the given list of arrays.
-
         Args:
             list_of_arrays ([List[np.ndarray]]): List of arrays to load.
-
         Returns:
             Tuple[DataLoader, DataLoader, DataLoader]: train, val, test data loaders.
         """
@@ -250,7 +286,6 @@ class OrbitsGenerator(object):
                               dataloaders_kwargs: DataLoaderKwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the orbits dataset 
-
         Returns:
             DataLoader: Dataloader of orbits
         """
@@ -264,7 +299,6 @@ class OrbitsGenerator(object):
     def get_dataloader_persistence_diagrams(self, dataloaders_kwargs: DataLoaderKwargs
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the persistence diagrams dataset 
-
         Returns:
             Tuple[DataLoader, DataLoader, DataLoader]:
                 Dataloaders of persistence diagrams
@@ -280,7 +314,6 @@ class OrbitsGenerator(object):
     def get_dataloader_combined(self, dataloaders_kwargs: DataLoaderKwargs,
                               )-> Tuple[DataLoader, DataLoader, DataLoader]:
         """Generates a Dataloader from the orbits dataset and the persistence diagrams
-
         Returns:
             DataLoader: Dataloader of orbits and persistence diagrams
         """
@@ -292,7 +325,6 @@ class OrbitsGenerator(object):
                                        self._persistence_diagrams,
                                        self._labels],
                                        dataloaders_kwargs)
-        
 
 
 def generate_orbit_parallel(

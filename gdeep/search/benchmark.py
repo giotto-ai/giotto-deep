@@ -23,7 +23,7 @@ class Benchmark:
             list of standard torch.dataloaders, e.g. `(dl_tr, dl_ts)`
         loss_fn (Callables):
             loss function
-        wirter (tensorboard SummaryWriter):
+        writer (tensorboard SummaryWriter):
             tensorboard writer
 
     """
@@ -48,7 +48,10 @@ class Benchmark:
               scheduler_params=None,
               profiling=False,
               k_folds=5,
-              parallel_tpu=False):
+              parallel_tpu=False,
+              keep_training=False,
+              store_grad_layer_hist=False,
+              n_accumulated_grads=0):
         """Method to be called when starting the benchmarking
         
         Args:
@@ -76,6 +79,17 @@ class Benchmark:
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
+            keep_training (bool):
+                This flag allows to restart a training from
+                the existing optimizer as well as the
+                existing model
+            store_grad_layer_hist (bool):
+                This flag allows to store the gradients
+                and the layer values in tensorboard for
+                each epoch
+            n_accumulated_grads (int, default=0):
+                number of accumulated gradients. It is
+                considered only if a positive integer
         """
 
         print("Benchmarking Started")
@@ -90,7 +104,11 @@ class Benchmark:
                             scheduler_params,
                             profiling,
                             k_folds,
-                            parallel_tpu)
+                            parallel_tpu,
+                            keep_training,
+                            store_grad_layer_hist,
+                            n_accumulated_grads,
+                            writer_tag="")
 
 
     def _inner_function(self, model,
@@ -103,7 +121,11 @@ class Benchmark:
                         scheduler_params,
                         profiling,
                         k_folds,
-                        parallel_tpu):
+                        parallel_tpu,
+                        keep_training,
+                        store_grad_layer_hist,
+                        n_accumulated_grads,
+                        writer_tag=""):
         """private method to run the inner
         function of the benchmark loops
         
@@ -139,9 +161,21 @@ class Benchmark:
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
+            keep_training (bool):
+                boolean flag to use the same model for
+                further training
+            store_grad_layer_hist (bool):
+                flag to store or not the layer's grads
+                on tensorboard
+            n_accumulated_grads (int):
+                this is the number of accumated grads. It
+                is taken into account only for positive integers
+            writer_tag (str):
+                the tensorboard writer tag
         """
         pipe = Pipeline(model["model"], dataloaders["dataloaders"],
                         self.loss_fn, self.writer)
+        writer_tag += "Dataset:" + dataloaders["name"] +"|Model:" + model["name"]
         pipe.train(optimizer, n_epochs,
                    cross_validation,
                    optimizer_param,
@@ -151,7 +185,11 @@ class Benchmark:
                    None,
                    profiling,
                    k_folds,
-                   parallel_tpu)
+                   parallel_tpu,
+                   keep_training,
+                   store_grad_layer_hist,
+                   n_accumulated_grads,
+                   writer_tag)
 
 def _benchmarking_param(fun, arguments, *args, **kwargs):
     """Function to be used as pseudo-decorator for

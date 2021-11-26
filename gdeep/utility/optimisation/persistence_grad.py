@@ -162,7 +162,7 @@ class PersistenceGradient():
         return pairs[:, :2], pairs[:, 2]
 
     def _persistence(self, X):
-        '''This function computess the persistence permutation.
+        '''This function computes the persistence permutation.
         This permutation permutes the filtration values and matches
         them as follows:
         $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
@@ -236,18 +236,18 @@ class PersistenceGradient():
                                  metric=self.metric,
                                  collapse_edges=self.collapse_edges,
                                  n_threads=-1,
-                                 ret_representative_simplices=True)
+                                 return_generators=True)
         
         persistence_pairs = []
-        #print(output["rpsm"])
+        #print(output["gens"])
         for dim in self.homology_dimensions:
             if dim == 0:
                 persistence_pairs += [(0, torch.norm(X[x[1]]-X[x[2]]),
-                                      0) for x in output["rpsm"][dim]]
+                                      0) for x in output["gens"][dim]]
             else:
                 persistence_pairs += [(torch.norm(X[x[1]]-X[x[0]]), 
                                       torch.norm(X[x[3]]-X[x[2]]), 
-                                      dim) for x in output["rpsm"][1][dim-1]]
+                                      dim) for x in output["gens"][1][dim-1]]
         return persistence_pairs
         
 
