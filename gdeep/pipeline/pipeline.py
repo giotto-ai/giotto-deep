@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 import torch
 import numpy as np
+import os
 import copy
 import time
 from functools import wraps
@@ -441,13 +442,11 @@ class Pipeline:
         if len(self.dataloaders) == 3:
             val_idx = list(range((len(self.dataloaders[1])-1)*self.dataloaders[1].batch_size))
             dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
-                                                 shuffle=False,
                                                  #pin_memory=True,
                                                  **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(val_idx))
             tr_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                shuffle=False,
                                                 #pin_memory=True,
                                                 **dataloaders_param_val,
                                                 sampler=SubsetRandomSampler(tr_idx))
@@ -456,12 +455,10 @@ class Pipeline:
             data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                 shuffle=False,
                                                  #pin_memory=True,
                                                  **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(val_idx))
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                shuffle=False,
                                                 #pin_memory=True,
                                                 **dataloaders_param_val,
                                                 sampler=SubsetRandomSampler(tr_idx))
@@ -481,12 +478,10 @@ class Pipeline:
                 if len(self.dataloaders) == 3:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                    shuffle=False,
                                                     #pin_memory=True,
                                                     **dataloaders_param_val,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                     shuffle=False,
                                                      #pin_memory=True,
                                                      **dataloaders_param_val,
                                                      sampler=SubsetRandomSampler(val_idx))
