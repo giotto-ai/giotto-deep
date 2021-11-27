@@ -40,7 +40,6 @@ def save_model_and_optimizer(model,
                    os.path.join("state_dicts",
                                 model.__class__.__name__+"-"+str(round(time.time()))+".pth"))
     else:
-        print(model)
         torch.save(model.state_dict(),
                    os.path.join("state_dicts",
                                 model_name +"-"+ str(round(time.time()))+".pth"))
