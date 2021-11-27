@@ -6,6 +6,7 @@ from .torch_datasets import TorchDataLoader, \
 from .preprocessing import PreprocessText, TextDataset
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     convert_pd_orbits_to_tensor, OrbitsGenerator, DataLoaderKwargs
+from .curvature_dataset import CurvatureSamplingGenerator
 
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     'generate_orbit_parallel',
     'create_pd_orbits',
     'OrbitsGenerator',
+    'CurvatureSamplingGenerator',
     "DataLoaderKwargs",
     'DataLoaderFromImages',
     "DataLoaderFromArray"

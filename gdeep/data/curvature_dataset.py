@@ -97,7 +97,7 @@ class CurvatureSamplingGenerator(object):
             return self._compute_distance_matrix(self._curvatures[i],
                                             self._num_points_per_sampling)
         
-        distance_matrices = Parallel(n_jobs=24)(delayed(process)(i)
+        distance_matrices = Parallel(n_jobs=self._n_jobs)(delayed(process)(i)
                                                 for i in range(len(self._curvatures)))
         
         self._diagrams = VR.fit_transform(distance_matrices)
