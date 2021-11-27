@@ -24,3 +24,4 @@ sphinx_rtd_theme
 torch_tb_profiler
 giotto-ph
 Pillow
+h5py

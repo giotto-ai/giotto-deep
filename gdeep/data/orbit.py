@@ -8,13 +8,16 @@ def generate_orbit(num_pts_per_orbit: int = 100,
     Non-parallel version
 
     Args:
-        num_pts_per_orbit (int, optional): Number of points to generate.
+        num_pts_per_orbit (int, optional): 
+            Number of points to generate.
             Defaults to 100.
-        parameter (float, optional): Parameter of the dynamical system.
+        parameter (float, optional): 
+            Parameter of the dynamical system.
             Defaults to 1.0.
 
     Returns:
-        np.ndarray: Array of sampled points of the dynamical system.
+        np.ndarray: 
+            Array of sampled points of the dynamical system.
     """
     warnings.warn("This methode is deprecated. Use the parallel\
                    version create_data.parallel_orbit.generate_\

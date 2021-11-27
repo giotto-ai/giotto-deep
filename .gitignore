@@ -15,7 +15,7 @@ build
 
 # Python jupyter notebooks
 examples/dask-worker-space
-examples/.ipynb_checkpoints
+*.ipynb_checkpoints
 examples/*/
 examples/*.nbconvert.ipynb
 examples/models

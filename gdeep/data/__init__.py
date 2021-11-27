@@ -23,5 +23,5 @@ __all__ = [
     'CurvatureSamplingGenerator',
     "DataLoaderKwargs",
     'DataLoaderFromImages',
-    "DataLoaderFromArray"
+    'DataLoaderFromArray'
     ]

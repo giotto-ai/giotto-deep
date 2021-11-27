@@ -277,7 +277,8 @@ class CreateToriDataset:
                 lab = np.append(lab, labels)
         return torch.from_numpy(data), lab
 
-    def _make_blobs(self, m: int = 3, n_pts: int = 200) -> tuple:
+    @staticmethod
+    def _make_blobs(m: int = 3, n_pts: int = 200) -> tuple:
         """Generates blobs in 3D.
         The labels correspond to the different blob.
 

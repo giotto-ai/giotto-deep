@@ -214,7 +214,7 @@ def _benchmarking_param(fun, arguments, *args, **kwargs):
         for model in models_dicts:
             if _are_compatible(model, dataloaders):
                 print("*"*40)
-                print("Performing Gridsearch on Dataset: {}, Model: {}".format(dataloaders["name"],
-                                                                               model["name"]))
+                print(f"Performing Gridsearch on Dataset: {dataloaders['name']}"
+                      f", Model: {model['name']}")
                 fun(model, dataloaders, *args, **kwargs)
 

@@ -11,7 +11,7 @@ else:
 
 
 class TextDataset(Dataset):
-    """This class is the base class for the tori-datasets
+    """This class is the base class for the text-datasets
 
     Args:
         data (Tensor):
@@ -36,13 +36,13 @@ class TextDataset(Dataset):
         return len(self.targets)
 
     def __getitem__(self, idx):
-        image = self.data[idx]
+        text = self.data[idx]
         label = self.targets[idx]
         if self.transform:
-            image = self.transform(image)
+            text = self.transform(text)
         if self.target_transform:
             label = self.target_transform(label)
-        sample = [image.to(torch.long), label.to(torch.long)]
+        sample = [text.to(torch.long), label.to(torch.long)]
         return sample
 
 
@@ -71,15 +71,8 @@ class PreprocessText:
         # self.vocabulary = Vocab(counter, min_freq=1)
         self.vocabulary = Vocab(counter)
         
-    def build_new_dataloaders(self, **kwargs):
-        """This method return the dataloaders of the tokenised
-        sentences, each converted to a list of integers via the
-        vocabulary. Hence, data can thus be treated as point data.
-
-        Returns:
-            (tuple):
-                training_dataloader, test_dataloader
-        """
+    def _build_dataset(self):
+        """private method to prepare the datasets"""
 
         label_pipeline = lambda x: int(x) - 1
         text_pipeline = lambda x: [self.vocabulary[token] for token in
@@ -91,7 +84,7 @@ class PreprocessText:
         
         for (_label, _text) in self.dataloaders[0]:
             label_list.append(label_pipeline(_label))
-            if type(_text) is tuple or type(_text) is list:
+            if isinstance(_text, tuple) or isinstance(_text, list):
                 _text = _text[0]
             processed_text = torch.tensor(text_pipeline(_text),
                                           dtype=torch.int64).to(DEVICE)
@@ -108,11 +101,11 @@ class PreprocessText:
                                  for item in text_list]).to(DEVICE)
 
         # offset_list = torch.tensor(offset_list[:-1]).cumsum(dim=0)
-        training_data = TextDataset(text_list, label_list)
+        self.training_data = TextDataset(text_list, label_list)
         label_list, text_list = [], []
 
         for (_label, _text) in self.dataloaders[1]:
-            if type(_text) is tuple or type(_text) is list:
+            if isinstance(_text, tuple) or isinstance(_text, list):
                 _text = _text[0]
             label_list.append(label_pipeline(_label))
             processed_text = torch.tensor(text_pipeline(_text),
@@ -128,10 +121,26 @@ class PreprocessText:
                                             for item in text_list]
                                             ).to(DEVICE)
 
-        test_data = TextDataset(text_list, label_list)
-        train_dataloader = DataLoader(training_data,
+        self.test_data = TextDataset(text_list, label_list)
+        
+    def build_dataloaders(self, **kwargs) -> tuple:
+        """This method return the dataloaders of the tokenised
+        sentences, each converted to a list of integers via the
+        vocabulary. Hence, data can thus be treated as point data.
+
+        Args:
+            kwargs (dict):
+                keyword arguments to add to the DataLoaders
+        Returns:
+            (tuple):
+                training_dataloader, test_dataloader
+        """
+        self._build_dataset()
+        train_dataloader = DataLoader(self.training_data,
+                                      pin_memory=True,
                                       **kwargs)
-        test_dataloader = DataLoader(test_data,
+        test_dataloader = DataLoader(self.test_data,
+                                     pin_memory=True,
                                      **kwargs)
         return train_dataloader, test_dataloader
 
