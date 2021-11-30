@@ -147,7 +147,7 @@ class PreprocessText:
             # offset_list.append(processed_text.size(0))
         try:
             label_list = torch.tensor(label_list).to(DEVICE)
-        except TypeError:
+        except (TypeError, ValueError):
             label_list = torch.stack([torch.cat([item,
                                                 pad_item_lab *
                                                 torch.ones(MAX_LENGTH -
