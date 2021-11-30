@@ -138,17 +138,16 @@ def geodesic_distance(curvature, x1 , x2):
         
     return dist
 # %%
-x1 = np.random.rand(1000, 2)
-x2 = np.random.rand(1000, 2)
-%timeit geodesic_distance(-1, x1 , x2)
+x = np.random.rand(1_000, 2)
+%timeit geodesic_distance(-1, x, x)
 # %%
 %timeit geodesic_distance(0, x1 , x2)
 # %%
 %timeit np.linalg.norm( x1 - x2 ) 
 # %%
 from sklearn.metrics import pairwise_distances
-x = np.random.rand(1000, 2)
-%timeit pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(0, x1 , x2))
+x = np.random.rand(10, 2)
+%timeit pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(-1, x1 , x2))
 # %%
 @numba.jit(nopython=True)
 def euclidean_numba1(x):
@@ -168,4 +167,84 @@ def euclidean_numba1(x):
 %timeit euclidean_numba1(x)
 # 19.4 ms ± 38.4 µs per loop (mean ± std. dev. of 7 runs, 1 loop each)
 
+# %%
+import numpy as np
+from numba import cuda
+from math import tanh, cos, sin, sqrt, atanh, atan2
+
+USE_64 = True
+
+if USE_64:
+    bits = 64
+    np_type = np.float64
+else:
+    bits = 32
+    np_type = np.float32
+    
+
+@cuda.jit("void(float{}[:, :], float{}[:, :], float{})".format(bits, bits, bits))
+def distance_matrix(mat, out, curvature):
+    m = mat.shape[0]
+    i, j = cuda.grid(2)
+    if i < m and j < m:
+        if curvature > 0:
+            R = 1.0/sqrt(curvature)
+            z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
+            z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
+            z2 = R * cos(mat[i, 0] / R)
+            
+            w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
+            w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
+            w2 = R * cos(mat[j, 0] / R)
+            
+            cross0 = z1 * w2 - z2 * w1
+            cross1 = z2 * w0 - z0 * w2
+            cross2 = z0 * w1 - z1 * w0
+            
+            out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
+                                  z0 * w0 + z1 * w1 + z2 * w2)
+        
+        if curvature < 0:
+            R = 1.0/sqrt(-curvature)
+            z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
+            z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
+            w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
+            w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
+            
+            temp0 = z0 * w0 + z1 * w1 - 1.0
+            temp1 = z0 * w1 - z1 * w0 + 1.0
+            temp = sqrt(temp0 * temp0 + temp1 * temp1)
+            x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
+            out[i, j] = 2.0 * R * atanh(x)
+            
+        if curvature == 0.0:  # it does not make sense to compare floats
+            z0 = mat[i, 0] * cos(mat[i, 1])
+            z1 = mat[i, 0] * sin(mat[i, 1])
+            
+            w0 = mat[j, 0] * cos(mat[j, 1])
+            w1 = mat[j, 0] * sin(mat[j, 1])
+            
+            out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
+
+def gpu_dist_matrix(mat, curvature):
+    rows = mat.shape[0]
+
+    block_dim = (16, 16)
+    grid_dim = (int(rows/block_dim[0] + 1), int(rows/block_dim[1] + 1))
+
+    stream = cuda.stream()
+    mat2 = cuda.to_device(np.asarray(mat, dtype=np_type), stream=stream)
+    out2 = cuda.device_array((rows, rows))
+    distance_matrix[grid_dim, block_dim](mat2, out2, curvature)
+    out = out2.copy_to_host(stream=stream)
+
+    return out
+# %%
+x = np.random.rand(3, 2) * np.array([1, np.pi])
+# %%
+
+gpu_dist_matrix(x, 0.0)
+
+# %%
+pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(0.0, x1 , x2))
 # %%
