@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 from torchtext import datasets as textds
 from torchvision.transforms import ToTensor, Resize
@@ -18,6 +18,24 @@ class DatasetNameError(Exception):
     pass
 
 
+class MapDataset(Dataset):
+    """Class to get a MapDataset from
+    an iterable one.
+
+    Args:
+        data_list (list):
+            the list(IterableDataset)
+    """
+    def __init__(self, data_list):
+        self.data_list = data_list
+
+    def __getitem__(self, index):
+        return self.data_list[index]
+
+    def __len__(self):
+        return len(self.data_list)
+
+
 class TorchDataLoader:
     """Class to obtain DataLoaders from the classical
     datasets available on pytorch.
@@ -26,13 +44,14 @@ class TorchDataLoader:
         name (string):
             check the available datasets at
             https://pytorch.org/vision/stable/datasets.html
-        n_pts (int):
-            number of points in customly generated
-            point clouds
+        convert_to_map_dataset (bool):
+            whether to convert an IterableDataset to a
+            MapDataset
 
     """
-    def __init__(self, name: str="MNIST") -> None:
+    def __init__(self, name: str="MNIST", convert_to_map_dataset: bool=False) -> None:
         self.name = name
+        self. convert_to_map_dataset =  convert_to_map_dataset
 
     def _build_datasets(self) -> None:
         """Private method to build the dataset from
@@ -61,6 +80,15 @@ class TorchDataLoader:
                     raise DatasetNameError(f"The dataset {self.name} is neither in the"
                                            f" texts nor images datasets")
 
+    def _convert(self):
+        """This private method converts and IterableDataset
+        to a MapDataset"""
+        if isinstance(self.training_data, torch.utils.data.IterableDataset):
+            self.training_data = MapDataset(list(self.training_data))
+
+        if isinstance(self.test_data, torch.utils.data.IterableDataset):
+            self.test_data = MapDataset(list(self.test_data))
+
     def build_dataloaders(self, **kwargs) -> tuple:
         """This method is to be called once the class
         has been initialised with the dataset name
@@ -75,6 +103,8 @@ class TorchDataLoader:
                 while the second the test DataLoader
         """
         self._build_datasets()
+        if self.convert_to_map_dataset:
+            self._convert()
         train_dataloader = DataLoader(self.training_data,
                                       pin_memory=True,
                                       **kwargs)

@@ -137,7 +137,10 @@ class Pipeline:
             y = y.to(self.DEVICE)
             # Compute prediction and loss
             pred = self.model(X)
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            try:
+                correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            except RuntimeError:
+                correct += (pred.argmax(2) == y).type(torch.float).sum().item()
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
@@ -258,7 +261,9 @@ class Pipeline:
                                          tensorboard_probs,
                                          global_step=0)
             except AttributeError:
-                pass
+                warnings.warn("Cannot store data in the PR curve")
+            except ValueError:
+                warnings.warn("Cannot store data in the PR curve")
 
     @_add_data_to_tb
     def _inner_loop(self, dl, class_probs, class_label,
@@ -276,8 +281,10 @@ class Pipeline:
                                      for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) ==
-                            y).type(torch.float).sum().item()
+                try:
+                    correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                except RuntimeError:
+                    correct += (pred.argmax(2) == y).type(torch.float).sum().item()
                 class_label.append(y)
 
         return pred_list, loss, correct
@@ -717,7 +724,10 @@ class Pipeline:
                 for batch, (X, y) in enumerate(para_train_loader):
                     # Compute prediction and loss
                     pred = model2(X)
-                    correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                    try:
+                        correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                    except RuntimeError:
+                        correct += (pred.argmax(2) == y).type(torch.float).sum().item()
                     loss = self.loss_fn(pred, y)
                     # Save to tensorboard
                     #self.writer.add_scalar("Parallel" + "/Loss/train",
@@ -755,8 +765,10 @@ class Pipeline:
                                              for el in pred]
                         class_probs.append(class_probs_batch)
                         loss += self.loss_fn(pred, y).item()
-                        correct += (pred.argmax(1) ==
-                                    y).type(torch.float).sum().item()
+                        try:
+                            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                        except RuntimeError:
+                            correct += (pred.argmax(2) == y).type(torch.float).sum().item()
                         class_label.append(y)
                     # add data to tensorboard
                     #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
