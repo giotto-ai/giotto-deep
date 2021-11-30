@@ -19,7 +19,7 @@ class MAB(nn.Module):
         if ln:
             self.ln0 = nn.LayerNorm(dim_V)
             self.ln1 = nn.LayerNorm(dim_V)
-        self.fc_o = nn.Linear(dim_V, dim_V)
+        self.fc_o = nn.Linear(dim_V, dim_V, bias=bias_attention)
 
     def forward(self, Q, K):
         Q = self.fc_q(Q)

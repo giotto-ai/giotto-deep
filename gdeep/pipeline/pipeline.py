@@ -116,7 +116,7 @@ class Pipeline:
                 else:
                     self.optimizer.step()
                 self.optimizer.zero_grad()
-        if batch % 1 == 0:
+        if batch % 100 == 0:
             t_loss += loss.item()
             print("Batch training loss: ", t_loss/(batch+1), " \tBatch training accuracy: ",
                   correct/((batch+1)*dl_tr.batch_size)*100,

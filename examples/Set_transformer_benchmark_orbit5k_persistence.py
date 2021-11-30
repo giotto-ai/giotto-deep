@@ -4,11 +4,11 @@
 #!pip install pyyaml==5.4.1
 
 # %%
-#from IPython import get_ipython  # type: ignore
+from IPython import get_ipython  # type: ignore
 
 # %% 
-#get_ipython().magic('load_ext autoreload')
-#get_ipython().magic('autoreload 2')
+get_ipython().magic('load_ext autoreload')
+get_ipython().magic('autoreload 2')
 
 
 # %%
@@ -33,7 +33,7 @@ from x_transformers.x_transformers import AttentionLayers, Encoder, ContinuousTr
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-#from gdeep.topology_layers import SetTransformer, PersFormer
+from gdeep.topology_layers import SetTransformer, PersFormer
 #from gdeep.topology_layers import AttentionPooling
 from gdeep.topology_layers import ISAB, PMA, SAB
 from gdeep.pipeline import Pipeline
@@ -47,7 +47,7 @@ from optuna.pruners import MedianPruner, NopPruner
 
 #Configs
 config_data = DotMap({
-    'batch_size_train': 64,
+    'batch_size_train': 32,
     'num_orbits_per_class': 2_000,
     'validation_percentage': 0.0,
     'test_percentage': 0.0,
@@ -65,22 +65,24 @@ config_model = DotMap({
     'dim_input': 4,
     'num_outputs': 1,  # for classification tasks this should be 1
     'num_classes': 5,  # number of classes
-    'dim_hidden': 128,
-    'num_heads': 8,
-    'num_induced_points': 32,
+    'dim_hidden': 64,
+    'num_heads': 4,
+    'num_induced_points': 64,
     'layer_norm': False,  # use layer norm
     'pre_layer_norm': False,
-    'num_layers_encoder': 4,
-    'num_layers_decoder': 3,
-    'attention_type': "induced_attention",
-    'activation': nn.GELU,
-    'dropout': 0.2,
+    'num_layers_encoder': 2,
+    'num_layers_decoder': 1,
+    'attention_type': "self_attention",
+    'activation': "nn.ReLU()",
+    'dropout_enc': 0.0,
+    'dropout_dec': 0.0,
     'optimizer': torch.optim.Adam,
-    'learning_rate': 1e-3,
-    'num_epochs': 1000,
-    'pooling_type': "max",
+    'learning_rate': 1e-4,
+    'num_epochs': 500,
+    'pooling_type': "attention",
     'weight_decay': 0.0,
-    'n_accumulated_grads': 0,
+    'n_accumulated_grads': 2,
+    'bias_attention': True
 })
 
 
@@ -133,6 +135,7 @@ if config_model.implementation == 'SetTransformer':
             attention_type=config_model.attention_type,
             dropout=config_model.dropout
     )
+
 elif config_model.implementation == 'PersFormer':
     model = PersFormer(
             dim_input=2,
@@ -155,7 +158,7 @@ elif config_model.implementation == 'PytorchTransformer':
             activation='gelu',
             norm_first=True,
             num_layers=3,
-            dropout=0.2,
+            dropout=0.0,
     )
 elif config_model.implementation == 'DeepSet':
     model = DeepSet(dim_input=2,
@@ -204,19 +207,30 @@ elif config_model.implementation == "Old_SetTransformer":
             dropout=0.0,
             num_layer_enc=2,
             num_layer_dec=2,
+            activation="nn.Relu()",
+            bias_attention=True,
+            attention_type="induced_attention"
         ):
             super().__init__()
-            self.enc = nn.Sequential(
-                ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm)),
-                *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm))
-                  for _ in range(num_layer_enc-1)],
-            )
+            if attention_type=="induced_attention":
+                self.enc = nn.Sequential(
+                    ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm), bias_attention=bias_attention),
+                    *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm), bias_attention=bias_attention)
+                      for _ in range(num_layer_enc-1)],
+                )
+            else:
+                self.enc = nn.Sequential(
+                    SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm), bias_attention=bias_attention),
+                    *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm), bias_attention=bias_attention)
+                      for _ in range(num_layer_enc-1)],
+                )
             self.dec = nn.Sequential(
                 nn.Dropout(dropout),
-                PMA(dim_hidden, eval(num_heads), num_outputs, ln=layer_norm),
+                PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm), bias_attention=bias_attention),
                 nn.Dropout(dropout),
                 *[nn.Sequential(nn.Linear(dim_hidden, dim_hidden),
-                nn.Dropout(dropout)) for _ in range(num_layer_dec-1)],
+                                nn.ReLU(),
+                                nn.Dropout(dropout)) for _ in range(num_layer_dec-1)],
                 nn.Linear(dim_hidden, dim_output),
             )
 
@@ -224,7 +238,18 @@ elif config_model.implementation == "Old_SetTransformer":
             return self.dec(self.enc(input)).squeeze(dim=1)
 
 
-    model = SetTransformerOld(dim_input=4, dim_output=5, num_inds=128)
+
+    model = SetTransformerOld(dim_input=4, dim_output=5,
+                           num_inds=config_model.num_induced_points,
+                           dim_hidden=config_model.dim_hidden,
+                           num_heads=str(config_model.num_heads),
+                           layer_norm=str(config_model.layer_norm),  # use layer norm
+                           dropout=config_model.dropout_dec,
+                           num_layer_enc=config_model.num_layers_encoder,
+                           num_layer_dec=config_model.num_layers_decoder,
+                           activation=config_model.activation,
+                           bias_attention=config_model.bias_attention,
+                           attention_type=config_model.attention_type)
 else:
     raise Exception("Unknown Implementation")
 # %%
@@ -234,6 +259,9 @@ if config_data.dtype == "float64":
     model = model.double()
 else:
     print("use float32 model")
+    print(config_model)
+    print(config_data)
+    print(model)
 
 # %%
 # Do training and validation
@@ -268,33 +296,32 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 # Gridsearch
 
 # initialise gridsearch
-pruner = NopPruner()
-search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
+# pruner = NopPruner()
+# search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
 
 # dictionaries of hyperparameters
-optimizers_params = {"lr": [1e-7, 1e-3, None, True],
-                      "weight_decay": [0.0, 0.2, 0.05] }
-dataloaders_params = {"batch_size": [16, 64, 16],
-                     "shuffle": True}
-models_hyperparams = {"num_layer_enc": [2, 4, 1],
-                      "num_layer_dec": [2, 5, 1],
+optimizers_params = {"lr": [1e-7, 1e-3, None, True]}#,
+                      #"weight_decay": [0.0, 0.2] }
+dataloaders_params = {"batch_size": [16, 32, 4]}
+models_hyperparams = {"n_layer_enc": [2, 3],
+                      "n_layer_dec": [1, 5],
                       "num_heads": ["2", "4", "8"],
-                      "dim_hidden": [16, 128, 16],
-                      "num_inds": [16, 128, 16],
-                      "dropout": [0.0, 0.5],
-                      "layer_norm": ["True", "False"]}
+                      "hidden_dim": ["16", "32", "64"],
+                      "dropout": [0.0, 0.5, 0.25],
+                      "layer_norm": ["True", "False"]}#,
+                      #'pre_layer_norm': ["True", "False"]}
 
 # starting the gridsearch
-search.start((Adam,), n_epochs=300, cross_validation=False,
-             optimizers_params=optimizers_params,
-             dataloaders_params=dataloaders_params,
-             models_hyperparams=models_hyperparams, lr_scheduler=None,
-             scheduler_params=None)
+search.start((Adam,), n_epochs=500, cross_validation=False,
+            optimizers_params=optimizers_params,
+            dataloaders_params=dataloaders_params,
+            models_hyperparams=models_hyperparams, lr_scheduler=None,
+            scheduler_params=None, n_accumulated_grads=config_model.n_accumulated_grads)
 
 
 # %%
 print(search.best_val_acc_gs, search.best_val_loss_gs)
 # %%
 df_res = search._results()
-df_res.to_csv('results_benchmark.csv')
-# %%
+df_res
+df_res.to_csv('set_transformer_grid_search.csv')
