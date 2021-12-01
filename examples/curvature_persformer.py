@@ -134,7 +134,7 @@ def geodesic_distance(curvature, x1 , x2):
         w = np.array([np.tanh(x2[0]/(2 * R)) * np.cos(x2[1]),
                     np.tanh(x2[0]/(2 * R)) * np.sin(x2[1])])
         temp = np.linalg.norm([(z*w).sum() - 1, np.linalg.det([z,w]) + 1])
-        dist = 2 * R * np.arctanh(np.linalg.norm(z - w)/temp) 
+        dist = 2 * R * np.arctanh(np.linalg.norm(z - w)/temp)
         
     return dist
 # %%
@@ -240,11 +240,11 @@ def gpu_dist_matrix(mat, curvature):
 
     return out
 # %%
-x = np.random.rand(3, 2) * np.array([1, np.pi])
+x = np.random.rand(1000, 2) * np.array([1.0, np.pi])
 # %%
 
-gpu_dist_matrix(x, 0.0)
+gpu_dist_matrix(x, 1.0).shape
 
 # %%
-pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(0.0, x1 , x2))
+pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(-1.0, x1 , x2)).shape
 # %%
