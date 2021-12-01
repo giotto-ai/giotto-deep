@@ -4,11 +4,11 @@
 #!pip install pyyaml==5.4.1
 
 # %%
-from IPython import get_ipython  # type: ignore
+#from IPython import get_ipython  # type: ignore
 
 # %% 
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
+#get_ipython().magic('load_ext autoreload')
+#get_ipython().magic('autoreload 2')
 
 
 # %%
@@ -82,7 +82,7 @@ config_model = DotMap({
     'pooling_type': "attention",
     'weight_decay': 0.0,
     'n_accumulated_grads': 2,
-    'bias_attention': True
+    'bias_attention': "True"
 })
 
 
@@ -208,10 +208,11 @@ elif config_model.implementation == "Old_SetTransformer":
             num_layer_enc=2,
             num_layer_dec=2,
             activation="nn.Relu()",
-            bias_attention=True,
+            bias_attention="True",
             attention_type="induced_attention"
         ):
             super().__init__()
+            bias_attention = eval(bias_attention)
             if attention_type=="induced_attention":
                 self.enc = nn.Sequential(
                     ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm), bias_attention=bias_attention),
@@ -296,8 +297,8 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 # Gridsearch
 
 # initialise gridsearch
-# pruner = NopPruner()
-# search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
+pruner = NopPruner()
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
 
 # dictionaries of hyperparameters
 optimizers_params = {"lr": [1e-7, 1e-3, None, True]}#,
@@ -308,11 +309,12 @@ models_hyperparams = {"n_layer_enc": [2, 3],
                       "num_heads": ["2", "4", "8"],
                       "hidden_dim": ["16", "32", "64"],
                       "dropout": [0.0, 0.5, 0.25],
-                      "layer_norm": ["True", "False"]}#,
+                      "layer_norm": ["True", "False"],
+                      "bias_attention": ["True", "False"]}#,
                       #'pre_layer_norm': ["True", "False"]}
 
 # starting the gridsearch
-search.start((Adam,), n_epochs=500, cross_validation=False,
+search.start((Adam,), n_epochs=1_000, cross_validation=False,
             optimizers_params=optimizers_params,
             dataloaders_params=dataloaders_params,
             models_hyperparams=models_hyperparams, lr_scheduler=None,
