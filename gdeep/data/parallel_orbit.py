@@ -133,7 +133,7 @@ class OrbitsGenerator(object):
             y = np.array([self._num_orbits_per_class * [c]
                           for c in range(self._num_classes)])
             
-            self._labels = y.reshape(-1)
+            self._labels = y.reshape(-1).astype('int64')
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
                 x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore

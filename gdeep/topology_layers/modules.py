@@ -9,7 +9,7 @@ from einops import rearrange, reduce  # type: ignore
 
 
 class MAB(nn.Module):
-    def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False, bias_attention=True):
+    def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False, bias_attention=True, activation='gelu'):
         super().__init__()
         self.dim_V = dim_V
         self.num_heads = num_heads
@@ -20,6 +20,12 @@ class MAB(nn.Module):
             self.ln0 = nn.LayerNorm(dim_V)
             self.ln1 = nn.LayerNorm(dim_V)
         self.fc_o = nn.Linear(dim_V, dim_V, bias=bias_attention)
+        if activation == 'gelu':
+            self.activation_function = nn.GELU()
+        elif activation == 'relu':
+            self.activation_function = nn.RELU()
+        else:
+            raise ValueError("Unknown activation '%s'" % activation)
 
     def forward(self, Q, K):
         Q = self.fc_q(Q)
@@ -33,27 +39,29 @@ class MAB(nn.Module):
         A = torch.softmax(Q_.bmm(K_.transpose(1, 2))/math.sqrt(self.dim_V), 2)
         O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), 0), 2)
         O = O if getattr(self, 'ln0', None) is None else self.ln0(O)
-        O = O + F.relu(self.fc_o(O))
+        O = O + self.activation_function(self.fc_o(O))
         O = O if getattr(self, 'ln1', None) is None else self.ln1(O)
         return O
 
 
 class SAB(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, ln=False, bias_attention=True):
+    def __init__(self, dim_in, dim_out, num_heads, ln=False, bias_attention=True, activation='gelu'):
         super().__init__()
-        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention)
+        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
+                       activation=activation)
 
     def forward(self, X):
         return self.mab(X, X)
 
 
 class ISAB(nn.Module):
-    def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False, bias_attention=True):
+    def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False, bias_attention=True,
+                 activation='gelu'):
         super().__init__()
         self.I = nn.Parameter(torch.Tensor(1, num_inds, dim_out))
         nn.init.xavier_uniform_(self.I)
-        self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention)
-        self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln, bias_attention=bias_attention)
+        self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention, activation=activation)
+        self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln, bias_attention=bias_attention, activation=activation)
 
     def forward(self, X):
         H = self.mab0(self.I.repeat(X.size(0), 1, 1), X)
@@ -61,11 +69,12 @@ class ISAB(nn.Module):
 
 
 class PMA(nn.Module):
-    def __init__(self, dim, num_heads, num_seeds, ln=False, bias_attention=True):
+    def __init__(self, dim, num_heads, num_seeds, ln=False, bias_attention=True,
+                 activation='gelu'):
         super().__init__()
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
         nn.init.xavier_uniform_(self.S)
-        self.mab = MAB(dim, dim, dim, num_heads, ln=ln, bias_attention=bias_attention)
+        self.mab = MAB(dim, dim, dim, num_heads, ln=ln, bias_attention=bias_attention, activation=activation)
 
     def forward(self, X):
         return self.mab(self.S.repeat(X.size(0), 1, 1), X)
