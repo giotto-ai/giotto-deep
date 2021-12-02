@@ -121,7 +121,7 @@ class Gridsearch(Pipeline):
                    dataloaders_params,
                    models_hyperparams,
                    lr_scheduler,
-                   scheduler_params,
+                   schedulers_params,
                    profiling,
                    k_folds,
                    parallel_tpu,
@@ -149,7 +149,7 @@ class Gridsearch(Pipeline):
                 parameters
             lr_scheduler (torch.optim):
                 a learning rate scheduler
-            scheduler_params (dict):
+            schedulers_params (dict):
                 learning rate scheduler parameters
             profiling (bool):
                 whether or not you want to activate the
@@ -183,10 +183,11 @@ class Gridsearch(Pipeline):
         self.optimizers_param = Gridsearch._suggest_params(trial, optimizers_params)
         self.dataloaders_param = Gridsearch._suggest_params(trial, dataloaders_params)
         self.models_hyperparam = Gridsearch._suggest_params(trial, models_hyperparams)
-        
+        self.schedulers_param = Gridsearch._suggest_params(trial, schedulers_params)
         # tag for storing the results
         writer_tag += "/" + str(self.optimizers_param) + \
-            str(self.dataloaders_param) + str(self.models_hyperparam)
+            str(self.dataloaders_param) + str(self.models_hyperparam) + \
+            str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
         self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
@@ -195,7 +196,7 @@ class Gridsearch(Pipeline):
                                          self.optimizers_param,
                                          self.dataloaders_param,
                                          lr_scheduler,
-                                         scheduler_params,
+                                         self.schedulers_param,
                                          (trial, self.search_metric),
                                          profiling,
                                          k_folds,
@@ -236,7 +237,7 @@ class Gridsearch(Pipeline):
               dataloaders_params=None,
               models_hyperparams=None,
               lr_scheduler=None,
-              scheduler_params=None,
+              schedulers_params=None,
               profiling=False,
               k_folds=5,
               parallel_tpu=False,
@@ -261,7 +262,7 @@ class Gridsearch(Pipeline):
                 dictionary of model parameters
             lr_scheduler (torch.optim):
                 torch learning rate schduler class
-            scheduler_params (dict):
+            schedulers_params (dict):
                 learning rate scheduler parameters
             profiling (bool, default=False):
                 whether or not you want to activate the
@@ -295,7 +296,7 @@ class Gridsearch(Pipeline):
                                       dataloaders_params,
                                       models_hyperparams,
                                       lr_scheduler,
-                                      scheduler_params,
+                                      schedulers_params,
                                       profiling,
                                       k_folds,
                                       parallel_tpu,
@@ -315,7 +316,7 @@ class Gridsearch(Pipeline):
                                 dataloaders_params,
                                 models_hyperparams,
                                 lr_scheduler,
-                                scheduler_params,
+                                schedulers_params,
                                 profiling,
                                 k_folds,
                                 parallel_tpu,
@@ -335,7 +336,7 @@ class Gridsearch(Pipeline):
                              dataloaders_params,
                              models_hyperparams,
                              lr_scheduler,
-                             scheduler_params,
+                             schedulers_params,
                              profiling,
                              k_folds,
                              parallel_tpu,
@@ -368,7 +369,7 @@ class Gridsearch(Pipeline):
                                                        dataloaders_params,
                                                        models_hyperparams,
                                                        lr_scheduler,
-                                                       scheduler_params,
+                                                       schedulers_params,
                                                        profiling,
                                                        k_folds,
                                                        parallel_tpu,
@@ -386,7 +387,8 @@ class Gridsearch(Pipeline):
                                      model["name"] +
                                      str(self.optimizers_param) +
                                      str(self.dataloaders_param) +
-                                     str(self.models_hyperparam),
+                                     str(self.models_hyperparam) *
+                                     str(self.schedulers_param),
                                      self.pipe.optimizer)
         except TypeError:
             try: 
@@ -410,6 +412,7 @@ class Gridsearch(Pipeline):
                            "\nOptimizer: " + str(self.pipe.optimizer) +
                            "\nOptimizer parameters: " + str(self.optimizers_param) +
                            "\nDataloader parameters: " + str(self.dataloaders_param) +
+                           "\nLR-scheduler parameters: " + str(self.schedulers_param) +
                            results_string_to_print
                            )
         try:
