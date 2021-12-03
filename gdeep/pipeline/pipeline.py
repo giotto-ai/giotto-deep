@@ -171,7 +171,7 @@ class Pipeline:
         try:
             self.DEVICE = xm.xla_device()
         except NameError:
-            print("No TPUs")
+            pass
         self.model = self.model.to(self.DEVICE)
         self.model.train()
         size = len(dl_tr.dataset)
@@ -181,18 +181,22 @@ class Pipeline:
         t_loss = 0
         tik = time.time()
         assert self.n_accumulated_grads <= steps, "The number of" + \
-                                                      " accumulated gradients shall be diminished!"
+                                                  " accumulated gradients shall be diminished!"
         correct, t_loss = self._inner_train_loop(dl_tr, 
-                                                   writer_tag, 
-                                                   steps,
-                                                   loss,
-                                                   t_loss,
-                                                   correct)
+                                                 writer_tag,
+                                                 steps,
+                                                 loss,
+                                                 t_loss,
+                                                 correct)
         try:
             self.writer.flush()
         except AttributeError:
             pass
         print(f"\nTime taken for this epoch: {round(time.time()-tik):.2f}s")
+        try:
+            print(f"Learning rate value: {self.optimizer.param_groups[0]['lr']:0.8f}")
+        except KeyError:
+            pass
         return t_loss, correct*100
     
     def _val_loop(self, dl_val, writer_tag=""):
@@ -202,7 +206,7 @@ class Pipeline:
         try:
             self.DEVICE = xm.xla_device()
         except NameError:
-            print("No TPUs")
+            pass
         self.model = self.model.to(self.DEVICE)
         # size = len(self.dataloaders[1].dataset)
         size = len(dl_val.dataset)
