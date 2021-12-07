@@ -43,7 +43,10 @@ class SaveLayerOutput(SaveOutput):
             module_out ([type]):
                 [description]
         """
-        self.outputs.append(module_out.detach())
+        if isinstance(module_out, tuple):
+            self.outputs.append(module_out[0].detach())
+        else:
+            self.outputs.append(module_out.detach())
 
 
 class PeriodicNeuralNetwork(nn.Module):

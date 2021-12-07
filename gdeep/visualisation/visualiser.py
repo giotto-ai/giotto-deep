@@ -52,7 +52,10 @@ class Visualiser:
         for img, lab in dataiter:
             index += 1
             features_list.append(img[0])
-            labels_list.append(str(lab[0].item()))
+            try:
+                labels_list.append(str(lab[0].item()))
+            except ValueError:
+                labels_list.append("Label not available")
             if index == 1000:
                 break
         max_number = min(1000, len(labels_list))

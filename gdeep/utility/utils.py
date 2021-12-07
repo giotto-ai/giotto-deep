@@ -46,4 +46,4 @@ def save_model_and_optimizer(model,
     if optimizer is not None:
         torch.save(optimizer.state_dict(),
                    os.path.join("state_dicts",
-                                "optimizer" +"-"+ str(round(time.time()))+".pth"))
+                                str(optimizer) +"-"+ str(round(time.time()))+".pth"))
