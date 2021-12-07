@@ -120,75 +120,8 @@ else:
 
 
 
-# Define the model
-if config_model.implementation == 'SetTransformer':
-    model = SetTransformer(
-            dim_input=config_model.dim_input,
-            num_outputs=1,  # for classification tasks this should be 1
-            dim_output=config_model.num_classes,  # number of classes
-            dim_hidden=config_model.dim_hidden,
-            num_heads=config_model.num_heads,
-            num_inds=config_model.num_induced_points,
-            ln=config_model.layer_norm,  # use layer norm
-            n_layers_encoder=config_model.num_layers_encoder,
-            n_layers_decoder=config_model.num_layers_decoder,
-            attention_type=config_model.attention_type,
-            dropout=config_model.dropout
-    )
-
-elif config_model.implementation == 'PersFormer':
-    model = PersFormer(
-            dim_input=2,
-            dim_output=5,
-            n_layers=5,
-            hidden_size=32,
-            n_heads=4,
-            dropout=0.1,
-            layer_norm=True,
-            pre_layer_norm=False,
-            activation=nn.GELU,
-            attention_layer_type="self_attention")
-
-elif config_model.implementation == 'PytorchTransformer':
-    model = PytorchTransformer(
-            dim_input=2,
-            dim_output=5,
-            hidden_size=64,
-            nhead=8,
-            activation='gelu',
-            norm_first=True,
-            num_layers=3,
-            dropout=0.0,
-    )
-elif config_model.implementation == 'DeepSet':
-    model = DeepSet(dim_input=2,
-                    dim_output=config_model.num_classes,
-                    dim_hidden=config_model.dim_hidden,
-                    n_layers_encoder=config_model.num_layers_encoder,
-                    n_layers_decoder=config_model.num_layers_decoder,
-                    pool=config_model.pooling_type).double()
-
-elif config_model.implementation == "X-Transformer":
-    model =     nn.Sequential(
-        ContinuousTransformerWrapper(
-            dim_in = 2,
-            use_pos_emb = True,
-            max_seq_len = None,
-            attn_layers = Encoder(
-                dim = config_model.dim_hidden,
-                depth = config_model.num_layers_encoder,
-                heads = config_model.num_heads,
-            ),
-        ),
-        AttentionPooling(hidden_dim = config_model.dim_hidden, q_length=1),
-        nn.Sequential(*[nn.Sequential(nn.Linear(config_model.dim_hidden,
-                            config_model.dim_hidden),
-                            nn.ReLU())
-                for _ in range(config_model.num_layers_decoder)]),
-        nn.Linear(config_model.dim_hidden, config_model.num_classes)
-    )
-    
-elif config_model.implementation == "Old_SetTransformer":
+# Define the model    
+if config_model.implementation == "Old_SetTransformer":
     # initialize SetTransformer model
 
     model = SetTransformerOld(dim_input=4, dim_output=5,
