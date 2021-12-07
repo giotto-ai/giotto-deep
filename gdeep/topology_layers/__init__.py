@@ -1,5 +1,5 @@
 from .persformer import SetTransformer, PersFormer,\
-    GraphClassifier, DeepSet, PytorchTransformer
+    GraphClassifier, DeepSet, SetTransformerOld, PytorchTransformer
 from .modules import ISAB, PMA, SAB, FastAttention
 from .preprocessing import load_data, load_augmented_data_as_tensor,\
     load_data_as_tensor, pad_pds
@@ -28,5 +28,6 @@ __all__ = [
     'AttentionPooling',
     'PersFormer',
     'DeepSet',
-    'PytorchTransformer'
+    'PytorchTransformer',
+    'SetTransformerOld',
     ]

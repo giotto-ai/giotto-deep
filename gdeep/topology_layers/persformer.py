@@ -8,6 +8,8 @@ from torch.nn import (Module, Linear,
 from torch.nn.modules.activation import GELU
 from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
 from gdeep.topology_layers.attention_modules import AttentionLayer, InducedAttention, AttentionPooling
+
+
 class DeepSet(nn.Module):
     def __init__(self,
         dim_input=2,
@@ -18,7 +20,7 @@ class DeepSet(nn.Module):
         pool="max",
         ):
         super().__init__()
-        assert pool in ["max", "mean", "sum" "attention"], "Unknown Pooling type"
+        assert pool in ["max", "mean", "sum", "attention"], "Unknown Pooling type"
         self.dim_hidden=dim_hidden
         self.enc = nn.Sequential(
             nn.Linear(in_features=dim_input, out_features=dim_hidden),
@@ -201,7 +203,7 @@ class PersFormer(Module):
         return total_params
 
 
-class SetTransformer(nn.Module):
+class SetTransformer(Module):
     """ SetTransformer from
     https://github.com/juho-lee/set_transformer/blob/master/main_pointcloud.py  
     with either induced attention or classical self attention.
@@ -298,6 +300,77 @@ class SetTransformer(nn.Module):
         for parameter in self.parameters():
             total_params += parameter.nelement()
         return total_params
+    
+    
+class SetTransformerOld(Module):
+    """
+    Set transformer architecture with old implementation.
+    """
+    def __init__(
+        self,
+        dim_input=4,  # dimension of input data for each element in the set
+        num_outputs=1,
+        dim_output=5,  # number of classes
+        num_inds=32,  # number of induced points, see  Set Transformer paper
+        dim_hidden=128,
+        num_heads="4",
+        layer_norm="False",  # use layer norm
+        simplified_layer_norm="True",
+        dropout=0.0,
+        num_layer_enc=2,
+        num_layer_dec=3,
+        activation="gelu",
+        bias_attention="True",
+        attention_type="induced_attention"
+    ):
+        super().__init__()
+        bias_attention = eval(bias_attention)
+        if activation == 'gelu':
+            activation_function = nn.GELU()
+        elif activation == 'relu':
+            activation_function = nn.RELU()
+        else:
+            raise ValueError("Unknown activation '%s'" % activation)
+        
+        if attention_type=="induced_attention":
+            self.enc = nn.Sequential(
+                ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                        simplified_layer_norm = eval(simplified_layer_norm),
+                        bias_attention=bias_attention, activation=activation),
+                *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                        simplified_layer_norm = eval(simplified_layer_norm),
+                        bias_attention=bias_attention, activation=activation)
+                    for _ in range(num_layer_enc-1)],
+            )
+        else:
+            self.enc = nn.Sequential(
+                SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                    simplifiey_layer_norm = eval(simplified_layer_norm),
+                    bias_attention=bias_attention, activation=activation),
+                *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                        simplified_layer_norm = eval(simplified_layer_norm),
+                        bias_attention=bias_attention, activation=activation)
+                    for _ in range(num_layer_enc-1)],
+            )
+        enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
+        self.dec = nn.Sequential(
+            nn.Dropout(dropout),
+            PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm),
+                simplified_layer_norm = eval(simplified_layer_norm),
+                bias_attention=bias_attention, activation=activation),
+            nn.Dropout(dropout),
+            *[nn.Sequential(nn.Linear(enc_layer_dim[i] * dim_hidden, enc_layer_dim[i+1] * dim_hidden),
+                            activation_function,
+                            nn.Dropout(dropout)) for i in range(num_layer_dec-1)],
+            nn.Linear(dim_hidden, dim_output),
+        )
+
+    def forward(self, input):
+        return self.dec(self.enc(input)).squeeze(dim=1)
+
+    
+    
+
 class GraphClassifier(nn.Module):
     """Classifier for Graphs using persistence features and additional
     features. The vectorization is based on a set transformer.
