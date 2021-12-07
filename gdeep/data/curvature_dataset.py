@@ -4,7 +4,8 @@ from gtda.homology import VietorisRipsPersistence
 from torch.utils.data import DataLoader, TensorDataset  # type: ignore
 
 
-from numba import cuda
+#from numba import cuda
+import numba as nb
 from math import tanh, cos, sin, sqrt, atanh, atan2
 
 USE_64 = True
@@ -17,61 +18,113 @@ else:
     np_type = np.float32
     
 
-@cuda.jit("void(float{}[:, :], float{}[:, :], float{})".format(bits, bits, bits))
-def distance_matrix(mat, out, curvature):
-    m = mat.shape[0]
-    i, j = cuda.grid(2)
-    if i < m and j < m:
-        if curvature > 0:
-            R = 1.0/sqrt(curvature)
-            z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
-            z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
-            z2 = R * cos(mat[i, 0] / R)
+# @cuda.jit("void(float{}[:, :], float{}[:, :], float{})".format(bits, bits, bits))
+# def distance_matrix(mat, out, curvature):
+#     m = mat.shape[0]
+#     i, j = cuda.grid(2)
+#     if i < m and j < m:
+#         if curvature > 0:
+#             R = 1.0/sqrt(curvature)
+#             z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
+#             z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
+#             z2 = R * cos(mat[i, 0] / R)
             
-            w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
-            w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
-            w2 = R * cos(mat[j, 0] / R)
+#             w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
+#             w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
+#             w2 = R * cos(mat[j, 0] / R)
             
-            cross0 = z1 * w2 - z2 * w1
-            cross1 = z2 * w0 - z0 * w2
-            cross2 = z0 * w1 - z1 * w0
+#             cross0 = z1 * w2 - z2 * w1
+#             cross1 = z2 * w0 - z0 * w2
+#             cross2 = z0 * w1 - z1 * w0
             
-            out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
-                                  z0 * w0 + z1 * w1 + z2 * w2)
+#             out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
+#                                   z0 * w0 + z1 * w1 + z2 * w2)
         
-        if curvature < 0:
-            R = 1.0/sqrt(-curvature)
-            z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
-            z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
-            w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
-            w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
+#         if curvature < 0:
+#             R = 1.0/sqrt(-curvature)
+#             z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
+#             z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
+#             w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
+#             w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
             
-            temp0 = z0 * w0 + z1 * w1 - 1.0
-            temp1 = z0 * w1 - z1 * w0 + 1.0
-            temp = sqrt(temp0 * temp0 + temp1 * temp1)
-            x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
-            out[i, j] = 2.0 * R * atanh(x)
+#             temp0 = z0 * w0 + z1 * w1 - 1.0
+#             temp1 = z0 * w1 - z1 * w0 + 1.0
+#             temp = sqrt(temp0 * temp0 + temp1 * temp1)
+#             x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
+#             out[i, j] = 2.0 * R * atanh(x)
             
-        if curvature == 0.0:  # it does not make sense to compare floats
-            z0 = mat[i, 0] * cos(mat[i, 1])
-            z1 = mat[i, 0] * sin(mat[i, 1])
+#         if curvature == 0.0:  # it does not make sense to compare floats
+#             z0 = mat[i, 0] * cos(mat[i, 1])
+#             z1 = mat[i, 0] * sin(mat[i, 1])
             
-            w0 = mat[j, 0] * cos(mat[j, 1])
-            w1 = mat[j, 0] * sin(mat[j, 1])
+#             w0 = mat[j, 0] * cos(mat[j, 1])
+#             w1 = mat[j, 0] * sin(mat[j, 1])
             
-            out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
+#             out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
 
-def gpu_dist_matrix(mat, curvature):
-    rows = mat.shape[0]
+# def gpu_dist_matrix(mat, curvature):
+#     rows = mat.shape[0]
 
-    block_dim = (16, 16)
-    grid_dim = (int(rows/block_dim[0] + 1), int(rows/block_dim[1] + 1))
+#     block_dim = (16, 16)
+#     grid_dim = (int(rows/block_dim[0] + 1), int(rows/block_dim[1] + 1))
 
-    stream = cuda.stream()
-    mat2 = cuda.to_device(np.asarray(mat, dtype=np_type), stream=stream)
-    out2 = cuda.device_array((rows, rows))
-    distance_matrix[grid_dim, block_dim](mat2, out2, curvature)
-    out = out2.copy_to_host(stream=stream)
+#     stream = cuda.stream()
+#     mat2 = cuda.to_device(np.asarray(mat, dtype=np_type), stream=stream)
+#     out2 = cuda.device_array((rows, rows))
+#     distance_matrix[grid_dim, block_dim](mat2, out2, curvature)
+#     out = out2.copy_to_host(stream=stream)
+
+#     return out
+
+@nb.njit
+def cpu_dist_matrix(mat, curvature):
+    m = mat.shape[0]
+
+    out = np.empty((m, m), dtype=np_type)  # corrected dtype
+
+
+    for i in range(m):
+        for j in range(i+1, m):
+            if i < m and j < m:
+                if curvature > 0:
+                    R = 1.0/sqrt(curvature)
+                    z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
+                    z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
+                    z2 = R * cos(mat[i, 0] / R)
+                    
+                    w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
+                    w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
+                    w2 = R * cos(mat[j, 0] / R)
+                    
+                    cross0 = z1 * w2 - z2 * w1
+                    cross1 = z2 * w0 - z0 * w2
+                    cross2 = z0 * w1 - z1 * w0
+                    
+                    out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
+                                        z0 * w0 + z1 * w1 + z2 * w2)
+                
+                if curvature < 0:
+                    R = 1.0/sqrt(-curvature)
+                    z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
+                    z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
+                    w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
+                    w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
+                    
+                    temp0 = z0 * w0 + z1 * w1 - 1.0
+                    temp1 = z0 * w1 - z1 * w0 + 1.0
+                    temp = sqrt(temp0 * temp0 + temp1 * temp1)
+                    x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
+                    out[i, j] = 2.0 * R * atanh(x)
+                    
+                if curvature == 0.0:  # it does not make sense to compare floats
+                    z0 = mat[i, 0] * cos(mat[i, 1])
+                    z1 = mat[i, 0] * sin(mat[i, 1])
+                    
+                    w0 = mat[j, 0] * cos(mat[j, 1])
+                    w1 = mat[j, 0] * sin(mat[j, 1])
+                    
+                    out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
+                out[j, i] = out[i, j]
 
     return out
 
@@ -153,7 +206,7 @@ class CurvatureSamplingGenerator(object):
     
     def _compute_distance_matrix(self, curvature, n_points):
         samples = self._sample_uniformly(curvature, n_points)
-        return gpu_dist_matrix(samples, curvature)
+        return cpu_dist_matrix(samples, curvature)
     
     def _compute_diagrams(self):  
         """ This functions outputs the persistence diagrams in homological dimensions given by
