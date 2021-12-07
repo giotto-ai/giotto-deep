@@ -75,12 +75,12 @@ config_model = DotMap({
     'attention_type': "induced_attention",
     'activation': "gelu", # gelu or relu 
     'dropout_enc': 0.0,
-    'dropout_dec': 0.0,
+    'dropout_dec': 0.2,
     'optimizer': AdamW,
-    'learning_rate': 1e-4,
+    'learning_rate': 1e-3,
     'num_epochs': 200,
     'pooling_type': "attention",
-    'weight_decay': 0.0, #0.0001,
+    'weight_decay': 1e-2,
     'n_accumulated_grads': 0,
     'bias_attention': "False"
 })

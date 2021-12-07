@@ -29,39 +29,44 @@ from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 import json
 # %%
-cg = CurvatureSamplingGenerator(num_samplings=10000,
-                        num_points_per_sampling=1000,
-                        n_jobs=20)
+num_points = 10
+cg = CurvatureSamplingGenerator(num_samplings=num_points,
+                        num_points_per_sampling=200,
+                        homology_dimensions=(1,))
 curvatures = cg.get_curvatures()
 diagrams = cg.get_diagrams()
-np.save('curvatures_10k.npy', curvatures)
-np.save('diagrams_curvature_10k.npy', diagrams)
+#np.save('curvatures_10k.npy', curvatures)
+#np.save('diagrams_curvature_10k.npy', diagrams)
 # %%
-curvatures = torch.tensor(np.load('curvatures.npy').astype(np.float32)).reshape(-1, 1)
-diagrams = torch.tensor(np.load('diagrams_curvature.npy').astype(np.float32))
+#curvatures = torch.tensor(np.load('curvatures.npy').astype(np.float32)).reshape(-1, 1)
+#diagrams = torch.tensor(np.load('diagrams_curvature.npy').astype(np.float32))
 
-dl_curvatures = DataLoader(TensorDataset(diagrams, curvatures),
-                   batch_size=2)
+dl_curvatures = DataLoader(TensorDataset(torch.tensor(diagrams[:, :, :2], dtype=torch.float32),
+                                         torch.tensor(curvatures, dtype=torch.float32)),
+                                         batch_size=10)
 # %%
 class SmallDeepSet(nn.Module):
     def __init__(self,
-        pool="max",
+        pool="sum",
         dim_input=2,
         dim_output=5,):
         super().__init__()
         self.enc = nn.Sequential(
-            nn.Linear(in_features=dim_input, out_features=64),
+            nn.Linear(in_features=dim_input, out_features=16),
             nn.ReLU(),
-            nn.Linear(in_features=64, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=64),
         )
         self.dec = nn.Sequential(
-            nn.Linear(in_features=64, out_features=64),
+            nn.Linear(in_features=16, out_features=16),
             nn.ReLU(),
-            nn.Linear(in_features=64, out_features=dim_output),
+            nn.Linear(in_features=16, out_features=16),
+            nn.ReLU(),
+            nn.Linear(in_features=16, out_features=16),
+            nn.ReLU(),
+            nn.Linear(in_features=16, out_features=16),
+            nn.ReLU(),
+            nn.Linear(in_features=16, out_features=16),
+            nn.ReLU(),
+            nn.Linear(in_features=16, out_features=dim_output),
         )
         self.pool = pool
 
@@ -76,28 +81,131 @@ class SmallDeepSet(nn.Module):
         x = self.dec(x)
         return x
 
-model = SetTransformer(dim_input=4, dim_output=1)
+model = SmallDeepSet(dim_input=2, dim_output=1, pool="sum")
+
 # %%
 # Do training and validation
 
 # initialise loss
-loss_fn = nn.L1Loss()
+#loss_fn = nn.MSELoss()
 
 # Initialize the Tensorflow writer
 #writer = SummaryWriter(comment=json.dumps(config_model.toDict())\
 #                                + json.dumps(config_data.toDict()))
-writer = SummaryWriter(comment="deep set")
+#writer = SummaryWriter(comment="deep set")
 
 # initialise pipeline class
-pipe = Pipeline(model, [dl_curvatures, None], loss_fn, writer)
+#pipe = Pipeline(model, [dl_curvatures, None], loss_fn, writer)
 # %%
 
 
 # train the model
-pipe.train(torch.optim.Adam,
-           100,
-           cross_validation=False,
-           optimizers_param={"lr": 5e-4})
+# pipe.train(torch.optim.Adam,
+#            1000,
+#            cross_validation=False,
+#            optimizers_param={"lr": 1e-3})
+# %%
+
+model = nn.Sequential(
+            nn.Linear(in_features=16, out_features=32),
+            nn.ReLU(),
+            nn.Linear(in_features=32, out_features=64),
+            nn.ReLU(),
+            nn.Linear(in_features=64, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=128),
+            nn.ReLU(),
+            nn.Linear(in_features=128, out_features=1),
+        )
+
+model.cuda()
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+for epoch in range(100000):  # loop over the dataset multiple times
+
+    running_loss = 0.0
+    for i, data in enumerate(dl_curvatures, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data
+        inputs, labels = su.detach(), labels.to('cuda').reshape(num_points, 1)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
+    print('[%d, %5d] loss: %.3f' %
+            (epoch + 1, i + 1, running_loss))
+
+print('Finished Training')
+# %%
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
+
+for epoch in range(100000):  # loop over the dataset multiple times
+
+    running_loss = 0.0
+    for i, data in enumerate(dl_curvatures, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data
+        inputs, labels = su.detach(), labels.to('cuda').reshape(num_points, 1)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
+    print('[%d, %5d] loss: %.3f' %
+            (epoch + 1, i + 1, running_loss))
+
+print('Finished Training')
+
+
+# %%
+model = nn.Sequential(
+            nn.Linear(in_features=10, out_features=1),
+        )
+model.cuda()
+num_points = 10
+data = (torch.rand(num_points, 10).cuda(), torch.rand(num_points).reshape(num_points, 1))
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
+
+for epoch in range(1000):  # loop over the dataset multiple times
+
+    # get the inputs; data is a list of [inputs, labels]
+    inputs, labels = data
+    inputs, labels = inputs.to('cuda'), labels.to('cuda'
+
+    # zero the parameter gradients
+    optimizer.zero_grad()
+
+    # forward + backward + optimize
+    outputs = model(inputs)
+    loss = criterion(outputs, labels)
+    loss.backward()
+    optimizer.step()
+
+    # print statistics
+    running_loss = loss.item()
+    print('[%d, %5d] loss: %.3f' %
+            (epoch + 1, i + 1, running_loss))
+
+print('Finished Training')
+
 # %%
 import matplotlib.pyplot as plt
 
@@ -248,3 +356,10 @@ gpu_dist_matrix(x, 1.0).shape
 # %%
 pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(-1.0, x1 , x2)).shape
 # %%
+
+def remove_file(file_path):
+    """Remove file in file_path if it exists"""
+    try:
+        os.remove(file_path)
+    except OSError as ex:
+        print("Error: {}, when removing {}.".format(ex.strerror, file_path))

@@ -189,7 +189,10 @@ class CurvatureSamplingGenerator(object):
             axis=-1)
 
     def get_diagrams(self):
-        return self._persistence_diagrams_to_one_hot()
+        if len(self._homology_dimensions) > 1:
+            return self._persistence_diagrams_to_one_hot()
+        else:
+            return self._diagrams
     
     def get_curvatures(self):
         return self._curvatures
