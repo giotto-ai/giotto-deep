@@ -84,47 +84,47 @@ def cpu_dist_matrix(mat, curvature):
 
 
     for i in range(m):
+        out[i, i] = 0.0
         for j in range(i+1, m):
-            if i < m and j < m:
-                if curvature > 0:
-                    R = 1.0/sqrt(curvature)
-                    z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
-                    z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
-                    z2 = R * cos(mat[i, 0] / R)
-                    
-                    w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
-                    w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
-                    w2 = R * cos(mat[j, 0] / R)
-                    
-                    cross0 = z1 * w2 - z2 * w1
-                    cross1 = z2 * w0 - z0 * w2
-                    cross2 = z0 * w1 - z1 * w0
-                    
-                    out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
-                                        z0 * w0 + z1 * w1 + z2 * w2)
+            if curvature > 0:
+                R = 1.0/sqrt(curvature)
+                z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
+                z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
+                z2 = R * cos(mat[i, 0] / R)
                 
-                if curvature < 0:
-                    R = 1.0/sqrt(-curvature)
-                    z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
-                    z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
-                    w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
-                    w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
-                    
-                    temp0 = z0 * w0 + z1 * w1 - 1.0
-                    temp1 = z0 * w1 - z1 * w0 + 1.0
-                    temp = sqrt(temp0 * temp0 + temp1 * temp1)
-                    x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
-                    out[i, j] = 2.0 * R * atanh(x)
-                    
-                if curvature == 0.0:  # it does not make sense to compare floats
-                    z0 = mat[i, 0] * cos(mat[i, 1])
-                    z1 = mat[i, 0] * sin(mat[i, 1])
-                    
-                    w0 = mat[j, 0] * cos(mat[j, 1])
-                    w1 = mat[j, 0] * sin(mat[j, 1])
-                    
-                    out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
-                out[j, i] = out[i, j]
+                w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
+                w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
+                w2 = R * cos(mat[j, 0] / R)
+                
+                cross0 = z1 * w2 - z2 * w1
+                cross1 = z2 * w0 - z0 * w2
+                cross2 = z0 * w1 - z1 * w0
+                
+                out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
+                                    z0 * w0 + z1 * w1 + z2 * w2)
+            
+            if curvature < 0:
+                R = 1.0/sqrt(-curvature)
+                z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
+                z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
+                w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
+                w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
+                
+                temp0 = z0 * w0 + z1 * w1 - 1.0
+                temp1 = z0 * w1 - z1 * w0 + 1.0
+                temp = sqrt(temp0 * temp0 + temp1 * temp1)
+                x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
+                out[i, j] = 2.0 * R * atanh(x)
+                
+            if curvature == 0.0:  # it does not make sense to compare floats
+                z0 = mat[i, 0] * cos(mat[i, 1])
+                z1 = mat[i, 0] * sin(mat[i, 1])
+                
+                w0 = mat[j, 0] * cos(mat[j, 1])
+                w1 = mat[j, 0] * sin(mat[j, 1])
+                
+                out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
+            out[j, i] = out[i, j]
 
     return out
 
