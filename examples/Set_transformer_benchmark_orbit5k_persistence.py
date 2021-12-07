@@ -4,11 +4,11 @@
 #!pip install pyyaml==5.4.1
 
 # %%
-from IPython import get_ipython  # type: ignore
+#from IPython import get_ipython  # type: ignore
 
 # %% 
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
+#get_ipython().magic('load_ext autoreload')
+#get_ipython().magic('autoreload 2')
 
 
 # %%
@@ -22,14 +22,14 @@ import numpy as np
 # Import the PyTorch modules
 import torch  # type: ignore
 from torch import nn  # type: ignore
-from torch.optim import SGD, Adam, RMSprop  # type: ignore
+from torch.optim import SGD, Adam, RMSprop, AdamW  # type: ignore
 
 # Import Tensorflow writer
 from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import modules from XTransformers
-from x_transformers.x_transformers import AttentionLayers, Encoder, ContinuousTransformerWrapper
-
+#from x_transformers.x_transformers import AttentionLayers, Encoder, ContinuousTransformerWrapper
+from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
@@ -73,16 +73,16 @@ config_model = DotMap({
     'num_layers_encoder': 2,
     'num_layers_decoder': 1,
     'attention_type': "self_attention",
-    'activation': "nn.ReLU()",
+    'activation': "gelu",
     'dropout_enc': 0.0,
     'dropout_dec': 0.0,
-    'optimizer': torch.optim.Adam,
+    'optimizer': AdamW,
     'learning_rate': 1e-4,
-    'num_epochs': 500,
+    'num_epochs': 1_000,
     'pooling_type': "attention",
     'weight_decay': 0.0,
     'n_accumulated_grads': 2,
-    'bias_attention': True
+    'bias_attention': "False"
 })
 
 
@@ -207,29 +207,42 @@ elif config_model.implementation == "Old_SetTransformer":
             dropout=0.0,
             num_layer_enc=2,
             num_layer_dec=2,
-            activation="nn.Relu()",
-            bias_attention=True,
+            activation="gelu",
+            bias_attention="True",
             attention_type="induced_attention"
         ):
             super().__init__()
+            bias_attention = eval(bias_attention)
+            if activation == 'gelu':
+                activation_function = nn.GELU()
+            elif activation == 'relu':
+                activation_function = nn.RELU()
+            else:
+                raise ValueError("Unknown activation '%s'" % activation)
+            
             if attention_type=="induced_attention":
                 self.enc = nn.Sequential(
-                    ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm), bias_attention=bias_attention),
-                    *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm), bias_attention=bias_attention)
+                    ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                         bias_attention=bias_attention, activation=activation),
+                    *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                           bias_attention=bias_attention, activation=activation)
                       for _ in range(num_layer_enc-1)],
                 )
             else:
                 self.enc = nn.Sequential(
-                    SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm), bias_attention=bias_attention),
-                    *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm), bias_attention=bias_attention)
+                    SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                        bias_attention=bias_attention, activation=activation),
+                    *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                          bias_attention=bias_attention, activation=activation)
                       for _ in range(num_layer_enc-1)],
                 )
             self.dec = nn.Sequential(
                 nn.Dropout(dropout),
-                PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm), bias_attention=bias_attention),
+                PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm),
+                    bias_attention=bias_attention, activation=activation),
                 nn.Dropout(dropout),
                 *[nn.Sequential(nn.Linear(dim_hidden, dim_hidden),
-                                nn.ReLU(),
+                                activation_function,
                                 nn.Dropout(dropout)) for _ in range(num_layer_dec-1)],
                 nn.Linear(dim_hidden, dim_output),
             )
@@ -296,27 +309,32 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 # Gridsearch
 
 # initialise gridsearch
-# pruner = NopPruner()
-# search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
+pruner = NopPruner()
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
 
 # dictionaries of hyperparameters
-optimizers_params = {"lr": [1e-7, 1e-3, None, True]}#,
-                      #"weight_decay": [0.0, 0.2] }
-dataloaders_params = {"batch_size": [16, 32, 4]}
-models_hyperparams = {"n_layer_enc": [2, 3],
+optimizers_params = {"lr": [1e-3, 1e-0, None, True],
+                      "weight_decay": [1e-5, 0.2, None, True] }
+dataloaders_params = {"batch_size": [8, 16, 2]}
+models_hyperparams = {"n_layer_enc": [2, 4],
                       "n_layer_dec": [1, 5],
                       "num_heads": ["2", "4", "8"],
-                      "hidden_dim": ["16", "32", "64"],
-                      "dropout": [0.0, 0.5, 0.25],
-                      "layer_norm": ["True", "False"]}#,
+                      "hidden_dim": ["32", "64", "80"],
+                      "dropout": [0.0, 0.5, 0.05],
+                      "layer_norm": ["True", "False"],
+                      "bias_attention": ["True", "False"]}#,
                       #'pre_layer_norm': ["True", "False"]}
+    
+scheduler_params = {"num_warmup_steps": int(0.1 * config_model.num_epochs),  #(int) – The number of steps for the warmup phase.
+                    "num_training_steps": config_model.num_epochs, #(int) – The total number of training steps.
+                    "num_cycles": 2}
 
 # starting the gridsearch
-search.start((Adam,), n_epochs=500, cross_validation=False,
+search.start((AdamW,), n_epochs=config_model.num_epochs, cross_validation=False,
             optimizers_params=optimizers_params,
             dataloaders_params=dataloaders_params,
-            models_hyperparams=models_hyperparams, lr_scheduler=None,
-            scheduler_params=None, n_accumulated_grads=config_model.n_accumulated_grads)
+            models_hyperparams=models_hyperparams, lr_scheduler=get_cosine_with_hard_restarts_schedule_with_warmup,
+            scheduler_params=scheduler_params)
 
 
 # %%
