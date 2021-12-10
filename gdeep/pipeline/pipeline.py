@@ -599,9 +599,13 @@ class Pipeline:
                     lista = me.get_layers_param()
                     for k, item in lista.items():
                         self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
+                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                  torch.log(torch.abs(item)+1e-8),t)
                     lista_grad = me.get_layers_grads()
                     for k, item in zip(lista.keys(),lista_grad):
                         self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
+                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                  torch.log(torch.abs(item)+1e-8),t)
                     self.writer.flush()
 
                 except AttributeError:
