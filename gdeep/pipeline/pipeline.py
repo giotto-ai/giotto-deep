@@ -85,6 +85,7 @@ class Pipeline:
             warnings.warn("No writer detected")
         self.DEVICE = DEVICE
         self.check_has_trained = False
+        self.registered_hook = None
         
     def _set_initial_model(self):
         """This private method is used to set
@@ -593,9 +594,9 @@ class Pipeline:
             self.val_epoch = t
             self.train_epoch = t
             self._train_loop(dl_tr, writer_tag)
+            me = ModelExtractor(self.model, self.loss_fn)
             if self.store_grad_layer_hist:
                 try:
-                    me = ModelExtractor(self.model, self.loss_fn)
                     lista = me.get_layers_param()
                     for k, item in lista.items():
                         self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
@@ -610,6 +611,12 @@ class Pipeline:
 
                 except AttributeError:
                     pass
+            lr_temporary = None
+            try:
+                lr_temporary = self.optimizer.param_groups[0]['lr']
+            except KeyError:
+                pass
+            self._run_pipe_hook(lr_temporary, t+1, me, self.writer)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
@@ -849,3 +856,25 @@ class Pipeline:
         loss /= len(dl)
         return 100*correct, loss, confusion_matrix
 
+
+    def register_pipe_hook(self, callable):
+        """This method registers a function that
+        will be called after each trainign step.
+
+        The arguments of the callable function are, in this order:
+         - current learning rate (float)
+         - current epoch number (int)
+         - the ModelExtractor instance at that epoch (ModelExtractor)
+         - the tensorboard writer
+
+        Args:
+            callable (Callable):
+                the function to register"""
+        self.registered_hook = callable
+
+
+    def _run_pipe_hook(self, lr, epoch, me, writer):
+        """private method that runs the hooked
+        function at every epoch, after the single training loop"""
+        if self.registered_hook is not None:
+            self.registered_hook(lr, epoch, me, writer)

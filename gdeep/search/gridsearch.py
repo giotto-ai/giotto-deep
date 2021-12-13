@@ -16,6 +16,9 @@ import warnings
 from itertools import chain, combinations
 from optuna.pruners import MedianPruner
 from ..utility import save_model_and_optimizer
+import random
+import string
+
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -40,10 +43,17 @@ class Gridsearch(Pipeline):
             epochs or the validation accuracy of the last epoch
         pruner (optuna.Pruners, default MedianPruner):
             Instance of an optuna pruner, can be user-defined
+        db_url (str):
+            name of the database to connect to. For example
+            ``mysql+mysqldb://usr:psw@host:port/db_name``
+        study_name (str):
+            name of the optuna study
+
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None):
+    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None,
+                 db_url=None, study_name=None):
         self.best_not_last = best_not_last
         self.is_pipe = None
         self.study = None
@@ -51,6 +61,8 @@ class Gridsearch(Pipeline):
         self.best_val_loss_gs = np.inf
         self.list_res = []
         self.df_res = None
+        self.db_url = db_url
+        self.study_name = study_name
         if (isinstance(obj, Pipeline)):
             self.pipe = obj
             super().__init__(self.pipe.model,
@@ -281,10 +293,19 @@ class Gridsearch(Pipeline):
         """
         if self.search_metric == "loss":
             self.study = optuna.create_study(direction="minimize",
-                                             pruner=self.pruner)
+                                             pruner=self.pruner,
+                                             storage=self.db_url,
+                                             study_name=self.study_name if self.study_name is not None else \
+                                                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20)),
+                                             load_if_exists=True)
         else:
             self.study = optuna.create_study(direction="maximize",
-                                             pruner=self.pruner)
+                                             pruner=self.pruner,
+                                             storage=self.db_url,
+                                             study_name=self.study_name if self.study_name is not None else \
+                                                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in
+                                                         range(20)),
+                                             load_if_exists=True)
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
             # already initialised. So they exist also in _objective()
