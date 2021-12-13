@@ -1,7 +1,7 @@
 torch
 torchvision
 giotto-tda
-numpy
+numpy=1.20.0
 pandas
 plotly
 matplotlib
@@ -25,3 +25,5 @@ torch_tb_profiler
 giotto-ph
 Pillow
 h5py
+sympy
+numba
