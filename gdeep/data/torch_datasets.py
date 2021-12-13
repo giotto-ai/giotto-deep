@@ -7,7 +7,7 @@ from . import CreateToriDataset
 import warnings
 import pandas as pd
 import os
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
 
