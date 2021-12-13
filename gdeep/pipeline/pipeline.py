@@ -85,6 +85,7 @@ class Pipeline:
             warnings.warn("No writer detected")
         self.DEVICE = DEVICE
         self.check_has_trained = False
+        self.registered_hook = None
         
     def _set_initial_model(self):
         """This private method is used to set
@@ -593,19 +594,24 @@ class Pipeline:
             self.val_epoch = t
             self.train_epoch = t
             self._train_loop(dl_tr, writer_tag)
+            me = ModelExtractor(self.model, self.loss_fn)
             if self.store_grad_layer_hist:
                 try:
-                    me = ModelExtractor(self.model, self.loss_fn)
                     lista = me.get_layers_param()
                     for k, item in lista.items():
                         self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
+                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                  torch.log(torch.abs(item)+1e-8),t)
                     lista_grad = me.get_layers_grads()
                     for k, item in zip(lista.keys(),lista_grad):
                         self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
+                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                  torch.log(torch.abs(item)+1e-8),t)
                     self.writer.flush()
 
                 except AttributeError:
                     pass
+            self._run_pipe_hook(t+1, self.optimizer, me, self.writer)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
@@ -845,3 +851,25 @@ class Pipeline:
         loss /= len(dl)
         return 100*correct, loss, confusion_matrix
 
+
+    def register_pipe_hook(self, callable):
+        """This method registers a function that
+        will be called after each trainign step.
+
+        The arguments of the callable function are, in this order:
+         - current optimizer (torch.optim)
+         - current epoch number (int)
+         - the ModelExtractor instance at that epoch (ModelExtractor)
+         - the tensorboard writer (writer)
+
+        Args:
+            callable (Callable):
+                the function to register"""
+        self.registered_hook = callable
+
+
+    def _run_pipe_hook(self, epoch, optim, me, writer):
+        """private method that runs the hooked
+        function at every epoch, after the single training loop"""
+        if self.registered_hook is not None:
+            self.registered_hook(epoch, optim, me, writer)

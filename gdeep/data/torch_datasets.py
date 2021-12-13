@@ -7,7 +7,7 @@ from . import CreateToriDataset
 import warnings
 import pandas as pd
 import os
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
 
@@ -178,7 +178,10 @@ class DataLoaderFromImages:
         ts_data = []
         list_of_file_names = os.listdir()
         for name in list_of_file_names:
-            image = Image.open(name)
+            try:
+                image = Image.open(name)
+            except UnidentifiedImageError:
+                warnings.warn(f"The image {name} canot be loaded. Skipping it.")
             imageT = ToTensor()(Resize(size)(image))
             ts_data.append(imageT)
 
