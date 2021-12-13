@@ -611,12 +611,7 @@ class Pipeline:
 
                 except AttributeError:
                     pass
-            lr_temporary = None
-            try:
-                lr_temporary = self.optimizer.param_groups[0]['lr']
-            except KeyError:
-                pass
-            self._run_pipe_hook(lr_temporary, t+1, me, self.writer)
+            self._run_pipe_hook(t+1, self.optimizer, me, self.writer)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
@@ -862,10 +857,10 @@ class Pipeline:
         will be called after each trainign step.
 
         The arguments of the callable function are, in this order:
-         - current learning rate (float)
+         - current optimizer (torch.optim)
          - current epoch number (int)
          - the ModelExtractor instance at that epoch (ModelExtractor)
-         - the tensorboard writer
+         - the tensorboard writer (writer)
 
         Args:
             callable (Callable):
@@ -873,8 +868,8 @@ class Pipeline:
         self.registered_hook = callable
 
 
-    def _run_pipe_hook(self, lr, epoch, me, writer):
+    def _run_pipe_hook(self, epoch, optim, me, writer):
         """private method that runs the hooked
         function at every epoch, after the single training loop"""
         if self.registered_hook is not None:
-            self.registered_hook(lr, epoch, me, writer)
+            self.registered_hook(epoch, optim, me, writer)
