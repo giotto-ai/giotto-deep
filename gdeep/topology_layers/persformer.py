@@ -328,7 +328,7 @@ class SetTransformerOld(Module):
         if activation == 'gelu':
             activation_function = nn.GELU()
         elif activation == 'relu':
-            activation_function = nn.RELU()
+            activation_function = nn.ReLU()
         else:
             raise ValueError("Unknown activation '%s'" % activation)
         
@@ -342,16 +342,31 @@ class SetTransformerOld(Module):
                         bias_attention=bias_attention, activation=activation)
                     for _ in range(num_layer_enc-1)],
             )
-        else:
+        elif attention_type=="self_attention":
             self.enc = nn.Sequential(
                 SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
-                    simplifiey_layer_norm = eval(simplified_layer_norm),
+                    simplified_layer_norm = eval(simplified_layer_norm),
                     bias_attention=bias_attention, activation=activation),
                 *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
                         simplified_layer_norm = eval(simplified_layer_norm),
                         bias_attention=bias_attention, activation=activation)
                     for _ in range(num_layer_enc-1)],
             )
+        elif attention_type=="pytorch_self_attention":
+            emb = Linear(dim_input, hidden_size)
+            encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_size,
+                                                    nhead=nhead,
+                                                    dropout=dropout,
+                                                    activation=activation,
+                                                    norm_first=norm_first,
+                                                    batch_first=True)
+            self.enc = nn.Sequential(
+                    emb,
+                    nn.TransformerEncoder(encoder_layer,
+                                                num_layers=num_layers)
+            )
+        else:
+            raise ValueError("Unknown attention type: {}".format(attention_type))
         enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
         self.dec = nn.Sequential(
             nn.Dropout(dropout),
@@ -362,7 +377,7 @@ class SetTransformerOld(Module):
             *[nn.Sequential(nn.Linear(enc_layer_dim[i] * dim_hidden, enc_layer_dim[i+1] * dim_hidden),
                             activation_function,
                             nn.Dropout(dropout)) for i in range(num_layer_dec-1)],
-            nn.Linear(dim_hidden, dim_output),
+            nn.Linear(enc_layer_dim[-1] * dim_hidden, dim_output),
         )
 
     def forward(self, input):

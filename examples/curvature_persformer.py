@@ -347,14 +347,75 @@ def gpu_dist_matrix(mat, curvature):
     out = out2.copy_to_host(stream=stream)
 
     return out
+    
 # %%
-x = np.random.rand(1000, 2) * np.array([1.0, np.pi])
+import numba as nb
+from math import tanh, cos, sin, sqrt, atanh, atan2
+
+np_type = np.float64
+
+@nb.jit
+def cpu_dist_matrix(mat, curvature):
+    m = mat.shape[0]
+
+    out = np.empty((m, m), dtype=np_type)  # corrected dtype
+
+
+    for i in range(m):
+        out[i, i] = 0.0
+        for j in range(i+1, m):
+            if i < m and j < m:
+                if curvature > 0:
+                    R = 1.0/sqrt(curvature)
+                    z0 = R * sin(mat[i, 0] / R) * cos(mat[i, 1])
+                    z1 = R * sin(mat[i, 0] / R) * sin(mat[i, 1])
+                    z2 = R * cos(mat[i, 0] / R)
+                    
+                    w0 = R * sin(mat[j, 0] / R) * cos(mat[j, 1])
+                    w1 = R * sin(mat[j, 0] / R) * sin(mat[j, 1])
+                    w2 = R * cos(mat[j, 0] / R)
+                    
+                    cross0 = z1 * w2 - z2 * w1
+                    cross1 = z2 * w0 - z0 * w2
+                    cross2 = z0 * w1 - z1 * w0
+                    
+                    out[i, j] = R * atan2(sqrt(cross0 * cross0 + cross1 * cross1 + cross2 * cross2),
+                                        z0 * w0 + z1 * w1 + z2 * w2)
+                
+                if curvature < 0:
+                    R = 1.0/sqrt(-curvature)
+                    z0 = tanh(mat[i, 0]/(2.0 * R)) * cos(mat[i, 1])
+                    z1 = tanh(mat[i, 0]/(2.0 * R)) * sin(mat[i, 1])
+                    w0 = tanh(mat[j, 0]/(2.0 * R)) * cos(mat[j, 1])
+                    w1 = tanh(mat[j, 0]/(2.0 * R)) * sin(mat[j, 1])
+                    
+                    temp0 = z0 * w0 + z1 * w1 - 1.0
+                    temp1 = z0 * w1 - z1 * w0 + 1.0
+                    temp = sqrt(temp0 * temp0 + temp1 * temp1)
+                    x = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))/temp
+                    out[i, j] = 2.0 * R * atanh(x)
+                    
+                if curvature == 0.0:  # it does not make sense to compare floats
+                    z0 = mat[i, 0] * cos(mat[i, 1])
+                    z1 = mat[i, 0] * sin(mat[i, 1])
+                    
+                    w0 = mat[j, 0] * cos(mat[j, 1])
+                    w1 = mat[j, 0] * sin(mat[j, 1])
+                    
+                    out[i, j] = sqrt((z0 - w0) * (z0 - w0) + (z1 - w1) * (z1 - w1))
+                out[j, i] = out[i, j]
+
+    return out
+
+# %%
+x = np.random.rand(100, 2) * np.array([1.0, np.pi])
 # %%
 
-gpu_dist_matrix(x, 1.0).shape
+%timeit cpu_dist_matrix(x, -1.0)
 
 # %%
-pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(-1.0, x1 , x2)).shape
+
+%timeit pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(-1.0, x1 , x2))
 # %%
 
 def remove_file(file_path):
@@ -363,3 +424,39 @@ def remove_file(file_path):
         os.remove(file_path)
     except OSError as ex:
         print("Error: {}, when removing {}.".format(ex.strerror, file_path))
+# %%
+curvature = 0.0
+d1 = cpu_dist_matrix(x, curvature)
+#np.fill_diagonal(d1, 0.0)
+np.allclose(d1, pairwise_distances(x, metric=lambda x1, x2: geodesic_distance(curvature, x1 , x2)), atol=10, rtol=10.0)
+# %%
+import numpy as np
+X = np.load('diagrams_5000_1000_0_1.npy')
+# %%
+import matplotlib.pyplot as plt
+
+plt.scatter(X[0, :, 0], X[0, :, 1])
+# %%
+(X[0, :, 3] == 1.0).sum()
+# %%
+(X[4, :, 3] == 1.0).sum()
+# %%
+counter = 0
+for i in range(X.shape[0]):
+    if (X[i, :, -1] == 1.0).sum() != 301:
+        #print("Warning")
+        counter += 1
+counter
+# %%
+y = np.load('curvatures_5000_1000_0_1.npy')
+# %%
+plt.hist(y)
+# %%
+! python -m pip install -U giotto-ph
+# %%
+import numpy as np
+from gph import ripser_parallel
+
+pc = np.random.random((10000, 2))
+dgm = ripser_parallel(pc, maxdim=1, n_threads=12)
+# %%

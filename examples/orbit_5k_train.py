@@ -28,7 +28,7 @@ from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import modules from XTransformers
 #from x_transformers.x_transformers import AttentionLayers, Encoder, ContinuousTransformerWrapper
-from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup
+from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup, get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
@@ -46,8 +46,8 @@ from optuna.pruners import MedianPruner, NopPruner
 
 #Configs
 config_data = DotMap({
-    'batch_size_train': 128,
-    'num_orbits_per_class': 2_000,
+    'batch_size_train': 16,
+    'num_orbits_per_class': 1_000,
     'validation_percentage': 0.0,
     'test_percentage': 0.0,
     'num_jobs': 2,
@@ -64,24 +64,24 @@ config_model = DotMap({
     'dim_input': 4,
     'num_outputs': 1,  # for classification tasks this should be 1
     'num_classes': 5,  # number of classes
-    'dim_hidden': 64,
-    'num_heads': 8,
-    'num_induced_points': 64,
-    'layer_norm': True,  # use layer norm
+    'dim_hidden': 128,
+    'num_heads': 4,
+    'num_induced_points': 32,
+    'layer_norm': False,  # use layer norm
     'simplified_layer_norm': True,  #Xu, J., et al. Understanding and improving layer normalization.
     'pre_layer_norm': False,
     'num_layers_encoder': 2,
-    'num_layers_decoder': 4,
-    'attention_type': "induced_attention",
+    'num_layers_decoder': 1,
+    'attention_type': "self_attention",
     'activation': "gelu",
     'dropout_enc': 0.0,
-    'dropout_dec': 0.1,
-    'optimizer': AdamW,
+    'dropout_dec': 0.2,
+    'optimizer': Adam,
     'learning_rate': 1e-3,
-    'num_epochs': 1000,
+    'num_epochs': 300,
     'pooling_type': "attention",
-    'weight_decay': 0.01,
-    'n_accumulated_grads': 0,
+    'weight_decay': 0.0,
+    'n_accumulated_grads': 2,
     'bias_attention': "False",
 })
 
@@ -172,14 +172,15 @@ pipe.train(config_model.optimizer,
            optimizers_param={"lr": config_model.learning_rate,
                              "weight_decay": config_model.weight_decay},
            n_accumulated_grads=config_model.n_accumulated_grads,
-           lr_scheduler=get_cosine_with_hard_restarts_schedule_with_warmup,
-           scheduler_params = {"num_warmup_steps": int(0.1 * config_model.num_epochs),
-                               "num_training_steps": config_model.num_epochs,
-                               "num_cycles": 1})
+           lr_scheduler=get_cosine_schedule_with_warmup,  #get_constant_schedule_with_warmup,  #get_cosine_with_hard_restarts_schedule_with_warmup,
+           scheduler_params = {"num_warmup_steps": int(0.02 * config_model.num_epochs),
+                               "num_training_steps": config_model.num_epochs,},
+                               #"num_cycles": 1},
+           store_grad_layer_hist=True)
 
 # %%
 # keep training
-#pipe.train(Adam, 300, False, keep_training=True)
+#pipe.train(Adam, 1, False, keep_training=True, store_grad_layer_hist=True)
 
 # %%
 # %%

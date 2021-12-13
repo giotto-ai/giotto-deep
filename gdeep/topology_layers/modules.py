@@ -20,11 +20,11 @@ class MAB(nn.Module):
         if ln:
             self.ln0 = nn.LayerNorm(dim_V, elementwise_affine = not simplified_layer_norm)
             self.ln1 = nn.LayerNorm(dim_V, elementwise_affine = not simplified_layer_norm)
-        self.fc_o = nn.Linear(dim_V, dim_V, bias=bias_attention)
+        self.fc_o = nn.Linear(dim_V, dim_V, bias=True)
         if activation == 'gelu':
             self.activation_function = nn.GELU()
         elif activation == 'relu':
-            self.activation_function = nn.RELU()
+            self.activation_function = nn.ReLU()
         else:
             raise ValueError("Unknown activation '%s'" % activation)
 
