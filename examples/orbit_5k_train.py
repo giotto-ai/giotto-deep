@@ -41,16 +41,17 @@ import json
 #from gdeep.search import Gridsearch
 
 from optuna.pruners import MedianPruner, NopPruner
+from gdeep.search import VariationPruner
 
 # %%
 
 #Configs
 config_data = DotMap({
     'batch_size_train': 16,
-    'num_orbits_per_class': 1_000,
+    'num_orbits_per_class': 2_000,
     'validation_percentage': 0.0,
     'test_percentage': 0.0,
-    'num_jobs': 2,
+    'num_jobs': 8,
     'dynamical_system': 'classical_convention',
     'homology_dimensions': (0, 1),
     'dtype': 'float32',
@@ -64,25 +65,27 @@ config_model = DotMap({
     'dim_input': 4,
     'num_outputs': 1,  # for classification tasks this should be 1
     'num_classes': 5,  # number of classes
-    'dim_hidden': 128,
-    'num_heads': 4,
+    'dim_hidden': 64,
+    'num_heads': 8,
     'num_induced_points': 32,
-    'layer_norm': False,  # use layer norm
-    'simplified_layer_norm': True,  #Xu, J., et al. Understanding and improving layer normalization.
+    'layer_norm': True,  # use layer norm
+    'simplified_layer_norm': False,  #Xu, J., et al. Understanding and improving layer normalization.
     'pre_layer_norm': False,
-    'num_layers_encoder': 2,
-    'num_layers_decoder': 1,
-    'attention_type': "self_attention",
+    'layer_norm_pooling': False,
+    'num_layers_encoder': 3,
+    'num_layers_decoder': 2,
+    'attention_type': "pytorch_self_attention",
     'activation': "gelu",
     'dropout_enc': 0.0,
     'dropout_dec': 0.2,
-    'optimizer': Adam,
+    'optimizer': AdamW,
     'learning_rate': 1e-3,
-    'num_epochs': 300,
+    'num_epochs': 1000,
     'pooling_type': "attention",
-    'weight_decay': 0.0,
-    'n_accumulated_grads': 2,
+    'weight_decay': 0.0001,
+    'n_accumulated_grads': 0,
     'bias_attention': "False",
+    'warmup': 0.02,
 })
 
 
@@ -129,13 +132,16 @@ if config_model.implementation == "Old_SetTransformer":
                            dim_hidden=config_model.dim_hidden,
                            num_heads=str(config_model.num_heads),
                            layer_norm=str(config_model.layer_norm),  # use layer norm
+                           pre_layer_norm=str(config_model.pre_layer_norm),
                            simplified_layer_norm=str(config_model.simplified_layer_norm),
-                           dropout=config_model.dropout_dec,
+                           dropout_enc=config_model.dropout_enc,
+                           dropout_dec=config_model.dropout_dec,
                            num_layer_enc=config_model.num_layers_encoder,
                            num_layer_dec=config_model.num_layers_decoder,
                            activation=config_model.activation,
                            bias_attention=config_model.bias_attention,
-                           attention_type=config_model.attention_type)
+                           attention_type=config_model.attention_type,
+                           layer_norm_pooling=str(config_model.layer_norm_pooling))
 else:
     raise Exception("Unknown Implementation")
 # %%
@@ -173,7 +179,7 @@ pipe.train(config_model.optimizer,
                              "weight_decay": config_model.weight_decay},
            n_accumulated_grads=config_model.n_accumulated_grads,
            lr_scheduler=get_cosine_schedule_with_warmup,  #get_constant_schedule_with_warmup,  #get_cosine_with_hard_restarts_schedule_with_warmup,
-           scheduler_params = {"num_warmup_steps": int(0.02 * config_model.num_epochs),
+           scheduler_params = {"num_warmup_steps": int(config_model.warmup * config_model.num_epochs),
                                "num_training_steps": config_model.num_epochs,},
                                #"num_cycles": 1},
            store_grad_layer_hist=True)

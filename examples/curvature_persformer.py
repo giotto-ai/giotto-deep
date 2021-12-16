@@ -21,114 +21,186 @@ import numpy as np # type: ignore
 # Import Tensorflow writer
 from torch.utils.tensorboard import SummaryWriter  # type: ignore
 from torch.utils.data import DataLoader, TensorDataset
+from torch.optim.lr_scheduler import ExponentialLR
 
 # Import the giotto-deep modules
 from gdeep.data import CurvatureSamplingGenerator
-from gdeep.topology_layers import SetTransformer, PersFormer, DeepSet, PytorchTransformer
+from gdeep.topology_layers import SetTransformerOld, PersFormer, DeepSet, PytorchTransformer
 from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 import json
 # %%
-num_points = 10
-cg = CurvatureSamplingGenerator(num_samplings=num_points,
-                        num_points_per_sampling=200,
-                        homology_dimensions=(1,))
-curvatures = cg.get_curvatures()
-diagrams = cg.get_diagrams()
-#np.save('curvatures_10k.npy', curvatures)
-#np.save('diagrams_curvature_10k.npy', diagrams)
 # %%
-#curvatures = torch.tensor(np.load('curvatures.npy').astype(np.float32)).reshape(-1, 1)
-#diagrams = torch.tensor(np.load('diagrams_curvature.npy').astype(np.float32))
+curvatures = torch.tensor(np.load('data/curvatures_5000_1000_0_1.npy').astype(np.float32)).reshape(-1, 1)
+diagrams = torch.tensor(np.load('data/diagrams_5000_1000_0_1.npy').astype(np.float32))[:, 999:, :2]
 
-dl_curvatures = DataLoader(TensorDataset(torch.tensor(diagrams[:, :, :2], dtype=torch.float32),
-                                         torch.tensor(curvatures, dtype=torch.float32)),
-                                         batch_size=10)
 # %%
-class SmallDeepSet(nn.Module):
-    def __init__(self,
-        pool="sum",
-        dim_input=2,
-        dim_output=5,):
-        super().__init__()
-        self.enc = nn.Sequential(
-            nn.Linear(in_features=dim_input, out_features=16),
-            nn.ReLU(),
-        )
-        self.dec = nn.Sequential(
-            nn.Linear(in_features=16, out_features=16),
-            nn.ReLU(),
-            nn.Linear(in_features=16, out_features=16),
-            nn.ReLU(),
-            nn.Linear(in_features=16, out_features=16),
-            nn.ReLU(),
-            nn.Linear(in_features=16, out_features=16),
-            nn.ReLU(),
-            nn.Linear(in_features=16, out_features=16),
-            nn.ReLU(),
-            nn.Linear(in_features=16, out_features=dim_output),
-        )
-        self.pool = pool
 
-    def forward(self, x):
-        x = self.enc(x)
-        if self.pool == "max":
-            x = x.max(dim=1)[0]
-        elif self.pool == "mean":
-            x = x.mean(dim=1)
-        elif self.pool == "sum":
-            x = x.sum(dim=1)
-        x = self.dec(x)
-        return x
+# dl_curvatures = DataLoader(TensorDataset(diagrams,
+#                                          curvatures),
+#                                          batch_size=32)
+# %%
+# class SmallDeepSet(nn.Module):
+#     def __init__(self,
+#         pool="sum",
+#         dim_input=2,
+#         dim_output=5,):
+#         super().__init__()
+#         self.enc = nn.Sequential(
+#             nn.Linear(in_features=dim_input, out_features=16),
+#             nn.ReLU(),
+#             nn.Linear(in_features=16, out_features=32),
+#             nn.ReLU(),
+#             nn.Linear(in_features=32, out_features=64),
+#             nn.ReLU(),
+#             nn.Linear(in_features=64, out_features=16),
+#         )
+#         self.dec = nn.Sequential(
+#             nn.Linear(in_features=16, out_features=32),
+#             nn.ReLU(),
+#             nn.Linear(in_features=32, out_features=64),
+#             nn.ReLU(),
+#             nn.Linear(in_features=64, out_features=32),
+#             nn.ReLU(),
+#             nn.Linear(in_features=32, out_features=dim_output),
+#         )
+#         self.ln = nn.LayerNorm(16)
+#         self.pool = pool
 
-model = SmallDeepSet(dim_input=2, dim_output=1, pool="sum")
+#     def forward(self, x):
+#         x = self.enc(x)
+#         if self.pool == "max":
+#             x = x.max(dim=1)[0]
+#         elif self.pool == "mean":
+#             x = x.mean(dim=1)
+#         elif self.pool == "sum":
+#             x = x.sum(dim=1)
+#         x = self.dec(self.ln(x))
+#         return x
+
+# model = SmallDeepSet(dim_input=2, dim_output=1, pool="max")
+
+model = SetTransformerOld(
+    dim_input=2,
+    num_outputs=1,  # for classification tasks this should be 1
+    dim_output=1,  # number of classes
+    dim_hidden=32,
+    num_heads="4",
+    layer_norm="False",  # use layer norm
+    pre_layer_norm="False", # use pre-layer norm
+    simplified_layer_norm="True",
+    dropout_enc=0.0,
+    dropout_dec=0.0,
+    num_layer_enc=2,
+    num_layer_dec=3,
+    activation="gelu",
+    bias_attention="True",
+    attention_type="self_attention",
+    layer_norm_pooling="False",
+ )
+
 
 # %%
 # Do training and validation
 
 # initialise loss
-#loss_fn = nn.MSELoss()
+loss_fn = nn.MSELoss()
 
 # Initialize the Tensorflow writer
-#writer = SummaryWriter(comment=json.dumps(config_model.toDict())\
-#                                + json.dumps(config_data.toDict()))
-#writer = SummaryWriter(comment="deep set")
+writer = SummaryWriter(comment="Set Transformer curvature")
 
 # initialise pipeline class
-#pipe = Pipeline(model, [dl_curvatures, None], loss_fn, writer)
+pipe = Pipeline(model, [dl_curvatures, None], loss_fn, writer)
 # %%
 
 
 # train the model
-# pipe.train(torch.optim.Adam,
-#            1000,
-#            cross_validation=False,
-#            optimizers_param={"lr": 1e-3})
+pipe.train(torch.optim.Adam,
+           100,
+           cross_validation=False,
+           optimizers_param={"lr": 1e-3},
+           lr_scheduler=ExponentialLR,
+           scheduler_params={"gamma": 0.95})
+
+
 # %%
+x, y = next(iter(dl_curvatures))
+x = x.to('cuda')
+pred = pipe.model(x)
 
-model = nn.Sequential(
-            nn.Linear(in_features=16, out_features=32),
-            nn.ReLU(),
-            nn.Linear(in_features=32, out_features=64),
-            nn.ReLU(),
-            nn.Linear(in_features=64, out_features=128),
-            nn.ReLU(),
-            nn.Linear(in_features=128, out_features=128),
-            nn.ReLU(),
-            nn.Linear(in_features=128, out_features=1),
-        )
+print(pred[-5:])
+print(y[-5:])
+# %%
+model.eval()
 
-model.cuda()
+for i in [3]:
+
+    delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
+    delta.requires_grad = True
+
+    loss = pipe.model(x + delta).sum()
+    loss.backward()
+
+    import matplotlib.pyplot as plt
+
+    c = torch.sqrt((delta.grad.detach().cpu()**2).sum(axis=-1))
+    eps = 1
+    c_max = c.max()
+
+
+    sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=-torch.log(c_max - c + eps))
+
+    plt.colorbar(sc)
+    plt.show()
+
+# %%
+def func(x):
+    if x.shape[0] > 0:
+        return np.max(x)
+    else:
+        return 0.0
+
+for i in [0, 1, 3, 4]:
+    x_life = x[i, :, 1] - x[i, :, 0]
+    x_life = x_life.cpu().numpy()
+
+    delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
+    delta.requires_grad = True
+
+    loss = pipe.model(x + delta).sum()
+    loss.backward()
+
+    c = torch.sqrt((delta.grad.detach().cpu()**2).sum(axis=-1))
+
+
+    importance = c.squeeze().numpy()
+
+
+    nbins = 10
+    bins = np.linspace(0, x_life.max(), nbins+1)
+    ind = np.digitize(x_life, bins)
+
+    result = [func(importance[ind == j]) for j in range(1, nbins)]
+
+    plt.plot(bins[:-2], result)
+# %%
+################################################################################################
+#
+#
+#
+#
+
+
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-for epoch in range(100000):  # loop over the dataset multiple times
+for epoch in range(10):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(dl_curvatures, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
-        inputs, labels = su.detach(), labels.to('cuda').reshape(num_points, 1)
+        inputs, labels = inputs.to('cuda'), labels.to('cuda')
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -141,10 +213,16 @@ for epoch in range(100000):  # loop over the dataset multiple times
 
         # print statistics
         running_loss += loss.item()
-    print('[%d, %5d] loss: %.3f' %
-            (epoch + 1, i + 1, running_loss))
+    print('[%d] loss: %.3f' %
+            (epoch + 1, running_loss / i))
 
 print('Finished Training')
+
+# %%
+x, y = next(iter(dl_curvatures))
+x = x.to('cuda')
+model(x)
+
 # %%
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)

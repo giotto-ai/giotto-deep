@@ -3,6 +3,7 @@
 import torch  # type: ignore
 import torch.nn as nn  # type: ignore
 from torch import Tensor  # type: ignore
+import torch.nn.functional as F
 from torch.nn import (Module, Linear,
                       Sequential, ModuleList)
 from torch.nn.modules.activation import GELU
@@ -315,20 +316,25 @@ class SetTransformerOld(Module):
         dim_hidden=128,
         num_heads="4",
         layer_norm="False",  # use layer norm
+        pre_layer_norm="False", # use pre-layer norm
         simplified_layer_norm="True",
-        dropout=0.0,
+        dropout_enc=0.0,
+        dropout_dec=0.0,
         num_layer_enc=2,
         num_layer_dec=3,
         activation="gelu",
         bias_attention="True",
-        attention_type="induced_attention"
+        attention_type="induced_attention",
+        layer_norm_pooling="False",
     ):
         super().__init__()
         bias_attention = eval(bias_attention)
         if activation == 'gelu':
-            activation_function = nn.GELU()
+            activation_layer = nn.GELU()
+            activation_function = F.gelu
         elif activation == 'relu':
-            activation_function = nn.ReLU()
+            activation_layer = nn.ReLU()
+            activation_function = F.relu
         else:
             raise ValueError("Unknown activation '%s'" % activation)
         
@@ -353,30 +359,30 @@ class SetTransformerOld(Module):
                     for _ in range(num_layer_enc-1)],
             )
         elif attention_type=="pytorch_self_attention":
-            emb = Linear(dim_input, hidden_size)
-            encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_size,
-                                                    nhead=nhead,
-                                                    dropout=dropout,
-                                                    activation=activation,
-                                                    norm_first=norm_first,
+            emb = Linear(dim_input, dim_hidden)
+            encoder_layer = nn.TransformerEncoderLayer(d_model=dim_hidden,
+                                                    nhead=eval(num_heads),
+                                                    dropout=dropout_enc,
+                                                    activation=activation_function,
+                                                    norm_first=eval(pre_layer_norm),
                                                     batch_first=True)
             self.enc = nn.Sequential(
                     emb,
                     nn.TransformerEncoder(encoder_layer,
-                                                num_layers=num_layers)
+                                                num_layers=num_layer_enc)
             )
         else:
             raise ValueError("Unknown attention type: {}".format(attention_type))
         enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
         self.dec = nn.Sequential(
-            nn.Dropout(dropout),
-            PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm),
+            nn.Dropout(dropout_dec),
+            PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm_pooling),
                 simplified_layer_norm = eval(simplified_layer_norm),
                 bias_attention=bias_attention, activation=activation),
-            nn.Dropout(dropout),
+            nn.Dropout(dropout_dec),
             *[nn.Sequential(nn.Linear(enc_layer_dim[i] * dim_hidden, enc_layer_dim[i+1] * dim_hidden),
-                            activation_function,
-                            nn.Dropout(dropout)) for i in range(num_layer_dec-1)],
+                            activation_layer,
+                            nn.Dropout(dropout_dec)) for i in range(num_layer_dec-1)],
             nn.Linear(enc_layer_dim[-1] * dim_hidden, dim_output),
         )
 
