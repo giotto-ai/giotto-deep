@@ -217,13 +217,16 @@ class OrbitsGenerator(object):
             [np.array]: 
                 persistent diagram with one-hot encoded homology dimension.
         """
-        return np.concatenate(
-            (
-                persistence_diagrams[:, :, :2],  # point coordinates
-                (np.eye(self._num_homology_dimensions)  # type: ignore
-                [persistence_diagrams[:, :, -1].astype(np.int32)]),
-            ),
-            axis=-1)
+        if self._num_homology_dimensions > 1:
+            return np.concatenate(
+                (
+                    persistence_diagrams[:, :, :2],  # point coordinates
+                    (np.eye(self._num_homology_dimensions)  # type: ignore
+                    [persistence_diagrams[:, :, -1].astype(np.int32)]),
+                ),
+                axis=-1)
+        else:
+            return persistence_diagrams[:, :, :2]
     
     def get_orbits(self) -> np.ndarray:
         """Returns the orbits as an ndarrays of shape

@@ -32,7 +32,7 @@ from transformers.optimization import get_cosine_with_hard_restarts_schedule_wit
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer, PersFormer, SetTransformerOld
+from gdeep.topology_layers import SetTransformer, PersFormer, SetTransformerOld, SAM
 #from gdeep.topology_layers import AttentionPooling
 from gdeep.topology_layers import ISAB, PMA, SAB
 from gdeep.pipeline import Pipeline
@@ -43,17 +43,19 @@ import json
 from optuna.pruners import MedianPruner, NopPruner
 from gdeep.search import VariationPruner
 
+
+
 # %%
 
 #Configs
 config_data = DotMap({
-    'batch_size_train': 16,
+    'batch_size_train': 128,
     'num_orbits_per_class': 2_000,
     'validation_percentage': 0.0,
     'test_percentage': 0.0,
     'num_jobs': 8,
     'dynamical_system': 'classical_convention',
-    'homology_dimensions': (0, 1),
+    'homology_dimensions': (1,),
     'dtype': 'float32',
     'arbitrary_precision': False
 })
@@ -62,29 +64,29 @@ config_data = DotMap({
 config_model = DotMap({
     'implementation': 'Old_SetTransformer', # SetTransformer, PersFormer,
     # PytorchTransformer, DeepSet, X-Transformer
-    'dim_input': 4,
+    'dim_input': 2 + len(config_data.homology_dimensions) if len(config_data.homology_dimensions) > 1 else 2,
     'num_outputs': 1,  # for classification tasks this should be 1
     'num_classes': 5,  # number of classes
-    'dim_hidden': 64,
+    'dim_hidden': 128,
     'num_heads': 8,
     'num_induced_points': 32,
     'layer_norm': True,  # use layer norm
     'simplified_layer_norm': False,  #Xu, J., et al. Understanding and improving layer normalization.
     'pre_layer_norm': False,
     'layer_norm_pooling': False,
-    'num_layers_encoder': 3,
-    'num_layers_decoder': 2,
-    'attention_type': "pytorch_self_attention",
+    'num_layers_encoder': 7,
+    'num_layers_decoder': 5,
+    'attention_type': "pytorch_self_attention_skip",
     'activation': "gelu",
-    'dropout_enc': 0.0,
+    'dropout_enc': 0.5,
     'dropout_dec': 0.2,
     'optimizer': AdamW,
     'learning_rate': 1e-3,
     'num_epochs': 1000,
     'pooling_type': "attention",
-    'weight_decay': 0.0001,
+    'weight_decay': 0.001,
     'n_accumulated_grads': 0,
-    'bias_attention': "False",
+    'bias_attention': "True",
     'warmup': 0.02,
 })
 
@@ -116,7 +118,7 @@ if config_data.arbitrary_precision:
     orbits = np.load(os.path.join('data', 'orbit5k_arbitrary_precision.npy'))
     og.orbits_from_array(orbits)
 
-if config_data.dim_input == 2:
+if len(config_data.homology_dimensions) == 0:
     dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
 else:
     dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
@@ -127,7 +129,7 @@ else:
 if config_model.implementation == "Old_SetTransformer":
     # initialize SetTransformer model
 
-    model = SetTransformerOld(dim_input=4, dim_output=5,
+    model = SetTransformerOld(dim_input=config_model.dim_input, dim_output=5,
                            num_inds=config_model.num_induced_points,
                            dim_hidden=config_model.dim_hidden,
                            num_heads=str(config_model.num_heads),
@@ -166,6 +168,8 @@ loss_fn = nn.CrossEntropyLoss()
 #                                + json.dumps(config_data.toDict()))
 writer = SummaryWriter(comment=config_model.implementation)
 
+optim = torch.optim.Adam(model.parameters(), 1e-3)
+
 # initialise pipeline class
 pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 # %%
@@ -176,13 +180,13 @@ pipe.train(config_model.optimizer,
            config_model.num_epochs,
            cross_validation=False,
            optimizers_param={"lr": config_model.learning_rate,
-                             "weight_decay": config_model.weight_decay},
+            "weight_decay": config_model.weight_decay},
            n_accumulated_grads=config_model.n_accumulated_grads,
            lr_scheduler=get_cosine_schedule_with_warmup,  #get_constant_schedule_with_warmup,  #get_cosine_with_hard_restarts_schedule_with_warmup,
            scheduler_params = {"num_warmup_steps": int(config_model.warmup * config_model.num_epochs),
                                "num_training_steps": config_model.num_epochs,},
                                #"num_cycles": 1},
-           store_grad_layer_hist=True)
+           store_grad_layer_hist=False)
 
 # %%
 # keep training

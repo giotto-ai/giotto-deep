@@ -328,6 +328,7 @@ class SetTransformerOld(Module):
         layer_norm_pooling="False",
     ):
         super().__init__()
+        self._attention_type = attention_type
         bias_attention = eval(bias_attention)
         if activation == 'gelu':
             activation_layer = nn.GELU()
@@ -371,6 +372,16 @@ class SetTransformerOld(Module):
                     nn.TransformerEncoder(encoder_layer,
                                                 num_layers=num_layer_enc)
             )
+        elif attention_type=="pytorch_self_attention_skip":
+            self.emb = Linear(dim_input, dim_hidden)
+            self.encoder_layers = nn.ModuleList(
+                [nn.TransformerEncoderLayer(d_model=dim_hidden,
+                                                    nhead=eval(num_heads),
+                                                    dropout=dropout_enc,
+                                                    activation=activation_function,
+                                                    norm_first=eval(pre_layer_norm),
+                                                    batch_first=True) for _ in range(num_layer_enc)]
+            )
         else:
             raise ValueError("Unknown attention type: {}".format(attention_type))
         enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
@@ -387,7 +398,13 @@ class SetTransformerOld(Module):
         )
 
     def forward(self, input):
-        return self.dec(self.enc(input)).squeeze(dim=1)
+        if self._attention_type == "pytorch_self_attention_skip":
+            x = self.emb(input)
+            for l in self.encoder_layers:
+                x = x + l(x)
+            return self.dec(x).squeeze(dim=1)
+        else:
+            return self.dec(self.enc(input)).squeeze(dim=1)
 
     
     
