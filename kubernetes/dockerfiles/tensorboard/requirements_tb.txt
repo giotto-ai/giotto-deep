@@ -1,0 +1,4 @@
+torch
+torchvision
+tensorboard
+torch_tb_profiler

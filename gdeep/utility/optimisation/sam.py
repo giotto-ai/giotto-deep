@@ -1,14 +1,19 @@
 import torch
 
 
+class MissingClosureError(Exception):
+    pass
+
 class SAM(torch.optim.Optimizer):
-    def __init__(self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs):
+    base_optimizer_cls = None
+    def __init__(self, params, base_optimizer=None, rho=0.05, adaptive=False, **kwargs):
         assert rho >= 0.0, f"Invalid rho, should be non-negative: {rho}"
 
         defaults = dict(rho=rho, adaptive=adaptive, **kwargs)
         super(SAM, self).__init__(params, defaults)
-
-        self.base_optimizer = base_optimizer(self.param_groups, **kwargs)
+        if base_optimizer is not None:
+            self.base_optimizer_cls = base_optimizer
+        self.base_optimizer = self.base_optimizer_cls(self.param_groups, **kwargs)
         self.param_groups = self.base_optimizer.param_groups
 
     @torch.no_grad()
@@ -38,7 +43,8 @@ class SAM(torch.optim.Optimizer):
 
     @torch.no_grad()
     def step(self, closure=None):
-        assert closure is not None, "Sharpness Aware Minimization requires closure, but it was not provided"
+        if closure is None:
+            raise MissingClosureError("Sharpness Aware Minimization requires closure, but it was not provided")
         closure = torch.enable_grad()(closure)  # the closure should do a full forward-backward pass
 
         self.first_step(zero_grad=True)
@@ -56,3 +62,23 @@ class SAM(torch.optim.Optimizer):
                     p=2
                )
         return norm
+
+    
+class SAMOptimizer(SAM):
+    """This is the class to be used in the pipeline.
+
+    First you need to initialise this class
+    with the torch optimiser
+    that you would like to apply SAM to.
+
+    Then, at the following call, the instance
+    behaves extcly like the SAM optimiser
+
+    Args:
+        optimizer (torch.optim):
+            the optimiser class (not the instance)
+    """
+    def __new__(cls, optimizer):
+        return type("SAMOptimizer", (SAM, torch.optim.Optimizer), {"base_optimizer_cls": optimizer})
+
+        
