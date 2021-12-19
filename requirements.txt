@@ -24,3 +24,4 @@ torch_tb_profiler
 giotto-ph
 Pillow
 h5py
+torchensemble
