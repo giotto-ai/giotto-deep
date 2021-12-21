@@ -40,7 +40,10 @@ class MAB(nn.Module):
         A = torch.softmax(Q_.bmm(K_.transpose(1, 2))/math.sqrt(self.dim_V), 2)
         O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), 0), 2)
         O = O if getattr(self, 'ln0', None) is None else self.ln0(O)
-        O = O + self.activation_function(self.fc_o(O))
+        if hasattr(self, 'activation_function'):
+            O = O + self.activation_function(self.fc_o(O))
+        else:
+            O = O + nn.ReLU()(self.fc_o(O))
         O = O if getattr(self, 'ln1', None) is None else self.ln1(O)
         return O
 

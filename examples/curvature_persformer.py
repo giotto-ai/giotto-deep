@@ -32,72 +32,44 @@ import json
 # %%
 # %%
 curvatures = torch.tensor(np.load('data/curvatures_5000_1000_0_1.npy').astype(np.float32)).reshape(-1, 1)
+
+# Only consider H1 features
 diagrams = torch.tensor(np.load('data/diagrams_5000_1000_0_1.npy').astype(np.float32))[:, 999:, :2]
 
 # %%
 
-dl_curvatures = DataLoader(TensorDataset(diagrams,
-                                         curvatures),
-                                         batch_size=32)
+
 # %%
-# class SmallDeepSet(nn.Module):
-#     def __init__(self,
-#         pool="sum",
-#         dim_input=2,
-#         dim_output=5,):
-#         super().__init__()
-#         self.enc = nn.Sequential(
-#             nn.Linear(in_features=dim_input, out_features=16),
-#             nn.ReLU(),
-#             nn.Linear(in_features=16, out_features=32),
-#             nn.ReLU(),
-#             nn.Linear(in_features=32, out_features=64),
-#             nn.ReLU(),
-#             nn.Linear(in_features=64, out_features=16),
-#         )
-#         self.dec = nn.Sequential(
-#             nn.Linear(in_features=16, out_features=32),
-#             nn.ReLU(),
-#             nn.Linear(in_features=32, out_features=64),
-#             nn.ReLU(),
-#             nn.Linear(in_features=64, out_features=32),
-#             nn.ReLU(),
-#             nn.Linear(in_features=32, out_features=dim_output),
-#         )
-#         self.ln = nn.LayerNorm(16)
-#         self.pool = pool
 
-#     def forward(self, x):
-#         x = self.enc(x)
-#         if self.pool == "max":
-#             x = x.max(dim=1)[0]
-#         elif self.pool == "mean":
-#             x = x.mean(dim=1)
-#         elif self.pool == "sum":
-#             x = x.sum(dim=1)
-#         x = self.dec(self.ln(x))
-#         return x
-
-# model = SmallDeepSet(dim_input=2, dim_output=1, pool="max")
+dl_curvatures_train = DataLoader(TensorDataset(diagrams[:4500],
+                                         curvatures[:4500]),
+                                         batch_size=32,
+                                         shuffle=True)
+dl_curvatures_val = DataLoader(TensorDataset(diagrams[4500:4750],
+                                         curvatures[4500:4750]),
+                                         batch_size=32)
+dl_curvatures_test = DataLoader(TensorDataset(diagrams[-250:],
+                                         curvatures[-250:]),
+                                         batch_size=32)
 
 model = SetTransformerOld(
     dim_input=2,
     num_outputs=1,  # for classification tasks this should be 1
     dim_output=1,  # number of classes
-    dim_hidden=32,
-    num_inds=31,
-    num_heads="4",
-    layer_norm="False",  # use layer norm
+    dim_hidden=128,
+    num_inds=32,
+    num_heads="8",
+    layer_norm="True",  # use layer norm
     pre_layer_norm="False", # use pre-layer norm
-    simplified_layer_norm="True",
+    simplified_layer_norm="False",
     dropout_enc=0.0,
     dropout_dec=0.0,
-    num_layer_enc=2,
-    num_layer_dec=3,
+    num_layer_enc=4,
+    num_layer_dec=2,
     activation="gelu",
     bias_attention="True",
-    attention_type="self_attention",
-    layer_norm_pooling="False",
+    attention_type="pytorch_self_attention_skip",
+    layer_norm_pooling="True",
  )
 
 
@@ -111,26 +83,63 @@ loss_fn = nn.MSELoss()
 writer = SummaryWriter(comment="Set Transformer curvature")
 
 # initialise pipeline class
-pipe = Pipeline(model, [dl_curvatures, None], loss_fn, writer)
+pipe = Pipeline(model, [dl_curvatures_train, dl_curvatures_val, dl_curvatures_test], loss_fn, writer)
 # %%
 
 
 # train the model
 pipe.train(torch.optim.Adam,
-           50,
+           500,
            cross_validation=False,
-           optimizers_param={"lr": 1e-3},
+           optimizers_param={"lr": 5e-3},
            lr_scheduler=ExponentialLR,
-           scheduler_params={"gamma": 0.9})
-
+           scheduler_params={"gamma": 0.95})
 
 # %%
-x, y = next(iter(dl_curvatures))
+from sklearn.metrics import r2_score, mse_score
+model.eval()
+x = torch.tensor(diagrams[-500:])
+y = curvatures[-500:]
 x = x.to('cuda')
 pred = pipe.model(x)
+pred = pred.clone().detach().cpu().numpy()
 
-print(pred[-5:])
-print(y[-5:])
+print('r2_score', r2_score(pred, y))
+print('mse', mse_score(pred, y))
+# %%
+from sklearn.metrics import r2_score, mean_squared_error
+model.eval()
+x = torch.tensor(diagrams[:500])
+y = curvatures[:500]
+x = x.to('cuda')
+pred = pipe.model(x)
+pred = pred.clone().detach().cpu().numpy()
+
+mean_squared_error(pred, y)
+# %%
+import matplotlib.pyplot as plt
+
+plt.scatter(y, pred)
+
+# %%
+from sklearn.metrics import r2_score, mean_squared_error
+model.eval()
+x = torch.tensor(diagrams[:500])
+y = curvatures[:500]
+x = x.to('cuda')
+pred = pipe.model(x)
+pred = pred.clone().detach().cpu().numpy()
+
+mean_squared_error(pred, y)
+
+# %%
+# Check model performance on sample
+# x, y = next(iter(dl_curvatures))
+# x = x.to('cuda')
+# pred = pipe.model(x)
+
+# print(pred[-5:])
+# print(y[-5:])
 
 # %%
 # Visualization of attention scores
@@ -161,6 +170,10 @@ output = inter.interpret_image(next(iter(dl_curvatures))[0][0].reshape(1, 301, 2
                       0, pipe.model.enc[0].mab.fc_o);
 
 # %%
+
+
+# Saliency maps from scratch
+
 x = next(iter(dl_curvatures))[0][0]
 
 
