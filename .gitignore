@@ -72,3 +72,5 @@ init_environment.sh
 pip
 .gitignore
 pip.error
+# Pytorch state dicts
+/examples/*.pth

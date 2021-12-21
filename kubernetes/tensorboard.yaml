@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tensorboard-deployment
+  namespace: main
+  labels:
+    app: gdeep-tensorboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gdeep-tensorboard
+  template:
+    metadata:
+      labels:
+        app: gdeep-tensorboard
+    spec:
+      volumes:
+      - name: task-pv-storage
+        persistentVolumeClaim:
+          claimName: task-pv-claim
+      containers:
+      - name: gdeep-tensorboard
+        image: matteocao/giotto-deep:gdeep-tensorboard
+        ports:
+        - containerPort: 6006
+        volumeMounts:
+        - mountPath: "/giotto-deep"
+          name: task-pv-storage
+        command: ["tensorboard"]
+        args: ["--logdir=giotto-deep/runs", "--bind_all"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdeep-tensorboard-service
+  namespace: main
+spec:
+  selector:
+    app: gdeep-tensorboard
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080 # internal port for the cluster
+      targetPort: 6006 # match the container port

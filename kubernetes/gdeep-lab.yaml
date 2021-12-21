@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdeep-lab-deployment
+  namespace: main
+  labels:
+    app: gdeep-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gdeep-lab
+  template:
+    metadata:
+      labels:
+        app: gdeep-lab
+    spec:
+      volumes:
+      - name: task-pv-storage
+        persistentVolumeClaim:
+          claimName: task-pv-claim
+      containers:
+      - name: gdeep-lab
+        image: matteocao/giotto-deep:gdeep-lab
+        ports:
+        - containerPort: 8888
+          name: jupyter
+        - containerPort: 22
+          name: ssh
+        volumeMounts:
+        - mountPath: "/giotto-deep"
+          name: task-pv-storage
+        command: ["supervisord"]
+        args: ["-c", "supervisord.conf"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdeep-lab-service
+  namespace: main
+spec:
+  selector:
+    app: gdeep-lab
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8888 #must match container port
+      name: jupyter
+    - protocol: TCP
+      port: 22
+      targetPort: 22  #must match container port
+      name: ssh

@@ -28,3 +28,4 @@ h5py
 sympy
 numba
 dotmap
+torchensemble

@@ -10,6 +10,7 @@ import warnings
 from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data.sampler import SubsetRandomSampler
 from gdeep.models import ModelExtractor
+from ..utility.optimisation import MissingClosureError
 import optuna
 
 if torch.cuda.is_available():
@@ -100,7 +101,7 @@ class Pipeline:
         self.model = copy.deepcopy(self.initial_model)
 
     def _optimisation_step(self, dl_tr, steps, loss, 
-                           t_loss, correct, batch):
+                           t_loss, correct, batch, closure):
         """Backpropagation"""
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
@@ -108,14 +109,21 @@ class Pipeline:
             if self.DEVICE.type == "xla":
                 xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
             else:
-                self.optimizer.step()
+                try:
+                    self.optimizer.step()
+                except (MissingClosureError, ):
+                    self.optimizer.step(closure)
+                    
         else:  # if we use gradient accumulation techniques
             (loss / self.n_accumulated_grads).backward()
             if (batch + 1) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
                 if self.DEVICE.type == "xla":
                     xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
                 else:
-                    self.optimizer.step()
+                    try:
+                        self.optimizer.step()
+                    except (MissingClosureError, ):
+                        self.optimizer.step(closure)
                 self.optimizer.zero_grad()
         if batch % 100 == 0:
             t_loss += loss.item()
@@ -134,6 +142,11 @@ class Pipeline:
         """Private method to run the loop
         over the batches for the optimisation"""
         for batch, (X, y) in enumerate(dl_tr):
+            def closure():
+                loss2 = self.loss_fn(self.model(X), y)
+                loss2.backward()
+                return loss2
+
             X = X.to(self.DEVICE)
             y = y.to(self.DEVICE)
             # Compute prediction and loss
@@ -158,7 +171,7 @@ class Pipeline:
             except AttributeError:
                 pass
             t_loss = self._optimisation_step(dl_tr, steps, loss, 
-                                    t_loss, correct, batch)
+                                    t_loss, correct, batch, closure)
         # accuracy:
         correct /= steps*dl_tr.batch_size
         t_loss /= steps
@@ -671,7 +684,8 @@ class Pipeline:
         self.val_loss = 0
         self.val_acc = 0
         warnings.warn("The tensorboard writer is ignored " +
-                      "for multi TPU processing")
+                      "for multi TPU processing. Also SAM optimisation"+
+                      " does not work for multi TPU training.")
         def map_fun_custom(index, flags):
             """map function for multi-processing"""
             device = xm.xla_device()

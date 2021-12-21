@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import os
 import time
 
@@ -47,3 +48,26 @@ def save_model_and_optimizer(model,
         torch.save(optimizer.state_dict(),
                    os.path.join("state_dicts",
                                 str(optimizer) +"-"+ str(round(time.time()))+".pth"))
+
+
+def ensemble_wrapper(clss):
+    """function to wrap the ensemble estimators
+    of the ``torchensable`` library.
+
+    The only argument is the estimator class. Then
+    you can initialise the output of this function
+    as you would normally do for the original
+    ``torchensebl``` class
+
+    Args
+        clss (type):
+            the class of the estimator, like
+            ``VotingClassifier`` for example
+    """
+
+    class NewEnsembleEstimator(clss):
+        def __init__(self, *args, **kwargs):
+            super(NewEnsembleEstimator, self).__init__(*args, **kwargs)
+            self.estimators_ = nn.ModuleList().extend([self._make_estimator() for _ in range(self.n_estimators)])
+
+    return NewEnsembleEstimator
