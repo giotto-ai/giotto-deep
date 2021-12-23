@@ -55,7 +55,7 @@ og = OrbitsGenerator(num_orbits_per_class=config_data.num_orbits_per_class,
                      arbitrary_precision=config_data.arbitrary_precision,
                      )
 
-dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts, shuffle=True)
+dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
 
 # %% 
 class SetTransformer(nn.Module):

@@ -56,20 +56,20 @@ model = SetTransformerOld(
     dim_input=2,
     num_outputs=1,  # for classification tasks this should be 1
     dim_output=1,  # number of classes
-    dim_hidden=128,
+    dim_hidden=32,
     num_inds=32,
     num_heads="8",
-    layer_norm="True",  # use layer norm
+    layer_norm="False",  # use layer norm
     pre_layer_norm="False", # use pre-layer norm
     simplified_layer_norm="False",
     dropout_enc=0.0,
     dropout_dec=0.0,
-    num_layer_enc=4,
-    num_layer_dec=2,
+    num_layer_enc=2,
+    num_layer_dec=4,
     activation="gelu",
-    bias_attention="True",
-    attention_type="pytorch_self_attention_skip",
-    layer_norm_pooling="True",
+    bias_attention="False",
+    attention_type="self_attention",#"pytorch_self_attention_skip",
+    layer_norm_pooling="False",
  )
 
 
@@ -88,15 +88,15 @@ pipe = Pipeline(model, [dl_curvatures_train, dl_curvatures_val, dl_curvatures_te
 
 
 # train the model
-pipe.train(torch.optim.Adam,
-           500,
+pipe.train(torch.optim.AdamW,
+           50,
            cross_validation=False,
-           optimizers_param={"lr": 5e-3},
+           optimizers_param={"lr": 1e-3, "weight_decay": 0.01},
            lr_scheduler=ExponentialLR,
-           scheduler_params={"gamma": 0.95})
+           scheduler_params={"gamma": 0.9})
 
 # %%
-from sklearn.metrics import r2_score, mse_score
+from sklearn.metrics import r2_score, mean_squared_error
 model.eval()
 x = torch.tensor(diagrams[-500:])
 y = curvatures[-500:]
@@ -105,7 +105,7 @@ pred = pipe.model(x)
 pred = pred.clone().detach().cpu().numpy()
 
 print('r2_score', r2_score(pred, y))
-print('mse', mse_score(pred, y))
+print('mse', mean_squared_error(pred, y))
 # %%
 from sklearn.metrics import r2_score, mean_squared_error
 model.eval()
@@ -174,7 +174,7 @@ output = inter.interpret_image(next(iter(dl_curvatures))[0][0].reshape(1, 301, 2
 
 # Saliency maps from scratch
 
-x = next(iter(dl_curvatures))[0][0]
+x = next(iter(dl_curvatures_test))[0][0]
 
 
 import matplotlib.pyplot as plt
@@ -189,9 +189,12 @@ plt.colorbar(sc)
 plt.show()
 
 # %%
-model.eval()
+pipe.model.eval()
+x, y = next(iter(dl_curvatures_train))
 
-for i in [3]:
+x = x.to('cuda')
+
+for i in [10, 12, 14]:
 
     delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
     delta.requires_grad = True
@@ -206,10 +209,13 @@ for i in [3]:
     c_max = c.max()
 
 
-    sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=-torch.log(c_max - c + eps))
+    #sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=-torch.log(c_max - c + eps))
+    sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=c)
 
     plt.colorbar(sc)
     plt.show()
+    plt.savefig('plots/' + 'curvature' + str(y[i]) + '.pdf')
+    print('y:', y[i], ', pred:', pipe.model(x)[i])
 
 # %%
 def func(x):
@@ -218,9 +224,10 @@ def func(x):
     else:
         return 0.0
 
-for i in [0, 1, 3, 4]:
+for i in range(0, 10):
     x_life = x[i, :, 1] - x[i, :, 0]
     x_life = x_life.cpu().numpy()
+    x_life_norm = x_life / x_life.max()
 
     delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
     delta.requires_grad = True
@@ -241,3 +248,5 @@ for i in [0, 1, 3, 4]:
     result = [func(importance[ind == j]) for j in range(1, nbins)]
 
     plt.plot(bins[:-2], result)
+
+# %%
