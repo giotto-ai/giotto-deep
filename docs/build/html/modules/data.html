@@ -226,16 +226,17 @@ the number of samples</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">OrbitsGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(2.5,</span> <span class="pre">3.5,</span> <span class="pre">4.0,</span> <span class="pre">4.1,</span> <span class="pre">4.3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_orbits_per_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pts_per_orbit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamical_system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classical_convention'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.OrbitsGenerator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">OrbitsGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(2.5,</span> <span class="pre">3.5,</span> <span class="pre">4.0,</span> <span class="pre">4.1,</span> <span class="pre">4.3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_orbits_per_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pts_per_orbit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamical_system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classical_convention'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'float32'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arbitrary_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.OrbitsGenerator" title="Permalink to this definition"></a></dt>
 <dd><p>Generate Orbit dataset consistent of orbits defined by the dynamical system
 x[n+1] = x[n] + r * y[n] * (1  - y[n]) % 1
 y[n+1] = y[n] + r * x[n+1] * (1 - x[n+1]) % 1
 Note that there is an x[n+1] value in the second dimension.
 The parameter r is an hyperparameter and the classification task is to predict
 it given the orbit.
-By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
+By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).
+Args:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>parameters (Tuple[float]): </dt><dd><p>Hyperparameter of the dynamical systems.</p>
 </dd>
 <dt>num_orbits_per_class (int): </dt><dd><p>number of orbits per class.</p>
@@ -257,73 +258,72 @@ convention ´pp_convention´ or the classical convention
 <dt>n_jobs (int, optional): </dt><dd><p>number of cpus to run the computation on. Defaults to 1.</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_dataloader_combined">
 <span class="sig-name descname"><span class="pre">get_dataloader_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.DataLoaderKwargs" title="gdeep.data.parallel_orbit.DataLoaderKwargs"><span class="pre">gdeep.data.parallel_orbit.DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_dataloader_combined" title="Permalink to this definition"></a></dt>
-<dd><p>Generates a Dataloader from the orbits dataset and the persistence diagrams</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><dl class="simple">
+<dd><p>Generates a Dataloader from the orbits dataset and the persistence diagrams
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>DataLoader: </dt><dd><p>Dataloader of orbits and persistence diagrams</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_dataloader_orbits">
 <span class="sig-name descname"><span class="pre">get_dataloader_orbits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.DataLoaderKwargs" title="gdeep.data.parallel_orbit.DataLoaderKwargs"><span class="pre">gdeep.data.parallel_orbit.DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_dataloader_orbits" title="Permalink to this definition"></a></dt>
-<dd><p>Generates a Dataloader from the orbits dataset</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><dl class="simple">
+<dd><p>Generates a Dataloader from the orbits dataset 
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>DataLoader: </dt><dd><p>Dataloader of orbits</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_dataloader_persistence_diagrams">
 <span class="sig-name descname"><span class="pre">get_dataloader_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.DataLoaderKwargs" title="gdeep.data.parallel_orbit.DataLoaderKwargs"><span class="pre">gdeep.data.parallel_orbit.DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_dataloader_persistence_diagrams" title="Permalink to this definition"></a></dt>
-<dd><p>Generates a Dataloader from the persistence diagrams dataset</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><dl class="simple">
+<dd><p>Generates a Dataloader from the persistence diagrams dataset 
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>Tuple[DataLoader, DataLoader, DataLoader]:</dt><dd><p>Dataloaders of persistence diagrams</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_orbits">
 <span class="sig-name descname"><span class="pre">get_orbits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_orbits" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the orbits as an ndarrays of shape
-(num_classes * num_orbits_per_class, num_pts_per_orbit, 2)</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><dl class="simple">
+(num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>np.ndarray: </dt><dd><p>Orbits</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_persistence_diagrams">
 <span class="sig-name descname"><span class="pre">get_persistence_diagrams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_persistence_diagrams" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the orbits as an ndarrays of shape
-(num_classes * num_orbits_per_class, num_topological_features, 3)</p>
-<dl class="simple">
-<dt>Returns:</dt><dd><dl class="simple">
+(num_classes * num_orbits_per_class, num_topological_features, 3)
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>np.ndarray: </dt><dd><p>Persistence diagrams</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</div></blockquote>
 </dd></dl>
 
 </dd></dl>

@@ -62,3 +62,9 @@ examples/*.js
 
 # Pytorch state dicts
 /examples/*.pth
+pip
+pip.error
+examples/curvatures_5000_1000_0_1.npy
+examples/curvatures.npy
+examples/diagrams_curvature.npy
+examples/diagrams_5000_1000_0_1.npy
