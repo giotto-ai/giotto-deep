@@ -33,7 +33,7 @@ from x_transformers.x_transformers import AttentionLayers, Encoder, ContinuousTr
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer, PersFormer, DeepSet, PytorchTransformer
+from gdeep.topology_layers import SetTransformer, PersFormerOld, DeepSet, PytorchTransformer
 from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 from gdeep.search import Gridsearch
@@ -137,7 +137,7 @@ if config_model.implementation == 'SetTransformer':
     )
 
 elif config_model.implementation == 'PersFormer':
-    model = PersFormer(
+    model = PersFormerOld(
             dim_input=2,
             dim_output=5,
             n_layers=5,

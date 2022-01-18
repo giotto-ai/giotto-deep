@@ -95,7 +95,7 @@ class PytorchTransformer(Module):
         x = self.pool(x)
         return x.squeeze()
 
-class PersFormer(Module):
+class PersFormerOld(Module):
     """ SetTransformer from
     with either induced attention or classical self attention or fast attention.
     """
@@ -351,7 +351,7 @@ class SetTransformer(Module):
         return total_params
     
     
-class SetTransformerOld(Module):
+class Persformer(Module):
     """
     Set transformer architecture with old implementation.
     """

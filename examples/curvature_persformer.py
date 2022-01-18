@@ -25,7 +25,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 
 # Import the giotto-deep modules
 from gdeep.data import CurvatureSamplingGenerator
-from gdeep.topology_layers import SetTransformerOld, PersFormer, DeepSet, PytorchTransformer
+from gdeep.topology_layers import Persformer, PersFormerOld, DeepSet, PytorchTransformer
 from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 import json
@@ -52,7 +52,7 @@ dl_curvatures_test = DataLoader(TensorDataset(diagrams[-250:],
                                          curvatures[-250:]),
                                          batch_size=32)
 
-model = SetTransformerOld(
+model = Persformer(
     dim_input=2,
     num_outputs=1,  # for classification tasks this should be 1
     dim_output=1,  # number of classes

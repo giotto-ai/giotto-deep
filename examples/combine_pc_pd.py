@@ -37,7 +37,7 @@ from torch.utils.data import DataLoader, TensorDataset  # type: ignore
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer, PersFormer, SetTransformerOld
+from gdeep.topology_layers import SetTransformer, PersFormerOld, Persformer
 #from gdeep.topology_layers import AttentionPooling
 from gdeep.topology_layers import ISAB, PMA, SAB
 from gdeep.pipeline import Pipeline
@@ -197,7 +197,7 @@ dl_train = DataLoader(TensorDataset(x, y),
 
 
 # %%
-model = SetTransformerOld(dim_input=config_model.dim_input, dim_output=5,
+model = Persformer(dim_input=config_model.dim_input, dim_output=5,
                         num_inds=config_model.num_induced_points,
                         dim_hidden=config_model.dim_hidden,
                         num_heads=str(config_model.num_heads),
