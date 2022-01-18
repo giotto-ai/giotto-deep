@@ -211,9 +211,10 @@ class SetTransformer(Module):
     """
     def __init__(
         self,
-        dim_input=3,
-        num_outputs=1,  # for classification tasks this should be 1
-        dim_output=40,  # number of classes
+        dim_input=4,  # 
+        num_outputs=1,
+        dim_output=5,
+        num_inds=32,  # number of induced points, see  Set Transformer paper
         dim_hidden=128,
         num_heads=4,
         num_inds=32,
@@ -267,7 +268,54 @@ class SetTransformer(Module):
                 for _ in range(n_layers_decoder)
             ])
         else:
-            raise ValueError("Unknown attention type:", attention_type)
+            raise ValueError("Unknown activation '%s'" % activation)
+        
+        if attention_type=="induced_attention":
+            self.enc = nn.Sequential(
+                ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                        simplified_layer_norm = eval(simplified_layer_norm),
+                        bias_attention=bias_attention, activation=activation),
+                *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                        simplified_layer_norm = eval(simplified_layer_norm),
+                        bias_attention=bias_attention, activation=activation)
+                    for _ in range(num_layer_enc-1)],
+            )
+        elif attention_type=="self_attention":
+            self.enc = nn.Sequential(
+                SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                    simplified_layer_norm = eval(simplified_layer_norm),
+                    bias_attention=bias_attention, activation=activation),
+                *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                        simplified_layer_norm = eval(simplified_layer_norm),
+                        bias_attention=bias_attention, activation=activation)
+                    for _ in range(num_layer_enc-1)],
+            )
+        elif attention_type=="pytorch_self_attention":
+            emb = Linear(dim_input, dim_hidden)
+            encoder_layer = nn.TransformerEncoderLayer(d_model=dim_hidden,
+                                                    nhead=eval(num_heads),
+                                                    dropout=dropout_enc,
+                                                    activation=activation_function,
+                                                    norm_first=eval(pre_layer_norm),
+                                                    batch_first=True)
+            self.enc = nn.Sequential(
+                    emb,
+                    nn.TransformerEncoder(encoder_layer,
+                                                num_layers=num_layer_enc)
+            )
+        elif attention_type=="pytorch_self_attention_skip":
+            self.emb = Linear(dim_input, dim_hidden)
+            self.encoder_layers = nn.ModuleList(
+                [nn.TransformerEncoderLayer(d_model=dim_hidden,
+                                                    nhead=eval(num_heads),
+                                                    dropout=dropout_enc,
+                                                    activation=activation_function,
+                                                    norm_first=eval(pre_layer_norm),
+                                                    batch_first=True) for _ in range(num_layer_enc)]
+            )
+        else:
+            raise ValueError("Unknown attention type: {}".format(attention_type))
+        enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
         self.dec = nn.Sequential(
             nn.Dropout(p=dropout),
             PMA(dim_hidden, num_heads, num_outputs, ln=ln),
@@ -426,7 +474,7 @@ class GraphClassifier(nn.Module):
                  dropout=0.0,
                 ):
         super().__init__()
-        self.st = SetTransformer(
+        self.st = Persformer(
             dim_input=dim_input,
             num_outputs=num_outputs,
             dim_output=dim_output,

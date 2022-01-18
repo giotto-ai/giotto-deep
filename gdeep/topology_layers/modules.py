@@ -5,7 +5,7 @@ import torch.nn as nn  # type: ignore
 import torch.nn.functional as F  # type: ignore
 from torch import einsum  # type: ignore
 import math
-from einops import rearrange, reduce  # type: ignore
+from einops import rearrange # type: ignore
 
 
 class MAB(nn.Module):

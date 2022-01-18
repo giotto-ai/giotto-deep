@@ -8,7 +8,7 @@ from .training import compute_accuracy, train, sam_train, train_vec
 from .attention_modules import AttentionLayer, InducedAttention, AttentionPooling
 
 __all__ = [
-    'SetTransformer',
+    'Persformer',
     'GraphClassifier',
     'ISAB',
     'PMA',
