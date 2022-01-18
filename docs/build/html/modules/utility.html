@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API reference &mdash; giotto-deep 0.0.1 documentation</title>
+  <title>Utility &mdash; giotto-deep 0.0.1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -18,8 +18,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Analysis" href="analysis.html" />
-    <link rel="prev" title="Installation" href="../installation.html" /> 
+    <link rel="next" title="Visualisation" href="visualisation.html" />
+    <link rel="prev" title="Topology Layers" href="topology_layers.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -40,7 +40,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">API reference</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bert.html">BERT</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
@@ -48,9 +48,9 @@
 <li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utility.html">Utility</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Utility</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#references">References</a></li>
 </ul>
 </li>
 </ul>
@@ -69,9 +69,10 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>API reference</li>
+          <li><a href="index.html">API reference</a> &raquo;</li>
+      <li>Utility</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/modules/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/modules/utility.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -79,37 +80,52 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="api-reference">
-<h1>API reference<a class="headerlink" href="#api-reference" title="Permalink to this headline"></a></h1>
-<p>This pages contains a list of available features in the library.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="bert.html">BERT</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline.html">Pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="search.html">Search</a></li>
-<li class="toctree-l1"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
-<li class="toctree-l1"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
-</ul>
-</div>
-<section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="../genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="../py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-</ul>
-</section>
+  <section id="utility">
+<h1>Utility<a class="headerlink" href="#utility" title="Permalink to this headline"></a></h1>
+<span class="target" id="module-gdeep.utility"></span><dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.ensemble_wrapper">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">ensemble_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clss</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.utility.ensemble_wrapper" title="Permalink to this definition"></a></dt>
+<dd><p>function to wrap the ensemble estimators
+of the <code class="docutils literal notranslate"><span class="pre">torchensable</span></code> library.</p>
+<p>The only argument is the estimator class. Then
+you can initialise the output of this function
+as you would normally do for the original
+<code class="docutils literal notranslate"><span class="pre">torchensebl`</span></code> class</p>
+<dl class="simple">
+<dt>Args</dt><dd><dl class="simple">
+<dt>clss (type):</dt><dd><p>the class of the estimator, like
+<code class="docutils literal notranslate"><span class="pre">VotingClassifier</span></code> for example</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.save_model_and_optimizer">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">save_model_and_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.utility.save_model_and_optimizer" title="Permalink to this definition"></a></dt>
+<dd><p>Save the model and the optimizer state_dict</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>model (nn.Module):</dt><dd><p>the model to be saved</p>
+</dd>
+<dt>model_name (str):</dt><dd><p>model name</p>
+</dd>
+<dt>optimizer (torch.optim):</dt><dd><p>the optimizer to save</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="analysis.html" class="btn btn-neutral float-right" title="Analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="topology_layers.html" class="btn btn-neutral float-left" title="Topology Layers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="visualisation.html" class="btn btn-neutral float-right" title="Visualisation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
