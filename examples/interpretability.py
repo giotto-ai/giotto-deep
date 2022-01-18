@@ -41,7 +41,8 @@ config_data = DotMap({
 })
 
 dataloaders_dicts = DataLoaderKwargs(train_kwargs = {"batch_size":
-                                                        config_data.batch_size_train,},
+                                                        config_data.batch_size_train,
+                                                        "shuffle": False},
                                      val_kwargs = {"batch_size": 4},
                                      test_kwargs = {"batch_size": 3})
 
@@ -94,4 +95,50 @@ model.eval()
 x, y = next(iter(dl_train))
 
 pred = torch.argmax(model(x.to('cuda')), -1)
+# %%
+from gdeep.models import ModelExtractor
+
+loss_fn = nn.CrossEntropyLoss()
+me = ModelExtractor(model, loss_fn)
+
+list_x = []
+list_y = []
+list_set_representations = []
+
+for x, y in dl_train:
+    list_activations = me.get_activations(x)
+    list_set_representations.append(list_activations[-4].detach().cpu())
+    list_x.append(x)
+    list_y.append(y)
+
+torch.save(torch.cat(list_set_representations), 'data/orbit5k_pd_vec.pt')
+torch.save(torch.tensor(og.get_orbits()), 'data/orbit5k_x.pt')
+torch.save(torch.cat(list_y), 'data/orbit5k_y.pt')
+# %%
+import matplotlib.pyplot as plt
+
+model.eval()
+x, y = next(iter(dl_train))
+x = x.to('cuda')
+
+for i in [10, 12, 14, 15]:
+
+    delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
+    delta.requires_grad = True
+
+    loss = model(x + delta)[i, y[i].item()]
+    print(y[i].item())
+    print(model(x + delta).shape)
+    loss.backward()
+
+    c = torch.sqrt((delta.grad.detach().cpu()**2).sum(axis=-1))
+
+
+    #sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=-torch.log(c_max - c + eps))
+    sc = plt.scatter(x[i, :, 0].detach().cpu(), x[i, :, 1].detach().cpu(), c=c)
+
+    plt.colorbar(sc)
+    plt.savefig('plots/' + 'orbit5k' + str(y[i].item()) + '.pdf')
+    plt.show()
+    print('y:', y[i])
 # %%

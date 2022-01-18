@@ -312,7 +312,8 @@ class OrbitsGenerator(object):
             self._generate_orbits()
         if self._train_idcs is None:
             self._split_data_idcs()
-        return self._get_data_loaders([self._orbits, self._labels], # type: ignore
+        return self._get_data_loaders([self._orbits.astype(self._dtype),
+                                            self._labels], # type: ignore
                                         dataloaders_kwargs)
     
     def get_dataloader_persistence_diagrams(self, dataloaders_kwargs: DataLoaderKwargs

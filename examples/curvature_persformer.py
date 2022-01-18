@@ -194,7 +194,7 @@ x, y = next(iter(dl_curvatures_train))
 
 x = x.to('cuda')
 
-for i in [10, 12, 14]:
+for i in [10, 12, 14, 15]:
 
     delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
     delta.requires_grad = True
@@ -213,8 +213,8 @@ for i in [10, 12, 14]:
     sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=c)
 
     plt.colorbar(sc)
+    plt.savefig('plots/' + 'curvature' + str(y[i].item()) + '.pdf')
     plt.show()
-    plt.savefig('plots/' + 'curvature' + str(y[i]) + '.pdf')
     print('y:', y[i], ', pred:', pipe.model(x)[i])
 
 # %%
@@ -224,7 +224,9 @@ def func(x):
     else:
         return 0.0
 
-for i in range(0, 10):
+result = [0] * 11
+
+for i in range(0, 32):
     x_life = x[i, :, 1] - x[i, :, 0]
     x_life = x_life.cpu().numpy()
     x_life_norm = x_life / x_life.max()
@@ -239,14 +241,22 @@ for i in range(0, 10):
 
 
     importance = c.squeeze().numpy()
+    importance_norm = importance / importance.max()
 
 
-    nbins = 10
-    bins = np.linspace(0, x_life.max(), nbins+1)
-    ind = np.digitize(x_life, bins)
+    nbins = 10+1
+    bins = np.linspace(0, x_life_norm.max(), nbins+1)
+    ind = np.digitize(x_life_norm, bins)
 
-    result = [func(importance[ind == j]) for j in range(1, nbins)]
+    result = [func(importance_norm[ind == j]) / 32 + result[j] for j in range(0, nbins)]
 
-    plt.plot(bins[:-2], result)
+plt.plot([i / (nbins - 1) for i in list(range(0, nbins-1))], result[1:])
 
+plt.xlabel("relative lifetime")
+plt.ylabel("relative importance score")
+plt.savefig('plots/' + 'lifetime_importance_max.pdf')
+#plt.show()
+
+# %%
+plt.savefig('plots/' + 'lifetime_importance_sum.pdf')
 # %%

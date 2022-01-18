@@ -32,7 +32,7 @@ from transformers.optimization import get_cosine_with_hard_restarts_schedule_wit
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer, PersFormer, SetTransformerOld, SAM
+from gdeep.topology_layers import SetTransformer, PersFormer, SetTransformerOld
 #from gdeep.topology_layers import AttentionPooling
 from gdeep.topology_layers import ISAB, PMA, SAB
 from gdeep.pipeline import Pipeline
@@ -49,13 +49,13 @@ from gdeep.search import VariationPruner
 
 #Configs
 config_data = DotMap({
-    'batch_size_train': 128,
-    'num_orbits_per_class': 2_000,
+    'batch_size_train': 32,
+    'num_orbits_per_class': 20_000,
     'validation_percentage': 0.0,
     'test_percentage': 0.0,
     'num_jobs': 8,
     'dynamical_system': 'classical_convention',
-    'homology_dimensions': (1,),
+    'homology_dimensions': (0, 1),
     'dtype': 'float32',
     'arbitrary_precision': False
 })
@@ -67,24 +67,24 @@ config_model = DotMap({
     'dim_input': 2 + len(config_data.homology_dimensions) if len(config_data.homology_dimensions) > 1 else 2,
     'num_outputs': 1,  # for classification tasks this should be 1
     'num_classes': 5,  # number of classes
-    'dim_hidden': 128,
-    'num_heads': 8,
+    'dim_hidden': 64,
+    'num_heads': 4,
     'num_induced_points': 32,
-    'layer_norm': True,  # use layer norm
+    'layer_norm': False,  # use layer norm
     'simplified_layer_norm': False,  #Xu, J., et al. Understanding and improving layer normalization.
     'pre_layer_norm': False,
     'layer_norm_pooling': False,
-    'num_layers_encoder': 7,
-    'num_layers_decoder': 5,
-    'attention_type': "pytorch_self_attention_skip",
+    'num_layers_encoder': 2,
+    'num_layers_decoder': 3,
+    'attention_type': "induced_attention",
     'activation': "gelu",
-    'dropout_enc': 0.5,
-    'dropout_dec': 0.2,
-    'optimizer': AdamW,
-    'learning_rate': 1e-3,
-    'num_epochs': 1000,
+    'dropout_enc': 0.0,
+    'dropout_dec': 0.0,
+    'optimizer': Adam,
+    'learning_rate': 1e-4,
+    'num_epochs': 200,
     'pooling_type': "attention",
-    'weight_decay': 0.001,
+    'weight_decay': 0.00,
     'n_accumulated_grads': 0,
     'bias_attention': "True",
     'warmup': 0.02,
@@ -176,7 +176,7 @@ pipe = Pipeline(model, [dl_train, None], loss_fn, writer)
 
 
 # train the model
-pipe.train(config_model.optimizer,
+""" pipe.train(config_model.optimizer,
            config_model.num_epochs,
            cross_validation=False,
            optimizers_param={"lr": config_model.learning_rate,
@@ -186,11 +186,18 @@ pipe.train(config_model.optimizer,
            scheduler_params = {"num_warmup_steps": int(config_model.warmup * config_model.num_epochs),
                                "num_training_steps": config_model.num_epochs,},
                                #"num_cycles": 1},
+           store_grad_layer_hist=False) """
+
+pipe.train(config_model.optimizer,
+           config_model.num_epochs,
+           cross_validation=False,
+           optimizers_param={"lr": config_model.learning_rate,
+            "weight_decay": config_model.weight_decay},
            store_grad_layer_hist=False)
 
 # %%
 # keep training
-#pipe.train(Adam, 1, False, keep_training=True, store_grad_layer_hist=True)
+#pipe.train(Adam, 100, False, keep_training=True, store_grad_layer_hist=False)
 
 # %%
 # %%
