@@ -59,3 +59,6 @@ test-output.xml
 
 # JavaScript for plots display
 examples/*.js
+
+# Pytorch state dicts
+/examples/*.pth

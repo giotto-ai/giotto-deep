@@ -1,7 +1,7 @@
 from typing import Tuple, List, Callable, Union, Any
 import torch
 import torch.nn as nn
-from .sam import SAM
+from ..utility.optimisation import SAM
 
 
 def compute_accuracy(

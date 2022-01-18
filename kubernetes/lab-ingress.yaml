@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lab-ingress
+  namespace: main
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - host: my-lab.info
+      http:
+        paths:
+          - path: /one
+            pathType: Prefix
+            backend:
+              service:
+                name: gdeep-lab-service
+                port:
+                  number: 8080
+          - path: /ssh-one
+            pathType: Prefix
+            backend:
+              service:
+                name: gdeep-lab-service
+                port: 
+                  number: 22
+          - path: /two
+            pathType: Prefix
+            backend:
+              service:
+                name: gdeep-lab-service-1
+                port: 
+                  number: 8080
+          - path: /ssh-two
+            pathType: Prefix
+            backend:
+              service:
+                name: gdeep-lab-service-1
+                port:
+                  number: 22
+          - path: /plot
+            pathType: Prefix
+            backend:
+              service:
+                name: gdeep-tensorboard-service
+                port:
+                  number: 8080

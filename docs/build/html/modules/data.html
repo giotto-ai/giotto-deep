@@ -330,7 +330,7 @@ convention ´pp_convention´ or the classical convention
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.PreprocessText">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessText" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer_lab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessText" title="Permalink to this definition"></a></dt>
 <dd><p>Class to preprocess text dataloaders</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -340,12 +340,60 @@ convention ´pp_convention´ or the classical convention
 <dt>n_pts (int):</dt><dd><p>number of points in customly generated
 point clouds</p>
 </dd>
+<dt>tokenizer (torch Tokenizer):</dt><dd><p>the tokenizer of the source text</p>
+</dd>
+<dt>tokenizer_lab (torch Tokenizer):</dt><dd><p>the tokenizer of the target text</p>
+</dd>
 </dl>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.PreprocessText.build_dataloaders">
 <span class="sig-name descname"><span class="pre">build_dataloaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#gdeep.data.PreprocessText.build_dataloaders" title="Permalink to this definition"></a></dt>
+<dd><p>This method return the dataloaders of the tokenised
+sentences, each converted to a list of integers via the
+vocabulary. Hence, data can thus be treated as point data.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>kwargs (dict):</dt><dd><p>keyword arguments to add to the DataLoaders</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(tuple):</dt><dd><p>training_dataloader, test_dataloader</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.PreprocessTextTranslation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessTextTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessTextTranslation" title="Permalink to this definition"></a></dt>
+<dd><p>Class to preprocess text dataloaders for translation
+tasks</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>name (string):</dt><dd><p>check the available datasets at
+<a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
+</dd>
+<dt>n_pts (int):</dt><dd><p>number of points in customly generated
+point clouds</p>
+</dd>
+<dt>tokenizer (torch Tokenizer):</dt><dd><p>the tokenizer of the source text</p>
+</dd>
+<dt>tokenizer_lab (torch Tokenizer):</dt><dd><p>the tokenizer of the target text</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.PreprocessTextTranslation.build_dataloaders">
+<span class="sig-name descname"><span class="pre">build_dataloaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#gdeep.data.PreprocessTextTranslation.build_dataloaders" title="Permalink to this definition"></a></dt>
 <dd><p>This method return the dataloaders of the tokenised
 sentences, each converted to a list of integers via the
 vocabulary. Hence, data can thus be treated as point data.</p>
@@ -380,7 +428,27 @@ vocabulary. Hence, data can thus be treated as point data.</p>
 <dt>data (Tensor):</dt><dd><p>tensor with first dimension
 the number of samples</p>
 </dd>
-<dt>taregts (list):</dt><dd><p>list of labels</p>
+<dt>targets (list):</dt><dd><p>list of labels</p>
+</dd>
+<dt>transform (Callable):</dt><dd><p>act on the single images</p>
+</dd>
+<dt>target_transform (Callable):</dt><dd><p>act on the single label</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.TextDatasetTranslation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">TextDatasetTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.TextDatasetTranslation" title="Permalink to this definition"></a></dt>
+<dd><p>This class is the base class for the text-datasets</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>data (Tensor):</dt><dd><p>tensor with first dimension
+the number of samples</p>
+</dd>
+<dt>targets (list):</dt><dd><p>list of labels</p>
 </dd>
 <dt>transform (Callable):</dt><dd><p>act on the single images</p>
 </dd>
@@ -393,7 +461,7 @@ the number of samples</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.TorchDataLoader">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">TorchDataLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MNIST'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.TorchDataLoader" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">TorchDataLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MNIST'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convert_to_map_dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.TorchDataLoader" title="Permalink to this definition"></a></dt>
 <dd><p>Class to obtain DataLoaders from the classical
 datasets available on pytorch.</p>
 <dl class="simple">
@@ -401,8 +469,8 @@ datasets available on pytorch.</p>
 <dt>name (string):</dt><dd><p>check the available datasets at
 <a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
 </dd>
-<dt>n_pts (int):</dt><dd><p>number of points in customly generated
-point clouds</p>
+<dt>convert_to_map_dataset (bool):</dt><dd><p>whether to convert an IterableDataset to a
+MapDataset</p>
 </dd>
 </dl>
 </dd>

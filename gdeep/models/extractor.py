@@ -55,6 +55,7 @@ class ModelExtractor:
         sample_points_tensor = sample_points_tensor.to(DEVICE)
         # print(sample_points_tensor.shape)
         # Using new gradient flow implementation
+        self.model.train()
         gf = GradientFlowDecisionBoundaryCalculator(model=self.model,
                                                     initial_points=
                                                     sample_points_tensor,

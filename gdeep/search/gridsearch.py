@@ -15,6 +15,10 @@ from functools import partial
 import warnings
 from itertools import chain, combinations
 from optuna.pruners import MedianPruner
+from ..utility import save_model_and_optimizer
+import random
+import string
+
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -39,27 +43,36 @@ class Gridsearch(Pipeline):
             epochs or the validation accuracy of the last epoch
         pruner (optuna.Pruners, default MedianPruner):
             Instance of an optuna pruner, can be user-defined
+        db_url (str):
+            name of the database to connect to. For example
+            ``mysql+mysqldb://usr:psw@host:port/db_name``
+        study_name (str):
+            name of the optuna study
+
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None):
+    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None,
+                 db_url=None, study_name=None):
         self.best_not_last = best_not_last
         self.is_pipe = None
-        self.obj = obj
-        self.bench = obj
         self.study = None
         self.best_val_acc_gs = 0
         self.best_val_loss_gs = np.inf
         self.list_res = []
         self.df_res = None
+        self.db_url = db_url
+        self.study_name = study_name
         if (isinstance(obj, Pipeline)):
-            super().__init__(self.obj.model,
-                             self.obj.dataloaders,
-                             self.obj.loss_fn,
-                             self.obj.writer)
+            self.pipe = obj
+            super().__init__(self.pipe.model,
+                             self.pipe.dataloaders,
+                             self.pipe.loss_fn,
+                             self.pipe.writer)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
+            self.bench = obj
             self.is_pipe = False
 
         self.search_metric = (search_metric if search_metric in ("loss", "accuracy")
@@ -80,7 +93,7 @@ class Gridsearch(Pipeline):
 
     def _initialise_new_model(self, models_hyperparam):
         """private method to find the maximal compatible set
-        between models and parameters
+        between models and hyperparameters
         
         Args:
             models_hyperparam (dict):
@@ -112,7 +125,6 @@ class Gridsearch(Pipeline):
             new_model = self.model
         return new_model
 
-
     def _objective(self, trial,
                    optimizers,
                    n_epochs,
@@ -121,7 +133,7 @@ class Gridsearch(Pipeline):
                    dataloaders_params,
                    models_hyperparams,
                    lr_scheduler,
-                   scheduler_params,
+                   schedulers_params,
                    profiling,
                    k_folds,
                    parallel_tpu,
@@ -138,15 +150,18 @@ class Gridsearch(Pipeline):
                 list of torch optimizers
             n_epochs (int):
                 number of training epochs
-            optimizers_param (dict):
+            optimizers_params (dict):
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            models_param (dict):
+            dataloaders_hyperparams (dict):
+                dictionary of the dataloaders
+                parameters
+            models_hyperparams (dict):
                 dictionary of the model
                 parameters
             lr_scheduler (torch.optim):
                 a learning rate scheduler
-            scheduler_params (dict):
+            schedulers_params (dict):
                 learning rate scheduler parameters
             profiling (bool):
                 whether or not you want to activate the
@@ -177,38 +192,37 @@ class Gridsearch(Pipeline):
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
 
         # generate all the hyperparameters
-        optimizers_param = Gridsearch._suggest_params(trial, optimizers_params)
-        dataloaders_param = Gridsearch._suggest_params(trial, dataloaders_params)
-        models_hyperparam = Gridsearch._suggest_params(trial, models_hyperparams)
-        
+        self.optimizers_param = Gridsearch._suggest_params(trial, optimizers_params)
+        self.dataloaders_param = Gridsearch._suggest_params(trial, dataloaders_params)
+        self.models_hyperparam = Gridsearch._suggest_params(trial, models_hyperparams)
+        self.schedulers_param = Gridsearch._suggest_params(trial, schedulers_params)
         # tag for storing the results
-        writer_tag += "/" + str(optimizers_param) + \
-            str(dataloaders_param) + str(models_hyperparam)
+        writer_tag += "/" + str(self.optimizers_param) + \
+            str(self.dataloaders_param) + str(self.models_hyperparam) + \
+            str(self.schedulers_param)
         # create a new model instance
-        new_model = self._initialise_new_model(models_hyperparam)
-        new_pipe = Pipeline(new_model, self.dataloaders, self.loss_fn, self.writer)
-
-        loss, accuracy = new_pipe.train(optimizer, n_epochs,
-                                        cross_validation,
-                                        optimizers_param,
-                                        dataloaders_param,
-                                        lr_scheduler,
-                                        scheduler_params,
-                                        (trial, self.search_metric),
-                                        profiling,
-                                        k_folds,
-                                        parallel_tpu,
-                                        keep_training,
-                                        store_grad_layer_hist,
-                                        n_accumulated_grads,
-                                        writer_tag
-                                        )
-        best_loss = new_pipe.best_val_loss
-        best_accuracy = new_pipe.best_val_acc
+        self.model = self._initialise_new_model(self.models_hyperparam)
+        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        loss, accuracy = self.pipe.train(optimizer, n_epochs,
+                                         cross_validation,
+                                         self.optimizers_param,
+                                         self.dataloaders_param,
+                                         lr_scheduler,
+                                         self.schedulers_param,
+                                         (trial, self.search_metric),
+                                         profiling,
+                                         k_folds,
+                                         parallel_tpu,
+                                         keep_training,
+                                         store_grad_layer_hist,
+                                         n_accumulated_grads,
+                                         writer_tag
+                                         )
+        best_loss = self.pipe.best_val_loss
+        best_accuracy = self.pipe.best_val_acc
         self.writer.flush()
-        # release resources
-        del(new_pipe)
-        del(new_model)
+        # print
+        self._print_output()
         # returns
         if self.search_metric == "loss":
             if self.best_not_last:
@@ -235,7 +249,7 @@ class Gridsearch(Pipeline):
               dataloaders_params=None,
               models_hyperparams=None,
               lr_scheduler=None,
-              scheduler_params=None,
+              schedulers_params=None,
               profiling=False,
               k_folds=5,
               parallel_tpu=False,
@@ -260,7 +274,7 @@ class Gridsearch(Pipeline):
                 dictionary of model parameters
             lr_scheduler (torch.optim):
                 torch learning rate schduler class
-            scheduler_params (dict):
+            schedulers_params (dict):
                 learning rate scheduler parameters
             profiling (bool, default=False):
                 whether or not you want to activate the
@@ -279,10 +293,19 @@ class Gridsearch(Pipeline):
         """
         if self.search_metric == "loss":
             self.study = optuna.create_study(direction="minimize",
-                                             pruner=self.pruner)
+                                             pruner=self.pruner,
+                                             storage=self.db_url,
+                                             study_name=self.study_name if self.study_name is not None else \
+                                                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20)),
+                                             load_if_exists=True)
         else:
             self.study = optuna.create_study(direction="maximize",
-                                             pruner=self.pruner)
+                                             pruner=self.pruner,
+                                             storage=self.db_url,
+                                             study_name=self.study_name if self.study_name is not None else \
+                                                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in
+                                                         range(20)),
+                                             load_if_exists=True)
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
             # already initialised. So they exist also in _objective()
@@ -294,7 +317,7 @@ class Gridsearch(Pipeline):
                                       dataloaders_params,
                                       models_hyperparams,
                                       lr_scheduler,
-                                      scheduler_params,
+                                      schedulers_params,
                                       profiling,
                                       k_folds,
                                       parallel_tpu,
@@ -314,7 +337,7 @@ class Gridsearch(Pipeline):
                                 dataloaders_params,
                                 models_hyperparams,
                                 lr_scheduler,
-                                scheduler_params,
+                                schedulers_params,
                                 profiling,
                                 k_folds,
                                 parallel_tpu,
@@ -334,7 +357,7 @@ class Gridsearch(Pipeline):
                              dataloaders_params,
                              models_hyperparams,
                              lr_scheduler,
-                             scheduler_params,
+                             schedulers_params,
                              profiling,
                              k_folds,
                              parallel_tpu,
@@ -367,7 +390,7 @@ class Gridsearch(Pipeline):
                                                        dataloaders_params,
                                                        models_hyperparams,
                                                        lr_scheduler,
-                                                       scheduler_params,
+                                                       schedulers_params,
                                                        profiling,
                                                        k_folds,
                                                        parallel_tpu,
@@ -377,16 +400,49 @@ class Gridsearch(Pipeline):
                                                        writer_tag),
                             n_trials=self.n_trials,
                             timeout=None)
+
         try:
             self._results(model_name = model["name"],
                      dataset_name = dataloaders["name"])
+            save_model_and_optimizer(self.pipe.model,
+                                     model["name"] +
+                                     str(self.optimizers_param) +
+                                     str(self.dataloaders_param) +
+                                     str(self.models_hyperparam) *
+                                     str(self.schedulers_param),
+                                     self.pipe.optimizer)
         except TypeError:
             try: 
-                self._results(model_name = self.obj.model.__class__.__name__,
-                     dataset_name = self.obj.dataloaders[0].dataset.__class__.__name__)
+                self._results(model_name = self.pipe.model.__class__.__name__,
+                     dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__)
+                save_model_and_optimizer(self.pipe.model,
+                                         optimizer=self.pipe.optimizer)
             except AttributeError:
                 self._results()
 
+
+    def _print_output(self):
+        """Printing the results of an optimisation"""
+        results_string_to_print = (("\nBest Validation loss: " +
+                                    str(self.pipe.best_val_loss))
+                                   if self.search_metric == "loss"
+                                   else ("\nBest Validation accuracy: " +
+                                         str(self.pipe.best_val_acc)))
+
+        string_to_print = ("\nModel Hyperparameters: " + str(self.models_hyperparam) +
+                           "\nOptimizer: " + str(self.pipe.optimizer) +
+                           "\nOptimizer parameters: " + str(self.optimizers_param) +
+                           "\nDataloader parameters: " + str(self.dataloaders_param) +
+                           "\nLR-scheduler parameters: " + str(self.schedulers_param) +
+                           results_string_to_print
+                           )
+        try:
+            # print models, metric and hyperparameters
+            print("*" * 20 + " RESULTS " + 20 * "*"+"\n",
+                  "\nModel: ", self.pipe.model.__class__.__name__,
+                  string_to_print)
+        except AttributeError:
+            print("*" * 20 + " RESULTS " + 20 * "*"+"\n" +string_to_print)
 
     def _results(self, model_name="model", dataset_name="dataset"):
         """This method returns the dataframe with all the results of
@@ -413,11 +469,13 @@ class Gridsearch(Pipeline):
         print("Number of pruned trials: ", len(pruned_trials))
         print("Number of complete trials: ", len(complete_trials))
         try:
-            print("Best trial:")
+            print("******************** BEST TRIAL: ********************")
             trial_best = self.study.best_trial
             print("Metric Value for best trial: ", trial_best.value)
+            print("Parameters Values for best trial: ", trial_best.params)
+            print("DateTime start of the best trial: ", trial_best.datetime_start)
         except ValueError:
-            pass
+            warnings.warn("No best trial found.")
         
         for tria in trials:
             temp_list = []
@@ -502,19 +560,24 @@ class Gridsearch(Pipeline):
         if params is None:
             return None
         param_temp = {}
-        param_temp = {k:trial.suggest_float(k,*v) for k,v in
-                      params.items() if (type(v) is list or type(v) is tuple)
-                      and (type(v[0]) is float or type(v[1]) is float)}
+        param_temp = {k:Gridsearch._new_suggest_float(trial, k,*v) for k,v in
+                      params.items() if (isinstance(v, list) or isinstance(v, tuple))
+                      and (isinstance(v[0], float) or isinstance(v[1], float))}
         param_temp2 = {k:trial.suggest_int(k,*v) for k,v in
-                       params.items() if (type(v) is list or type(v) is tuple)
-                       and (type(v[0]) is int or type(v[1]) is int)}
+                       params.items() if (isinstance(v, list) or isinstance(v, tuple))
+                       and (isinstance(v[0], int) or isinstance(v[1], int))}
         param_temp.update(param_temp2)
         param = {k:trial.suggest_categorical(k, v) for k,v in
-                 params.items() if (type(v) is list or type(v) is tuple)
-                 and (type(v[0]) is str or type(v[1]) is str)}
+                 params.items() if (isinstance(v, list) or isinstance(v, tuple))
+                 and (isinstance(v[0], str) or isinstance(v[1], str))}
         param.update(param_temp)
         #print(param)
         return param
+
+    @staticmethod
+    def _new_suggest_float(trial, name, low, high, step=None, log=False):
+        """A modification of the Optuna function, in order to remove the `*`"""
+        return trial.suggest_float(name, low, high, log=log, step=step)
 
     @staticmethod
     def _powerset(iterable):

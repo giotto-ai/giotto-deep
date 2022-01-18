@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: test-volume
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+  - ReadWriteOnce
+  gcePersistentDisk:
+    pdName: my-data-disk
+    fsType: ext4
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        # failure-domain.beta.kubernetes.io/zone should be used prior to 1.21
+        - key: topology.kubernetes.io/zone
+          operator: In
+          values:
+          - us-central1-a
+          - us-central1-b
