@@ -25,3 +25,4 @@ giotto-ph
 Pillow
 h5py
 torchensemble
+dotmap
