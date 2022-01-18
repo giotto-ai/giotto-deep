@@ -18,29 +18,45 @@ class Persformer(Module):
     
 
     Args:
-        dim_input (int, optional): Dimension of input data for each element in the set. Defaults to 4.
-        dim_output (int, optional): Output dimension of the model. This corresponds to the number of classes. Defaults to 5.
-        dim_hidden (int, optional): Hidden dimension of the encoder. Defaults to 128.
-        num_heads (str, optional): Number of attention heads in every attention layer. Defaults to "4".
-        layer_norm (str, optional): Use layer normalization in the encoder. Defaults to "False".
-        pre_layer_norm (str, optional): Use pre-layer normalization. Defaults to "False".
-        simplified_layer_norm (str, optional): Use simplified layer normalization. 
-        See 
-        https://proceedings.neurips.cc/paper/2019/file/2f4fe03d77724a7217006e5d16728874-Paper.pdf
-        Defaults to "True".
-        dropout_enc (float, optional): Dropout probability in the encoder. Defaults to 0.0.
-        dropout_dec (float, optional): Dropout probability in the decoder. Defaults to 0.0.
-        num_layer_enc (int, optional): Number of attention blocks in the encoder. Defaults to 2.
-        num_layer_dec (int, optional): Number of feed-forwards layers in the decoder. Defaults to 3.
-        activation (str, optional): Activation function to use in the whole model. Defaults to "gelu".
-        bias_attention (str, optional): Use bias in the query, key and value computation. Defaults to "True".
-        attention_type (str, optional): Either use full self-attention with quadratic complexity (´self_attention´, ´pytorch_self_attention´)
+        dim_input (int, optional):
+            Dimension of input data for each element in the set. Defaults to 4.
+        dim_output (int, optional):
+            Output dimension of the model. This corresponds to the number of classes. Defaults to 5.
+        dim_hidden (int, optional):
+            Hidden dimension of the encoder. Defaults to 128.
+        num_heads (str, optional):
+            Number of attention heads in every attention layer. Defaults to "4".
+        layer_norm (str, optional):
+            Use layer normalization in the encoder. Defaults to "False".
+        pre_layer_norm (str, optional):
+            Use pre-layer normalization. Defaults to "False".
+        simplified_layer_norm (str, optional):
+           Use simplified layer normalization.
+           See
+           https://proceedings.neurips.cc/paper/2019/file/2f4fe03d77724a7217006e5d16728874-Paper.pdf
+           Defaults to "True".
+        dropout_enc (float, optional):
+            Dropout probability in the encoder. Defaults to 0.0.
+        dropout_dec (float, optional):
+            Dropout probability in the decoder. Defaults to 0.0.
+        num_layer_enc (int, optional):
+            Number of attention blocks in the encoder. Defaults to 2.
+        num_layer_dec (int, optional):
+            Number of feed-forwards layers in the decoder. Defaults to 3.
+        activation (str, optional):
+            Activation function to use in the whole model. Defaults to "gelu".
+        bias_attention (str, optional):
+            Use bias in the query, key and value computation. Defaults to "True".
+        attention_type (str, optional):
+            Either use full self-attention with quadratic complexity (´self_attention´, ´pytorch_self_attention´)
             full self-attention with skip-connections (´pytorch_self_attention_skip´),
             or induced attention with linear complexity (´induced_attention´). Defaults to "´pytorch_self_attention_skip´".
-        layer_norm_pooling (str, optional): Use layer norm in the multi-head attention pooling layer. Defaults to "False".
+        layer_norm_pooling (str, optional):
+            Use layer norm in the multi-head attention pooling layer. Defaults to "False".
 
     Raises:
-        ValueError: [description]
+        ValueError:
+            [description]
     """
     def __init__(
         self,
@@ -192,9 +208,12 @@ class GraphClassifier(nn.Module):
         and concatenated with the feature vector. These concatenated
         features are used for classification using a fully connected
         feed -forward layer.
+        
         Args:
-            x_pd (Tensor): persistence diagrams of the graph
-            x_feature (Tensor): additional graph features
+            x_pd (Tensor):
+                persistence diagrams of the graph
+            x_feature (Tensor):
+                additional graph features
         """
         pd_vector = self.st(x_pd)
         features_stacked = torch.hstack((pd_vector, x_feature))
