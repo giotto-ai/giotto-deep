@@ -47,7 +47,8 @@ def save_model_and_optimizer(model,
     if optimizer is not None:
         torch.save(optimizer.state_dict(),
                    os.path.join("state_dicts",
-                                str(optimizer) +"-"+ str(round(time.time()))+".pth"))
+                                str(optimizer).replace("\n","").replace("(","").replace(":","").replace(")","")
+                                +"-"+ str(round(time.time()))+".pth"))
 
 
 def ensemble_wrapper(clss):

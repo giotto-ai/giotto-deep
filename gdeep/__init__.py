@@ -1,9 +1,11 @@
 __all__ = [
     'analysis',
+    'bert',
     'data',
     'models',
-    'search',
     'pipeline',
+    'search',
+    'topology_layers',
     'utility',
     'visualisation'
     ] 

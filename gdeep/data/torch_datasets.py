@@ -106,10 +106,8 @@ class TorchDataLoader:
         if self.convert_to_map_dataset:
             self._convert()
         train_dataloader = DataLoader(self.training_data,
-                                      pin_memory=True,
                                       **kwargs)
         test_dataloader = DataLoader(self.test_data,
-                                     pin_memory=True,
                                      **kwargs)
         return train_dataloader, test_dataloader
         
@@ -186,10 +184,8 @@ class DataLoaderFromImages:
             ts_data.append(imageT)
 
         train_dataloader = DataLoader(tr_data,
-                                      pin_memory=True,
                                       **kwargs)
         test_dataloader = DataLoader(ts_data,
-                                     pin_memory=True,
                                      **kwargs)
         os.chdir(CWD)
         return train_dataloader, test_dataloader
@@ -262,12 +258,9 @@ class DataLoaderFromArray:
             ts_data = None
 
         train_dataloader = DataLoader(tr_data,
-                                      pin_memory=True,
                                       **kwargs)
         val_dataloader = DataLoader(val_data,
-                                     pin_memory=True,
                                      **kwargs)
         test_dataloader = DataLoader(ts_data,
-                                     pin_memory=True,
                                      **kwargs)
         return train_dataloader, val_dataloader, test_dataloader

@@ -135,7 +135,7 @@ class Pipeline:
     def _inner_train_loop(self, 
                             dl_tr, 
                             writer_tag, 
-                            steps, 
+                            size, steps,
                             loss,
                             t_loss,
                             correct):
@@ -173,7 +173,7 @@ class Pipeline:
             t_loss = self._optimisation_step(dl_tr, steps, loss, 
                                     t_loss, correct, batch, closure)
         # accuracy:
-        correct /= steps*dl_tr.batch_size
+        correct /= size
         t_loss /= steps
         return correct, t_loss
 
@@ -188,7 +188,10 @@ class Pipeline:
             pass
         self.model = self.model.to(self.DEVICE)
         self.model.train()
-        size = len(dl_tr.dataset)
+        try:
+            size = len(dl_tr.sampler.indices)
+        except AttributeError:
+            size = len(dl_tr.dataset)
         steps = len(dl_tr)
         loss = 0
         correct = 0
@@ -198,15 +201,16 @@ class Pipeline:
                                                   " accumulated gradients shall be diminished!"
         correct, t_loss = self._inner_train_loop(dl_tr, 
                                                  writer_tag,
-                                                 steps,
+                                                 size, steps,
                                                  loss,
                                                  t_loss,
                                                  correct)
+        print(f"Epoch training loss: {t_loss:>8f} \tEpoch training accuracy: {(correct*100):.2f}% ".ljust(100))
         try:
             self.writer.flush()
         except AttributeError:
             pass
-        print(f"\nTime taken for this epoch: {round(time.time()-tik):.2f}s")
+        print(f"Time taken for this epoch: {round(time.time()-tik):.2f}s")
         try:
             print(f"Learning rate value: {self.optimizer.param_groups[0]['lr']:0.8f}")
         except KeyError:
@@ -222,8 +226,10 @@ class Pipeline:
         except NameError:
             pass
         self.model = self.model.to(self.DEVICE)
-        # size = len(self.dataloaders[1].dataset)
-        size = len(dl_val.dataset)
+        try:
+            size = len(dl_val.sampler.indices)
+        except AttributeError:
+            size = len(dl_val.dataset)
         val_loss, correct = 0, 0
         class_label = []
         class_probs = []
@@ -237,7 +243,7 @@ class Pipeline:
                                                    writer=self.writer,
                                                    writer_tag=writer_tag)
         # accuracy
-        correct /= len(dl_val)*dl_val.batch_size
+        correct /= size
         val_loss /= len(dl_val)
         try:
             self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
@@ -250,7 +256,7 @@ class Pipeline:
                 pass
         except AttributeError:
             pass
-        print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
+        print(f"Validation results: \n Accuracy: {(100*correct):.2f}%, \
                 Avg loss: {val_loss:>8f} \n")
         try:
             self.writer.flush()
@@ -465,19 +471,30 @@ class Pipeline:
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:
-            val_idx = list(range((len(self.dataloaders[1])-1)*self.dataloaders[1].batch_size))
+            try:
+                val_idx = self.dataloaders[1].sampler.indices
+            except AttributeError:
+                val_idx = list(range(len(self.dataloaders[1].dataset)))
+            #print(val_idx)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
                                                  #pin_memory=True,
                                                  **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(val_idx))
-            tr_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
+            try:
+                tr_idx = self.dataloaders[0].sampler.indices
+            except AttributeError:
+                tr_idx = list(range(len(self.dataloaders[0].dataset)))
+            #print(tr_idx)
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                 #pin_memory=True,
                                                 **dataloaders_param_val,
                                                 sampler=SubsetRandomSampler(tr_idx))
         else:
-
-            data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
+            try:
+                data_idx = self.dataloaders[0].sampler.indices
+            except AttributeError:
+                data_idx = list(range(len(self.dataloaders[0].dataset)))
+            #print(data_idx)
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                  #pin_memory=True,
@@ -492,7 +509,11 @@ class Pipeline:
             mean_val_loss = []
             mean_val_acc = []
             valloss, valacc = 0, 0
-            data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
+            try:
+                data_idx = self.dataloaders[0].sampler.indices
+            except AttributeError:
+                data_idx = list(range(len(self.dataloaders[0].dataset)))
+            #print(data_idx)
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
                 self._init_optimizer_and_scheduler(keep_training, cross_validation,
@@ -772,7 +793,6 @@ class Pipeline:
                 # evaluation
                 model2.eval()
                 
-                # size = len(self.dataloaders[1].dataset)
                 size = len(dl_val.dataset)
                 loss, correct = 0, 0
                 class_label = []
@@ -798,7 +818,7 @@ class Pipeline:
                     #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
 
                 #self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
-                print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
+                print(f"Validation results: \n Accuracy: {(100*correct):.2f}%, \
                         Avg loss: {loss:>8f} \n")
 
                 #self.writer.flush()
