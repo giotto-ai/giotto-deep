@@ -1,8 +1,3 @@
-# To add a new cell, type '# %%'
-# To add a new markdown cell, type '# %% [markdown]'
-# %%
-from IPython import get_ipython
-
 # %% [markdown]
 #  ## Benchmarking PersFormer on the graph datasets.
 #  We will compare the accuracy on the graph datasets of our SetTransformer
@@ -25,6 +20,7 @@ from IPython import get_ipython
 #  fold and training the model on the 9 other folds.
 
 # %%
+from IPython import get_ipython
 get_ipython().magic('load_ext autoreload')
 get_ipython().magic('autoreload 2')
 
@@ -48,10 +44,8 @@ from torch.optim import SGD, Adam
 import matplotlib.pyplot as plt  # type: ignore
 
 from gdeep.topology_layers import load_data_as_tensor,\
-    load_augmented_data_as_tensor, GraphClassifier, train
+    load_augmented_data_as_tensor, GraphClassifier
 
-# for SAM training
-from gdeep.topology_layers import sam_train
 from gdeep.pipeline import Pipeline
 
 
@@ -117,11 +111,11 @@ if config.pers_only:
 
 
 # %%
-warnings.warn("You use debuging code, this should be removed in\
-future versions")
-x_pds = x_pds[188:]
-x_features = x_features[188:]
-y = y[188:]
+# warnings.warn("You use debuging code, this should be removed in\
+# future versions")
+# x_pds = x_pds[188:]
+# x_features = x_features[188:]
+# y = y[188:]
 
 
 # %%
@@ -146,7 +140,7 @@ if config.balance_dataset:
 
     print('number of data points removed:', num_classes_to_remove)
 
-print('balance:', (y.sum() / y.shape[0]).item())
+print('balance: {:.2f}'.format(y.sum() / y.shape[0]).item())
 
 
 # %%

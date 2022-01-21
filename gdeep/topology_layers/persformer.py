@@ -217,7 +217,6 @@ class SetTransformer(Module):
         num_inds=32,  # number of induced points, see  Set Transformer paper
         dim_hidden=128,
         num_heads=4,
-        num_inds=32,
         ln=False,  # use layer norm
         n_layers_encoder=1,
         n_layers_decoder=1,
@@ -444,6 +443,26 @@ class Persformer(Module):
                             nn.Dropout(dropout_dec)) for i in range(num_layer_dec-1)],
             nn.Linear(enc_layer_dim[-1] * dim_hidden, dim_output),
         )
+        
+    @classmethod
+    def from_config(cls, config_model, config_data):
+        return cls(dim_input=config_model.dim_input,
+                   dim_output=config_data.num_classes,
+                   num_inds=config_model.num_induced_points,
+                   dim_hidden=config_model.dim_hidden,
+                   num_heads=str(config_model.num_heads),
+                   layer_norm=str(config_model.layer_norm),  # use layer norm
+                   pre_layer_norm=str(config_model.pre_layer_norm),
+                   simplified_layer_norm=str(config_model.simplified_layer_norm),
+                   dropout_enc=config_model.dropout_enc,
+                   dropout_dec=config_model.dropout_dec,
+                   num_layer_enc=config_model.num_layers_encoder,
+                   num_layer_dec=config_model.num_layers_decoder,
+                   activation=config_model.activation,
+                   bias_attention=config_model.bias_attention,
+                   attention_type=config_model.attention_type,
+                   layer_norm_pooling=str(config_model.layer_norm_pooling))
+    
 
     def forward(self, input):
         if self._attention_type == "pytorch_self_attention_skip":
@@ -453,8 +472,16 @@ class Persformer(Module):
             return self.dec(x).squeeze(dim=1)
         else:
             return self.dec(self.enc(input)).squeeze(dim=1)
-
-    
+    @property
+    def num_params(self) -> int:
+        """Returns number of trainable parameters.
+        Returns:
+            int: Number of trainable parameters.
+        """
+        total_params = 0
+        for parameter in self.parameters():
+            total_params += parameter.nelement()
+        return total_params
     
 
 class GraphClassifier(nn.Module):
