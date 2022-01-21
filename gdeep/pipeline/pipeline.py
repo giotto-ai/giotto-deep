@@ -384,7 +384,9 @@ class Pipeline:
                 whether or not to perform five-fold cross-validation
             dataloaders_param (dict):
                 dictionary of the dataloaders
-                parameters, e.g. `{'batch_size': 32}`
+                parameters, e.g. `{'batch_size': 32}`. If ``None``, then
+                the parameters of the training and validation
+                dataloaders will be used.
             optimizers_param (dict):
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
@@ -441,7 +443,10 @@ class Pipeline:
             
         # dataloaders_param initialisation
         if dataloaders_param is None:
-            dataloaders_param_val = Pipeline.copy_dataloader_params(self.dataloaders[1])
+            if self.dataloaders[1] is not None:
+                dataloaders_param_val = Pipeline.copy_dataloader_params(self.dataloaders[1])
+            else:
+                dataloaders_param_val = Pipeline.copy_dataloader_params(dl_tr)
             dataloaders_param_tr = Pipeline.copy_dataloader_params(dl_tr)
         else:
             dataloaders_param_val = dataloaders_param.copy()
