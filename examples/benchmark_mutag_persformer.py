@@ -57,11 +57,14 @@ from optuna.pruners import MedianPruner, NopPruner
 # %%
 
 #Configs
-with open(os.path.join('Model_Data_specifications', 'Mutag_data.json')) as config_data_file:
+
+model_data_file = 'model_data_specifications'
+
+with open(os.path.join(model_data_file, 'Mutag_data.json')) as config_data_file:
     config_data = DotMap(json.load(config_data_file))
 
 
-with open(os.path.join('Model_Data_specifications', 'Mutag_model.json')) as config_data_file:
+with open(os.path.join(model_data_file, 'Mutag_model.json')) as config_data_file:
     config_model = DotMap(json.load(config_data_file))
 
 # %%
@@ -79,7 +82,7 @@ print('class balance: {:.2f}'.format((y.sum() / y.shape[0]).item()))
 # create the datasets
 graph_ds = TensorDataset(x_pds, y)
 
-# create the data loaders
+# Split the dataset into training and validation
 total_size = x_pds.shape[0]
 train_size = int(total_size * config_data.train_percentage)
 graph_ds_train, graph_ds_val = torch.utils.data.random_split(
