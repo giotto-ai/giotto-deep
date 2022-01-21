@@ -438,8 +438,16 @@ class Pipeline:
         dl_tr = self.dataloaders[0]
         if optimizers_param is None:
             optimizers_param = {"lr": 0.001}
+            
+        # dataloaders_param initialisation
         if dataloaders_param is None:
-            dataloaders_param = {"batch_size": dl_tr.batch_size}
+            dataloaders_param_val = Pipeline.copy_dataloader_params(self.dataloaders[1])
+            dataloaders_param_tr = Pipeline.copy_dataloader_params(dl_tr)
+        else:
+            dataloaders_param_val = dataloaders_param.copy()
+            dataloaders_param_tr = dataloaders_param.copy()
+        
+        # scheduler_params initialisation
         if scheduler_params is None:
             scheduler_params = {}
 
@@ -461,10 +469,15 @@ class Pipeline:
                                    cross_validation, 
                                    n_epochs, k_folds)
         
-        # remove sampler to avoid conflicts with validation
-        dataloaders_param_val = dataloaders_param.copy()
+        # remove sampler to avoid conflicts with indexing
+        # we will re-introduce the sampler when creating the indexing list
         try:
             dataloaders_param_val.pop("sampler")
+        except KeyError:
+            pass
+
+        try:
+            dataloaders_param_tr.pop("sampler")
         except KeyError:
             pass
 
@@ -487,7 +500,7 @@ class Pipeline:
             #print(tr_idx)
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                 #pin_memory=True,
-                                                **dataloaders_param_val,
+                                                **dataloaders_param_tr,
                                                 sampler=SubsetRandomSampler(tr_idx))
         else:
             try:
@@ -502,7 +515,7 @@ class Pipeline:
                                                  sampler=SubsetRandomSampler(val_idx))
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                 #pin_memory=True,
-                                                **dataloaders_param_val,
+                                                **dataloaders_param_tr,
                                                 sampler=SubsetRandomSampler(tr_idx))
 
         if cross_validation:
@@ -525,7 +538,7 @@ class Pipeline:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     #pin_memory=True,
-                                                    **dataloaders_param_val,
+                                                    **dataloaders_param_tr,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                      #pin_memory=True,
@@ -907,3 +920,19 @@ class Pipeline:
         function at every epoch, after the single training loop"""
         if self.registered_hook is not None:
             self.registered_hook(epoch, optim, me, writer)
+            
+    @staticmethod
+    def copy_dataloader_params(original_dataloader):
+        """returns the dict of init parameters"""
+        return {"batch_size": original_dataloader.batch_size,
+                #"batch_sampler": original_dataloader.batch_sampler, 
+                "num_workers": original_dataloader.num_workers, 
+                "collate_fn": original_dataloader.collate_fn, 
+                "pin_memory": original_dataloader.pin_memory, 
+                "drop_last": original_dataloader.drop_last, 
+                "timeout": original_dataloader.timeout, 
+                "worker_init_fn": original_dataloader.worker_init_fn, 
+                "multiprocessing_context": original_dataloader.multiprocessing_context, 
+                "generator": original_dataloader.generator, 
+                "prefetch_factor": original_dataloader.prefetch_factor, 
+                "persistent_workers": original_dataloader.persistent_workers}
