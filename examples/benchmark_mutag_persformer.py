@@ -89,7 +89,7 @@ graph_ds_train, graph_ds_val = torch.utils.data.random_split(
                                                     graph_ds,
                                                     [train_size,
                                                     total_size - train_size],
-                                                    generator=torch.Generator().manual_seed(36))
+                                                    generator=torch.Generator().manual_seed(16))
 
 
 # Define data loaders
@@ -129,7 +129,7 @@ loss_fn = nn.CrossEntropyLoss()
 writer = SummaryWriter("runs/" + config_model.implementation)
 
 # initialise pipeline class
-pipe = Pipeline(model, [graph_dl_train, None], loss_fn, writer)
+pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
 # %%
 
 

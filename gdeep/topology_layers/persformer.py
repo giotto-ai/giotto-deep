@@ -378,9 +378,9 @@ class Persformer(Module):
         bias_attention (str, optional):
             Use bias in the query, key and value computation. Defaults to "True".
         attention_type (str, optional):
-            Either use full self-attention with quadratic complexity (´self_attention´, ´pytorch_self_attention´)
-            full self-attention with skip-connections (´pytorch_self_attention_skip´),
-            or induced attention with linear complexity (´induced_attention´). Defaults to "´pytorch_self_attention_skip´".
+            Either use full self-attention with quadratic complexity (`self_attention`, `pytorch_self_attention`)
+            full self-attention with skip-connections (`pytorch_self_attention_skip`),
+            or induced attention with linear complexity (`induced_attention`). Defaults to "pytorch_self_attention_skip".
         layer_norm_pooling (str, optional):
             Use layer norm in the multi-head attention pooling layer. Defaults to "False".
 
