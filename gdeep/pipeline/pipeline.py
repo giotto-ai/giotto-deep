@@ -135,7 +135,7 @@ class Pipeline:
     def _inner_train_loop(self, 
                             dl_tr, 
                             writer_tag, 
-                            steps, 
+                            size, steps,
                             loss,
                             t_loss,
                             correct):
@@ -173,7 +173,7 @@ class Pipeline:
             t_loss = self._optimisation_step(dl_tr, steps, loss, 
                                     t_loss, correct, batch, closure)
         # accuracy:
-        correct /= steps*dl_tr.batch_size
+        correct /= size
         t_loss /= steps
         return correct, t_loss
 
@@ -188,7 +188,10 @@ class Pipeline:
             pass
         self.model = self.model.to(self.DEVICE)
         self.model.train()
-        size = len(dl_tr.dataset)
+        try:
+            size = len(dl_tr.sampler.indices)
+        except AttributeError:
+            size = len(dl_tr.dataset)
         steps = len(dl_tr)
         loss = 0
         correct = 0
@@ -198,15 +201,16 @@ class Pipeline:
                                                   " accumulated gradients shall be diminished!"
         correct, t_loss = self._inner_train_loop(dl_tr, 
                                                  writer_tag,
-                                                 steps,
+                                                 size, steps,
                                                  loss,
                                                  t_loss,
                                                  correct)
+        print(f"Epoch training loss: {t_loss:>8f} \tEpoch training accuracy: {(correct*100):.2f}% ".ljust(100))
         try:
             self.writer.flush()
         except AttributeError:
             pass
-        print(f"\nTime taken for this epoch: {round(time.time()-tik):.2f}s")
+        print(f"Time taken for this epoch: {round(time.time()-tik):.2f}s")
         try:
             print(f"Learning rate value: {self.optimizer.param_groups[0]['lr']:0.8f}")
         except KeyError:
@@ -222,8 +226,10 @@ class Pipeline:
         except NameError:
             pass
         self.model = self.model.to(self.DEVICE)
-        # size = len(self.dataloaders[1].dataset)
-        size = len(dl_val.dataset)
+        try:
+            size = len(dl_val.sampler.indices)
+        except AttributeError:
+            size = len(dl_val.dataset)
         val_loss, correct = 0, 0
         class_label = []
         class_probs = []
@@ -237,7 +243,7 @@ class Pipeline:
                                                    writer=self.writer,
                                                    writer_tag=writer_tag)
         # accuracy
-        correct /= len(dl_val)*dl_val.batch_size
+        correct /= size
         val_loss /= len(dl_val)
         try:
             self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
@@ -250,7 +256,7 @@ class Pipeline:
                 pass
         except AttributeError:
             pass
-        print(f"Validation results: \n Accuracy: {(100*correct):>8f}%, \
+        print(f"Validation results: \n Accuracy: {(100*correct):.2f}%, \
                 Avg loss: {val_loss:>8f} \n")
         try:
             self.writer.flush()
@@ -378,7 +384,9 @@ class Pipeline:
                 whether or not to perform five-fold cross-validation
             dataloaders_param (dict):
                 dictionary of the dataloaders
-                parameters, e.g. `{'batch_size': 32}`
+                parameters, e.g. `{'batch_size': 32}`. If ``None``, then
+                the parameters of the training and validation
+                dataloaders will be used.
             optimizers_param (dict):
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
@@ -432,8 +440,19 @@ class Pipeline:
         dl_tr = self.dataloaders[0]
         if optimizers_param is None:
             optimizers_param = {"lr": 0.001}
+            
+        # dataloaders_param initialisation
         if dataloaders_param is None:
-            dataloaders_param = {"batch_size": dl_tr.batch_size}
+            if self.dataloaders[1] is not None:
+                dataloaders_param_val = Pipeline.copy_dataloader_params(self.dataloaders[1])
+            else:
+                dataloaders_param_val = Pipeline.copy_dataloader_params(dl_tr)
+            dataloaders_param_tr = Pipeline.copy_dataloader_params(dl_tr)
+        else:
+            dataloaders_param_val = dataloaders_param.copy()
+            dataloaders_param_tr = dataloaders_param.copy()
+        
+        # scheduler_params initialisation
         if scheduler_params is None:
             scheduler_params = {}
 
@@ -455,29 +474,45 @@ class Pipeline:
                                    cross_validation, 
                                    n_epochs, k_folds)
         
-        # remove sampler to avoid conflicts with validation
-        dataloaders_param_val = dataloaders_param.copy()
+        # remove sampler to avoid conflicts with indexing
+        # we will re-introduce the sampler when creating the indexing list
         try:
             dataloaders_param_val.pop("sampler")
+        except KeyError:
+            pass
+
+        try:
+            dataloaders_param_tr.pop("sampler")
         except KeyError:
             pass
 
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:
-            val_idx = list(range((len(self.dataloaders[1])-1)*self.dataloaders[1].batch_size))
+            try:
+                val_idx = self.dataloaders[1].sampler.indices
+            except AttributeError:
+                val_idx = list(range(len(self.dataloaders[1].dataset)))
+            #print(val_idx)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
                                                  #pin_memory=True,
                                                  **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(val_idx))
-            tr_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
+            try:
+                tr_idx = self.dataloaders[0].sampler.indices
+            except AttributeError:
+                tr_idx = list(range(len(self.dataloaders[0].dataset)))
+            #print(tr_idx)
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                 #pin_memory=True,
-                                                **dataloaders_param_val,
+                                                **dataloaders_param_tr,
                                                 sampler=SubsetRandomSampler(tr_idx))
         else:
-
-            data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
+            try:
+                data_idx = self.dataloaders[0].sampler.indices
+            except AttributeError:
+                data_idx = list(range(len(self.dataloaders[0].dataset)))
+            #print(data_idx)
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                  #pin_memory=True,
@@ -485,14 +520,18 @@ class Pipeline:
                                                  sampler=SubsetRandomSampler(val_idx))
             dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                 #pin_memory=True,
-                                                **dataloaders_param_val,
+                                                **dataloaders_param_tr,
                                                 sampler=SubsetRandomSampler(tr_idx))
 
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
             valloss, valacc = 0, 0
-            data_idx = list(range((len(self.dataloaders[0])-1)*self.dataloaders[0].batch_size))
+            try:
+                data_idx = self.dataloaders[0].sampler.indices
+            except AttributeError:
+                data_idx = list(range(len(self.dataloaders[0].dataset)))
+            #print(data_idx)
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
                 self._init_optimizer_and_scheduler(keep_training, cross_validation,
@@ -504,7 +543,7 @@ class Pipeline:
                     warnings.warn("Validation set is ignored in automatic Cross Validation")
                 dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                     #pin_memory=True,
-                                                    **dataloaders_param_val,
+                                                    **dataloaders_param_tr,
                                                     sampler=SubsetRandomSampler(tr_idx))
                 dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
                                                      #pin_memory=True,
@@ -772,7 +811,6 @@ class Pipeline:
                 # evaluation
                 model2.eval()
                 
-                # size = len(self.dataloaders[1].dataset)
                 size = len(dl_val.dataset)
                 loss, correct = 0, 0
                 class_label = []
@@ -798,7 +836,7 @@ class Pipeline:
                     #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
 
                 #self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
-                print(f"Validation results: \n Accuracy: {(100*correct):>0.1f}%, \
+                print(f"Validation results: \n Accuracy: {(100*correct):.2f}%, \
                         Avg loss: {loss:>8f} \n")
 
                 #self.writer.flush()
@@ -887,3 +925,19 @@ class Pipeline:
         function at every epoch, after the single training loop"""
         if self.registered_hook is not None:
             self.registered_hook(epoch, optim, me, writer)
+            
+    @staticmethod
+    def copy_dataloader_params(original_dataloader):
+        """returns the dict of init parameters"""
+        return {"batch_size": original_dataloader.batch_size,
+                #"batch_sampler": original_dataloader.batch_sampler, 
+                "num_workers": original_dataloader.num_workers, 
+                "collate_fn": original_dataloader.collate_fn, 
+                "pin_memory": original_dataloader.pin_memory, 
+                "drop_last": original_dataloader.drop_last, 
+                "timeout": original_dataloader.timeout, 
+                "worker_init_fn": original_dataloader.worker_init_fn, 
+                "multiprocessing_context": original_dataloader.multiprocessing_context, 
+                "generator": original_dataloader.generator, 
+                "prefetch_factor": original_dataloader.prefetch_factor, 
+                "persistent_workers": original_dataloader.persistent_workers}
