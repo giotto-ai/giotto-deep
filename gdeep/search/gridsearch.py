@@ -566,6 +566,9 @@ class Gridsearch(Pipeline):
         """
         if params is None:
             return None
+        for k, v in params.items():
+            if (isinstance(v, list) or isinstance(v, tuple)) and len(v)==1:
+                params[k] = 2*v
         param_temp = {}
         param_temp = {k:Gridsearch._new_suggest_float(trial, k,*v) for k,v in
                       params.items() if (isinstance(v, list) or isinstance(v, tuple))
