@@ -390,7 +390,7 @@ class Persformer(Module):
     """
     def __init__(
         self,
-        dim_input=4,  # dimension of input data for each element in the set
+        dim_input=6,  # dimension of input data for each element in the set
         num_outputs=1,
         dim_output=5,  # number of classes
         num_inds=32,  # number of induced points, see  Set Transformer paper

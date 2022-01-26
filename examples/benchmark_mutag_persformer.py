@@ -44,9 +44,7 @@ from torch.utils.tensorboard import SummaryWriter  # type: ignore
 from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup, get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup
 
 # Import the giotto-deep modules
-from gdeep.data import OrbitsGenerator, DataLoaderKwargs
 from gdeep.topology_layers import Persformer
-from gdeep.topology_layers import ISAB, PMA, SAB
 from gdeep.pipeline import Pipeline
 from gdeep.search import Gridsearch
 from gdeep.topology_layers import load_data_as_tensor, balance_binary_dataset,\
@@ -126,7 +124,9 @@ model = Persformer.from_config(config_model, config_data)
 loss_fn = nn.CrossEntropyLoss()
 
 # Initialize the Tensorflow writer
-writer = SummaryWriter("runs/" + config_model.implementation)
+writer = SummaryWriter("runs/" + config_model.implementation +
+                       "_" + config_data.dataset_name +
+                       "_" + "small hyperparameter_search")
 
 # initialise pipeline class
 pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
@@ -146,33 +146,34 @@ pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
                                #"num_cycles": 1},
            store_grad_layer_hist=False) """
 
-pipe.train(eval(config_model.optimizer),
-           config_model.num_epochs,
-           cross_validation=False,
-           optimizers_param={"lr": config_model.learning_rate,
-            "weight_decay": config_model.weight_decay},
-           store_grad_layer_hist=False)
+# pipe.train(eval(config_model.optimizer),
+#            config_model.num_epochs,
+#            cross_validation=False,
+#            optimizers_param={"lr": config_model.learning_rate,
+#             "weight_decay": config_model.weight_decay},
+#            store_grad_layer_hist=False)
 # %%
 # Hyperparameter search
 
 pruner = NopPruner()
-search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=2, best_not_last=True, pruner=pruner)
 
 #dictionaries of hyperparameters
 optimizers_params = {"lr": [1e-3, 1e-0, None, True],
                       "weight_decay": [0.0001, 0.2, None, True] }
 dataloaders_params = {"batch_size": [8, 16, 2]}
-models_hyperparams = {"n_layer_enc": [2, 4],
-                      "n_layer_dec": [1, 5],
-                      "num_heads": ["2", "4", "8"],
-                      "hidden_dim": ["16", "32", "64"],
-                      "dropout": [0.0, 0.5, 0.05],
+models_hyperparams = {"n_layer_enc": [2, 4], #(int) - The number of layers in the encoder
+                      "n_layer_dec": [1, 5], #(int) - The number of layers in the encoder
+                      "num_heads": ["2", "4", "8"], #(int) - The number of heads in the encoder
+                      "hidden_dim": ["16", "32", "64"], #(int) - The number of hidden dimensions in the encoder
+                      "dropout_enc": [0.0, 0.5, 0.05], 
                       "layer_norm": ["True", "False"],
-                      "bias_attention": ["True", "False"]}#,
-                      #'pre_layer_norm': ["True", "False"]}
+                      "bias_attention": ["True", "False"],
+                      "input_dim": [config_model["input_dim"]],
+                      }
 
-schedulers_params = {"num_warmup_steps": int(0.02 * config_model.num_epochs),  #(int) – The number of steps for the warmup phase.
-                    "num_training_steps": config_model.num_epochs, #(int) – The total number of training steps.
+schedulers_params = {"num_warmup_steps": [int(0.02 * config_model.num_epochs)],  #(int) – The number of steps for the warmup phase.
+                    "num_training_steps": [config_model.num_epochs], #(int) – The total number of training steps.
                     "num_cycles": [1, 3, 1]} #(int) – The number of restart cycles
 
 # starting the gridsearch
