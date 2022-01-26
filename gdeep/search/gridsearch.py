@@ -43,6 +43,9 @@ class Gridsearch(Pipeline):
             epochs or the validation accuracy of the last epoch
         pruner (optuna.Pruners, default MedianPruner):
             Instance of an optuna pruner, can be user-defined
+        sampler (optuna.Samplers, default TPESampler):
+            If left unspecified, ``TPESample`` is used during single-objective 
+            optimization and ``NSGAIISampler`` during multi-objective optimization
         db_url (str):
             name of the database to connect to. For example
             ``mysql+mysqldb://usr:psw@host:port/db_name``
@@ -52,7 +55,8 @@ class Gridsearch(Pipeline):
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, pruner=None,
+    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, 
+                 pruner=None, sampler=None,
                  db_url=None, study_name=None):
         self.best_not_last = best_not_last
         self.is_pipe = None
@@ -83,6 +87,7 @@ class Gridsearch(Pipeline):
         self.n_trials = n_trials
         self.val_epoch = 0
         self.train_epoch = 0
+        self.sampler = sampler
         if pruner is not None:
             self.pruner = pruner
         else:
@@ -293,6 +298,7 @@ class Gridsearch(Pipeline):
         """
         if self.search_metric == "loss":
             self.study = optuna.create_study(direction="minimize",
+                                             sampler=self.sampler,
                                              pruner=self.pruner,
                                              storage=self.db_url,
                                              study_name=self.study_name if self.study_name is not None else \
@@ -300,6 +306,7 @@ class Gridsearch(Pipeline):
                                              load_if_exists=True)
         else:
             self.study = optuna.create_study(direction="maximize",
+                                             sampler=self.sampler,
                                              pruner=self.pruner,
                                              storage=self.db_url,
                                              study_name=self.study_name if self.study_name is not None else \
@@ -559,6 +566,9 @@ class Gridsearch(Pipeline):
         """
         if params is None:
             return None
+        for k, v in params.items():
+            if (isinstance(v, list) or isinstance(v, tuple)) and len(v)==1:
+                params[k] = 2*v
         param_temp = {}
         param_temp = {k:Gridsearch._new_suggest_float(trial, k,*v) for k,v in
                       params.items() if (isinstance(v, list) or isinstance(v, tuple))
