@@ -146,7 +146,7 @@ class Pipeline:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
                 return loss2
-
+            print('test ', y.shape)
             X = X.to(self.DEVICE)
             y = y.to(self.DEVICE)
             # Compute prediction and loss
@@ -297,6 +297,7 @@ class Pipeline:
         pred_list = []
         with torch.no_grad():
             for X, y in dl:
+                print('val ', y.shape)
                 X = X.to(self.DEVICE)
                 y = y.to(self.DEVICE)
                 pred = self.model(X)
@@ -348,6 +349,7 @@ class Pipeline:
             self._reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             if lr_scheduler is not None:
+                print(scheduler_params)
                 self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
         elif cross_validation:
             # reset the model weights

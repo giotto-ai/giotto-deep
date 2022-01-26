@@ -293,7 +293,7 @@ def balance_binary_dataset(x, y, verbose=False):
     return x, y
 
 
-def print_class_balance(dl):
+def print_class_balance(dl, dataset_type: str="train"):
     """Prints the class balance of a binary dataset
 
     Args:
@@ -305,5 +305,5 @@ def print_class_balance(dl):
     for _, y_batch in dl:
         balance += y_batch.sum()
         total += y_batch.shape[0]
-    print('train_size:', total)
-    print('train_balance', (balance / total).item())  # type: ignore
+    print(dataset_type + '_size:', total)
+    print(dataset_type + '_balance', (balance / total).item())  # type: ignore

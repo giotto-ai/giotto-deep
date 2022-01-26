@@ -1,7 +1,7 @@
 {
     "balance_dataset": false,
     "baseline_accuracy": 85.2,
-    "batch_size_train": 64,
+    "batch_size_train": 17,
     "batch_size_val": 19,
     "dataset_name": "MUTAG",
     "num_classes": 2,

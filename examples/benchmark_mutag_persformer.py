@@ -110,8 +110,8 @@ graph_dl_val = DataLoader(
 
 # Compute balance of train and validation datasets
     
-print_class_balance(graph_dl_train)
-print_class_balance(graph_dl_val)
+print_class_balance(graph_dl_train, 'train')
+print_class_balance(graph_dl_val, 'validation')
 
 # %%
 # Define and initialize the model
@@ -152,4 +152,34 @@ pipe.train(eval(config_model.optimizer),
            optimizers_param={"lr": config_model.learning_rate,
             "weight_decay": config_model.weight_decay},
            store_grad_layer_hist=False)
+# %%
+# Hyperparameter search
+
+pruner = NopPruner()
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
+
+#dictionaries of hyperparameters
+optimizers_params = {"lr": [1e-3, 1e-0, None, True],
+                      "weight_decay": [0.0001, 0.2, None, True] }
+dataloaders_params = {"batch_size": [8, 16, 2]}
+models_hyperparams = {"n_layer_enc": [2, 4],
+                      "n_layer_dec": [1, 5],
+                      "num_heads": ["2", "4", "8"],
+                      "hidden_dim": ["16", "32", "64"],
+                      "dropout": [0.0, 0.5, 0.05],
+                      "layer_norm": ["True", "False"],
+                      "bias_attention": ["True", "False"]}#,
+                      #'pre_layer_norm': ["True", "False"]}
+
+schedulers_params = {"num_warmup_steps": int(0.02 * config_model.num_epochs),  #(int) – The number of steps for the warmup phase.
+                    "num_training_steps": config_model.num_epochs, #(int) – The total number of training steps.
+                    "num_cycles": [1, 3, 1]} #(int) – The number of restart cycles
+
+# starting the gridsearch
+search.start((AdamW,), n_epochs=config_model.num_epochs, cross_validation=False,
+            optimizers_params=optimizers_params,
+            dataloaders_params=dataloaders_params,
+            models_hyperparams=models_hyperparams, lr_scheduler=get_cosine_with_hard_restarts_schedule_with_warmup,
+            schedulers_params=schedulers_params)
+
 # %%
