@@ -2,7 +2,8 @@
 from PIL import Image
 import numpy as np
 import os
-from plotly.io import write_image
+# from plotly.io import write_image
+import io
 import torch
 
 
@@ -18,10 +19,10 @@ def plotly2tensor(fig) -> torch.Tensor:
             the tensor discretisation of the
             figure
     """
-    write_image(fig, "deleteme.jpeg", format="jpeg")
-    img = Image.open("deleteme.jpeg")
-    arr = np.asarray(img).copy()
-    os.remove("deleteme.jpeg")
+    fig_bytes = fig.to_image(format="png")
+    buf = io.BytesIO(fig_bytes)
+    img = Image.open(buf)
+    arr = np.asarray(img)
     return torch.from_numpy(arr)
 
 
