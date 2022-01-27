@@ -146,7 +146,6 @@ class Pipeline:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
                 return loss2
-            print('test ', y.shape)
             X = X.to(self.DEVICE)
             y = y.to(self.DEVICE)
             # Compute prediction and loss
@@ -297,7 +296,6 @@ class Pipeline:
         pred_list = []
         with torch.no_grad():
             for X, y in dl:
-                print('val ', y.shape)
                 X = X.to(self.DEVICE)
                 y = y.to(self.DEVICE)
                 pred = self.model(X)
