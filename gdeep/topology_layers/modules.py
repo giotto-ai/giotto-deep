@@ -12,6 +12,8 @@ class MAB(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False, bias_attention=True, activation='gelu',
                  simplified_layer_norm=True):
         super().__init__()
+        self.dim_Q = dim_Q
+        self.dim_K = dim_K
         self.dim_V = dim_V
         self.num_heads = num_heads
         self.fc_q = nn.Linear(dim_Q, dim_V, bias=bias_attention)
@@ -29,7 +31,11 @@ class MAB(nn.Module):
             raise ValueError("Unknown activation '%s'" % activation)
 
     def forward(self, Q, K):
+        assert Q.shape[-1] == self.dim_Q,\
+            "Q must be of dimension {} but it is of dimension {}".format(self.dim_Q, Q.shape[-1])
         Q = self.fc_q(Q)
+        assert K.shape[-1] == self.dim_K,\
+            "K must be of dimension {} but it is of dimension {}".format(self.dim_K, K.shape[-1])
         K, V = self.fc_k(K), self.fc_v(K)
 
         dim_split = self.dim_V // self.num_heads
