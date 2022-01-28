@@ -39,7 +39,7 @@ from torch.optim import SGD, Adam, RMSprop, AdamW  # type: ignore
 from torch.utils.data import TensorDataset, DataLoader
 
 # Import Tensorflow writer
-from torch.utils.tensorboard import SummaryWriter  # type: ignore
+from torch.utils.tensorboard import GiottoSummaryWriter  # type: ignore
 
 from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup, get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup
 
@@ -124,10 +124,10 @@ model = Persformer.from_config(config_model, config_data)
 loss_fn = nn.CrossEntropyLoss()
 
 # Initialize the Tensorflow writer
-writer = SummaryWriter("runs/" + config_model.implementation +
+writer = GiottoSummaryWriter("runs/" + config_model.implementation +
                        "_" + config_data.dataset_name +
                        "_" + "pytorch_self_attention_skip" +
-                       "_" + "_hyperparameter_search")
+                       "_" + "_hyperparameter_search_giotto")
 
 # initialise pipeline class
 pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
@@ -183,7 +183,7 @@ schedulers_params = {"num_warmup_steps": [int(0.02 * config_model.num_epochs)], 
                     "num_cycles": [1]} #(int) – The number of restart cycles
 
 # starting the gridsearch
-search.start((AdamW,), n_epochs=config_model.num_epochs, cross_validation=False,
+search.start((eval(config_model.optimizer),), n_epochs=config_model.num_epochs, cross_validation=False,
             optimizers_params=optimizers_params,
             dataloaders_params=dataloaders_params,
             models_hyperparams=models_hyperparams, lr_scheduler=get_cosine_with_hard_restarts_schedule_with_warmup,

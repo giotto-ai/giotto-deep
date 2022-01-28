@@ -87,6 +87,13 @@ class Pipeline:
         self.DEVICE = DEVICE
         self.check_has_trained = False
         self.registered_hook = None
+        # used in gradient clipping
+        self.clip = 5
+        # used by gridsearch:
+        self.run_name = None
+        self.val_loss_list_hparam = []
+        self.val_acc_list_hparam = []
+
         
     def _set_initial_model(self):
         """This private method is used to set
@@ -110,6 +117,7 @@ class Pipeline:
                 xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
             else:
                 try:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
                     self.optimizer.step()
                 except (MissingClosureError, ):
                     self.optimizer.step(closure)
@@ -121,6 +129,7 @@ class Pipeline:
                     xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
                 else:
                     try:
+                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
                         self.optimizer.step()
                     except (MissingClosureError, ):
                         self.optimizer.step(closure)
@@ -160,6 +169,7 @@ class Pipeline:
                 self.writer.add_scalar(writer_tag + "/loss/train",
                                        loss.item(),
                                        self.train_epoch*len(dl_tr) + batch)
+
                 try:
                     top2_pred = torch.topk(pred, 2, -1).values
                     self.writer.add_histogram(writer_tag + "/predictions/train",
@@ -245,7 +255,15 @@ class Pipeline:
         correct /= size
         val_loss /= len(dl_val)
         try:
-            self.writer.add_scalar(writer_tag + "/accuracy/validation", correct, self.val_epoch)
+            if not self.run_name:
+                self.writer.add_scalar(writer_tag + "/accuracy/validation",
+                                       correct, self.val_epoch)
+            else:
+                self.val_acc_list_hparam.append([correct,
+                                                 self.val_epoch])
+                self.val_loss_list_hparam.append([val_loss,
+                                                 self.val_epoch])
+
             try:
                 top2_pred = torch.topk(torch.vstack(pred), 2, -1).values
                 self.writer.add_histogram(writer_tag + "/predictions/validation",

@@ -1,7 +1,9 @@
 import torch
 import optuna
+import os
 import pandas as pd
 import numpy as np
+import time
 from gdeep.utility import _are_compatible
 from optuna.trial import TrialState
 from gdeep.pipeline import Pipeline
@@ -16,6 +18,8 @@ import warnings
 from itertools import chain, combinations
 from optuna.pruners import MedianPruner
 from ..utility import save_model_and_optimizer
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.summary import hparams
 import random
 import string
 
@@ -24,6 +28,65 @@ if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
+
+
+class GiottoSummaryWriter(SummaryWriter):
+    def add_hparams(self, hparam_dict, metric_dict,
+                    hparam_domain_discrete=None, run_name=None,
+                    scalars_lists=None):
+        """Add a set of hyperparameters to be compared in TensorBoard.
+
+        Args:
+            hparam_dict (dict):
+                Each key-value pair in the dictionary is the
+                name of the hyper parameter and it's corresponding value.
+                The type of the value can be one of `bool`, `string`, `float`,
+                `int`, or `None`.
+            metric_dict (dict):
+                Each key-value pair in the dictionary is the
+                name of the metric and it's corresponding value. Note that the key used
+                here should be unique in the tensorboard record. Otherwise the value
+                you added by ``add_scalar`` will be displayed in hparam plugin. In most
+                cases, this is unwanted.
+            hparam_domain_discrete:
+                (Optional[Dict[str, List[Any]]]) A dictionary that
+                contains names of the hyperparameters and all discrete values they can hold
+            run_name (str):
+                Name of the run, to be included as part of the logdir.
+                If unspecified, will use current timestamp.
+            scalars_lists (list):
+                The lists for the loss and accuracy plots.
+                This is a list with two lists
+                (one for accuracy and one for the loss).
+                Each one of the inner lists contain the
+                pairs (metric_value, epoch).
+
+        Examples::
+
+            from torch.utils.tensorboard import SummaryWriter
+            with SummaryWriter() as w:
+                for i in range(5):
+                    w.add_hparams({'lr': 0.1*i, 'bsize': i},
+                                  {'hparam/accuracy': 10*i, 'hparam/loss': 10*i})
+
+        """
+        torch._C._log_api_usage_once("tensorboard.logging.add_hparams")
+        if type(hparam_dict) is not dict or type(metric_dict) is not dict:
+            raise TypeError('hparam_dict and metric_dict should be dictionary.')
+        exp, ssi, sei = hparams(hparam_dict, metric_dict, hparam_domain_discrete)
+        # print(scalars_lists, "scalar lists!!!!")
+        if not run_name:
+            run_name = str(time.time())
+        logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
+        with SummaryWriter(log_dir=logdir) as w_hp:
+            w_hp.file_writer.add_summary(exp)
+            w_hp.file_writer.add_summary(ssi)
+            w_hp.file_writer.add_summary(sei)
+            if isinstance(scalars_lists, list):
+                for v, t in scalars_lists[0]:
+                    w_hp.add_scalar("loss", v, t)
+                for v, t in scalars_lists[1]:
+                    w_hp.add_scalar("accuracy", v, t)
 
 
 class Gridsearch(Pipeline):
@@ -95,6 +158,7 @@ class Gridsearch(Pipeline):
                                        n_warmup_steps=0,
                                        interval_steps=1,
                                        n_min_trials=1)
+        self.scalars_dict = dict()
 
     def _initialise_new_model(self, models_hyperparam):
         """private method to find the maximal compatible set
@@ -202,12 +266,14 @@ class Gridsearch(Pipeline):
         self.models_hyperparam = Gridsearch._suggest_params(trial, models_hyperparams)
         self.schedulers_param = Gridsearch._suggest_params(trial, schedulers_params)
         # tag for storing the results
-        writer_tag += "/" + str(self.optimizers_param) + \
-            str(self.dataloaders_param) + str(self.models_hyperparam) + \
-            str(self.schedulers_param)
+        writer_tag += "/" + str(trial.datetime_start) # str(self.optimizers_param) + \
+            #str(self.dataloaders_param) + str(self.models_hyperparam) + \
+            #str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
         self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        # set the run_name
+        self.pipe.run_name = str(trial.datetime_start)
         loss, accuracy = self.pipe.train(optimizer, n_epochs,
                                          cross_validation,
                                          self.optimizers_param,
@@ -223,6 +289,10 @@ class Gridsearch(Pipeline):
                                          n_accumulated_grads,
                                          writer_tag
                                          )
+        self.scalars_dict[str(trial.datetime_start)] = [self.pipe.val_loss_list_hparam,
+                                                        self.pipe.val_acc_list_hparam]
+        # release the run_name
+        self.pipe.run_name = None
         best_loss = self.pipe.best_val_loss
         best_accuracy = self.pipe.best_val_acc
         self.writer.flush()
@@ -410,7 +480,7 @@ class Gridsearch(Pipeline):
 
         try:
             self._results(model_name = model["name"],
-                     dataset_name = dataloaders["name"])
+                          dataset_name = dataloaders["name"])
             save_model_and_optimizer(self.pipe.model,
                                      model["name"] +
                                      str(self.optimizers_param) +
@@ -421,7 +491,7 @@ class Gridsearch(Pipeline):
         except TypeError:
             try: 
                 self._results(model_name = self.pipe.model.__class__.__name__,
-                     dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__)
+                              dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__)
                 save_model_and_optimizer(self.pipe.model,
                                          optimizer=self.pipe.optimizer)
             except AttributeError:
@@ -456,6 +526,8 @@ class Gridsearch(Pipeline):
         the gridsearch. It also saves the figures in the writer.
 
         Args:
+            run_name (str):
+                name of the tensorboard run
             model_name (str):
                 the model name for the
                 tensorboard gridsearch table
@@ -489,11 +561,11 @@ class Gridsearch(Pipeline):
             for val in tria.params.values():
                 temp_list.append(val)
             if self.search_metric == "loss":
-                self.list_res.append([model_name, dataset_name] + temp_list + [tria.value, -1])
+                self.list_res.append([str(tria.datetime_start), model_name, dataset_name] + temp_list + [tria.value, -1])
             else:
-                self.list_res.append([model_name, dataset_name] + temp_list + [np.inf, tria.value])
+                self.list_res.append([str(tria.datetime_start), model_name, dataset_name] + temp_list + [np.inf, tria.value])
 
-        self.df_res = pd.DataFrame(self.list_res, columns=["model", "dataset"] +
+        self.df_res = pd.DataFrame(self.list_res, columns=["run_name", "model", "dataset"] +
                               list(trial_best.params.keys())+["loss", "accuracy"])
         # compute hyperparams correlaton
         corr, labels = self._correlation_of_hyperparams()
@@ -540,10 +612,15 @@ class Gridsearch(Pipeline):
     def _store_to_tensorboard(self):
         """Store the hyperparameters to tensorboard"""
         for i in range(len(self.df_res)):
-            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][:-2]).items()}
-            self.writer.add_hparams(dictio,
-                                    {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
-                                     self.df_res.columns[-1]: self.df_res.iloc[i][-1]})
+            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][1:-2]).items()}
+            try:
+                self.writer.add_hparams(dictio,
+                                        {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
+                                         self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
+                                        run_name=self.df_res.iloc[i][0],
+                                        scalars_lists=self.scalars_dict[self.df_res.iloc[i][0]])
+            except KeyError:  # this happens when trials have been pruned
+                pass
         
         self.writer.flush()
         
