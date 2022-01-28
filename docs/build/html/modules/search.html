@@ -154,6 +154,53 @@ considered only if a positive integer</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="gdeep.search.GiottoSummaryWriter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">GiottoSummaryWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purge_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_queue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flush_secs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">120</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.GiottoSummaryWriter" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.GiottoSummaryWriter.add_hparams">
+<span class="sig-name descname"><span class="pre">add_hparams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hparam_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hparam_domain_discrete</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalars_lists</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.GiottoSummaryWriter.add_hparams" title="Permalink to this definition"></a></dt>
+<dd><p>Add a set of hyperparameters to be compared in TensorBoard.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>hparam_dict (dict):</dt><dd><p>Each key-value pair in the dictionary is the
+name of the hyper parameter and it’s corresponding value.
+The type of the value can be one of <cite>bool</cite>, <cite>string</cite>, <cite>float</cite>,
+<cite>int</cite>, or <cite>None</cite>.</p>
+</dd>
+<dt>metric_dict (dict):</dt><dd><p>Each key-value pair in the dictionary is the
+name of the metric and it’s corresponding value. Note that the key used
+here should be unique in the tensorboard record. Otherwise the value
+you added by <code class="docutils literal notranslate"><span class="pre">add_scalar</span></code> will be displayed in hparam plugin. In most
+cases, this is unwanted.</p>
+</dd>
+<dt>hparam_domain_discrete:</dt><dd><p>(Optional[Dict[str, List[Any]]]) A dictionary that
+contains names of the hyperparameters and all discrete values they can hold</p>
+</dd>
+<dt>run_name (str):</dt><dd><p>Name of the run, to be included as part of the logdir.
+If unspecified, will use current timestamp.</p>
+</dd>
+<dt>scalars_lists (list):</dt><dd><p>The lists for the loss and accuracy plots.
+This is a list with two lists
+(one for accuracy and one for the loss).
+Each one of the inner lists contain the
+pairs (metric_value, epoch).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch.utils.tensorboard</span> <span class="kn">import</span> <span class="n">SummaryWriter</span>
+<span class="k">with</span> <span class="n">SummaryWriter</span><span class="p">()</span> <span class="k">as</span> <span class="n">w</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">add_hparams</span><span class="p">({</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;bsize&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s1">&#39;hparam/accuracy&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;hparam/loss&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="o">*</span><span class="n">i</span><span class="p">})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="gdeep.search.Gridsearch">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">Gridsearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_trials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_not_last</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pruner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.Gridsearch" title="Permalink to this definition"></a></dt>
 <dd><p>This is the generic class that allows

@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import os
 from plotly.io import write_image
+#import io
 import torch
 
 
@@ -18,7 +19,10 @@ def plotly2tensor(fig) -> torch.Tensor:
             the tensor discretisation of the
             figure
     """
-    write_image(fig, "deleteme.jpeg", format="jpeg")
+    try:
+        write_image(fig, "deleteme.jpeg", format="jpeg", engine="orca")
+    except ValueError:
+        write_image(fig, "deleteme.jpeg", format="jpeg")
     img = Image.open("deleteme.jpeg")
     arr = np.asarray(img).copy()
     os.remove("deleteme.jpeg")
