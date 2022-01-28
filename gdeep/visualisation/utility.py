@@ -20,9 +20,8 @@ def plotly2tensor(fig) -> torch.Tensor:
             figure
     """
     try:
-        import orca
         write_image(fig, "deleteme.jpeg", format="jpeg", engine="orca")
-    except ModuleNotFoundError:
+    except ValueError:
         write_image(fig, "deleteme.jpeg", format="jpeg")
     img = Image.open("deleteme.jpeg")
     arr = np.asarray(img).copy()
