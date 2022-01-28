@@ -87,7 +87,7 @@ graph_ds_train, graph_ds_val = torch.utils.data.random_split(
                                                     graph_ds,
                                                     [train_size,
                                                     total_size - train_size],
-                                                    generator=torch.Generator().manual_seed(16))
+                                                    generator=torch.Generator().manual_seed(config_data.data_split_seed))
 
 
 # Define data loaders
@@ -126,7 +126,8 @@ loss_fn = nn.CrossEntropyLoss()
 # Initialize the Tensorflow writer
 writer = SummaryWriter("runs/" + config_model.implementation +
                        "_" + config_data.dataset_name +
-                       "_" + "small hyperparameter_search")
+                       "_" + "pytorch_self_attention_skip" +
+                       "_" + "_hyperparameter_search")
 
 # initialise pipeline class
 pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
@@ -156,25 +157,30 @@ pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
 # Hyperparameter search
 
 pruner = NopPruner()
-search = Gridsearch(pipe, search_metric="accuracy", n_trials=2, best_not_last=True, pruner=pruner)
+search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
 
 #dictionaries of hyperparameters
 optimizers_params = {"lr": [1e-3, 1e-0, None, True],
                       "weight_decay": [0.0001, 0.2, None, True] }
-dataloaders_params = {"batch_size": [8, 16, 2]}
-models_hyperparams = {"n_layer_enc": [2, 4], #(int) - The number of layers in the encoder
-                      "n_layer_dec": [1, 5], #(int) - The number of layers in the encoder
+dataloaders_params = {"batch_size": [8, 32, 2]}
+models_hyperparams = {"n_layer_enc": [2, 4, 1], #(int) - The number of layers in the encoder
+                      "n_layer_dec": [1, 5, 1], #(int) - The number of layers in the encoder
                       "num_heads": ["2", "4", "8"], #(int) - The number of heads in the encoder
-                      "hidden_dim": ["16", "32", "64"], #(int) - The number of hidden dimensions in the encoder
-                      "dropout_enc": [0.0, 0.5, 0.05], 
+                      "hidden_dim": ["16", "32", "64", "96", "128"], #(int) - The number of hidden dimensions in the encoder
+                      "dropout_enc": [0.0, 0.5, 0.05],
+                      "dropout_dec": [0.0, 0.5, 0.05], 
                       "layer_norm": ["True", "False"],
+                      "pre_layer_norm": ["True", "False"],
                       "bias_attention": ["True", "False"],
                       "input_dim": [config_model["input_dim"]],
+                      "pooling_type": ["pytorch_self_attention_skip"],
+                      "layer_norm_pooling": ["True", "False"],
+                      "activation": ["gelu",]
                       }
 
 schedulers_params = {"num_warmup_steps": [int(0.02 * config_model.num_epochs)],  #(int) – The number of steps for the warmup phase.
                     "num_training_steps": [config_model.num_epochs], #(int) – The total number of training steps.
-                    "num_cycles": [1, 3, 1]} #(int) – The number of restart cycles
+                    "num_cycles": [1]} #(int) – The number of restart cycles
 
 # starting the gridsearch
 search.start((AdamW,), n_epochs=config_model.num_epochs, cross_validation=False,
@@ -182,5 +188,14 @@ search.start((AdamW,), n_epochs=config_model.num_epochs, cross_validation=False,
             dataloaders_params=dataloaders_params,
             models_hyperparams=models_hyperparams, lr_scheduler=get_cosine_with_hard_restarts_schedule_with_warmup,
             schedulers_params=schedulers_params)
+
+# %%
+# from gdeep.visualisation import plotly2tensor
+# import plotly.express as px
+# df = px.data.iris()
+
+# fig = px.scatter(
+#     df, x="sepal_width", y="sepal_length", color="species"
+# )
 
 # %%
