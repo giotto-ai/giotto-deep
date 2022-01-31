@@ -137,7 +137,7 @@ loss_fn = nn.CrossEntropyLoss()
 writer = GiottoSummaryWriter("runs/" + config_model.implementation +
                        "_" + config_data.dataset_name +
                        "_" + config_model.attention_type +
-                       "_" + "_hyperparameter_search_giotto")
+                       "_" + "hyperparameter_search_giotto")
 
 # initialize pipeline object
 pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
