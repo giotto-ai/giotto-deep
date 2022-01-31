@@ -1,0 +1,29 @@
+{
+    "dataloaders_params": {
+        "batch_size": [8, 32, 2]
+    },
+    "models_hyperparams": {
+        "activation": ["gelu"],
+        "bias_attention": [ "True", "False"],
+        "dropout_dec": [0.0, 0.5, 0.05],
+        "dropout_enc": [0.0, 0.5, 0.05],
+        "hidden_dim": ["16", "32", "64", "96", "128"],
+        "input_dim": [6],
+        "layer_norm": ["True", "False"],
+        "layer_norm_pooling": ["True", "False"],
+        "n_layer_dec": [1, 5, 1],
+        "n_layer_enc": [2, 4, 1],
+        "num_heads": ["2", "4", "8"],
+        "pooling_type": ["pytorch_self_attention_skip"],
+        "pre_layer_norm": ["True", "False"]
+    },
+    "optimizers_params": {
+        "lr": [0.001, 1.0, null, true],
+        "weight_decay": [0.0001, 0.2, null, true]
+    },
+    "schedulers_params": {
+        "num_cycles": [1],
+        "num_training_steps": [300],
+        "num_warmup_steps": [6]
+    }
+}

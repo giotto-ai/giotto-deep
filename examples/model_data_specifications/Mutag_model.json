@@ -23,5 +23,6 @@
     "pre_layer_norm": false,
     "simplified_layer_norm": false,
     "warmup": 0.0,
-    "weight_decay": 0.0
+    "weight_decay": 0.0,
+    "gradient_clipping": 0.5
 }

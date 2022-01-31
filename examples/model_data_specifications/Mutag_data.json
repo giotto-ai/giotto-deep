@@ -8,5 +8,5 @@
     "num_homology_types": 4,
     "num_jobs": 0,
     "train_percentage": 0.8,
-    "data_split_seed": 23
+    "data_split_seed": 24
 }

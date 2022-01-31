@@ -39,7 +39,8 @@ from torch.optim import SGD, Adam, RMSprop, AdamW  # type: ignore
 from torch.utils.data import TensorDataset, DataLoader
 
 # Import Tensorflow writer
-from torch.utils.tensorboard import GiottoSummaryWriter  # type: ignore
+#from torch.utils.tensorboard import SummaryWriter  # type: ignore
+from gdeep.search import GiottoSummaryWriter
 
 from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup, get_constant_schedule_with_warmup, get_cosine_schedule_with_warmup
 
@@ -64,6 +65,16 @@ with open(os.path.join(model_data_file, 'Mutag_data.json')) as config_data_file:
 
 with open(os.path.join(model_data_file, 'Mutag_model.json')) as config_data_file:
     config_model = DotMap(json.load(config_data_file))
+    
+
+with open(os.path.join(model_data_file, 'Mutag_hyperparameter_space.json')) as config_data_file:
+    hyperparameters_dicts = DotMap(json.load(config_data_file))
+    dataloaders_params = hyperparameters_dicts.dataloaders_params
+    models_hyperparams = hyperparameters_dicts.models_hyperparams
+    optimizers_params = hyperparameters_dicts.optimizers_params
+    schedulers_params = hyperparameters_dicts.schedulers_params
+    
+    
 
 # %%
 x_pds, _, y = load_data_as_tensor(config_data.dataset_name)
@@ -113,24 +124,29 @@ print_class_balance(graph_dl_val, 'validation')
 
 # %%
 # Define and initialize the model
-
 model = Persformer.from_config(config_model, config_data)
 
 
 # %%
 # Do training and validation
 
-# initialise loss
+# initialize loss
 loss_fn = nn.CrossEntropyLoss()
 
 # Initialize the Tensorflow writer
 writer = GiottoSummaryWriter("runs/" + config_model.implementation +
                        "_" + config_data.dataset_name +
-                       "_" + "pytorch_self_attention_skip" +
+                       "_" + config_model.attention_type +
                        "_" + "_hyperparameter_search_giotto")
 
-# initialise pipeline class
+# initialize pipeline object
 pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
+
+# Use gradient clipping
+if config_model.gradient_clipping == None:
+    pipe.clip = 1.0  # use default clipping value 1.0
+else:
+    pipe.clip = config_model.gradient_clipping
 # %%
 
 
@@ -160,28 +176,28 @@ pruner = NopPruner()
 search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
 
 #dictionaries of hyperparameters
-optimizers_params = {"lr": [1e-3, 1e-0, None, True],
-                      "weight_decay": [0.0001, 0.2, None, True] }
-dataloaders_params = {"batch_size": [8, 32, 2]}
-models_hyperparams = {"n_layer_enc": [2, 4, 1], #(int) - The number of layers in the encoder
-                      "n_layer_dec": [1, 5, 1], #(int) - The number of layers in the encoder
-                      "num_heads": ["2", "4", "8"], #(int) - The number of heads in the encoder
-                      "hidden_dim": ["16", "32", "64", "96", "128"], #(int) - The number of hidden dimensions in the encoder
-                      "dropout_enc": [0.0, 0.5, 0.05],
-                      "dropout_dec": [0.0, 0.5, 0.05], 
-                      "layer_norm": ["True", "False"],
-                      "pre_layer_norm": ["True", "False"],
-                      "bias_attention": ["True", "False"],
-                      "input_dim": [config_model["input_dim"]],
-                      "pooling_type": ["pytorch_self_attention_skip"],
-                      "layer_norm_pooling": ["True", "False"],
-                      "activation": ["gelu",]
-                      }
+# optimizers_params = {"lr": [1e-3, 1e-0, None, True],
+#                       "weight_decay": [0.0001, 0.2, None, True] }
+# dataloaders_params = {"batch_size": [8, 32, 2]}
+# models_hyperparams = {"n_layer_enc": [2, 4, 1], #(int) - The number of layers in the encoder
+#                       "n_layer_dec": [1, 5, 1], #(int) - The number of layers in the encoder
+#                       "num_heads": ["2", "4", "8"], #(int) - The number of heads in the encoder
+#                       "hidden_dim": ["16", "32", "64", "96", "128"], #(int) - The number of hidden dimensions in the encoder
+#                       "dropout_enc": [0.0, 0.5, 0.05],
+#                       "dropout_dec": [0.0, 0.5, 0.05], 
+#                       "layer_norm": ["True", "False"],
+#                       "pre_layer_norm": ["True", "False"],
+#                       "bias_attention": ["True", "False"],
+#                       "input_dim": [config_model["input_dim"]],
+#                       "pooling_type": ["pytorch_self_attention_skip"],
+#                       "layer_norm_pooling": ["True", "False"],
+#                       "activation": ["gelu",]
+#                       }
 
-schedulers_params = {"num_warmup_steps": [int(0.02 * config_model.num_epochs)],  #(int) – The number of steps for the warmup phase.
-                    "num_training_steps": [config_model.num_epochs], #(int) – The total number of training steps.
-                    "num_cycles": [1]} #(int) – The number of restart cycles
-
+# schedulers_params = {"num_warmup_steps": [int(0.02 * config_model.num_epochs)],  #(int) – The number of steps for the warmup phase.
+#                     "num_training_steps": [config_model.num_epochs], #(int) – The total number of training steps.
+#                     "num_cycles": [1]} #(int) – The number of restart cycles
+#%%
 # starting the gridsearch
 search.start((eval(config_model.optimizer),), n_epochs=config_model.num_epochs, cross_validation=False,
             optimizers_params=optimizers_params,
