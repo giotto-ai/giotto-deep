@@ -173,9 +173,13 @@ class Pipeline:
 
                 try:
                     top2_pred = torch.topk(pred, 2, -1).values
-                    self.writer.add_histogram(writer_tag + "/predictions/train",
-                                              torch.abs(torch.diff(top2_pred, dim=-1)),
-                                              self.train_epoch*steps + batch)
+                    try:
+                        self.writer.add_histogram(writer_tag + "/predictions/train",
+                                                  torch.abs(torch.diff(top2_pred, dim=-1)),
+                                                  self.train_epoch*steps + batch)
+                    except ValueError:
+                        warnings.warn(f"The histogram is empty, most likely because your loss"
+                                      f" is exploding. Try use gradient clipping.")
                 except RuntimeError:
                     pass
             except AttributeError:
@@ -267,9 +271,13 @@ class Pipeline:
 
             try:
                 top2_pred = torch.topk(torch.vstack(pred), 2, -1).values
-                self.writer.add_histogram(writer_tag + "/predictions/validation",
-                                          torch.abs(torch.diff(top2_pred, dim=-1)),
-                                          self.val_epoch)
+                try:
+                    self.writer.add_histogram(writer_tag + "/predictions/validation",
+                                              torch.abs(torch.diff(top2_pred, dim=-1)),
+                                              self.val_epoch)
+                except ValueError:
+                    warnings.warn(f"The histogram is empty, most likely because your loss"
+                                  f" is exploding. Try use gradient clipping.")
             except RuntimeError:
                 pass
         except AttributeError:
@@ -669,14 +677,22 @@ class Pipeline:
                 try:
                     lista = me.get_layers_param()
                     for k, item in lista.items():
-                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
-                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
-                                                  torch.log(torch.abs(item)+1e-8),t)
+                        try:
+                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
+                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                      torch.log(torch.abs(item)+1e-8),t)
+                        except ValueError:
+                            warnings.warn(f"The histogram is empty, most likely because your loss"
+                                          f" is exploding. Try use gradient clipping.")
                     lista_grad = me.get_layers_grads()
                     for k, item in zip(lista.keys(),lista_grad):
-                        self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
-                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
-                                                  torch.log(torch.abs(item)+1e-8),t)
+                        try:
+                            self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
+                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                      torch.log(torch.abs(item)+1e-8),t)
+                        except ValueError:
+                            warnings.warn(f"The histogram is empty, most likely because your loss"
+                                          f" is exploding. Try use gradient clipping.")
                     self.writer.flush()
 
                 except AttributeError:
