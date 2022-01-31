@@ -22,6 +22,7 @@ examples/models
 examples/runs/*
 examples/data/*
 examples/.*
+!examples/model_data_specifications
 
 # Html files
 examples/*.html
@@ -81,5 +82,5 @@ examples/curvatures.npy
 examples/diagrams_curvature.npy
 examples/diagrams_5000_1000_0_1.npy
 
-# virtual enviroment
+# virtual environment
 giotto-deep/*
