@@ -91,36 +91,44 @@ print('class balance: {:.2f}'.format((y.sum() / y.shape[0]).item()))
 # create the datasets
 graph_ds = TensorDataset(x_pds, y)
 
-# Split the dataset into training and validation
-total_size = x_pds.shape[0]
-train_size = int(total_size * config_data.train_percentage)
-graph_ds_train, graph_ds_val = torch.utils.data.random_split(
-                                                    graph_ds,
-                                                    [train_size,
-                                                    total_size - train_size],
-                                                    generator=torch.Generator().manual_seed(config_data.data_split_seed))
+# Either use fixed train and validation split or use cross validation
+if hyperparameters_dicts.cross_validation:
+    graph_dl = DataLoader(
+                        graph_ds,
+                        num_workers=config_data.num_jobs,
+                        batch_size=config_data.batch_size_train,
+                        shuffle=True
+                        )
+else:
+    # Split the dataset into training and validation
+    total_size = x_pds.shape[0]
+    train_size = int(total_size * config_data.train_percentage)
+    graph_ds_train, graph_ds_val = torch.utils.data.random_split(
+                                                        graph_ds,
+                                                        [train_size,
+                                                        total_size - train_size],
+                                                        generator=torch.Generator().manual_seed(config_data.data_split_seed))
 
 
-# Define data loaders
+    # Define data loaders
+    graph_dl_train = DataLoader(
+        graph_ds_train,
+        num_workers=config_data.num_jobs,
+        batch_size=config_data.batch_size_train,
+        shuffle=True
+        )
 
-graph_dl_train = DataLoader(
-    graph_ds_train,
-    num_workers=config_data.num_jobs,
-    batch_size=config_data.batch_size_train,
-    shuffle=True
+    graph_dl_val = DataLoader(
+        graph_ds_val,
+        num_workers=config_data.num_jobs,
+        batch_size=config_data.batch_size_val,
+        shuffle=False
     )
 
-graph_dl_val = DataLoader(
-    graph_ds_val,
-    num_workers=config_data.num_jobs,
-    batch_size=config_data.batch_size_val,
-    shuffle=False
-)
-
-# Compute balance of train and validation datasets
-    
-print_class_balance(graph_dl_train, 'train')
-print_class_balance(graph_dl_val, 'validation')
+    # Compute balance of train and validation datasets
+        
+    print_class_balance(graph_dl_train, 'train')
+    print_class_balance(graph_dl_val, 'validation')
 
 # %%
 # Define and initialize the model
@@ -134,13 +142,19 @@ model = Persformer.from_config(config_model, config_data)
 loss_fn = nn.CrossEntropyLoss()
 
 # Initialize the Tensorflow writer
-writer = GiottoSummaryWriter("runs/" + config_model.implementation +
-                       "_" + config_data.dataset_name +
-                       "_" + config_model.attention_type +
-                       "_" + "hyperparameter_search_giotto")
+writer = GiottoSummaryWriter(
+            os.path.join("runs",
+                        config_model.implementation +
+                        "_" + config_data.dataset_name +
+                        "_" + config_model.attention_type +
+                        "_" + "hyperparameter_search_giotto")
+            )
 
 # initialize pipeline object
-pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
+if hyperparameters_dicts.cross_validation:
+    pipe = Pipeline(model, [graph_dl, None], loss_fn, writer)
+else:
+    pipe = Pipeline(model, [graph_dl_train, graph_dl_val, None], loss_fn, writer)
 
 # Use gradient clipping
 if config_model.gradient_clipping == None:
@@ -173,7 +187,11 @@ else:
 # Hyperparameter search
 
 pruner = NopPruner()
-search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=True, pruner=pruner)
+search = Gridsearch(pipe,
+                    search_metric="accuracy",
+                    n_trials=hyperparameters_dicts.n_trials,
+                    best_not_last=True,
+                    pruner=pruner)
 
 #dictionaries of hyperparameters
 # optimizers_params = {"lr": [1e-3, 1e-0, None, True],
@@ -199,19 +217,25 @@ search = Gridsearch(pipe, search_metric="accuracy", n_trials=50, best_not_last=T
 #                     "num_cycles": [1]} #(int) – The number of restart cycles
 #%%
 # starting the gridsearch
-search.start((eval(config_model.optimizer),), n_epochs=config_model.num_epochs, cross_validation=False,
+search.start((eval(config_model.optimizer),),
+            n_epochs=schedulers_params.num_training_steps[0],
+            cross_validation=hyperparameters_dicts.cross_validation,
+            k_folds=hyperparameters_dicts.k_folds,
             optimizers_params=optimizers_params,
             dataloaders_params=dataloaders_params,
             models_hyperparams=models_hyperparams, lr_scheduler=get_cosine_with_hard_restarts_schedule_with_warmup,
             schedulers_params=schedulers_params)
 
 # %%
-# from gdeep.visualisation import plotly2tensor
-# import plotly.express as px
-# df = px.data.iris()
+from gdeep.visualisation import plotly2tensor
+from plotly.io import write_image
+import plotly.express as px
+df = px.data.iris()
 
-# fig = px.scatter(
-#     df, x="sepal_width", y="sepal_length", color="species"
-# )
-
+fig = px.scatter(
+    df, x="sepal_width", y="sepal_length", color="species"
+)
+write_image(fig, "deleteme.jpeg", format="jpeg", engine="orca")
+fig.show()
+plotly2tensor(fig)
 # %%

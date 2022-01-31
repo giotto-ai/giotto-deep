@@ -23,7 +23,10 @@
     },
     "schedulers_params": {
         "num_cycles": [1],
-        "num_training_steps": [300],
+        "num_training_steps": [1],
         "num_warmup_steps": [6]
-    }
+    },
+    "n_trials": 2,
+    "cross_validation": true,
+    "k_folds": 5
 }
