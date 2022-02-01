@@ -561,9 +561,11 @@ class Gridsearch(Pipeline):
             for val in tria.params.values():
                 temp_list.append(val)
             if self.search_metric == "loss":
-                self.list_res.append([str(tria.datetime_start), model_name, dataset_name] + temp_list + [tria.value, -1])
+                self.list_res.append([str(tria.datetime_start).replace(":","-"), model_name,
+                                      dataset_name] + temp_list + [tria.value, -1])
             else:
-                self.list_res.append([str(tria.datetime_start), model_name, dataset_name] + temp_list + [np.inf, tria.value])
+                self.list_res.append([str(tria.datetime_start).replace(":","-"), model_name,
+                                      dataset_name] + temp_list + [np.inf, tria.value])
 
         self.df_res = pd.DataFrame(self.list_res, columns=["run_name", "model", "dataset"] +
                               list(trial_best.params.keys())+["loss", "accuracy"])
