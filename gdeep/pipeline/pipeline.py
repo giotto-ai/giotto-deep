@@ -582,13 +582,13 @@ class Pipeline:
                     valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                        dl_val, lr_scheduler, self.scheduler,
                                                        prof, check_optuna, search_metric,
-                                                       trial, writer_tag + "/fold = " + str(fold+1))
+                                                       trial, fold, writer_tag + "/fold = " + str(fold+1))
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, optimizers_param, lr_scheduler,
                                                        self.scheduler,
                                                        prof, check_optuna, search_metric,
-                                                       trial)
+                                                       trial, fold)
 
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
@@ -606,13 +606,13 @@ class Pipeline:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, self.scheduler,
                                                    prof, check_optuna, search_metric,
-                                                   trial, writer_tag)
+                                                   trial, 0, writer_tag)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, optimizers_param, lr_scheduler,
                                                    self.scheduler,
                                                    prof, check_optuna, search_metric,
-                                                   trial)
+                                                   trial, 0)
         try:
             self.writer.flush()
         except AttributeError:
@@ -626,7 +626,7 @@ class Pipeline:
     def _training_loops(self, n_epochs, dl_tr,
                         dl_val, lr_scheduler, scheduler,
                         prof, check_optuna, search_metric,
-                        trial, writer_tag=""):
+                        trial, fold=0, writer_tag=""):
         """private method to run the trainign loops
         
         Args:
@@ -658,6 +658,8 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
+            fold (int, default 0):
+                the fold of a CV
             writer_tag (str):
                 the tensorboard writer tag
 
@@ -707,9 +709,9 @@ class Pipeline:
 
             if check_optuna:
                 if search_metric == "loss":
-                    trial.report(valloss, t)
+                    trial.report(valloss, t + fold*n_epochs)
                 else:
-                    trial.report(valacc, t)
+                    trial.report(valacc, t + fold*n_epochs)
                 # Handle pruning based on the intermediate value.
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
@@ -720,7 +722,7 @@ class Pipeline:
                                     dl_val_old, optimizers_param,
                                     lr_scheduler, scheduler,
                                     prof, check_optuna, search_metric,
-                                    trial):
+                                    trial, fold=0):
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
         Note: ``cross_validation`` parameter as well as
@@ -749,6 +751,8 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
+            fold (int, default 0):
+                the fold of the CV
 
         Returns:
             (float, float):
@@ -882,9 +886,9 @@ class Pipeline:
 
                 if check_optuna:
                     if search_metric == "loss":
-                        trial.report(loss, t)
+                        trial.report(loss, t + fold*n_epochs)
                     else:
-                        trial.report(correct, t)
+                        trial.report(correct, t + fold*n_epochs)
                     # Handle pruning based on the intermediate value.
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()

@@ -71,10 +71,9 @@ class GiottoSummaryWriter(SummaryWriter):
 
         """
         torch._C._log_api_usage_once("tensorboard.logging.add_hparams")
-        if type(hparam_dict) is not dict or type(metric_dict) is not dict:
+        if (not isinstance(hparam_dict, dict)) or (not isinstance(metric_dict, dict)):
             raise TypeError('hparam_dict and metric_dict should be dictionary.')
         exp, ssi, sei = hparams(hparam_dict, metric_dict, hparam_domain_discrete)
-        # print(scalars_lists, "scalar lists!!!!")
         if not run_name:
             run_name = str(time.time()).replace(":","-")
         logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
@@ -82,7 +81,7 @@ class GiottoSummaryWriter(SummaryWriter):
             w_hp.file_writer.add_summary(exp)
             w_hp.file_writer.add_summary(ssi)
             w_hp.file_writer.add_summary(sei)
-            if isinstance(scalars_lists, list):
+            if isinstance(scalars_lists, list) or isinstance(scalars_lists, tuple):
                 for v, t in scalars_lists[0]:
                     w_hp.add_scalar("loss", v, t)
                 for v, t in scalars_lists[1]:
@@ -256,6 +255,9 @@ class Gridsearch(Pipeline):
                 on tensorboard
         """
 
+        # for proper storing of data
+        self._cross_validation = cross_validation
+        self._k_folds = k_folds
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
@@ -289,7 +291,7 @@ class Gridsearch(Pipeline):
                                          n_accumulated_grads,
                                          writer_tag
                                          )
-        self.scalars_dict[str(trial.datetime_start)] = [self.pipe.val_loss_list_hparam,
+        self.scalars_dict[str(trial.datetime_start).replace(":","-")] = [self.pipe.val_loss_list_hparam,
                                                         self.pipe.val_acc_list_hparam]
         # release the run_name
         self.pipe.run_name = None
@@ -422,7 +424,6 @@ class Gridsearch(Pipeline):
                                 store_grad_layer_hist,
                                 n_accumulated_grads,
                                 writer_tag="")
-
         self._store_to_tensorboard()
 
 
@@ -479,8 +480,8 @@ class Gridsearch(Pipeline):
                             timeout=None)
 
         try:
-            self._results(model_name = model["name"],
-                          dataset_name = dataloaders["name"])
+            self._results(model_name=model["name"],
+                          dataset_name=dataloaders["name"])
             save_model_and_optimizer(self.pipe.model,
                                      model["name"] +
                                      str(self.optimizers_param) +
@@ -489,9 +490,9 @@ class Gridsearch(Pipeline):
                                      str(self.schedulers_param),
                                      self.pipe.optimizer)
         except TypeError:
-            try: 
-                self._results(model_name = self.pipe.model.__class__.__name__,
-                              dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__)
+            try:
+                self._results(model_name=self.pipe.model.__class__.__name__,
+                              dataset_name=self.pipe.dataloaders[0].dataset.__class__.__name__)
                 save_model_and_optimizer(self.pipe.model,
                                          optimizer=self.pipe.optimizer)
             except AttributeError:
@@ -613,6 +614,10 @@ class Gridsearch(Pipeline):
 
     def _store_to_tensorboard(self):
         """Store the hyperparameters to tensorboard"""
+        # average over the scalars_dict
+        scalars_dict_avg = dict()
+        for k, l1l2 in self.scalars_dict.items():
+            scalars_dict_avg[k] = self._refactor_scalars(l1l2)
         for i in range(len(self.df_res)):
             dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][1:-2]).items()}
             try:
@@ -620,13 +625,44 @@ class Gridsearch(Pipeline):
                                         {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
                                          self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
                                         run_name=self.df_res.iloc[i][0],
-                                        scalars_lists=self.scalars_dict[self.df_res.iloc[i][0]])
+                                        scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]])
             except KeyError:  # this happens when trials have been pruned
                 pass
         
         self.writer.flush()
         
         return self.df_res
+
+    def _refactor_scalars(self, two_lists):
+        """private method to transform a list with
+        many values for the same epoch into a dictionary
+        compatible with ``add_scalar`` averaged per epoch
+
+        Args:
+            two_lists (list):
+                two lists with pairs (value, time) with possible
+                repetition of the same time
+
+        Returns:
+            list of list:
+                compatible with ``add_scalar``
+        """
+
+        out0 = self._inner_refactor_scalars(two_lists[0])
+        out1 = self._inner_refactor_scalars(two_lists[1])
+        return out0, out1
+
+    def _inner_refactor_scalars(self, list_):
+        out = []
+        for t in range(len(list_)):
+            lis = [x[0] for x in list_ if x[1]==t]
+            value = sum(lis)
+            if len(lis) > 0:
+                if self._cross_validation:
+                    out.append([value/self._k_folds , t])
+                else:
+                    out.append([value, t])
+        return out
 
     @staticmethod
     def _suggest_params(trial, params):
