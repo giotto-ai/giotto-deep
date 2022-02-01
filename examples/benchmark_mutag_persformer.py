@@ -227,15 +227,15 @@ search.start((eval(config_model.optimizer),),
             schedulers_params=schedulers_params)
 
 # %%
-from gdeep.visualisation import plotly2tensor
-from plotly.io import write_image
-import plotly.express as px
-df = px.data.iris()
+# from gdeep.visualisation import plotly2tensor
+# from plotly.io import write_image
+# import plotly.express as px
+# df = px.data.iris()
 
-fig = px.scatter(
-    df, x="sepal_width", y="sepal_length", color="species"
-)
-write_image(fig, "deleteme.jpeg", format="jpeg", engine="orca")
-fig.show()
-plotly2tensor(fig)
+# fig = px.scatter(
+#     df, x="sepal_width", y="sepal_length", color="species"
+# )
+# write_image(fig, "deleteme.jpeg", format="jpeg", engine="orca")
+# fig.show()
+# plotly2tensor(fig)
 # %%
