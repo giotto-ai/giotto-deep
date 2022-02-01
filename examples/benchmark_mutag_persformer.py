@@ -146,7 +146,7 @@ writer = GiottoSummaryWriter(
             os.path.join("runs",
                         config_model.implementation +
                         "_" + config_data.dataset_name +
-                        "_" + config_model.attention_type +
+                        "_" + models_hyperparams.attention_type[0] +
                         "_" + "hyperparameter_search_giotto")
             )
 
