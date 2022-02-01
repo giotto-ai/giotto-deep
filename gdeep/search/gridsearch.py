@@ -64,7 +64,7 @@ class GiottoSummaryWriter(SummaryWriter):
         Examples::
 
             from torch.utils.tensorboard import SummaryWriter
-            with SummaryWriter() as w:
+            with GiottoSummaryWriter() as w:
                 for i in range(5):
                     w.add_hparams({'lr': 0.1*i, 'bsize': i},
                                   {'hparam/accuracy': 10*i, 'hparam/loss': 10*i})
@@ -76,7 +76,7 @@ class GiottoSummaryWriter(SummaryWriter):
         exp, ssi, sei = hparams(hparam_dict, metric_dict, hparam_domain_discrete)
         # print(scalars_lists, "scalar lists!!!!")
         if not run_name:
-            run_name = str(time.time())
+            run_name = str(time.time()).replace(":","-")
         logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
         with SummaryWriter(log_dir=logdir) as w_hp:
             w_hp.file_writer.add_summary(exp)
@@ -273,7 +273,7 @@ class Gridsearch(Pipeline):
         self.model = self._initialise_new_model(self.models_hyperparam)
         self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
         # set the run_name
-        self.pipe.run_name = str(trial.datetime_start)
+        self.pipe.run_name = str(trial.datetime_start).replace(":","-")
         loss, accuracy = self.pipe.train(optimizer, n_epochs,
                                          cross_validation,
                                          self.optimizers_param,
@@ -569,26 +569,26 @@ class Gridsearch(Pipeline):
                               list(trial_best.params.keys())+["loss", "accuracy"])
         # compute hyperparams correlaton
         corr, labels = self._correlation_of_hyperparams()
-        
-        try:
-            fig2 = px.imshow(corr,
-                    labels=dict(x="Parameters",
-                                y="Parameters",
-                                color="Correlation"),
-                    x=labels,
-                    y=labels
-                   )
-            fig2.update_xaxes(side="top")
-            fig2.show()
-            img2 = plotly2tensor(fig2)
+        if self.n_trials > 1:
+            try:
+                fig2 = px.imshow(corr,
+                        labels=dict(x="Parameters",
+                                    y="Parameters",
+                                    color="Correlation"),
+                        x=labels,
+                        y=labels
+                       )
+                fig2.update_xaxes(side="top")
+                fig2.show()
+                img2 = plotly2tensor(fig2)
 
-            self.writer.add_images("Gridsearch correlation: " +
-                                   model_name + " " + dataset_name,
-                                   img2, dataformats="HWC")
-            self.writer.flush()
-        except ValueError:
-            warnings.warn("Cannot send the picture of the correlation" +
-                          " matrix to tensorboard")
+                self.writer.add_images("Gridsearch correlation: " +
+                                       model_name + " " + dataset_name,
+                                       img2, dataformats="HWC")
+                self.writer.flush()
+            except ValueError:
+                warnings.warn("Cannot send the picture of the correlation" +
+                              " matrix to tensorboard")
         
         return self.df_res
 
