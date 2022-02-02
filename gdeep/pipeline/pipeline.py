@@ -287,9 +287,7 @@ class Pipeline:
             self.writer.flush()
         except AttributeError:
             pass
-        # store the best results
-        self.best_val_acc = max(self.best_val_acc,100*correct)
-        self.best_val_loss = min(self.best_val_loss,val_loss)
+
         return val_loss, 100*correct
 
     @staticmethod
@@ -580,22 +578,25 @@ class Pipeline:
                 # the training and validation loop
                 if parallel_tpu == False:
                     valloss, valacc = self._training_loops(n_epochs, dl_tr,
-                                                       dl_val, lr_scheduler, self.scheduler,
-                                                       prof, check_optuna, search_metric,
-                                                       trial, fold, writer_tag + "/fold = " + str(fold+1))
+                                                           dl_val, lr_scheduler, self.scheduler,
+                                                           prof, check_optuna, search_metric,
+                                                           trial, cross_validation,
+                                                           writer_tag + "/fold = " + str(fold+1))
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, optimizers_param, lr_scheduler,
                                                        self.scheduler,
                                                        prof, check_optuna, search_metric,
-                                                       trial, fold)
+                                                       trial, cross_validation)
 
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
             # mean of the validation and loss accuracies over folds
             valloss = np.mean(mean_val_loss)
             valacc = np.mean(mean_val_acc)
-
+            # store the best results
+            self.best_val_acc = max(mean_val_acc)
+            self.best_val_loss = min(mean_val_loss)
 
         else:
             self._init_optimizer_and_scheduler(keep_training, cross_validation,
@@ -613,6 +614,8 @@ class Pipeline:
                                                    self.scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial, 0)
+            self.best_val_acc = valacc
+            self.best_val_loss = valloss
         try:
             self.writer.flush()
         except AttributeError:
@@ -626,7 +629,7 @@ class Pipeline:
     def _training_loops(self, n_epochs, dl_tr,
                         dl_val, lr_scheduler, scheduler,
                         prof, check_optuna, search_metric,
-                        trial, fold=0, writer_tag=""):
+                        trial, cross_validation=False, writer_tag=""):
         """private method to run the trainign loops
         
         Args:
@@ -658,8 +661,8 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
-            fold (int, default 0):
-                the fold of a CV
+            cross_validation (bool, default False)
+                the boolean flag for cross validation
             writer_tag (str):
                 the tensorboard writer tag
 
@@ -668,7 +671,7 @@ class Pipeline:
                 the validation loss and validation accuracy
         """
 
-        valloss, valacc = 0, 0
+        min_valloss, max_valacc = np.inf, 0
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.val_epoch = t
@@ -701,28 +704,30 @@ class Pipeline:
                     pass
             self._run_pipe_hook(t+1, self.optimizer, me, self.writer)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
+            min_valloss = min(min_valloss, valloss)
+            max_valacc = max(max_valacc, valacc)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
                 scheduler.step()
             if not prof is None:
                 prof.step()
-
-            if check_optuna:
+            # pruning trials
+            if check_optuna and not cross_validation:
                 if search_metric == "loss":
-                    trial.report(valloss, t + fold*n_epochs)
+                    trial.report(valloss, t) # + fold*n_epochs)
                 else:
-                    trial.report(valacc, t + fold*n_epochs)
+                    trial.report(valacc, t) # + fold*n_epochs)
                 # Handle pruning based on the intermediate value.
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
-        return valloss, valacc
+        return min_valloss, max_valacc
 
 
     def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
                                     dl_val_old, optimizers_param,
                                     lr_scheduler, scheduler,
                                     prof, check_optuna, search_metric,
-                                    trial, fold=0):
+                                    trial, cross_validation=False):
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
         Note: ``cross_validation`` parameter as well as
@@ -751,8 +756,8 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
-            fold (int, default 0):
-                the fold of the CV
+            cross_validation (bool, default False)
+                the boolean flag for cross validation
 
         Returns:
             (float, float):
@@ -884,11 +889,11 @@ class Pipeline:
                 if not prof is None:
                     prof.step()
 
-                if check_optuna:
+                if check_optuna and not cross_validation:
                     if search_metric == "loss":
-                        trial.report(loss, t + fold*n_epochs)
+                        trial.report(loss, t)
                     else:
-                        trial.report(correct, t + fold*n_epochs)
+                        trial.report(correct, t)
                     # Handle pruning based on the intermediate value.
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
