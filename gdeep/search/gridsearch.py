@@ -100,9 +100,10 @@ class Gridsearch(Pipeline):
             either ``'loss'`` or ``'accuracy'``
         n_trials (int):
             number of total gridsearch trials
-        best_not_last (bool):
-            A flag to use the best validation accuracy over the
-            epochs or the validation accuracy of the last epoch
+        best_not_mean (bool, default False):
+            boolean flag that is ``True`` would use
+            the best metric over folds in CV
+            rather than the mean over folds
         pruner (optuna.Pruners, default MedianPruner):
             Instance of an optuna pruner, can be user-defined
         sampler (optuna.Samplers, default TPESampler):
@@ -117,10 +118,11 @@ class Gridsearch(Pipeline):
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, 
+    def __init__(self, obj, search_metric="loss", n_trials=10,
+                 best_not_mean=False,
                  pruner=None, sampler=None,
                  db_url=None, study_name=None):
-        self.best_not_last = best_not_last
+        self.best_not_mean = best_not_mean
         self.is_pipe = None
         self.study = None
         self.best_val_acc_gs = 0
@@ -302,7 +304,7 @@ class Gridsearch(Pipeline):
         self._print_output()
         # returns
         if self.search_metric == "loss":
-            if self.best_not_last:
+            if self.best_not_mean:
                 self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
                 self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
                 return best_loss
@@ -310,7 +312,7 @@ class Gridsearch(Pipeline):
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return loss
         else:
-            if self.best_not_last:
+            if self.best_not_mean:
                 self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
                 self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
                 return best_accuracy
