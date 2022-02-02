@@ -12,21 +12,20 @@
         "layer_norm": ["True", "False"],
         "layer_norm_pooling": ["True", "False"],
         "n_layer_dec": [1, 5, 1],
-        "n_layer_enc": [2, 4, 1],
-        "num_heads": ["2", "4", "8"],
-        "attention_type": ["self_attention"],
-        "pre_layer_norm": ["True", "False"]
+        "n_layer_enc": [2, 5, 1],
+        "num_heads": ["2", "4", "8", "16"],
+        "attention_type": ["self_attention"]
     },
     "optimizers_params": {
-        "lr": [0.001, 1.0, null, true],
-        "weight_decay": [0.0001, 0.2, null, true]
+        "lr": [0.00001, 0.1, null, true],
+        "weight_decay": [0.000001, 0.1, null, true]
     },
     "schedulers_params": {
         "num_cycles": [1],
-        "num_training_steps": [300],
+        "num_training_steps": [500],
         "num_warmup_steps": [6]
     },
-    "n_trials": 10,
+    "n_trials": 100,
     "cross_validation": true,
-    "k_folds": 3
+    "k_folds": 6
 }
