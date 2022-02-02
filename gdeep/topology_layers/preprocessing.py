@@ -171,7 +171,7 @@ def load_augmented_data_as_tensor(
         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     if dataset_name not in ["PROTEINS", "MUTAG"]:
         raise NotImplementedError()
-    x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)
+    x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)  # type: ignore
 
     original_data_size = x_pds.shape[0]
     

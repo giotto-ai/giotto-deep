@@ -77,7 +77,7 @@ with open(os.path.join(model_data_file, 'Mutag_hyperparameter_space.json')) as c
     
 
 # %%
-x_pds, _, y = load_data_as_tensor(config_data.dataset_name)
+x_pds, y = load_data_as_tensor(config_data.dataset_name)  # type: ignore
 
 # Balance labels in dataset
 
