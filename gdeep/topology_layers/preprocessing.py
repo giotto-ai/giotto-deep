@@ -149,9 +149,9 @@ def load_data_as_tensor(
         ) -> Union[Tuple[torch.Tensor, torch.Tensor, torch.Tensor],\
             Tuple[torch.Tensor, torch.Tensor]]:
     if persistence_diagrams_only:
-        x_pds_dict, y = load_data(dataset_name)
+        x_pds_dict, y = load_data(dataset_name)  # type: ignore
     else:
-        x_pds_dict, x_features, y = load_data(dataset_name)
+        x_pds_dict, x_features, y = load_data(dataset_name)  # type: ignore
 
     # Compute the max number of points in the persistence diagrams
     max_number_of_points = max([x_pd.shape[0]

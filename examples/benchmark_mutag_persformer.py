@@ -190,7 +190,7 @@ pruner = NopPruner()
 search = Gridsearch(pipe,
                     search_metric="accuracy",
                     n_trials=hyperparameters_dicts.n_trials,
-                    best_not_last=True,
+                    best_not_mean=False,
                     pruner=pruner)
 
 #dictionaries of hyperparameters
