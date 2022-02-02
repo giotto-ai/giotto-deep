@@ -77,7 +77,7 @@ with open(os.path.join(model_data_file, 'Mutag_hyperparameter_space.json')) as c
     
 
 # %%
-x_pds, _, y = load_data_as_tensor(config_data.dataset_name)
+x_pds, y = load_data_as_tensor(config_data.dataset_name)  # type: ignore
 
 # Balance labels in dataset
 
@@ -190,7 +190,7 @@ pruner = NopPruner()
 search = Gridsearch(pipe,
                     search_metric="accuracy",
                     n_trials=hyperparameters_dicts.n_trials,
-                    best_not_last=True,
+                    best_not_mean=False,
                     pruner=pruner)
 
 #dictionaries of hyperparameters

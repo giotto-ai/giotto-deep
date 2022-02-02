@@ -1,4 +1,4 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Union
 
 from sklearn.preprocessing import LabelEncoder  # type: ignore
 from os.path import join, isfile
@@ -61,8 +61,10 @@ def persistence_diagrams_to_sequence(
 def load_data(
         dataset_: str = "MUTAG",
         path_dataset: str = "graph_data",
-        verbose: bool = False
-        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        verbose: bool = False,
+        persistence_diagrams_only: bool = True,
+        ) -> Union[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], \
+                Tuple[torch.Tensor, torch.Tensor]]:
     """Load dataset from files.
 
     Args:
@@ -106,10 +108,11 @@ def load_data(
     labels = additional_features[['label']].values  # true labels of graphs
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(labels.reshape(-1))
-    x_features = np.array(additional_features)[:, 1:]
+    if not persistence_diagrams_only:
+        x_features = np.array(additional_features)[:, 1:]
     # additional graph features
 
-    number_of_graphs = additional_features.shape[0]
+    number_of_graphs = y.shape[0]
     # number of graphs in the dataset
 
     # convert values in diagrams_file from numpy.ndarray to torch.tensor
@@ -129,16 +132,26 @@ def load_data(
             "\nNumber of graphs:", number_of_graphs,
             "\nNumber of classes", label_encoder.classes_.shape[0]
             )
-    return (persistence_diagrams_to_sequence(tensor_dict),
-            torch.tensor(x_features, dtype=torch.float),
+
+    if persistence_diagrams_only:
+        return (persistence_diagrams_to_sequence(tensor_dict),
             torch.tensor(y))
+    else:
+        return (persistence_diagrams_to_sequence(tensor_dict),
+                torch.tensor(x_features, dtype=torch.float),
+                torch.tensor(y))
 
 def load_data_as_tensor(
         dataset_name: str = "PROTEINS",
         path_dataset: str = "graph_data",
-        verbose: bool = False
-        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    x_pds_dict, x_features, y = load_data(dataset_name)
+        verbose: bool = False,
+        persistence_diagrams_only: bool = True,
+        ) -> Union[Tuple[torch.Tensor, torch.Tensor, torch.Tensor],\
+            Tuple[torch.Tensor, torch.Tensor]]:
+    if persistence_diagrams_only:
+        x_pds_dict, y = load_data(dataset_name)  # type: ignore
+    else:
+        x_pds_dict, x_features, y = load_data(dataset_name)  # type: ignore
 
     # Compute the max number of points in the persistence diagrams
     max_number_of_points = max([x_pd.shape[0]
@@ -146,7 +159,10 @@ def load_data_as_tensor(
 
     x_pds = pad_pds(x_pds_dict, max_number_of_points)
 
-    return x_pds, x_features, y
+    if persistence_diagrams_only:
+        return x_pds, y
+    else:
+        return x_pds, x_features, y
 
 def load_augmented_data_as_tensor(
         dataset_name: str = "PROTEINS",
@@ -155,7 +171,7 @@ def load_augmented_data_as_tensor(
         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     if dataset_name not in ["PROTEINS", "MUTAG"]:
         raise NotImplementedError()
-    x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)
+    x_pds, x_features, y = load_data_as_tensor(dataset_name, path_dataset, verbose)  # type: ignore
 
     original_data_size = x_pds.shape[0]
     
