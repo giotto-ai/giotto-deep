@@ -27,5 +27,5 @@
     },
     "n_trials": 100,
     "cross_validation": true,
-    "k_folds": 6
+    "k_folds": 4
 }

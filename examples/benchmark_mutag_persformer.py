@@ -147,7 +147,7 @@ writer = GiottoSummaryWriter(
                         config_model.implementation +
                         "_" + config_data.dataset_name +
                         "_" + models_hyperparams.attention_type[0] +
-                        "_" + "hyperparameter_search_giotto")
+                        "_" + "hyperparameter_search_giotto_100_2")
             )
 
 # initialize pipeline object
