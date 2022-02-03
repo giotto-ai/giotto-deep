@@ -10,6 +10,7 @@ import warnings
 from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data.sampler import SubsetRandomSampler
 from gdeep.models import ModelExtractor
+from gdeep.utility import _inner_refactor_scalars
 from ..utility.optimisation import MissingClosureError
 import optuna
 
@@ -63,9 +64,8 @@ class Pipeline:
             `[dl_tr, dl_val, dl_ts]`
         loss_fn (Callables):
             loss function to average over batches
-        wirter (tensorboard SummaryWriter):
+        writer (tensorboard SummaryWriter):
             tensorboard writer
-
     """
 
     # def __init__(self, model, dataloaders, loss_fn, writer,
@@ -93,6 +93,7 @@ class Pipeline:
         self.run_name = None
         self.val_loss_list_hparam = []
         self.val_acc_list_hparam = []
+        self.best_not_last = False
 
         
     def _set_initial_model(self):
@@ -556,6 +557,7 @@ class Pipeline:
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
             #print(data_idx)
+            assert k_folds > 0, "k_folds must be a positive integer"
             fold = KFold(k_folds, shuffle=False)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
                 self._init_optimizer_and_scheduler(keep_training, cross_validation,
@@ -592,11 +594,16 @@ class Pipeline:
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
             # mean of the validation and loss accuracies over folds
-            valloss = np.mean(mean_val_loss)
-            valacc = np.mean(mean_val_acc)
-            # store the best results
-            self.best_val_acc = max(mean_val_acc)
-            self.best_val_loss = min(mean_val_loss)
+            if self.best_not_last:
+                valloss = min(np.array(_inner_refactor_scalars(self.val_loss_list_hparam,
+                                                  True,
+                                                  k_folds))[:,0])
+                valacc = max(np.array(_inner_refactor_scalars(self.val_acc_list_hparam,
+                                                 True,
+                                                 k_folds))[:,0])
+            else:
+                valloss = np.mean(mean_val_loss)
+                valacc = np.mean(mean_val_acc)
 
         else:
             self._init_optimizer_and_scheduler(keep_training, cross_validation,
@@ -614,8 +621,7 @@ class Pipeline:
                                                    self.scheduler,
                                                    prof, check_optuna, search_metric,
                                                    trial, 0)
-            self.best_val_acc = valacc
-            self.best_val_loss = valloss
+
         try:
             self.writer.flush()
         except AttributeError:
@@ -704,8 +710,9 @@ class Pipeline:
                     pass
             self._run_pipe_hook(t+1, self.optimizer, me, self.writer)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
-            min_valloss = min(min_valloss, valloss)
-            max_valacc = max(max_valacc, valacc)
+            # absolute best of loss and accuracy
+            self.best_val_acc = max(self.best_val_acc, valacc)
+            self.best_val_loss = min(self.best_val_loss, valloss)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
                 scheduler.step()
@@ -720,7 +727,7 @@ class Pipeline:
                 # Handle pruning based on the intermediate value.
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
-        return min_valloss, max_valacc
+        return valloss, valacc
 
 
     def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,

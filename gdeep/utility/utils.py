@@ -72,3 +72,18 @@ def ensemble_wrapper(clss):
             self.estimators_ = nn.ModuleList().extend([self._make_estimator() for _ in range(self.n_estimators)])
 
     return NewEnsembleEstimator
+
+
+def _inner_refactor_scalars(list_, cross_validation, k_folds):
+    """used to restructure lists of accuracies and losses
+    per epoch"""
+    out = []
+    for t in range(len(list_)):
+        lis = [x[0] for x in list_ if x[1]==t]
+        value = sum(lis)
+        if len(lis) > 0:
+            if cross_validation:
+                out.append([value/k_folds , t])
+            else:
+                out.append([value, t])
+    return out
