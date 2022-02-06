@@ -115,17 +115,124 @@ class PreprocessText:
     """Class to preprocess text dataloaders
 
     Args:
-        name (string):
-            check the available datasets at
-            https://pytorch.org/vision/stable/datasets.html
-        n_pts (int):
-            number of points in customly generated
-            point clouds
+        dataloaders (string):
+            train and test dataloaders. Labels are
+            expected to be tensors
         tokenizer (torch Tokenizer):
             the tokenizer of the source text
-        tokenizer_lab (torch Tokenizer):
-            the tokenizer of the target text
+        kwargs (dict):
+            keyword arguments for the ``Vocab``
     """
+    def __init__(self, dataloaders,
+                 tokenizer=None, **kwargs):
+        self.dataloaders = (list(dataloaders[0]), list(dataloaders[1]))
+        if tokenizer is None:
+            self.tokenizer = get_tokenizer('basic_english')
+        else:
+            self.tokenizer = tokenizer
+        counter = Counter()  # for the text
+        for (label, text) in self.dataloaders[0]:
+            if isinstance(text, tuple) or isinstance(text, list):
+                text = text[0]
+            counter.update(self.tokenizer(text))
+        # self.vocabulary = Vocab(counter, min_freq=1)
+        self.vocabulary = Vocab(counter, **kwargs)
+
+
+    def _loop_over_dataloader(self, dl):
+        """helper function for the creation of dataset"""
+
+        label_pipeline = lambda x: int(x) - 1
+        text_pipeline = lambda x: [self.vocabulary[token] for token in
+                                   self.tokenizer(x)]
+
+        label_list, text_list = [], []
+        MAX_LENGTH = 0
+        pad_item = self.vocabulary["."]
+
+        for (_label, _text) in dl:
+            try:
+                label_list.append(label_pipeline(_label.to(DEVICE)))
+            except TypeError:
+                if isinstance(_label, tuple) or isinstance(_label, list):
+                    _label = _label[0]
+                label_list.append(label_pipeline(_label.to(DEVICE)))
+
+            if isinstance(_text, tuple) or isinstance(_text, list):
+                _text = _text[0]
+            processed_text = torch.tensor(text_pipeline(_text),
+                                          dtype=torch.int64).to(DEVICE)
+            MAX_LENGTH = max(MAX_LENGTH, processed_text.shape[0])
+            text_list.append(processed_text)
+        # convert to tensors
+        label_list = torch.tensor(label_list).to(DEVICE)
+        text_list = torch.stack([torch.cat([item,
+                                            pad_item *
+                                            torch.ones(MAX_LENGTH -
+                                                       item.shape[0]
+                                            ).to(DEVICE)])
+                                 for item in text_list]).to(DEVICE)
+        return text_list, label_list
+
+    def _build_dataset(self):
+        """private method to prepare the datasets"""
+
+        text_list, label_list = self._loop_over_dataloader(self.dataloaders[0])
+        self.training_data = TextDataset(text_list, label_list)
+        text_list, label_list = self._loop_over_dataloader(self.dataloaders[1])
+        self.test_data = TextDataset(text_list, label_list)
+        
+    def build_dataloaders(self, **kwargs) -> tuple:
+        """This method return the dataloaders of the tokenised
+        sentences, each converted to a list of integers via the
+        vocabulary. Hence, data can thus be treated as point data.
+
+        Args:
+            kwargs (dict):
+                keyword arguments to add to the DataLoaders
+        Returns:
+            (tuple):
+                training_dataloader, test_dataloader
+        """
+        self._build_dataset()
+        train_dataloader = DataLoader(self.training_data,
+                                      **kwargs)
+        test_dataloader = DataLoader(self.test_data,
+                                     **kwargs)
+        return train_dataloader, test_dataloader
+
+    def collate_fn(self, batch):
+        label_list, text_list, offsets = [], [], [0]
+        label_pipeline = lambda x: int(x) - 1
+        text_pipeline = lambda x: [self.vocabulary[token] for token in
+                                   self.tokenizer(x)]
+        for (_label, _text) in batch:
+            label_list.append(label_pipeline(_label))
+            processed_text = torch.tensor(text_pipeline(_text),
+                                          dtype=torch.int64).to(DEVICE)
+            text_list.append(processed_text)
+            offsets.append(processed_text.size(0))
+        label_list = torch.tensor(label_list, dtype=torch.int64).to(DEVICE)
+        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0).to(DEVICE)
+        text_list = torch.cat(text_list).to(DEVICE)
+        return text_list, label_list, offsets
+
+class PreprocessTextTranslation(PreprocessText):
+    """Class to preprocess text dataloaders for translation
+    tasks
+
+        Args:
+            name (string):
+                check the available datasets at
+                https://pytorch.org/vision/stable/datasets.html
+            n_pts (int):
+                number of points in customly generated
+                point clouds
+            tokenizer (torch Tokenizer):
+                the tokenizer of the source text
+            tokenizer_lab (torch Tokenizer):
+                the tokenizer of the target text
+        """
     def __init__(self, dataloaders,
                  tokenizer=None,
                  tokenizer_lab=None):
@@ -198,68 +305,6 @@ class PreprocessText:
                                             ).to(DEVICE)])
                                  for item in text_list]).to(DEVICE)
         return text_list, label_list
-
-    def _build_dataset(self):
-        """private method to prepare the datasets"""
-
-        text_list, label_list = self._loop_over_dataloader(self.dataloaders[0])
-        self.training_data = TextDataset(text_list, label_list)
-        text_list, label_list = self._loop_over_dataloader(self.dataloaders[1])
-        self.test_data = TextDataset(text_list, label_list)
-        
-    def build_dataloaders(self, **kwargs) -> tuple:
-        """This method return the dataloaders of the tokenised
-        sentences, each converted to a list of integers via the
-        vocabulary. Hence, data can thus be treated as point data.
-
-        Args:
-            kwargs (dict):
-                keyword arguments to add to the DataLoaders
-        Returns:
-            (tuple):
-                training_dataloader, test_dataloader
-        """
-        self._build_dataset()
-        train_dataloader = DataLoader(self.training_data,
-                                      **kwargs)
-        test_dataloader = DataLoader(self.test_data,
-                                     **kwargs)
-        return train_dataloader, test_dataloader
-
-    def collate_fn(self, batch):
-        label_list, text_list, offsets = [], [], [0]
-        label_pipeline = lambda x: int(x) - 1
-        text_pipeline = lambda x: [self.vocabulary[token] for token in
-                                   self.tokenizer(x)]
-        for (_label, _text) in batch:
-            label_list.append(label_pipeline(_label))
-            processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64).to(DEVICE)
-            text_list.append(processed_text)
-            offsets.append(processed_text.size(0))
-        label_list = torch.tensor(label_list, dtype=torch.int64).to(DEVICE)
-        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0).to(DEVICE)
-        text_list = torch.cat(text_list).to(DEVICE)
-        return text_list, label_list, offsets
-
-class PreprocessTextTranslation(PreprocessText):
-    """Class to preprocess text dataloaders for translation
-    tasks
-
-        Args:
-            name (string):
-                check the available datasets at
-                https://pytorch.org/vision/stable/datasets.html
-            n_pts (int):
-                number of points in customly generated
-                point clouds
-            tokenizer (torch Tokenizer):
-                the tokenizer of the source text
-            tokenizer_lab (torch Tokenizer):
-                the tokenizer of the target text
-        """
-    def __init__(self, *args, **kwargs):
-        super(PreprocessTextTranslation, self).__init__(*args, **kwargs)
 
     def build_dataloaders(self, **kwargs) -> tuple:
         """This method return the dataloaders of the tokenised
