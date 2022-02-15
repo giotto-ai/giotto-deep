@@ -22,7 +22,6 @@ from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer
 from gdeep.pipeline import Pipeline
 
 # %%
@@ -259,19 +258,6 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 pipe = Pipeline(fast_model.double(), [dl_train, dl_test], fast_model.criterion, writer)
 # %%
 # Train the model
-<<<<<<< HEAD
-pipe.train(Adam, 10, True, {"lr": 0.001})
-
-
-# %%
-nn.TransformerEncoderLayer(d_model=16,
-                          nhead=2,
-                          dropout=0.1,
-                          activation=nn.ReLU,
-                          norm_first=True,
-                          batch_first=True)
-# %%
-=======
 pipe.train(Adam, 1000, cross_validation=False,
     lr_scheduler=get_cosine_schedule_with_warmup,
     scheduler_params={"num_warmup_steps": 100,
@@ -281,4 +267,3 @@ pipe.train(Adam, 1000, cross_validation=False,
 
 
 # %%
->>>>>>> 05c122d943e3c2cf16e4603d1ac9d7f0b29a40bb

@@ -142,3 +142,64 @@ for i in [10, 12, 14, 15]:
     plt.show()
     print('y:', y[i])
 # %%
+i = 15
+max_pt_idx = torch.argmax(x[i, : , 1])
+
+
+# %%
+
+# Implementation of matplotlib function
+import matplotlib.pyplot as plt
+import matplotlib.tri as tri
+import numpy as np
+
+import itertools
+
+def flatten_list(list2d):
+    return list(itertools.chain.from_iterable(list2d))
+
+def plot_model(pd_x, class_idx):
+    x_max = 0.2
+    y_max = 0.2
+    d = 0.05
+    min_radius = 3.0 * d
+    list2d_x = [[j * d for j in range(i + 1)] for i in range(int(x_max / d) + 1)]
+    list2d_y = [[i * d for j in range(i + 1)] for i in range(int(x_max / d) + 1)]
+    x = torch.tensor(flatten_list(list2d_x))
+    y = torch.tensor(flatten_list(list2d_y))
+    pd_x_expand = pd_x.unsqueeze(0).repeat(x.shape[0], 1, 1)
+    pd_x_expand[:, max_pt_idx, :2] = torch.stack([x, y], 0).transpose(0, 1)
+    pd_x_expand[:, max_pt_idx, :2]
+    
+    print("x", x.shape)
+    print("y", y.shape)
+    
+    z = model(pd_x_expand.cuda()).detach().cpu()[:, class_idx]
+    print(z.shape)
+    
+    triang = tri.Triangulation(x, y)
+        
+    fig1, ax1 = plt.subplots()
+    ax1.set_aspect('equal')
+    tcf = ax1.tricontourf(triang, z)
+    fig1.colorbar(tcf)
+    ax1.set_title('matplotlib.axes.Axes.tricontourf() Example')
+    plt.show()
+# %%
+pd_x = x[i]
+class_idx = y[i].item()
+plot_model(pd_x, class_idx)
+
+
+# %%
+list2d_x = [[j for j in range(i + 1)] for i in range(int(2) + 1)]
+list2d_y = [[i for j in range(i + 1)] for i in range(int(2) + 1)]
+x = torch.tensor(flatten_list(list2d_x))
+y = torch.tensor(flatten_list(list2d_y))
+# %%
+pd_x_expand = pd_x.unsqueeze(0).repeat(6, 1, 1)
+pd_x_expand[:, max_pt_idx, :2] = torch.stack([x, y], 0).transpose(0, 1)
+pd_x_expand[:, max_pt_idx, :2]
+# %%
+
+# %%

@@ -27,13 +27,10 @@ from torch.optim import SGD, Adam, RMSprop  # type: ignore
 # Import Tensorflow writer
 from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
-# Import modules from XTransformers
-from x_transformers.x_transformers import AttentionLayers, Encoder, ContinuousTransformerWrapper
-
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer, PersFormerOld, DeepSet, PytorchTransformer
+from gdeep.topology_layers import Persformer, DeepSet, PytorchTransformer
 from gdeep.topology_layers import AttentionPooling
 from gdeep.pipeline import Pipeline
 from gdeep.search import Gridsearch
@@ -54,7 +51,7 @@ config_data = DotMap({
     'dynamical_system': 'classical_convention',
     'homology_dimensions': (0, 1),
     'dtype': 'float32',
-    'arbitrary_precision': True
+    'arbitrary_precision': False
 })
 
 
@@ -288,4 +285,26 @@ print(search.best_val_acc_gs, search.best_val_loss_gs)
 # %%
 df_res = search._results()
 df_res
+# %%
+from gtda.homology import VietorisRipsPersistence
+
+VR = VietorisRipsPersistence(homology_dimensions=[0, 1])  # Parameter explained in the text
+diagrams = VR.fit_transform([orbits[i] for i in [1, 1001, 2001, 3001, 4005]])
+diagrams.shape
+
+from gtda.plotting import plot_diagram
+
+for i in range(0, 5):
+    fig = plot_diagram(diagrams[i])
+    fig.show()
+
+# %%
+import matplotlib.pyplot as plt
+plt.scatter(x = orbits[1_000 * 3, :, 0], y = orbits[1_000 * 3, :, 1])
+# %%
+import matplotlib.pyplot as plt
+
+for i in range(-5, 500):
+    plt.scatter(x = orbits[1_000 * 4+i, :, 0], y = orbits[1_000 * 4+i, :, 1])
+    plt.show()
 # %%

@@ -1,7 +1,4 @@
 # %%
-!pip install x-transformers
-
-# %%
 from IPython import get_ipython  # type: ignore
 
 # %% 

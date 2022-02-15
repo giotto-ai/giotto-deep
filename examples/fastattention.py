@@ -17,7 +17,6 @@ from torch.utils.tensorboard import SummaryWriter  # type: ignore
 
 # Import the giotto-deep modules
 from gdeep.data import OrbitsGenerator, DataLoaderKwargs
-from gdeep.topology_layers import SetTransformer
 from gdeep.pipeline import Pipeline
 
 # %%
@@ -254,8 +253,4 @@ dl_train, _, dl_test = og.get_dataloader_orbits(dataloaders_dicts)
 pipe = Pipeline(fast_model.double(), [dl_train, dl_test], fast_model.criterion, writer)
 # %%
 # Train the model
-pipe.train(Adam, 10, cross_validation=False,
-            lr_scheduler=ExponentialLR, scheduler_params={"gamma": 0.9})
-# %%
-from transformers import get_cosine_schedule_with_warmup
-lr_scheduler = get_cosine_schedule_with_warmup()
+pipe.train(Adam, 10, cross_validation=False)

@@ -13,7 +13,7 @@ get_ipython().magic('autoreload 2')
 
 # %%
 
-from dotmap import DotMap
+from dotmap import DotMap  # type: ignore
 import json
 import os
 

@@ -1,12 +1,11 @@
 # %%
-! pip install xformers pytorch_lightning
-# %%
-import math
 from enum import Enum
 
 import pytorch_lightning as pl
 import torch
 from torch import nn
+
+import math
 
 from xformers.factory import xFormer, xFormerConfig
 
