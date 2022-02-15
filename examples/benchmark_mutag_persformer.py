@@ -147,7 +147,7 @@ writer = GiottoSummaryWriter(
                         config_model.implementation +
                         "_" + config_data.dataset_name +
                         "_" + models_hyperparams.attention_type[0] +
-                        "_" + "hyperparameter_search_giotto_100_2")
+                        "_" + "hyperparameter_search_giotto_4_best")
             )
 
 # initialize pipeline object
@@ -190,7 +190,7 @@ pruner = NopPruner()
 search = Gridsearch(pipe,
                     search_metric="accuracy",
                     n_trials=hyperparameters_dicts.n_trials,
-                    best_not_mean=False,
+                    best_not_last=True,
                     pruner=pruner)
 
 #dictionaries of hyperparameters

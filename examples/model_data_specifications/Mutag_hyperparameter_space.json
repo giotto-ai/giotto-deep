@@ -14,7 +14,7 @@
         "n_layer_dec": [1, 5, 1],
         "n_layer_enc": [2, 5, 1],
         "num_heads": ["2", "4", "8", "16"],
-        "attention_type": ["self_attention"]
+        "attention_type": ["pytorch_self_attention"]
     },
     "optimizers_params": {
         "lr": [0.00001, 0.1, null, true],
@@ -22,7 +22,7 @@
     },
     "schedulers_params": {
         "num_cycles": [1],
-        "num_training_steps": [500],
+        "num_training_steps": [800],
         "num_warmup_steps": [6]
     },
     "n_trials": 100,
