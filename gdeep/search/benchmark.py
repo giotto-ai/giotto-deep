@@ -2,6 +2,7 @@ from gdeep.pipeline import Pipeline
 from gdeep.utility import _are_compatible
 import torch
 from sklearn.model_selection import KFold
+import warnings
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
