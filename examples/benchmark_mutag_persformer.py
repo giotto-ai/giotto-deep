@@ -239,3 +239,28 @@ search.start((eval(config_model.optimizer),),
 # fig.show()
 # plotly2tensor(fig)
 # %%
+import matplotlib.pyplot as plt
+
+search.model.eval()
+x, y = next(iter(graph_dl))
+
+for i in range(1):
+
+    delta = torch.zeros_like(x[i].unsqueeze(0))
+    delta.requires_grad = True
+
+    loss = search.model(x[i].unsqueeze(0) + delta)[0, y[i].item()]
+    loss.backward()
+
+    c = torch.sqrt((delta.grad[:, :, :2].detach().cpu()**2).sum(axis=-1))
+
+
+    #sc = plt.scatter(x[i, :, 0].cpu(), x[i, :, 1].cpu(), c=-torch.log(c_max - c + eps))
+    sc = plt.scatter(x[i, :, 0].detach(), x[i, :, 1].detach(), c=torch.nn.functional.normalize(c))
+
+    plt.colorbar(sc)
+    plt.plot([0, x[i, :, 0].max()], [0, x[i, :, 1].max()])
+    plt.savefig('plots/' + 'orbit5k' + str(y[i].item()) + '.pdf')
+    plt.show()
+    print('y:', y[i])
+# %%
