@@ -66,11 +66,15 @@ class Pipeline:
             loss function to average over batches
         writer (tensorboard SummaryWriter):
             tensorboard writer
+        KFold_class (sklearn.model_selection, default KFold):
+            the class to implement the KFold, can be
+            any of the Splitter classes of sklearn. More
+            info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
     """
 
     # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
-    def __init__(self, model, dataloaders, loss_fn, writer):
+    def __init__(self, model, dataloaders, loss_fn, writer, KFold_class=None):
         self.model = model
         self.initial_model = copy.deepcopy(self.model)
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
@@ -94,6 +98,11 @@ class Pipeline:
         self.val_loss_list_hparam = []
         self.val_acc_list_hparam = []
         self.best_not_last = False
+
+        if not KFold_class:
+            self.KFold_class = KFold
+        else:
+            self.KFold_class = KFold_class
 
         
     def _set_initial_model(self):
@@ -554,12 +563,14 @@ class Pipeline:
             valloss, valacc = 0, 0
             try:
                 data_idx = self.dataloaders[0].sampler.indices
+                labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
+                labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
             #print(data_idx)
             assert k_folds > 0, "k_folds must be a positive integer"
-            fold = KFold(k_folds, shuffle=False)
-            for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
+            fold = self.KFold_class(k_folds, shuffle=False)
+            for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx, labels_for_split)):
                 self._init_optimizer_and_scheduler(keep_training, cross_validation,
                                                    optimizer, optimizers_param,
                                                    lr_scheduler, scheduler_params)

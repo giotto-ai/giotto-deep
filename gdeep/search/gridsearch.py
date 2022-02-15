@@ -142,7 +142,8 @@ class Gridsearch(Pipeline):
             super().__init__(self.pipe.model,
                              self.pipe.dataloaders,
                              self.pipe.loss_fn,
-                             self.pipe.writer)
+                             self.pipe.writer,
+                             self.pipe.KFold_class)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
@@ -281,7 +282,8 @@ class Gridsearch(Pipeline):
             #str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn,
+                             self.writer, self.KFold_class)
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
@@ -310,6 +312,11 @@ class Gridsearch(Pipeline):
         self.writer.flush()
         # print
         self._print_output()
+        
+        # save model and optimizer
+        save_model_and_optimizer(self.pipe.model,
+                                 trial_id=str(trial.datetime_start).replace(":","-"),
+                                 optimizer=self.pipe.optimizer)
         # returns
         if self.search_metric == "loss":
             #if self.best_not_last:
@@ -492,19 +499,19 @@ class Gridsearch(Pipeline):
         try:
             self._results(model_name=model["name"],
                           dataset_name=dataloaders["name"])
-            save_model_and_optimizer(self.pipe.model,
-                                     model["name"] +
-                                     str(self.optimizers_param) +
-                                     str(self.dataloaders_param) +
-                                     str(self.models_hyperparam) *
-                                     str(self.schedulers_param),
-                                     self.pipe.optimizer)
+            #save_model_and_optimizer(self.pipe.model,
+            #                         model["name"] +
+            #                         str(self.optimizers_param) +
+            #                         str(self.dataloaders_param) +
+            #                         str(self.models_hyperparam) +
+            #                         str(self.schedulers_param),
+            #                         self.pipe.optimizer)
         except TypeError:
             try:
                 self._results(model_name=self.pipe.model.__class__.__name__,
                               dataset_name=self.pipe.dataloaders[0].dataset.__class__.__name__)
-                save_model_and_optimizer(self.pipe.model,
-                                         optimizer=self.pipe.optimizer)
+                #save_model_and_optimizer(self.pipe.model,
+                #                         optimizer=self.pipe.optimizer)
             except AttributeError:
                 self._results()
 

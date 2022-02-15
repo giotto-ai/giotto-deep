@@ -1,6 +1,7 @@
 from gdeep.pipeline import Pipeline
 from gdeep.utility import _are_compatible
 import torch
+from sklearn.model_selection import KFold
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -25,14 +26,26 @@ class Benchmark:
             loss function
         writer (tensorboard SummaryWriter):
             tensorboard writer
+        KFold_class (sklearn.model_selection, default KFold):
+            the class to implement the KFold, can be
+            any of the Splitter classes of sklearn. More
+            info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
 
     """
 
-    def __init__(self, models_dicts, dataloaders_dicts, loss_fn, writer):
+    def __init__(self, models_dicts, dataloaders_dicts, loss_fn, writer, KFold_class=None):
         self.models_dicts = models_dicts
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
         self.writer = writer
+        if not self.writer:
+            warnings.warn("No writer detected")
+        
+        if not KFold_class:
+            self.KFold_class = KFold
+        else:
+            self.KFold_class = KFold_class
+
         if not isinstance(self.models_dicts, list):
             raise TypeError("The provided models must be a Python list of dictionaries")
 
@@ -174,7 +187,7 @@ class Benchmark:
                 the tensorboard writer tag
         """
         pipe = Pipeline(model["model"], dataloaders["dataloaders"],
-                        self.loss_fn, self.writer)
+                        self.loss_fn, self.writer, self.KFold_class)
         writer_tag += "Dataset:" + dataloaders["name"] +"|Model:" + model["name"]
         pipe.train(optimizer, n_epochs,
                    cross_validation,
