@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import numpy as np
 import time
-from gdeep.utility import _are_compatible
+from gdeep.utility import _are_compatible, _inner_refactor_scalars
 from optuna.trial import TrialState
 from gdeep.pipeline import Pipeline
 from gdeep.search import Benchmark, _benchmarking_param
@@ -33,7 +33,7 @@ else:
 class GiottoSummaryWriter(SummaryWriter):
     def add_hparams(self, hparam_dict, metric_dict,
                     hparam_domain_discrete=None, run_name=None,
-                    scalars_lists=None):
+                    scalars_lists=None, best_not_last=False):
         """Add a set of hyperparameters to be compared in TensorBoard.
 
         Args:
@@ -82,9 +82,15 @@ class GiottoSummaryWriter(SummaryWriter):
             w_hp.file_writer.add_summary(ssi)
             w_hp.file_writer.add_summary(sei)
             if isinstance(scalars_lists, list) or isinstance(scalars_lists, tuple):
-                for v, t in scalars_lists[0]:
+                scalars_list_loss = scalars_lists[0]
+                if best_not_last:
+                    scalars_list_loss = [x for x in scalars_list_loss[:np.argmin(np.array(scalars_list_loss)[:,0])+1]]
+                for v, t in scalars_list_loss:
                     w_hp.add_scalar("loss", v, t)
-                for v, t in scalars_lists[1]:
+                scalars_list_acc = scalars_lists[1]
+                if best_not_last:
+                    scalars_list_acc = [x for x in scalars_list_acc[:np.argmax(np.array(scalars_list_acc)[:,0])+1]]
+                for v, t in scalars_list_acc:
                     w_hp.add_scalar("accuracy", v, t)
 
 
@@ -100,10 +106,11 @@ class Gridsearch(Pipeline):
             either ``'loss'`` or ``'accuracy'``
         n_trials (int):
             number of total gridsearch trials
-        best_not_mean (bool, default False):
+        best_not_last (bool, default False):
             boolean flag that is ``True`` would use
-            the best metric over folds in CV
-            rather than the mean over folds
+            the best metric over epochs averaged over the folds in CV
+            rather than the last value of the metrics
+            over the epochs averaged over the folds
         pruner (optuna.Pruners, default MedianPruner):
             Instance of an optuna pruner, can be user-defined
         sampler (optuna.Samplers, default TPESampler):
@@ -115,14 +122,13 @@ class Gridsearch(Pipeline):
         study_name (str):
             name of the optuna study
 
-
     """
 
     def __init__(self, obj, search_metric="loss", n_trials=10,
-                 best_not_mean=False,
+                 best_not_last=False,
                  pruner=None, sampler=None,
                  db_url=None, study_name=None):
-        self.best_not_mean = best_not_mean
+        self.best_not_last_gs = best_not_last
         self.is_pipe = None
         self.study = None
         self.best_val_acc_gs = 0
@@ -276,6 +282,8 @@ class Gridsearch(Pipeline):
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
         self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        # set best_not_last
+        self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
         self.pipe.run_name = str(trial.datetime_start).replace(":","-")
         loss, accuracy = self.pipe.train(optimizer, n_epochs,
@@ -304,18 +312,18 @@ class Gridsearch(Pipeline):
         self._print_output()
         # returns
         if self.search_metric == "loss":
-            if self.best_not_mean:
-                self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
-                self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
-                return best_loss
+            #if self.best_not_last:
+            #    self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
+            #    self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
+            #    return best_loss
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return loss
         else:
-            if self.best_not_mean:
-                self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
-                self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
-                return best_accuracy
+            #if self.best_not_last:
+            #    self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
+            #    self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
+            #    return best_accuracy
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return accuracy
@@ -627,7 +635,8 @@ class Gridsearch(Pipeline):
                                         {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
                                          self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
                                         run_name=self.df_res.iloc[i][0],
-                                        scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]])
+                                        scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]],
+                                        best_not_last=self.best_not_last_gs)
             except KeyError:  # this happens when trials have been pruned
                 pass
         
@@ -650,21 +659,16 @@ class Gridsearch(Pipeline):
                 compatible with ``add_scalar``
         """
 
-        out0 = self._inner_refactor_scalars(two_lists[0])
-        out1 = self._inner_refactor_scalars(two_lists[1])
+        out0 = _inner_refactor_scalars(two_lists[0],
+                                            self._cross_validation,
+                                            self._k_folds)
+        out1 = _inner_refactor_scalars(two_lists[1],
+                                            self._cross_validation,
+                                            self._k_folds)
         return out0, out1
 
-    def _inner_refactor_scalars(self, list_):
-        out = []
-        for t in range(len(list_)):
-            lis = [x[0] for x in list_ if x[1]==t]
-            value = sum(lis)
-            if len(lis) > 0:
-                if self._cross_validation:
-                    out.append([value/self._k_folds , t])
-                else:
-                    out.append([value, t])
-        return out
+
+
 
     @staticmethod
     def _suggest_params(trial, params):

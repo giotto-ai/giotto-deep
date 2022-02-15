@@ -118,17 +118,15 @@ torch.save(torch.cat(list_y), 'data/orbit5k_y.pt')
 import matplotlib.pyplot as plt
 
 model.eval()
-x, y = next(iter(dl_train))
+x, y = torch.tensor(og.get_persistence_diagrams()), torch.tensor(og._labels)
 x = x.to('cuda')
 
-for i in [10, 12, 14, 15]:
+for i in [4012]:
 
     delta = torch.zeros_like(x[i].unsqueeze(0)).to('cuda')
     delta.requires_grad = True
 
-    loss = model(x + delta)[i, y[i].item()]
-    print(y[i].item())
-    print(model(x + delta).shape)
+    loss = model(x[i].unsqueeze(0) + delta)[y[i].item()]
     loss.backward()
 
     c = torch.sqrt((delta.grad.detach().cpu()**2).sum(axis=-1))
@@ -142,10 +140,26 @@ for i in [10, 12, 14, 15]:
     plt.show()
     print('y:', y[i])
 # %%
-i = 15
+i = 2014
 max_pt_idx = torch.argmax(x[i, : , 1])
+print(y[i])
 
+# %%
 
+plt.scatter(og.get_orbits()[i, : , 0], og.get_orbits()[i, : , 1])
+
+# %%
+from gtda.plotting import plot_diagram
+from gtda.homology import WeakAlphaPersistence
+
+wap = WeakAlphaPersistence(
+                    homology_dimensions=(0, 1)
+                    )
+# c: class, o: orbit, p: point, d: dimension
+#orbits_stack = rearrange(self._orbits, 'c o p d -> (c o) p d')  # stack classes
+persistence_diagrams_categorical = wap.fit_transform([og.get_orbits()[i, :, :]])
+
+plot_diagram(persistence_diagrams_categorical[0])
 # %%
 
 # Implementation of matplotlib function
@@ -159,10 +173,9 @@ def flatten_list(list2d):
     return list(itertools.chain.from_iterable(list2d))
 
 def plot_model(pd_x, class_idx):
-    x_max = 0.2
-    y_max = 0.2
-    d = 0.05
-    min_radius = 3.0 * d
+    max_pt_idx = torch.argmax(pd_x[: , 1])
+    x_max = 0.3
+    d = 0.005
     list2d_x = [[j * d for j in range(i + 1)] for i in range(int(x_max / d) + 1)]
     list2d_y = [[i * d for j in range(i + 1)] for i in range(int(x_max / d) + 1)]
     x = torch.tensor(flatten_list(list2d_x))
@@ -183,7 +196,10 @@ def plot_model(pd_x, class_idx):
     ax1.set_aspect('equal')
     tcf = ax1.tricontourf(triang, z)
     fig1.colorbar(tcf)
+    print(pd_x[class_idx])
     ax1.set_title('matplotlib.axes.Axes.tricontourf() Example')
+    plt.scatter(pd_x[:, 0].detach().cpu(), pd_x[:, 1].detach().cpu(), c='black')
+    plt.arrow(pd_x[max_pt_idx, 0].detach().cpu(), pd_x[max_pt_idx, 1].detach().cpu(), -.02, 0.005)
     plt.show()
 # %%
 pd_x = x[i]
@@ -200,6 +216,4 @@ y = torch.tensor(flatten_list(list2d_y))
 pd_x_expand = pd_x.unsqueeze(0).repeat(6, 1, 1)
 pd_x_expand[:, max_pt_idx, :2] = torch.stack([x, y], 0).transpose(0, 1)
 pd_x_expand[:, max_pt_idx, :2]
-# %%
-
 # %%

@@ -32,10 +32,10 @@ class MAB(nn.Module):
 
     def forward(self, Q, K):
         # assert Q.shape[-1] == self.dim_Q,\
-            # "Q must be of dimension {} but it is of dimension {}".format(self.dim_Q, Q.shape[-1])
+        #     "Q must be of dimension {} but it is of dimension {}".format(self.dim_Q, Q.shape[-1])
         Q = self.fc_q(Q)
         # assert K.shape[-1] == self.dim_K,\
-            # "K must be of dimension {} but it is of dimension {}".format(self.dim_K, K.shape[-1])
+        #     "K must be of dimension {} but it is of dimension {}".format(self.dim_K, K.shape[-1])
         K, V = self.fc_k(K), self.fc_v(K)
 
         dim_split = self.dim_V // self.num_heads
