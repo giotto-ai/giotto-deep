@@ -167,6 +167,8 @@ class Gridsearch(Pipeline):
                                        interval_steps=1,
                                        n_min_trials=1)
         self.scalars_dict = dict()
+        # can be changed by changing this attribute
+        self.store_pickle = False
 
     def _initialise_new_model(self, models_hyperparam):
         """private method to find the maximal compatible set
@@ -316,7 +318,8 @@ class Gridsearch(Pipeline):
         # save model and optimizer
         save_model_and_optimizer(self.pipe.model,
                                  trial_id=str(trial.datetime_start).replace(":","-"),
-                                 optimizer=self.pipe.optimizer)
+                                 optimizer=self.pipe.optimizer,
+                                 store_pickle=self.store_pickle)
         # returns
         if self.search_metric == "loss":
             #if self.best_not_last:
