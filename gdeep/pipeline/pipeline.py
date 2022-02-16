@@ -569,8 +569,14 @@ class Pipeline:
                 labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
             #print(data_idx)
             assert k_folds > 0, "k_folds must be a positive integer"
-            fold = self.KFold_class(k_folds, shuffle=False)
+            fold = self.KFold_class(k_folds, shuffle=True)
             for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx, labels_for_split)):
+                # prints for class balance
+                #lab_tr_fold = [self.dataloaders[0].dataset[i][-1] for i in tr_idx]
+                #lab_val_fold = [self.dataloaders[0].dataset[i][-1] for i in val_idx]
+                #print("train labels:",[(i, lab_tr_fold.count(i)) for i in np.unique(np.array(lab_tr_fold))])
+                #print("val labels:",[(i, lab_val_fold.count(i)) for i in np.unique(np.array(lab_val_fold))])
+                #print("lenghts: ", len(lab_tr_fold), len(lab_val_fold))
                 self._init_optimizer_and_scheduler(keep_training, cross_validation,
                                                    optimizer, optimizers_param,
                                                    lr_scheduler, scheduler_params)
