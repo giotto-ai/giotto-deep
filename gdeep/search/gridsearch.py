@@ -466,7 +466,8 @@ class Gridsearch(Pipeline):
             super().__init__(model["model"],
                              dataloaders["dataloaders"],
                              self.bench.loss_fn,
-                             self.bench.writer)
+                             self.bench.writer,
+                             self.bench.KFold_class)
         except TypeError:
             pass
 
