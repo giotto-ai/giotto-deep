@@ -214,7 +214,6 @@ class Gridsearch(Pipeline):
                    lr_scheduler,
                    schedulers_params,
                    profiling,
-                   k_folds,
                    parallel_tpu,
                    keep_training,
                    store_grad_layer_hist,
@@ -245,8 +244,6 @@ class Gridsearch(Pipeline):
             profiling (bool):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -268,7 +265,7 @@ class Gridsearch(Pipeline):
 
         # for proper storing of data
         self._cross_validation = cross_validation
-        self._k_folds = k_folds
+        self._k_folds = self.KFold_class.n_splits
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
@@ -298,7 +295,6 @@ class Gridsearch(Pipeline):
                                          self.schedulers_param,
                                          (trial, self.search_metric),
                                          profiling,
-                                         k_folds,
                                          parallel_tpu,
                                          keep_training,
                                          store_grad_layer_hist,
@@ -348,7 +344,6 @@ class Gridsearch(Pipeline):
               lr_scheduler=None,
               schedulers_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -376,8 +371,6 @@ class Gridsearch(Pipeline):
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -418,7 +411,6 @@ class Gridsearch(Pipeline):
                                       lr_scheduler,
                                       schedulers_params,
                                       profiling,
-                                      k_folds,
                                       parallel_tpu,
                                       keep_training,
                                       store_grad_layer_hist,
@@ -438,7 +430,6 @@ class Gridsearch(Pipeline):
                                 lr_scheduler,
                                 schedulers_params,
                                 profiling,
-                                k_folds,
                                 parallel_tpu,
                                 keep_training,
                                 store_grad_layer_hist,
@@ -457,7 +448,6 @@ class Gridsearch(Pipeline):
                              lr_scheduler,
                              schedulers_params,
                              profiling,
-                             k_folds,
                              parallel_tpu,
                              keep_training,
                              store_grad_layer_hist,
@@ -490,7 +480,6 @@ class Gridsearch(Pipeline):
                                                        lr_scheduler,
                                                        schedulers_params,
                                                        profiling,
-                                                       k_folds,
                                                        parallel_tpu,
                                                        keep_training,
                                                        store_grad_layer_hist,

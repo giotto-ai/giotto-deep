@@ -27,8 +27,8 @@ class Benchmark:
             loss function
         writer (tensorboard SummaryWriter):
             tensorboard writer
-        KFold_class (sklearn.model_selection, default KFold):
-            the class to implement the KFold, can be
+        KFold_class (sklearn.model_selection, default KFold()):
+            the class instance to implement the KFold, can be
             any of the Splitter classes of sklearn. More
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
 
@@ -43,7 +43,7 @@ class Benchmark:
             warnings.warn("No writer detected")
         
         if not KFold_class:
-            self.KFold_class = KFold
+            self.KFold_class = KFold(5, shuffle=True)
         else:
             self.KFold_class = KFold_class
 
@@ -61,7 +61,6 @@ class Benchmark:
               lr_scheduler=None,
               scheduler_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -88,8 +87,6 @@ class Benchmark:
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -117,7 +114,6 @@ class Benchmark:
                             lr_scheduler,
                             scheduler_params,
                             profiling,
-                            k_folds,
                             parallel_tpu,
                             keep_training,
                             store_grad_layer_hist,
@@ -134,7 +130,6 @@ class Benchmark:
                         lr_scheduler,
                         scheduler_params,
                         profiling,
-                        k_folds,
                         parallel_tpu,
                         keep_training,
                         store_grad_layer_hist,
@@ -170,8 +165,6 @@ class Benchmark:
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -198,7 +191,6 @@ class Benchmark:
                    scheduler_params,
                    None,
                    profiling,
-                   k_folds,
                    parallel_tpu,
                    keep_training,
                    store_grad_layer_hist,

@@ -66,10 +66,42 @@ class Pipeline:
             loss function to average over batches
         writer (tensorboard SummaryWriter):
             tensorboard writer
-        KFold_class (sklearn.model_selection, default KFold):
-            the class to implement the KFold, can be
+        KFold_class (sklearn.model_selection, default ``KFold(5, shuffle=True)``):
+            the class instance to implement the KFold, can be
             any of the Splitter classes of sklearn. More
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
+
+    Examples::
+        from torch import nn
+        from torch.optim import SGD
+        from sklearn.model_selection import StratifiedKFold
+        from gdeep.pipeline import Pipeline
+        from gdeep.data import TorchDataLoader
+        from gdeep.search import GiottoSummaryWriter
+        # model
+        class model1(nn.Module):
+            def __init__(self):
+                super(model1, self).__init__()
+                self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[3, 5, 10, 5, 2]))
+            def forward(self, x):
+                return self.seqmodel(x)
+
+        model = model1()
+        # dataloaders
+        dl = TorchDataLoader(name="DoubleTori")
+        dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
+        dl_ts = None
+        # loss function
+        loss_fn = nn.CrossEntropyLoss()
+        # tb writer
+        writer = GiottoSummaryWriter()
+        # pipeline
+        pipe = Pipeline(model, [dl_tr, dl_val, dl_ts],
+                        loss_fn, writer,
+                        StratifiedKFold(5, shuffle=True))
+        # then one needs to train the model using the pipeline!
+        pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=5)
+
     """
 
     # def __init__(self, model, dataloaders, loss_fn, writer,
@@ -100,7 +132,7 @@ class Pipeline:
         self.best_not_last = False
 
         if not KFold_class:
-            self.KFold_class = KFold
+            self.KFold_class = KFold(5, shuffle=True)
         else:
             self.KFold_class = KFold_class
 
@@ -401,7 +433,6 @@ class Pipeline:
               scheduler_params=None,
               optuna_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -438,8 +469,6 @@ class Pipeline:
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 Use or not parallel TPU cores.
                 Still experimental!
@@ -506,7 +535,7 @@ class Pipeline:
         # profiling
         prof = self._init_profiler(profiling, 
                                    cross_validation, 
-                                   n_epochs, k_folds)
+                                   n_epochs, self.KFold_class.n_splits)
         
         # remove sampler to avoid conflicts with indexing
         # we will re-introduce the sampler when creating the indexing list
@@ -568,9 +597,8 @@ class Pipeline:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
                 labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
             #print(data_idx)
-            assert k_folds > 0, "k_folds must be a positive integer"
-            fold = self.KFold_class(k_folds, shuffle=True)
-            for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx, labels_for_split)):
+
+            for fold, (tr_idx, val_idx) in enumerate(self.KFold_class.split(data_idx, labels_for_split)):
                 # prints for class balance
                 #lab_tr_fold = [self.dataloaders[0].dataset[i][-1] for i in tr_idx]
                 #lab_val_fold = [self.dataloaders[0].dataset[i][-1] for i in val_idx]
@@ -614,10 +642,10 @@ class Pipeline:
             if self.best_not_last:
                 valloss = min(np.array(_inner_refactor_scalars(self.val_loss_list_hparam,
                                                   True,
-                                                  k_folds))[:,0])
+                                                  self.KFold_class.n_splits))[:,0])
                 valacc = max(np.array(_inner_refactor_scalars(self.val_acc_list_hparam,
                                                  True,
-                                                 k_folds))[:,0])
+                                                 self.KFold_class.n_splits))[:,0])
             else:
                 valloss = np.mean(mean_val_loss)
                 valacc = np.mean(mean_val_acc)
