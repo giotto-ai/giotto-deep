@@ -5,7 +5,17 @@
 ![Upload Python Package](https://github.com/giotto-ai/giotto-deep/workflows/Upload%20Python%20Package/badge.svg)
 # giotto-deep
 
-WIP
+The first library to bring seamless integration between topological data
+analysis and deep learning on top of PyTorch.
+The code for Persformer will be released open-source soon together
+with Giotto-deep.
+It aims to make the day-to-day of researchers easy, allowing them
+to focus on inventing new models and layers rather than dealing
+with the more standard deep-learning code.
+It comes with optimized implementations for multi-GPU/TPU
+computations and the ability to run benchmarks and
+hyperparameter optimization in a few lines of code.
+
 ## Documentation
 
 You can find the documentation of this repository here: https://giotto-ai.github.io/giotto-deep/
