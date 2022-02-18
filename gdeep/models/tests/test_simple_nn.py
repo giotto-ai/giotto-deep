@@ -1,6 +1,6 @@
 """Testing for simpleNN."""
 # License: GNU AGPLv3
-import pytest
+import pytest  # type: ignore
 import torch
 from .. import FFNet
 
