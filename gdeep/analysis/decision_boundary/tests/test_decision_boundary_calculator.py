@@ -6,7 +6,7 @@ from ....models import FFNet
 import torch
 
 
-device = device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def test_gfdbc_2_dim():
 
