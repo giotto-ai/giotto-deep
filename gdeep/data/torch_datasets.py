@@ -11,6 +11,16 @@ from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
 
+from abc import ABC, abstractmethod
+
+
+class AbstractDataLoader(ABC):
+    """The abstractr class to interface the
+    Giotto dataloaders"""
+    @abstractmethod
+    def build_dataloaders(self):
+        pass
+
 
 class DatasetNameError(Exception):
     """Exception for the improper dataset
@@ -36,7 +46,7 @@ class MapDataset(Dataset):
         return len(self.data_list)
 
 
-class TorchDataLoader:
+class TorchDataLoader(AbstractDataLoader):
     """Class to obtain DataLoaders from the classical
     datasets available on pytorch.
 
@@ -116,7 +126,7 @@ class TorchDataLoader:
         return train_dataloader, test_dataloader
         
 
-class DataLoaderFromImages:
+class DataLoaderFromImages(AbstractDataLoader):
     """This class is useful to build dataloaders
     from different images you have in a folder
     
@@ -195,7 +205,7 @@ class DataLoaderFromImages:
         return train_dataloader, test_dataloader
 
 
-class DataLoaderFromArray:
+class DataLoaderFromArray(AbstractDataLoader):
     """This class is useful to build dataloaders
     from a array of X and y
 
