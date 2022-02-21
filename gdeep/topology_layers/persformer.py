@@ -12,11 +12,6 @@ from gdeep.topology_layers.modules import ISAB, PMA, SAB  # type: ignore
     
 class Persformer(Module):
     """
-    Persformer architecture as described in
-    "Persformer: A Transformer Architecture for Topological Machine Learning"
-    https://arxiv.org/abs/2112.15210
-    
-
     Args:
         dim_input (int, optional):
             Dimension of input data for each element in the set. Defaults to 4.
@@ -48,21 +43,20 @@ class Persformer(Module):
         bias_attention (str, optional):
             Use bias in the query, key and value computation. Defaults to "True".
         attention_type (str, optional):
-            Either use full self-attention with quadratic complexity (´self_attention´, ´pytorch_self_attention´)
-            full self-attention with skip-connections (´pytorch_self_attention_skip´),
-            or induced attention with linear complexity (´induced_attention´). Defaults to "´pytorch_self_attention_skip´".
+            Either use full self-attention with quadratic complexity (`self_attention`, `pytorch_self_attention`)
+            full self-attention with skip-connections (`pytorch_self_attention_skip`),
+            or induced attention with linear complexity (`induced_attention`). Defaults to "pytorch_self_attention_skip".
         layer_norm_pooling (str, optional):
             Use layer norm in the multi-head attention pooling layer. Defaults to "False".
-
     Raises:
         ValueError:
             [description]
     """
     def __init__(
         self,
-        dim_input=4,  # 
+        dim_input=6,  # dimension of input data for each element in the set
         num_outputs=1,
-        dim_output=5,
+        dim_output=5,  # number of classes
         num_inds=32,  # number of induced points, see  Set Transformer paper
         dim_hidden=128,
         num_heads="4",
@@ -75,7 +69,7 @@ class Persformer(Module):
         num_layer_dec=3,
         activation="gelu",
         bias_attention="True",
-        attention_type="´pytorch_self_attention_skip´",
+        attention_type="induced_attention",
         layer_norm_pooling="False",
     ):
         super().__init__()
@@ -147,6 +141,26 @@ class Persformer(Module):
                             nn.Dropout(dropout_dec)) for i in range(num_layer_dec-1)],
             nn.Linear(enc_layer_dim[-1] * dim_hidden, dim_output),
         )
+        
+    @classmethod
+    def from_config(cls, config_model, config_data):
+        return cls(dim_input=config_model.dim_input,
+                   dim_output=config_data.num_classes,
+                   num_inds=config_model.num_induced_points,
+                   dim_hidden=config_model.dim_hidden,
+                   num_heads=str(config_model.num_heads),
+                   layer_norm=str(config_model.layer_norm),  # use layer norm
+                   pre_layer_norm=str(config_model.pre_layer_norm),
+                   simplified_layer_norm=str(config_model.simplified_layer_norm),
+                   dropout_enc=config_model.dropout_enc,
+                   dropout_dec=config_model.dropout_dec,
+                   num_layer_enc=config_model.num_layers_encoder,
+                   num_layer_dec=config_model.num_layers_decoder,
+                   activation=config_model.activation,
+                   bias_attention=config_model.bias_attention,
+                   attention_type=config_model.attention_type,
+                   layer_norm_pooling=str(config_model.layer_norm_pooling))
+    
 
     def forward(self, input):
         if self._attention_type == "pytorch_self_attention_skip":
@@ -156,7 +170,6 @@ class Persformer(Module):
             return self.dec(x).squeeze(dim=1)
         else:
             return self.dec(self.enc(input)).squeeze(dim=1)
-
     @property
     def num_params(self) -> int:
         """Returns number of trainable parameters.
