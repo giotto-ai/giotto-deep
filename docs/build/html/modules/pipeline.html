@@ -89,7 +89,7 @@
 the user to benchhmark models over architectures
 datasets, regularisations, metrics… in one line
 of code.</p>
-<dl>
+<dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>model (nn.Module):</dt><dd><p>standard torch model</p>
 </dd>
@@ -106,42 +106,39 @@ info at <a class="reference external" href="https://scikit-learn.org/stable/modu
 </dd>
 </dl>
 </dd>
-<dt>Examples::</dt><dd><p>from torch import nn
-from torch.optim import SGD
-from sklearn.model_selection import StratifiedKFold
-from gdeep.pipeline import Pipeline
-from gdeep.data import TorchDataLoader
-from gdeep.search import GiottoSummaryWriter
-# model
-class model1(nn.Module):</p>
-<blockquote>
-<div><dl class="simple">
-<dt>def __init__(self):</dt><dd><p>super(model1, self).__init__()
-self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[3, 5, 10, 5, 2]))</p>
-</dd>
-<dt>def forward(self, x):</dt><dd><p>return self.seqmodel(x)</p>
-</dd>
 </dl>
-</div></blockquote>
-<p>model = model1()
-# dataloaders
-dl = TorchDataLoader(name=”DoubleTori”)
-dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
-dl_ts = None
-# loss function
-loss_fn = nn.CrossEntropyLoss()
-# tb writer
-writer = GiottoSummaryWriter()
-# pipeline
-pipe = Pipeline(model, [dl_tr, dl_val, dl_ts],</p>
-<blockquote>
-<div><p>loss_fn, writer,
-StratifiedKFold(5, shuffle=True))</p>
-</div></blockquote>
-<p># then one needs to train the model using the pipeline!
-pipe.train(SGD, 2, True, {“lr”: 0.001}, n_accumulated_grads=5)</p>
-</dd>
-</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">SGD</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">StratifiedKFold</span>
+<span class="kn">from</span> <span class="nn">gdeep.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">TorchDataLoader</span>
+<span class="kn">from</span> <span class="nn">gdeep.search</span> <span class="kn">import</span> <span class="n">GiottoSummaryWriter</span>
+<span class="c1"># model</span>
+<span class="k">class</span> <span class="nc">model1</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">model1</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seqmodel</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span> <span class="n">FFNet</span><span class="p">(</span><span class="n">arch</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqmodel</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">model1</span><span class="p">()</span>
+<span class="c1"># dataloaders</span>
+<span class="n">dl</span> <span class="o">=</span> <span class="n">TorchDataLoader</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;DoubleTori&quot;</span><span class="p">)</span>
+<span class="n">dl_tr</span><span class="p">,</span> <span class="n">dl_val</span> <span class="o">=</span> <span class="n">dl</span><span class="o">.</span><span class="n">build_dataloaders</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">23</span><span class="p">)</span>
+<span class="n">dl_ts</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="c1"># loss function</span>
+<span class="n">loss_fn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+<span class="c1"># tb writer</span>
+<span class="n">writer</span> <span class="o">=</span> <span class="n">GiottoSummaryWriter</span><span class="p">()</span>
+<span class="c1"># pipeline</span>
+<span class="n">pipe</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[</span><span class="n">dl_tr</span><span class="p">,</span> <span class="n">dl_val</span><span class="p">,</span> <span class="n">dl_ts</span><span class="p">],</span>
+                <span class="n">loss_fn</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span>
+                <span class="n">StratifiedKFold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1"># then one needs to train the model using the pipeline!</span>
+<span class="n">pipe</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">SGD</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span> <span class="n">n_accumulated_grads</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.pipeline.Pipeline.copy_dataloader_params">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copy_dataloader_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_dataloader</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.pipeline.Pipeline.copy_dataloader_params" title="Permalink to this definition"></a></dt>
