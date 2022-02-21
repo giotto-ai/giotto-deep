@@ -76,6 +76,7 @@ class Pipeline:
         from torch import nn
         from torch.optim import SGD
         from sklearn.model_selection import StratifiedKFold
+        from gdeep.models import FFNet
         from gdeep.pipeline import Pipeline
         from gdeep.data import TorchDataLoader
         from gdeep.search import GiottoSummaryWriter
