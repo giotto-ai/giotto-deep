@@ -30,6 +30,8 @@ def test_size_of_persistence_diagrams():
         == [len(parameters) * num_orbits_per_class, 2 + og._num_homology_dimensions]
 
 def test_recursive_definition():
+    """Tests if the recursively defined orbits are correct
+    """
     for p_idx, p in enumerate(parameters):
         for o in range(num_orbits_per_class):
             for i in range(1, num_pts_per_orbit - 1):

@@ -27,3 +27,4 @@ h5py
 torchensemble
 dotmap
 sympy
+google-cloud-storage
