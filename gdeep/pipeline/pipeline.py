@@ -72,6 +72,7 @@ class Pipeline:
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
 
     Examples::
+
         from torch import nn
         from torch.optim import SGD
         from sklearn.model_selection import StratifiedKFold
