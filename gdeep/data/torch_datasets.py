@@ -268,3 +268,14 @@ class DataLoaderFromArray:
         test_dataloader = DataLoader(ts_data,
                                      **kwargs)
         return train_dataloader, val_dataloader, test_dataloader
+    
+    
+    
+class DataLoaderFromDataCloud():
+    """Class that loads data from the GCP datacloud
+
+    Raises:
+        NotImplementedError: _description_
+    """
+    #raise NotImplementedError
+    pass
