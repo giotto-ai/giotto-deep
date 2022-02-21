@@ -12,6 +12,10 @@ from gdeep.topology_layers.modules import ISAB, PMA, SAB  # type: ignore
     
 class Persformer(Module):
     """
+    Persformer architecture as described in
+    "Persformer: A Transformer Architecture for Topological Machine Learning"
+    https://arxiv.org/abs/2112.15210
+    
     Args:
         dim_input (int, optional):
             Dimension of input data for each element in the set. Defaults to 4.
