@@ -61,7 +61,7 @@ class TorchDataLoader(AbstractDataLoader):
     """
     def __init__(self, name: str="MNIST", convert_to_map_dataset: bool=False) -> None:
         self.name = name
-        self. convert_to_map_dataset =  convert_to_map_dataset
+        self.convert_to_map_dataset = convert_to_map_dataset
 
     def _build_datasets(self) -> None:
         """Private method to build the dataset from
@@ -152,7 +152,7 @@ class DataLoaderFromImages(AbstractDataLoader):
         self.labels_file = labels_file
         
     def build_dataloaders(self, size: tuple=(128, 128), **kwargs) -> tuple:
-        """This function builds the dataloader.
+        """This method builds the dataloader.
 
         Args:
             size (tuple):
@@ -165,7 +165,7 @@ class DataLoaderFromImages(AbstractDataLoader):
         Returns:
             tuple of torch.DataLoader:
                 the tuple with thhe training and
-                test dataloader directly useble in
+                test dataloader directly usable in
                 the pipeline class
         """
         CWD = os.getcwd()
@@ -235,15 +235,17 @@ class DataLoaderFromArray(AbstractDataLoader):
             self.y_train = y_train.reshape(-1, 1)
         else:
             self.y_train = y_train
-        self.X_val = X_val
-        if len(y_train.shape) == 1:
-            self.y_val = y_val.reshape(-1, 1)
-        else:
-            self.y_val = y_val
-        self.X_test = X_test
+        if X_val is not None:
+            self.X_val = X_val
+            if len(y_val.shape) == 1:
+                self.y_val = y_val.reshape(-1, 1)
+            else:
+                self.y_val = y_val
+        if X_test is not None:
+            self.X_test = X_test
 
     def build_dataloaders(self, **kwargs) -> tuple:
-        """This function builds the dataloader.
+        """This method builds the dataloader.
 
         Args:
             kwargs (dict):
@@ -253,7 +255,7 @@ class DataLoaderFromArray(AbstractDataLoader):
         Returns:
             tuple of torch.DataLoader:
                 the tuple with the training, validation and
-                test dataloader directly useble in
+                test dataloader directly usable in
                 the pipeline class
         """
         tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
@@ -264,11 +266,11 @@ class DataLoaderFromArray(AbstractDataLoader):
                          y if isinstance(y, int) else
                          torch.tensor(y).float()) for x, y in zip(self.X_val,
                                                                   self.y_val)]
-        except TypeError:
+        except (TypeError, AttributeError):
             val_data = None
         try:
             ts_data = [torch.from_numpy(x).float() for x in self.X_test]
-        except TypeError:
+        except (TypeError, AttributeError):
             ts_data = None
 
         train_dataloader = DataLoader(tr_data,
@@ -281,11 +283,14 @@ class DataLoaderFromArray(AbstractDataLoader):
     
     
     
-class DataLoaderFromDataCloud():
+class DataLoaderFromDataCloud(AbstractDataLoader):
     """Class that loads data from the GCP datacloud
 
     Raises:
         NotImplementedError: _description_
     """
-    #raise NotImplementedError
-    pass
+    def __init__(self):
+        pass
+
+    def build_dataloaders(self):
+        pass

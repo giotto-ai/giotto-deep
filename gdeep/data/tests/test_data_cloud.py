@@ -1,4 +1,4 @@
-from ..data_cloud import DataCloud
+from gdeep.data import DataCloud
 import os
 import hashlib
 import google
