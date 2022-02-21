@@ -409,7 +409,6 @@ class PreprocessTextQA(PreprocessText):
         max_length_0, max_length_1, max_length_2 = 0, 0, 1
         self.pad_item = self.vocabulary["."]
         for (_context, _question, _answer, _pos) in dl:
-            #print(_context, _question, _answer, _pos)
             max_length_0 = self._add_to_list(_context, text_pipeline, max_length_0, context_list)
             max_length_1 = self._add_to_list(_question, text_pipeline, max_length_1, question_list)
             pos_init_list.append(self._convert_to_token_index(_pos,_context))
@@ -420,7 +419,6 @@ class PreprocessTextQA(PreprocessText):
         pos_init_list = self._convert_list_to_tensor(pos_init_list, max_length_2, self.pad_item)
         pos_end_list = self._convert_list_to_tensor(pos_end_list, max_length_2, self.pad_item)
 
-        #print(answer_list.shape, context_list.shape, pos_init_list.shape, question_list.shape)
         return question_list, context_list, pos_init_list, pos_end_list
 
     def build_dataloaders(self, **kwargs) -> tuple:

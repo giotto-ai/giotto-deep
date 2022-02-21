@@ -142,7 +142,8 @@ class Gridsearch(Pipeline):
             super().__init__(self.pipe.model,
                              self.pipe.dataloaders,
                              self.pipe.loss_fn,
-                             self.pipe.writer)
+                             self.pipe.writer,
+                             self.pipe.KFold_class)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
@@ -166,6 +167,8 @@ class Gridsearch(Pipeline):
                                        interval_steps=1,
                                        n_min_trials=1)
         self.scalars_dict = dict()
+        # can be changed by changing this attribute
+        self.store_pickle = False
 
     def _initialise_new_model(self, models_hyperparam):
         """private method to find the maximal compatible set
@@ -211,7 +214,6 @@ class Gridsearch(Pipeline):
                    lr_scheduler,
                    schedulers_params,
                    profiling,
-                   k_folds,
                    parallel_tpu,
                    keep_training,
                    store_grad_layer_hist,
@@ -242,8 +244,6 @@ class Gridsearch(Pipeline):
             profiling (bool):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -265,7 +265,7 @@ class Gridsearch(Pipeline):
 
         # for proper storing of data
         self._cross_validation = cross_validation
-        self._k_folds = k_folds
+        self._k_folds = self.KFold_class.n_splits
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
@@ -281,7 +281,8 @@ class Gridsearch(Pipeline):
             #str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn,
+                             self.writer, self.KFold_class)
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
@@ -294,7 +295,6 @@ class Gridsearch(Pipeline):
                                          self.schedulers_param,
                                          (trial, self.search_metric),
                                          profiling,
-                                         k_folds,
                                          parallel_tpu,
                                          keep_training,
                                          store_grad_layer_hist,
@@ -310,6 +310,12 @@ class Gridsearch(Pipeline):
         self.writer.flush()
         # print
         self._print_output()
+        
+        # save model and optimizer
+        save_model_and_optimizer(self.pipe.model,
+                                 trial_id=str(trial.datetime_start).replace(":","-"),
+                                 optimizer=self.pipe.optimizer,
+                                 store_pickle=self.store_pickle)
         # returns
         if self.search_metric == "loss":
             #if self.best_not_last:
@@ -338,7 +344,6 @@ class Gridsearch(Pipeline):
               lr_scheduler=None,
               schedulers_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -366,8 +371,6 @@ class Gridsearch(Pipeline):
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -408,7 +411,6 @@ class Gridsearch(Pipeline):
                                       lr_scheduler,
                                       schedulers_params,
                                       profiling,
-                                      k_folds,
                                       parallel_tpu,
                                       keep_training,
                                       store_grad_layer_hist,
@@ -428,7 +430,6 @@ class Gridsearch(Pipeline):
                                 lr_scheduler,
                                 schedulers_params,
                                 profiling,
-                                k_folds,
                                 parallel_tpu,
                                 keep_training,
                                 store_grad_layer_hist,
@@ -447,7 +448,6 @@ class Gridsearch(Pipeline):
                              lr_scheduler,
                              schedulers_params,
                              profiling,
-                             k_folds,
                              parallel_tpu,
                              keep_training,
                              store_grad_layer_hist,
@@ -466,7 +466,8 @@ class Gridsearch(Pipeline):
             super().__init__(model["model"],
                              dataloaders["dataloaders"],
                              self.bench.loss_fn,
-                             self.bench.writer)
+                             self.bench.writer,
+                             self.bench.KFold_class)
         except TypeError:
             pass
 
@@ -480,7 +481,6 @@ class Gridsearch(Pipeline):
                                                        lr_scheduler,
                                                        schedulers_params,
                                                        profiling,
-                                                       k_folds,
                                                        parallel_tpu,
                                                        keep_training,
                                                        store_grad_layer_hist,
@@ -492,19 +492,19 @@ class Gridsearch(Pipeline):
         try:
             self._results(model_name=model["name"],
                           dataset_name=dataloaders["name"])
-            save_model_and_optimizer(self.pipe.model,
-                                     model["name"] +
-                                     str(self.optimizers_param) +
-                                     str(self.dataloaders_param) +
-                                     str(self.models_hyperparam) *
-                                     str(self.schedulers_param),
-                                     self.pipe.optimizer)
+            #save_model_and_optimizer(self.pipe.model,
+            #                         model["name"] +
+            #                         str(self.optimizers_param) +
+            #                         str(self.dataloaders_param) +
+            #                         str(self.models_hyperparam) +
+            #                         str(self.schedulers_param),
+            #                         self.pipe.optimizer)
         except TypeError:
             try:
                 self._results(model_name=self.pipe.model.__class__.__name__,
                               dataset_name=self.pipe.dataloaders[0].dataset.__class__.__name__)
-                save_model_and_optimizer(self.pipe.model,
-                                         optimizer=self.pipe.optimizer)
+                #save_model_and_optimizer(self.pipe.model,
+                #                         optimizer=self.pipe.optimizer)
             except AttributeError:
                 self._results()
 

@@ -6,9 +6,11 @@ from ....models import FFNet
 import torch
 
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def test_gfdbc_2_dim():
 
-    circle_detect_nn = FFNet([2, 2])
+    circle_detect_nn = FFNet([2, 2]).to(device)
 
     g = GradientFlowDecisionBoundaryCalculator(
             model=circle_detect_nn,
@@ -22,7 +24,7 @@ def test_gfdbc_2_dim():
 
 def test_gfdbc_multiclass():
 
-    circle_nn_3d = FFNet([3, 3])
+    circle_nn_3d = FFNet([3, 3]).to(device)
 
     g = GradientFlowDecisionBoundaryCalculator(model=
                                                circle_nn_3d,

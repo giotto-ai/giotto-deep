@@ -20,7 +20,9 @@ def _are_compatible(model_dict, dataloaders_dict):
 
 def save_model_and_optimizer(model,
                              model_name: str=None,
-                             optimizer=None):
+                             trial_id: str=None,
+                             optimizer=None,
+                             store_pickle=False):
     """Save the model and the optimizer state_dict
 
     Args:
@@ -28,27 +30,47 @@ def save_model_and_optimizer(model,
             the model to be saved
         model_name (str):
             model name
+        trial_id (str):
+            trial id to add to the name
         optimizer (torch.optim):
             the optimizer to save
+        store_pickle (bool, default False):
+            whether to store the pickle file of the model
+            instead of the state_dict. The default
+            is for state_dicts
     """
+
+    if not trial_id:
+        trial_id = str(round(time.time()))
+
     if os.path.exists("state_dicts"):
         pass
     else:
         os.makedirs("state_dicts")
 
     if model_name is None:
-        torch.save(model.state_dict(),
-                   os.path.join("state_dicts",
-                                model.__class__.__name__+"-"+str(round(time.time()))+".pth"))
+        if store_pickle:
+            torch.save(model,
+                       os.path.join("state_dicts",
+                                    model.__class__.__name__ + "-" + trial_id + ".pickle"))
+        else:
+            torch.save(model.state_dict(),
+                       os.path.join("state_dicts",
+                                    model.__class__.__name__+"-"+trial_id+".pth"))
     else:
-        torch.save(model.state_dict(),
-                   os.path.join("state_dicts",
-                                model_name +"-"+ str(round(time.time()))+".pth"))
+        if store_pickle:
+            torch.save(model,
+                       os.path.join("state_dicts",
+                                    model_name + "-" + trial_id + ".pickle"))
+        else:
+            torch.save(model.state_dict(),
+                       os.path.join("state_dicts",
+                                    model_name +"-"+trial_id+".pth"))
     if optimizer is not None:
         torch.save(optimizer.state_dict(),
                    os.path.join("state_dicts",
                                 str(optimizer).replace("\n","").replace("(","").replace(":","").replace(")","")
-                                +"-"+ str(round(time.time()))+".pth"))
+                                +"-"+trial_id+".pth"))
 
 
 def ensemble_wrapper(clss):
