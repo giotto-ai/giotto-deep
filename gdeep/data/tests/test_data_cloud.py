@@ -2,6 +2,9 @@ from ..data_cloud import DataCloud
 import os
 import hashlib
 import google
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 def test_download():
     """Test download of sample data from bucket
@@ -23,4 +26,4 @@ def test_download():
         # check if downloaded file is correct
         assert "d4b12b2dc2bc199831ba803431184fcb" == hashlib.md5(file_as_bytes(open(file_path, 'rb'))).hexdigest()
     except google.auth.exceptions.DefaultCredentialsError:
-        pass
+        LOGGER.warning("GCP credentials failed.")
