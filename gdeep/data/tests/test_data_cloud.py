@@ -2,6 +2,7 @@ from ..data_cloud import DataCloud
 import os
 import hashlib
 import google
+import pytest
 
 def test_download():
     """Test download of sample data from bucket
@@ -11,6 +12,12 @@ def test_download():
         file_name = "giotto-deep-big.png"
         data_cloud.download(file_name,
                             file_name)
+        
+        # check if correct extension is raised when trying to download non-existing file
+        with pytest.raises(google.api_core.exceptions.NotFound):
+            non_existing_file_name: str = "giotto-deep-bigs.png"
+            data_cloud.download(non_existing_file_name,
+                                non_existing_file_name)
         
         # check if downloaded file exists
         file_path = os.path.join(data_cloud.download_directory, file_name)
