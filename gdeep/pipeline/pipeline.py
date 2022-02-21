@@ -10,6 +10,7 @@ import warnings
 from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data.sampler import SubsetRandomSampler
 from gdeep.models import ModelExtractor
+from gdeep.utility import _inner_refactor_scalars
 from ..utility.optimisation import MissingClosureError
 import optuna
 
@@ -63,14 +64,49 @@ class Pipeline:
             `[dl_tr, dl_val, dl_ts]`
         loss_fn (Callables):
             loss function to average over batches
-        wirter (tensorboard SummaryWriter):
+        writer (tensorboard SummaryWriter):
             tensorboard writer
+        KFold_class (sklearn.model_selection, default ``KFold(5, shuffle=True)``):
+            the class instance to implement the KFold, can be
+            any of the Splitter classes of sklearn. More
+            info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
+
+    Examples::
+        from torch import nn
+        from torch.optim import SGD
+        from sklearn.model_selection import StratifiedKFold
+        from gdeep.pipeline import Pipeline
+        from gdeep.data import TorchDataLoader
+        from gdeep.search import GiottoSummaryWriter
+        # model
+        class model1(nn.Module):
+            def __init__(self):
+                super(model1, self).__init__()
+                self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[3, 5, 10, 5, 2]))
+            def forward(self, x):
+                return self.seqmodel(x)
+
+        model = model1()
+        # dataloaders
+        dl = TorchDataLoader(name="DoubleTori")
+        dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
+        dl_ts = None
+        # loss function
+        loss_fn = nn.CrossEntropyLoss()
+        # tb writer
+        writer = GiottoSummaryWriter()
+        # pipeline
+        pipe = Pipeline(model, [dl_tr, dl_val, dl_ts],
+                        loss_fn, writer,
+                        StratifiedKFold(5, shuffle=True))
+        # then one needs to train the model using the pipeline!
+        pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=5)
 
     """
 
     # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
-    def __init__(self, model, dataloaders, loss_fn, writer):
+    def __init__(self, model, dataloaders, loss_fn, writer, KFold_class=None):
         self.model = model
         self.initial_model = copy.deepcopy(self.model)
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
@@ -93,6 +129,12 @@ class Pipeline:
         self.run_name = None
         self.val_loss_list_hparam = []
         self.val_acc_list_hparam = []
+        self.best_not_last = False
+
+        if not KFold_class:
+            self.KFold_class = KFold(5, shuffle=True)
+        else:
+            self.KFold_class = KFold_class
 
         
     def _set_initial_model(self):
@@ -173,9 +215,13 @@ class Pipeline:
 
                 try:
                     top2_pred = torch.topk(pred, 2, -1).values
-                    self.writer.add_histogram(writer_tag + "/predictions/train",
-                                              torch.abs(torch.diff(top2_pred, dim=-1)),
-                                              self.train_epoch*steps + batch)
+                    try:
+                        self.writer.add_histogram(writer_tag + "/predictions/train",
+                                                  torch.abs(torch.diff(top2_pred, dim=-1)),
+                                                  self.train_epoch*steps + batch)
+                    except ValueError:
+                        warnings.warn(f"The histogram is empty, most likely because your loss"
+                                      f" is exploding. Try use gradient clipping.")
                 except RuntimeError:
                     pass
             except AttributeError:
@@ -267,9 +313,13 @@ class Pipeline:
 
             try:
                 top2_pred = torch.topk(torch.vstack(pred), 2, -1).values
-                self.writer.add_histogram(writer_tag + "/predictions/validation",
-                                          torch.abs(torch.diff(top2_pred, dim=-1)),
-                                          self.val_epoch)
+                try:
+                    self.writer.add_histogram(writer_tag + "/predictions/validation",
+                                              torch.abs(torch.diff(top2_pred, dim=-1)),
+                                              self.val_epoch)
+                except ValueError:
+                    warnings.warn(f"The histogram is empty, most likely because your loss"
+                                  f" is exploding. Try use gradient clipping.")
             except RuntimeError:
                 pass
         except AttributeError:
@@ -280,9 +330,7 @@ class Pipeline:
             self.writer.flush()
         except AttributeError:
             pass
-        # store the best results
-        self.best_val_acc = max(self.best_val_acc,100*correct)
-        self.best_val_loss = min(self.best_val_loss,val_loss)
+
         return val_loss, 100*correct
 
     @staticmethod
@@ -385,7 +433,6 @@ class Pipeline:
               scheduler_params=None,
               optuna_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -422,8 +469,6 @@ class Pipeline:
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 Use or not parallel TPU cores.
                 Still experimental!
@@ -490,7 +535,7 @@ class Pipeline:
         # profiling
         prof = self._init_profiler(profiling, 
                                    cross_validation, 
-                                   n_epochs, k_folds)
+                                   n_epochs, self.KFold_class.n_splits)
         
         # remove sampler to avoid conflicts with indexing
         # we will re-introduce the sampler when creating the indexing list
@@ -547,11 +592,19 @@ class Pipeline:
             valloss, valacc = 0, 0
             try:
                 data_idx = self.dataloaders[0].sampler.indices
+                labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
+                labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
             #print(data_idx)
-            fold = KFold(k_folds, shuffle=False)
-            for fold, (tr_idx, val_idx) in enumerate(fold.split(data_idx)):
+
+            for fold, (tr_idx, val_idx) in enumerate(self.KFold_class.split(data_idx, labels_for_split)):
+                # prints for class balance
+                #lab_tr_fold = [self.dataloaders[0].dataset[i][-1] for i in tr_idx]
+                #lab_val_fold = [self.dataloaders[0].dataset[i][-1] for i in val_idx]
+                #print("train labels:",[(i, lab_tr_fold.count(i)) for i in np.unique(np.array(lab_tr_fold))])
+                #print("val labels:",[(i, lab_val_fold.count(i)) for i in np.unique(np.array(lab_val_fold))])
+                #print("lenghts: ", len(lab_tr_fold), len(lab_val_fold))
                 self._init_optimizer_and_scheduler(keep_training, cross_validation,
                                                    optimizer, optimizers_param,
                                                    lr_scheduler, scheduler_params)
@@ -572,22 +625,30 @@ class Pipeline:
                 # the training and validation loop
                 if parallel_tpu == False:
                     valloss, valacc = self._training_loops(n_epochs, dl_tr,
-                                                       dl_val, lr_scheduler, self.scheduler,
-                                                       prof, check_optuna, search_metric,
-                                                       trial, writer_tag + "/fold = " + str(fold+1))
+                                                           dl_val, lr_scheduler, self.scheduler,
+                                                           prof, check_optuna, search_metric,
+                                                           trial, cross_validation,
+                                                           writer_tag + "/fold = " + str(fold+1))
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, optimizers_param, lr_scheduler,
                                                        self.scheduler,
                                                        prof, check_optuna, search_metric,
-                                                       trial)
+                                                       trial, cross_validation)
 
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
             # mean of the validation and loss accuracies over folds
-            valloss = np.mean(mean_val_loss)
-            valacc = np.mean(mean_val_acc)
-
+            if self.best_not_last:
+                valloss = min(np.array(_inner_refactor_scalars(self.val_loss_list_hparam,
+                                                  True,
+                                                  self.KFold_class.n_splits))[:,0])
+                valacc = max(np.array(_inner_refactor_scalars(self.val_acc_list_hparam,
+                                                 True,
+                                                 self.KFold_class.n_splits))[:,0])
+            else:
+                valloss = np.mean(mean_val_loss)
+                valacc = np.mean(mean_val_acc)
 
         else:
             self._init_optimizer_and_scheduler(keep_training, cross_validation,
@@ -598,13 +659,14 @@ class Pipeline:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, self.scheduler,
                                                    prof, check_optuna, search_metric,
-                                                   trial, writer_tag)
+                                                   trial, 0, writer_tag)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, optimizers_param, lr_scheduler,
                                                    self.scheduler,
                                                    prof, check_optuna, search_metric,
-                                                   trial)
+                                                   trial, 0)
+
         try:
             self.writer.flush()
         except AttributeError:
@@ -618,7 +680,7 @@ class Pipeline:
     def _training_loops(self, n_epochs, dl_tr,
                         dl_val, lr_scheduler, scheduler,
                         prof, check_optuna, search_metric,
-                        trial, writer_tag=""):
+                        trial, cross_validation=False, writer_tag=""):
         """private method to run the trainign loops
         
         Args:
@@ -650,6 +712,8 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
+            cross_validation (bool, default False)
+                the boolean flag for cross validation
             writer_tag (str):
                 the tensorboard writer tag
 
@@ -658,7 +722,7 @@ class Pipeline:
                 the validation loss and validation accuracy
         """
 
-        valloss, valacc = 0, 0
+        min_valloss, max_valacc = np.inf, 0
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.val_epoch = t
@@ -669,31 +733,42 @@ class Pipeline:
                 try:
                     lista = me.get_layers_param()
                     for k, item in lista.items():
-                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
-                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
-                                                  torch.log(torch.abs(item)+1e-8),t)
+                        try:
+                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/"+k,item,t)
+                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                      torch.log(torch.abs(item)+1e-8),t)
+                        except ValueError:
+                            warnings.warn(f"The histogram is empty, most likely because your loss"
+                                          f" is exploding. Try use gradient clipping.")
                     lista_grad = me.get_layers_grads()
                     for k, item in zip(lista.keys(),lista_grad):
-                        self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
-                        self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
-                                                  torch.log(torch.abs(item)+1e-8),t)
+                        try:
+                            self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/"+k,item,t)
+                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/"+k,
+                                                      torch.log(torch.abs(item)+1e-8),t)
+                        except ValueError:
+                            warnings.warn(f"The histogram is empty, most likely because your loss"
+                                          f" is exploding. Try use gradient clipping.")
                     self.writer.flush()
 
                 except AttributeError:
                     pass
             self._run_pipe_hook(t+1, self.optimizer, me, self.writer)
             valloss, valacc = self._val_loop(dl_val, writer_tag)
+            # absolute best of loss and accuracy
+            self.best_val_acc = max(self.best_val_acc, valacc)
+            self.best_val_loss = min(self.best_val_loss, valloss)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
                 scheduler.step()
             if not prof is None:
                 prof.step()
-
-            if check_optuna:
+            # pruning trials
+            if check_optuna and not cross_validation:
                 if search_metric == "loss":
-                    trial.report(valloss, t)
+                    trial.report(valloss, t) # + fold*n_epochs)
                 else:
-                    trial.report(valacc, t)
+                    trial.report(valacc, t) # + fold*n_epochs)
                 # Handle pruning based on the intermediate value.
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
@@ -704,7 +779,7 @@ class Pipeline:
                                     dl_val_old, optimizers_param,
                                     lr_scheduler, scheduler,
                                     prof, check_optuna, search_metric,
-                                    trial):
+                                    trial, cross_validation=False):
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
         Note: ``cross_validation`` parameter as well as
@@ -733,6 +808,8 @@ class Pipeline:
                 corresponds to the gridsearch criterion
             trial (optuna.trial):
                 the optuna trial
+            cross_validation (bool, default False)
+                the boolean flag for cross validation
 
         Returns:
             (float, float):
@@ -864,7 +941,7 @@ class Pipeline:
                 if not prof is None:
                     prof.step()
 
-                if check_optuna:
+                if check_optuna and not cross_validation:
                     if search_metric == "loss":
                         trial.report(loss, t)
                     else:

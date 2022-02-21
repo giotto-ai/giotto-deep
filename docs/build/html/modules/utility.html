@@ -103,7 +103,7 @@ as you would normally do for the original
 
 <dl class="py function">
 <dt class="sig sig-object py" id="gdeep.utility.save_model_and_optimizer">
-<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">save_model_and_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.utility.save_model_and_optimizer" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">save_model_and_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_pickle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.utility.save_model_and_optimizer" title="Permalink to this definition"></a></dt>
 <dd><p>Save the model and the optimizer state_dict</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -111,7 +111,13 @@ as you would normally do for the original
 </dd>
 <dt>model_name (str):</dt><dd><p>model name</p>
 </dd>
+<dt>trial_id (str):</dt><dd><p>trial id to add to the name</p>
+</dd>
 <dt>optimizer (torch.optim):</dt><dd><p>the optimizer to save</p>
+</dd>
+<dt>store_pickle (bool, default False):</dt><dd><p>whether to store the pickle file of the model
+instead of the state_dict. The default
+is for state_dicts</p>
 </dd>
 </dl>
 </dd>

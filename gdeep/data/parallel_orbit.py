@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Union
 import numpy as np  # type: ignore
 import multiprocessing
 import torch  # type: ignore
@@ -55,17 +55,17 @@ class OrbitsGenerator(object):
             number of cpus to run the computation on. Defaults to 1.
     """
     def __init__(self,
-             parameters: Sequence[float] = (2.5, 3.5, 4.0, 4.1, 4.3),
-             num_orbits_per_class: int = 1_000,
-             num_pts_per_orbit: int = 1_000,
-             homology_dimensions: Sequence[int] = (0, 1),
-             validation_percentage: float=0.0,
-             test_percentage: float=0.0,
-             dynamical_system: str='classical_convention',
-             n_jobs: int=1,
-             dtype: str = 'float32',
-             arbitrary_precision=False,
-             ) -> None:
+                 parameters: Sequence[float] = (2.5, 3.5, 4.0, 4.1, 4.3),
+                 num_orbits_per_class: int = 1_000,
+                 num_pts_per_orbit: int = 1_000,
+                 homology_dimensions: Sequence[int] = (0, 1),
+                 validation_percentage: float = 0.0,
+                 test_percentage: float = 0.0,
+                 dynamical_system: str = 'classical_convention',
+                 n_jobs: int = 1,
+                 dtype: str = 'float32',
+                 arbitrary_precision=False,
+                 ) -> None:
 
         # Initialize member variables.
         self._parameters = parameters
@@ -101,7 +101,6 @@ class OrbitsGenerator(object):
 
         self.arbitrary_precision = arbitrary_precision
 
-
     def orbits_from_array(self, orbits):
         assert (orbits.shape[0] == self._num_orbits_per_class * self._num_classes and
                 orbits.shape[1] == self._num_pts_per_orbit and
@@ -110,7 +109,7 @@ class OrbitsGenerator(object):
         self._orbits = orbits
 
         y = np.array([self._num_orbits_per_class * [c]
-                          for c in range(self._num_classes)])
+                      for c in range(self._num_classes)])
 
         self._labels = y.reshape(-1)
 
@@ -133,7 +132,7 @@ class OrbitsGenerator(object):
             y = np.array([self._num_orbits_per_class * [c]
                           for c in range(self._num_classes)])
             
-            self._labels = y.reshape(-1).astype('int64')
+            self._labels = y.reshape(-1).astype('int64')  # type: ignore
             # generate dataset
             for class_idx, p in enumerate(self._parameters):  # type: ignore
                 x[class_idx, :, 0, :] = np.random.rand(self._num_orbits_per_class, 2)  # type: ignore
@@ -163,7 +162,7 @@ class OrbitsGenerator(object):
                             x[class_idx, :, i, 1] = (y_cur + p * x_next * (1. - x_next)) % 1
 
 
-            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))
+            self._orbits = x.reshape((-1, self._num_pts_per_orbit, 2))  #type: ignore
 
     def _orbit_high_precision(self, x_init, rho, num_points=1_000, precision=600):
         x_precise = np.zeros((1_000, 2))
@@ -228,7 +227,7 @@ class OrbitsGenerator(object):
         else:
             return persistence_diagrams[:, :, :2]
     
-    def get_orbits(self) -> np.ndarray:
+    def get_orbits(self) -> Union[None, np.ndarray]:
         """Returns the orbits as an ndarrays of shape
         (num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
         Returns:
@@ -239,7 +238,7 @@ class OrbitsGenerator(object):
             self._generate_orbits()
         return self._orbits
     
-    def get_persistence_diagrams(self) -> np.ndarray:
+    def get_persistence_diagrams(self) -> Union[None, np.ndarray]:
         """Returns the orbits as an ndarrays of shape
         (num_classes * num_orbits_per_class, num_topological_features, 3)
         Returns:
@@ -312,7 +311,7 @@ class OrbitsGenerator(object):
             self._generate_orbits()
         if self._train_idcs is None:
             self._split_data_idcs()
-        return self._get_data_loaders([self._orbits.astype(self._dtype),
+        return self._get_data_loaders([self._orbits.astype(self._dtype),  # type: ignore
                                             self._labels], # type: ignore
                                         dataloaders_kwargs)
     
@@ -343,8 +342,8 @@ class OrbitsGenerator(object):
         if self._train_idcs is None:
             self._split_data_idcs()
         return self._get_data_loaders([self._orbits,  # type: ignore
-                                       self._persistence_diagrams,
-                                       self._labels],
+                                       self._persistence_diagrams,  # type: ignore
+                                       self._labels],  # type: ignore
                                        dataloaders_kwargs)
 
 

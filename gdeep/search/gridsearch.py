@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import numpy as np
 import time
-from gdeep.utility import _are_compatible
+from gdeep.utility import _are_compatible, _inner_refactor_scalars
 from optuna.trial import TrialState
 from gdeep.pipeline import Pipeline
 from gdeep.search import Benchmark, _benchmarking_param
@@ -33,7 +33,7 @@ else:
 class GiottoSummaryWriter(SummaryWriter):
     def add_hparams(self, hparam_dict, metric_dict,
                     hparam_domain_discrete=None, run_name=None,
-                    scalars_lists=None):
+                    scalars_lists=None, best_not_last=False):
         """Add a set of hyperparameters to be compared in TensorBoard.
 
         Args:
@@ -64,28 +64,33 @@ class GiottoSummaryWriter(SummaryWriter):
         Examples::
 
             from torch.utils.tensorboard import SummaryWriter
-            with SummaryWriter() as w:
+            with GiottoSummaryWriter() as w:
                 for i in range(5):
                     w.add_hparams({'lr': 0.1*i, 'bsize': i},
                                   {'hparam/accuracy': 10*i, 'hparam/loss': 10*i})
 
         """
         torch._C._log_api_usage_once("tensorboard.logging.add_hparams")
-        if type(hparam_dict) is not dict or type(metric_dict) is not dict:
+        if (not isinstance(hparam_dict, dict)) or (not isinstance(metric_dict, dict)):
             raise TypeError('hparam_dict and metric_dict should be dictionary.')
         exp, ssi, sei = hparams(hparam_dict, metric_dict, hparam_domain_discrete)
-        # print(scalars_lists, "scalar lists!!!!")
         if not run_name:
-            run_name = str(time.time())
+            run_name = str(time.time()).replace(":","-")
         logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
         with SummaryWriter(log_dir=logdir) as w_hp:
             w_hp.file_writer.add_summary(exp)
             w_hp.file_writer.add_summary(ssi)
             w_hp.file_writer.add_summary(sei)
-            if isinstance(scalars_lists, list):
-                for v, t in scalars_lists[0]:
+            if isinstance(scalars_lists, list) or isinstance(scalars_lists, tuple):
+                scalars_list_loss = scalars_lists[0]
+                if best_not_last:
+                    scalars_list_loss = [x for x in scalars_list_loss[:np.argmin(np.array(scalars_list_loss)[:,0])+1]]
+                for v, t in scalars_list_loss:
                     w_hp.add_scalar("loss", v, t)
-                for v, t in scalars_lists[1]:
+                scalars_list_acc = scalars_lists[1]
+                if best_not_last:
+                    scalars_list_acc = [x for x in scalars_list_acc[:np.argmax(np.array(scalars_list_acc)[:,0])+1]]
+                for v, t in scalars_list_acc:
                     w_hp.add_scalar("accuracy", v, t)
 
 
@@ -101,9 +106,11 @@ class Gridsearch(Pipeline):
             either ``'loss'`` or ``'accuracy'``
         n_trials (int):
             number of total gridsearch trials
-        best_not_last (bool):
-            A flag to use the best validation accuracy over the
-            epochs or the validation accuracy of the last epoch
+        best_not_last (bool, default False):
+            boolean flag that is ``True`` would use
+            the best metric over epochs averaged over the folds in CV
+            rather than the last value of the metrics
+            over the epochs averaged over the folds
         pruner (optuna.Pruners, default MedianPruner):
             Instance of an optuna pruner, can be user-defined
         sampler (optuna.Samplers, default TPESampler):
@@ -115,13 +122,13 @@ class Gridsearch(Pipeline):
         study_name (str):
             name of the optuna study
 
-
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10, best_not_last=False, 
+    def __init__(self, obj, search_metric="loss", n_trials=10,
+                 best_not_last=False,
                  pruner=None, sampler=None,
                  db_url=None, study_name=None):
-        self.best_not_last = best_not_last
+        self.best_not_last_gs = best_not_last
         self.is_pipe = None
         self.study = None
         self.best_val_acc_gs = 0
@@ -135,7 +142,8 @@ class Gridsearch(Pipeline):
             super().__init__(self.pipe.model,
                              self.pipe.dataloaders,
                              self.pipe.loss_fn,
-                             self.pipe.writer)
+                             self.pipe.writer,
+                             self.pipe.KFold_class)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
@@ -159,6 +167,8 @@ class Gridsearch(Pipeline):
                                        interval_steps=1,
                                        n_min_trials=1)
         self.scalars_dict = dict()
+        # can be changed by changing this attribute
+        self.store_pickle = False
 
     def _initialise_new_model(self, models_hyperparam):
         """private method to find the maximal compatible set
@@ -204,7 +214,6 @@ class Gridsearch(Pipeline):
                    lr_scheduler,
                    schedulers_params,
                    profiling,
-                   k_folds,
                    parallel_tpu,
                    keep_training,
                    store_grad_layer_hist,
@@ -235,8 +244,6 @@ class Gridsearch(Pipeline):
             profiling (bool):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -256,6 +263,9 @@ class Gridsearch(Pipeline):
                 on tensorboard
         """
 
+        # for proper storing of data
+        self._cross_validation = cross_validation
+        self._k_folds = self.KFold_class.n_splits
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
@@ -271,9 +281,12 @@ class Gridsearch(Pipeline):
             #str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn, self.writer)
+        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn,
+                             self.writer, self.KFold_class)
+        # set best_not_last
+        self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
-        self.pipe.run_name = str(trial.datetime_start)
+        self.pipe.run_name = str(trial.datetime_start).replace(":","-")
         loss, accuracy = self.pipe.train(optimizer, n_epochs,
                                          cross_validation,
                                          self.optimizers_param,
@@ -282,14 +295,13 @@ class Gridsearch(Pipeline):
                                          self.schedulers_param,
                                          (trial, self.search_metric),
                                          profiling,
-                                         k_folds,
                                          parallel_tpu,
                                          keep_training,
                                          store_grad_layer_hist,
                                          n_accumulated_grads,
                                          writer_tag
                                          )
-        self.scalars_dict[str(trial.datetime_start)] = [self.pipe.val_loss_list_hparam,
+        self.scalars_dict[str(trial.datetime_start).replace(":","-")] = [self.pipe.val_loss_list_hparam,
                                                         self.pipe.val_acc_list_hparam]
         # release the run_name
         self.pipe.run_name = None
@@ -298,20 +310,26 @@ class Gridsearch(Pipeline):
         self.writer.flush()
         # print
         self._print_output()
+        
+        # save model and optimizer
+        save_model_and_optimizer(self.pipe.model,
+                                 trial_id=str(trial.datetime_start).replace(":","-"),
+                                 optimizer=self.pipe.optimizer,
+                                 store_pickle=self.store_pickle)
         # returns
         if self.search_metric == "loss":
-            if self.best_not_last:
-                self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
-                self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
-                return best_loss
+            #if self.best_not_last:
+            #    self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
+            #    self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
+            #    return best_loss
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return loss
         else:
-            if self.best_not_last:
-                self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
-                self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
-                return best_accuracy
+            #if self.best_not_last:
+            #    self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
+            #    self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
+            #    return best_accuracy
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return accuracy
@@ -326,7 +344,6 @@ class Gridsearch(Pipeline):
               lr_scheduler=None,
               schedulers_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -354,8 +371,6 @@ class Gridsearch(Pipeline):
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -396,7 +411,6 @@ class Gridsearch(Pipeline):
                                       lr_scheduler,
                                       schedulers_params,
                                       profiling,
-                                      k_folds,
                                       parallel_tpu,
                                       keep_training,
                                       store_grad_layer_hist,
@@ -416,13 +430,11 @@ class Gridsearch(Pipeline):
                                 lr_scheduler,
                                 schedulers_params,
                                 profiling,
-                                k_folds,
                                 parallel_tpu,
                                 keep_training,
                                 store_grad_layer_hist,
                                 n_accumulated_grads,
                                 writer_tag="")
-
         self._store_to_tensorboard()
 
 
@@ -436,7 +448,6 @@ class Gridsearch(Pipeline):
                              lr_scheduler,
                              schedulers_params,
                              profiling,
-                             k_folds,
                              parallel_tpu,
                              keep_training,
                              store_grad_layer_hist,
@@ -455,7 +466,8 @@ class Gridsearch(Pipeline):
             super().__init__(model["model"],
                              dataloaders["dataloaders"],
                              self.bench.loss_fn,
-                             self.bench.writer)
+                             self.bench.writer,
+                             self.bench.KFold_class)
         except TypeError:
             pass
 
@@ -469,7 +481,6 @@ class Gridsearch(Pipeline):
                                                        lr_scheduler,
                                                        schedulers_params,
                                                        profiling,
-                                                       k_folds,
                                                        parallel_tpu,
                                                        keep_training,
                                                        store_grad_layer_hist,
@@ -479,21 +490,21 @@ class Gridsearch(Pipeline):
                             timeout=None)
 
         try:
-            self._results(model_name = model["name"],
-                          dataset_name = dataloaders["name"])
-            save_model_and_optimizer(self.pipe.model,
-                                     model["name"] +
-                                     str(self.optimizers_param) +
-                                     str(self.dataloaders_param) +
-                                     str(self.models_hyperparam) *
-                                     str(self.schedulers_param),
-                                     self.pipe.optimizer)
+            self._results(model_name=model["name"],
+                          dataset_name=dataloaders["name"])
+            #save_model_and_optimizer(self.pipe.model,
+            #                         model["name"] +
+            #                         str(self.optimizers_param) +
+            #                         str(self.dataloaders_param) +
+            #                         str(self.models_hyperparam) +
+            #                         str(self.schedulers_param),
+            #                         self.pipe.optimizer)
         except TypeError:
-            try: 
-                self._results(model_name = self.pipe.model.__class__.__name__,
-                              dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__)
-                save_model_and_optimizer(self.pipe.model,
-                                         optimizer=self.pipe.optimizer)
+            try:
+                self._results(model_name=self.pipe.model.__class__.__name__,
+                              dataset_name=self.pipe.dataloaders[0].dataset.__class__.__name__)
+                #save_model_and_optimizer(self.pipe.model,
+                #                         optimizer=self.pipe.optimizer)
             except AttributeError:
                 self._results()
 
@@ -561,34 +572,36 @@ class Gridsearch(Pipeline):
             for val in tria.params.values():
                 temp_list.append(val)
             if self.search_metric == "loss":
-                self.list_res.append([str(tria.datetime_start), model_name, dataset_name] + temp_list + [tria.value, -1])
+                self.list_res.append([str(tria.datetime_start).replace(":","-"), model_name,
+                                      dataset_name] + temp_list + [tria.value, -1])
             else:
-                self.list_res.append([str(tria.datetime_start), model_name, dataset_name] + temp_list + [np.inf, tria.value])
+                self.list_res.append([str(tria.datetime_start).replace(":","-"), model_name,
+                                      dataset_name] + temp_list + [np.inf, tria.value])
 
         self.df_res = pd.DataFrame(self.list_res, columns=["run_name", "model", "dataset"] +
                               list(trial_best.params.keys())+["loss", "accuracy"])
         # compute hyperparams correlaton
         corr, labels = self._correlation_of_hyperparams()
-        
-        try:
-            fig2 = px.imshow(corr,
-                    labels=dict(x="Parameters",
-                                y="Parameters",
-                                color="Correlation"),
-                    x=labels,
-                    y=labels
-                   )
-            fig2.update_xaxes(side="top")
-            fig2.show()
-            img2 = plotly2tensor(fig2)
+        if self.n_trials > 1:
+            try:
+                fig2 = px.imshow(corr,
+                        labels=dict(x="Parameters",
+                                    y="Parameters",
+                                    color="Correlation"),
+                        x=labels,
+                        y=labels
+                       )
+                fig2.update_xaxes(side="top")
+                fig2.show()
+                img2 = plotly2tensor(fig2)
 
-            self.writer.add_images("Gridsearch correlation: " +
-                                   model_name + " " + dataset_name,
-                                   img2, dataformats="HWC")
-            self.writer.flush()
-        except ValueError:
-            warnings.warn("Cannot send the picture of the correlation" +
-                          " matrix to tensorboard")
+                self.writer.add_images("Gridsearch correlation: " +
+                                       model_name + " " + dataset_name,
+                                       img2, dataformats="HWC")
+                self.writer.flush()
+            except ValueError:
+                warnings.warn("Cannot send the picture of the correlation" +
+                              " matrix to tensorboard")
         
         return self.df_res
 
@@ -611,6 +624,10 @@ class Gridsearch(Pipeline):
 
     def _store_to_tensorboard(self):
         """Store the hyperparameters to tensorboard"""
+        # average over the scalars_dict
+        scalars_dict_avg = dict()
+        for k, l1l2 in self.scalars_dict.items():
+            scalars_dict_avg[k] = self._refactor_scalars(l1l2)
         for i in range(len(self.df_res)):
             dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][1:-2]).items()}
             try:
@@ -618,13 +635,40 @@ class Gridsearch(Pipeline):
                                         {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
                                          self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
                                         run_name=self.df_res.iloc[i][0],
-                                        scalars_lists=self.scalars_dict[self.df_res.iloc[i][0]])
+                                        scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]],
+                                        best_not_last=self.best_not_last_gs)
             except KeyError:  # this happens when trials have been pruned
                 pass
         
         self.writer.flush()
         
         return self.df_res
+
+    def _refactor_scalars(self, two_lists):
+        """private method to transform a list with
+        many values for the same epoch into a dictionary
+        compatible with ``add_scalar`` averaged per epoch
+
+        Args:
+            two_lists (list):
+                two lists with pairs (value, time) with possible
+                repetition of the same time
+
+        Returns:
+            list of list:
+                compatible with ``add_scalar``
+        """
+
+        out0 = _inner_refactor_scalars(two_lists[0],
+                                            self._cross_validation,
+                                            self._k_folds)
+        out1 = _inner_refactor_scalars(two_lists[1],
+                                            self._cross_validation,
+                                            self._k_folds)
+        return out0, out1
+
+
+
 
     @staticmethod
     def _suggest_params(trial, params):

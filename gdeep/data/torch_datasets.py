@@ -79,6 +79,10 @@ class TorchDataLoader:
                 except AttributeError:
                     raise DatasetNameError(f"The dataset {self.name} is neither in the"
                                            f" texts nor images datasets")
+                except TypeError:
+                    string_data = 'textds.' + self.name + \
+                                  '(split=("train","dev"))'
+                    self.training_data, self.test_data = eval(string_data)
 
     def _convert(self):
         """This private method converts and IterableDataset

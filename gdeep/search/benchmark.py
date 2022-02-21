@@ -1,6 +1,8 @@
 from gdeep.pipeline import Pipeline
 from gdeep.utility import _are_compatible
 import torch
+from sklearn.model_selection import KFold
+import warnings
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -25,14 +27,26 @@ class Benchmark:
             loss function
         writer (tensorboard SummaryWriter):
             tensorboard writer
+        KFold_class (sklearn.model_selection, default KFold()):
+            the class instance to implement the KFold, can be
+            any of the Splitter classes of sklearn. More
+            info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
 
     """
 
-    def __init__(self, models_dicts, dataloaders_dicts, loss_fn, writer):
+    def __init__(self, models_dicts, dataloaders_dicts, loss_fn, writer, KFold_class=None):
         self.models_dicts = models_dicts
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
         self.writer = writer
+        if not self.writer:
+            warnings.warn("No writer detected")
+        
+        if not KFold_class:
+            self.KFold_class = KFold(5, shuffle=True)
+        else:
+            self.KFold_class = KFold_class
+
         if not isinstance(self.models_dicts, list):
             raise TypeError("The provided models must be a Python list of dictionaries")
 
@@ -47,7 +61,6 @@ class Benchmark:
               lr_scheduler=None,
               scheduler_params=None,
               profiling=False,
-              k_folds=5,
               parallel_tpu=False,
               keep_training=False,
               store_grad_layer_hist=False,
@@ -74,8 +87,6 @@ class Benchmark:
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -103,7 +114,6 @@ class Benchmark:
                             lr_scheduler,
                             scheduler_params,
                             profiling,
-                            k_folds,
                             parallel_tpu,
                             keep_training,
                             store_grad_layer_hist,
@@ -120,7 +130,6 @@ class Benchmark:
                         lr_scheduler,
                         scheduler_params,
                         profiling,
-                        k_folds,
                         parallel_tpu,
                         keep_training,
                         store_grad_layer_hist,
@@ -156,8 +165,6 @@ class Benchmark:
             profiling (bool, default=False):
                 whether or not you want to activate the
                 profiler
-            k_folds (int, default=5):
-                number of folds in cross validation
             parallel_tpu (bool):
                 boolean value to run the computations
                 on multiple TPUs
@@ -174,7 +181,7 @@ class Benchmark:
                 the tensorboard writer tag
         """
         pipe = Pipeline(model["model"], dataloaders["dataloaders"],
-                        self.loss_fn, self.writer)
+                        self.loss_fn, self.writer, self.KFold_class)
         writer_tag += "Dataset:" + dataloaders["name"] +"|Model:" + model["name"]
         pipe.train(optimizer, n_epochs,
                    cross_validation,
@@ -184,7 +191,6 @@ class Benchmark:
                    scheduler_params,
                    None,
                    profiling,
-                   k_folds,
                    parallel_tpu,
                    keep_training,
                    store_grad_layer_hist,

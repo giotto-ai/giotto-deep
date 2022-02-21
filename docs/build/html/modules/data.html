@@ -303,7 +303,7 @@ Returns:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_orbits">
-<span class="sig-name descname"><span class="pre">get_orbits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_orbits" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_orbits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_orbits" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the orbits as an ndarrays of shape
 (num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
 Returns:</p>
@@ -317,7 +317,7 @@ Returns:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.OrbitsGenerator.get_persistence_diagrams">
-<span class="sig-name descname"><span class="pre">get_persistence_diagrams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_persistence_diagrams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.OrbitsGenerator.get_persistence_diagrams" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the orbits as an ndarrays of shape
 (num_classes * num_orbits_per_class, num_topological_features, 3)
 Returns:</p>
@@ -333,19 +333,16 @@ Returns:</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.PreprocessText">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer_lab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessText" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessText" title="Permalink to this definition"></a></dt>
 <dd><p>Class to preprocess text dataloaders</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>name (string):</dt><dd><p>check the available datasets at
-<a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a></p>
-</dd>
-<dt>n_pts (int):</dt><dd><p>number of points in customly generated
-point clouds</p>
+<dt>dataloaders (string):</dt><dd><p>train and test dataloaders. Labels are
+expected to be tensors</p>
 </dd>
 <dt>tokenizer (torch Tokenizer):</dt><dd><p>the tokenizer of the source text</p>
 </dd>
-<dt>tokenizer_lab (torch Tokenizer):</dt><dd><p>the tokenizer of the target text</p>
+<dt>kwargs (dict):</dt><dd><p>keyword arguments for the <code class="docutils literal notranslate"><span class="pre">Vocab</span></code></p>
 </dd>
 </dl>
 </dd>
@@ -373,8 +370,46 @@ vocabulary. Hence, data can thus be treated as point data.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.PreprocessTextQA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessTextQA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessTextQA" title="Permalink to this definition"></a></dt>
+<dd><p>Class to preprocess text dataloaders for Q&amp;A
+tasks</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataloaders (list):</dt><dd><p>list of dataloaders, e.g. (train, test).</p>
+</dd>
+<dt>tokenizer (torch Tokenizer):</dt><dd><p>the tokenizer of the source text</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.PreprocessTextQA.build_dataloaders">
+<span class="sig-name descname"><span class="pre">build_dataloaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#gdeep.data.PreprocessTextQA.build_dataloaders" title="Permalink to this definition"></a></dt>
+<dd><p>This method return the dataloaders of the tokenised
+sentences, each converted to a list of integers via the
+vocabulary. Hence, data can thus be treated as point data.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>kwargs (dict):</dt><dd><p>keyword arguments to add to the DataLoaders</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(tuple):</dt><dd><p>training_dataloader, test_dataloader</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.PreprocessTextTranslation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessTextTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessTextTranslation" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">PreprocessTextTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer_lab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.PreprocessTextTranslation" title="Permalink to this definition"></a></dt>
 <dd><p>Class to preprocess text dataloaders for translation
 tasks</p>
 <blockquote>
@@ -424,7 +459,7 @@ vocabulary. Hence, data can thus be treated as point data.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.TextDataset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">TextDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.TextDataset" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.</span></span><span class="sig-name descname"><span class="pre">TextDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.TextDataset" title="Permalink to this definition"></a></dt>
 <dd><p>This class is the base class for the text-datasets</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
