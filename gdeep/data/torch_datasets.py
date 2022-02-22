@@ -11,6 +11,16 @@ from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
 
+from abc import ABC, abstractmethod
+
+
+class AbstractDataLoader(ABC):
+    """The abstractr class to interface the
+    Giotto dataloaders"""
+    @abstractmethod
+    def build_dataloaders(self):
+        pass
+
 
 class DatasetNameError(Exception):
     """Exception for the improper dataset
@@ -36,7 +46,7 @@ class MapDataset(Dataset):
         return len(self.data_list)
 
 
-class TorchDataLoader:
+class TorchDataLoader(AbstractDataLoader):
     """Class to obtain DataLoaders from the classical
     datasets available on pytorch.
 
@@ -51,7 +61,7 @@ class TorchDataLoader:
     """
     def __init__(self, name: str="MNIST", convert_to_map_dataset: bool=False) -> None:
         self.name = name
-        self. convert_to_map_dataset =  convert_to_map_dataset
+        self.convert_to_map_dataset = convert_to_map_dataset
 
     def _build_datasets(self) -> None:
         """Private method to build the dataset from
@@ -116,7 +126,7 @@ class TorchDataLoader:
         return train_dataloader, test_dataloader
         
 
-class DataLoaderFromImages:
+class DataLoaderFromImages(AbstractDataLoader):
     """This class is useful to build dataloaders
     from different images you have in a folder
     
@@ -142,7 +152,7 @@ class DataLoaderFromImages:
         self.labels_file = labels_file
         
     def build_dataloaders(self, size: tuple=(128, 128), **kwargs) -> tuple:
-        """This function builds the dataloader.
+        """This method builds the dataloader.
 
         Args:
             size (tuple):
@@ -155,7 +165,7 @@ class DataLoaderFromImages:
         Returns:
             tuple of torch.DataLoader:
                 the tuple with thhe training and
-                test dataloader directly useble in
+                test dataloader directly usable in
                 the pipeline class
         """
         CWD = os.getcwd()
@@ -195,7 +205,7 @@ class DataLoaderFromImages:
         return train_dataloader, test_dataloader
 
 
-class DataLoaderFromArray:
+class DataLoaderFromArray(AbstractDataLoader):
     """This class is useful to build dataloaders
     from a array of X and y
 
@@ -225,15 +235,17 @@ class DataLoaderFromArray:
             self.y_train = y_train.reshape(-1, 1)
         else:
             self.y_train = y_train
-        self.X_val = X_val
-        if len(y_train.shape) == 1:
-            self.y_val = y_val.reshape(-1, 1)
-        else:
-            self.y_val = y_val
-        self.X_test = X_test
+        if X_val is not None:
+            self.X_val = X_val
+            if len(y_val.shape) == 1:
+                self.y_val = y_val.reshape(-1, 1)
+            else:
+                self.y_val = y_val
+        if X_test is not None:
+            self.X_test = X_test
 
     def build_dataloaders(self, **kwargs) -> tuple:
-        """This function builds the dataloader.
+        """This method builds the dataloader.
 
         Args:
             kwargs (dict):
@@ -243,7 +255,7 @@ class DataLoaderFromArray:
         Returns:
             tuple of torch.DataLoader:
                 the tuple with the training, validation and
-                test dataloader directly useble in
+                test dataloader directly usable in
                 the pipeline class
         """
         tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
@@ -254,11 +266,11 @@ class DataLoaderFromArray:
                          y if isinstance(y, int) else
                          torch.tensor(y).float()) for x, y in zip(self.X_val,
                                                                   self.y_val)]
-        except TypeError:
+        except (TypeError, AttributeError):
             val_data = None
         try:
             ts_data = [torch.from_numpy(x).float() for x in self.X_test]
-        except TypeError:
+        except (TypeError, AttributeError):
             ts_data = None
 
         train_dataloader = DataLoader(tr_data,
@@ -271,11 +283,14 @@ class DataLoaderFromArray:
     
     
     
-class DataLoaderFromDataCloud():
+class DataLoaderFromDataCloud(AbstractDataLoader):
     """Class that loads data from the GCP datacloud
 
     Raises:
         NotImplementedError: _description_
     """
-    #raise NotImplementedError
-    pass
+    def __init__(self):
+        pass
+
+    def build_dataloaders(self):
+        pass
