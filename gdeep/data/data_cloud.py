@@ -30,35 +30,24 @@ class DataCloud():
         
         
     def download(self,
-                 source_blob_name: str,
-                 destination_file_name: Union[str, None] = None):
+                 blob_name: str):
         """Download a blob from Google Cloud Storage bucket.
 
         Args:
             source_blob_name (str): Name of the blob to download.
-            destination_file_name (str): Name of the destination file to download.
         """
-        if destination_file_name is None:
-            destination_file_name = source_blob_name
-        blob = self.bucket.blob(source_blob_name)
-        blob.download_to_filename(os.path.join(self.download_directory, destination_file_name))
+        blob = self.bucket.blob(blob_name)
+        blob.download_to_filename(os.path.join(self.download_directory, blob_name))
         
-    def upload(self,
-               source_file_name: str,
-               destination_blob_name: str,
-               upload_directory: Union[str, None] = None):
+    def upload_file(self,
+               source_file_name: str):
         """Upload a local file to Google Cloud Storage bucket.
 
         Args:
-            source_file_name (str): Filename of the local file to upload. This
-                has to be in the directory ´upload_directory´.
-            source_blob_name (str): _description_
-            upload_directory (str): Directory where the local file should be. Defaults to "".
+            source_file_name (str): Filename of the local file to upload.
         """
-        if upload_directory is None:
-            upload_directory = ""
-        blob = self.bucket.blob(destination_blob_name)
-        blob.upload_from_filename(os.path.join(upload_directory, source_file_name))
+        blob = self.bucket.blob(source_file_name)
+        blob.upload_from_filename(source_file_name)
         
     def delete_blob(self,
                     blob_name: str):
