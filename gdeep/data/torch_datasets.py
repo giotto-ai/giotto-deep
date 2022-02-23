@@ -259,12 +259,12 @@ class DataLoaderFromArray(AbstractDataLoader):
                 the pipeline class
         """
         tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
-                    torch.tensor(y).float()) for
+                    torch.tensor(y).long()) for
                     x, y in zip(self.X_train, self.y_train)]
         try:
             val_data = [(torch.from_numpy(x).float(),
                          y if isinstance(y, int) else
-                         torch.tensor(y).float()) for x, y in zip(self.X_val,
+                         torch.tensor(y).long()) for x, y in zip(self.X_val,
                                                                   self.y_val)]
         except (TypeError, AttributeError):
             val_data = None
