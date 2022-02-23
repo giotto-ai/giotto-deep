@@ -261,14 +261,14 @@ class DataLoaderFromArray(AbstractDataLoader):
         tr_data = [(torch.from_numpy(x).float(),
                     torch.tensor(y).long() if isinstance(y, int) or
                                               ('__getitem__' in dir(y) and
-                                               isinstance(y[0], np.int64)) else
+                                               (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
             torch.tensor(y).float()) for x, y in zip(self.X_train, self.y_train)]
 
         try:
             val_data = [(torch.from_numpy(x).float(),
                          torch.tensor(y).long() if isinstance(y, np.int64) or
                                                    ('__getitem__' in dir(y)
-                        and isinstance(y[0], int)) else
+                        and (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
             torch.tensor(y).float()) for x, y in zip(self.X_val, self.y_val)]
         except (TypeError, AttributeError):
             val_data = None
