@@ -284,7 +284,7 @@ class DataLoaderFromArray(AbstractDataLoader):
     
     
 class DataLoaderFromDataCloud(AbstractDataLoader):
-    """Class that loads data from the GCP datacloud
+    """Class that loads data from Google Cloud Storage
 
     Raises:
         NotImplementedError: _description_
