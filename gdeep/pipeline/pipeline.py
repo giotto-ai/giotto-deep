@@ -598,7 +598,6 @@ class Pipeline:
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
                 labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
-            #print(data_idx)
 
             for fold, (tr_idx, val_idx) in enumerate(self.KFold_class.split(data_idx, labels_for_split)):
                 # prints for class balance

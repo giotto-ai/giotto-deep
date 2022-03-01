@@ -210,7 +210,7 @@ class DataLoaderFromImages(AbstractDataLoader):
 
 class DataLoaderFromArray(AbstractDataLoader):
     """This class is useful to build dataloaders
-    from a array of X and y
+    from a array of X and y. Tensors are also supported.
 
     Args:
         X_train (np.array):
@@ -247,6 +247,15 @@ class DataLoaderFromArray(AbstractDataLoader):
         if X_test is not None:
             self.X_test = X_test
 
+    @staticmethod
+    def _from_numpy(X):
+        """this is torch.from_numpy() that also allows
+        for tensors"""
+        if isinstance(X, torch.Tensor):
+            return X
+        return torch.from_numpy(X)
+
+
     def build_dataloaders(self, **kwargs) -> tuple:
         """This method builds the dataloader.
 
@@ -261,18 +270,22 @@ class DataLoaderFromArray(AbstractDataLoader):
                 test dataloader directly usable in
                 the pipeline class
         """
-        tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
-                    torch.tensor(y).float()) for
-                    x, y in zip(self.X_train, self.y_train)]
+        tr_data = [(DataLoaderFromArray._from_numpy(x).float(),
+                    torch.tensor(y).long() if isinstance(y, int) or
+                                              ('__getitem__' in dir(y) and
+                                               (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
+            torch.tensor(y).float()) for x, y in zip(self.X_train, self.y_train)]
+
         try:
-            val_data = [(torch.from_numpy(x).float(),
-                         y if isinstance(y, int) else
-                         torch.tensor(y).float()) for x, y in zip(self.X_val,
-                                                                  self.y_val)]
+            val_data = [(DataLoaderFromArray._from_numpy(x).float(),
+                         torch.tensor(y).long() if isinstance(y, np.int64) or
+                                                   ('__getitem__' in dir(y)
+                        and (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
+            torch.tensor(y).float()) for x, y in zip(self.X_val, self.y_val)]
         except (TypeError, AttributeError):
             val_data = None
         try:
-            ts_data = [torch.from_numpy(x).float() for x in self.X_test]
+            ts_data = [DataLoaderFromArray._from_numpy(x).float() for x in self.X_test]
         except (TypeError, AttributeError):
             ts_data = None
 
