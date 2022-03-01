@@ -310,9 +310,10 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                  download_directory):
         self.dataset_name = dataset_name
         self.download_directory = download_directory
-        self.dataset_cloud = DatasetCloud(dataset_name,
+        dataset_cloud = DatasetCloud(dataset_name,
                                 download_directory=download_directory)
-        self.dataset_cloud.download()
+        dataset_cloud.download()
+        del dataset_cloud
         self.dl_builder = None
         with open(join(self.download_directory, self.dataset_name, "metadata.json")) as f:
             self.dataset_metadata = json.load(f)
@@ -320,15 +321,21 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
             if self.dataset_metadata['data_format'] == 'pytorch_tensor':
                 data = torch.load(join(self.download_directory, self.dataset_name, "data.pt"))
                 labels = torch.load(join(self.download_directory, self.dataset_name, "labels.pt"))
-                self.dl_builder = DataLoaderFromArray(np.array(data), np.array(labels))
+                self.dl_builder = DataLoaderFromArray(data, labels)
+            elif self.dataset_metadata['data_format'] == 'numpy_array':
+                data = np.load(join(self.download_directory, self.dataset_name, "data.npy"))
+                labels = np.load(join(self.download_directory, self.dataset_name, "labels.npy"))
+                self.dl_builder = DataLoaderFromArray(data, labels)
             else:
                 raise ValueError(f"Data format {self.dataset_metadata['data_format']} is not yet supported.")
         else:
             raise ValueError(f"Dataset type {self.dataset_metadata['data_type']} is not yet supported.")
         
     def __del__(self):
-        del self.dataset_cloud
         del self.dl_builder
 
-    def build_dataloaders(self):
-        return self.dl_builder.build_dataloaders()
+    def get_metadata(self):
+        return self.dataset_metadata
+    
+    def build_dataloaders(self, **kwargs):
+        return self.dl_builder.build_dataloaders(**kwargs)

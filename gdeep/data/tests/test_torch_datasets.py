@@ -1,6 +1,19 @@
-from gdeep.data import DataLoaderFromArray, TorchDataLoader
+from gdeep.data import DataLoaderFromArray, TorchDataLoader, DlBuilderFromDataCloud
+from os.path import join
 import numpy as np
 import torch
+import logging
+from google.auth.exceptions import DefaultCredentialsError  # type: ignore
+
+LOGGER = logging.getLogger(__name__)
+
+def credentials_error_logging(func):
+    def inner():
+        try:
+            func()
+        except DefaultCredentialsError:
+            LOGGER.warning("GCP credentials failed.")
+    return inner
 
 def test_array():
     """test class DataLoaderFromArray"""
@@ -32,3 +45,17 @@ def test_torchdataloader():
     dl = TorchDataLoader(name="DoubleTori")
     # train_indices = list(range(160))
     dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
+    
+    
+@credentials_error_logging
+def test_dlbuilderfromdatacloud():
+    dataset_name = "SmallDataset"
+    download_directory = join("examples", "data", "DatasetCloud")
+
+    dl_cloud_builder = DlBuilderFromDataCloud(dataset_name,
+                                    download_directory)
+
+    train_dataloader, val_dataloader, test_dataloader = dl_cloud_builder.build_dataloaders(batch_size=10)
+    x, y = next(iter(train_dataloader))
+    assert x.shape == torch.Size([10, 5])
+    assert y.shape == torch.Size([10, 1])
