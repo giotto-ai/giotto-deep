@@ -3,13 +3,26 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 from torchtext import datasets as textds
 from torchvision.transforms import ToTensor, Resize
-from . import CreateToriDataset
 import warnings
 import pandas as pd
 import os
+from os.path import join
+import json
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
+
+from abc import ABC, abstractmethod
+
+from . import CreateToriDataset
+from .dataset_cloud import DatasetCloud
+
+class AbstractDataLoader(ABC):
+    """The abstractr class to interface the
+    Giotto dataloaders"""
+    @abstractmethod
+    def build_dataloaders(self):
+        pass
 
 
 class DatasetNameError(Exception):
@@ -36,7 +49,7 @@ class MapDataset(Dataset):
         return len(self.data_list)
 
 
-class TorchDataLoader:
+class TorchDataLoader(AbstractDataLoader):
     """Class to obtain DataLoaders from the classical
     datasets available on pytorch.
 
@@ -51,7 +64,7 @@ class TorchDataLoader:
     """
     def __init__(self, name: str="MNIST", convert_to_map_dataset: bool=False) -> None:
         self.name = name
-        self. convert_to_map_dataset =  convert_to_map_dataset
+        self.convert_to_map_dataset = convert_to_map_dataset
 
     def _build_datasets(self) -> None:
         """Private method to build the dataset from
@@ -116,7 +129,7 @@ class TorchDataLoader:
         return train_dataloader, test_dataloader
         
 
-class DataLoaderFromImages:
+class DataLoaderFromImages(AbstractDataLoader):
     """This class is useful to build dataloaders
     from different images you have in a folder
     
@@ -142,7 +155,7 @@ class DataLoaderFromImages:
         self.labels_file = labels_file
         
     def build_dataloaders(self, size: tuple=(128, 128), **kwargs) -> tuple:
-        """This function builds the dataloader.
+        """This method builds the dataloader.
 
         Args:
             size (tuple):
@@ -155,7 +168,7 @@ class DataLoaderFromImages:
         Returns:
             tuple of torch.DataLoader:
                 the tuple with thhe training and
-                test dataloader directly useble in
+                test dataloader directly usable in
                 the pipeline class
         """
         CWD = os.getcwd()
@@ -195,9 +208,9 @@ class DataLoaderFromImages:
         return train_dataloader, test_dataloader
 
 
-class DataLoaderFromArray:
+class DataLoaderFromArray(AbstractDataLoader):
     """This class is useful to build dataloaders
-    from a array of X and y
+    from a array of X and y. Tensors are also supported.
 
     Args:
         X_train (np.array):
@@ -225,15 +238,26 @@ class DataLoaderFromArray:
             self.y_train = y_train.reshape(-1, 1)
         else:
             self.y_train = y_train
-        self.X_val = X_val
-        if len(y_train.shape) == 1:
-            self.y_val = y_val.reshape(-1, 1)
-        else:
-            self.y_val = y_val
-        self.X_test = X_test
+        if X_val is not None:
+            self.X_val = X_val
+            if len(y_val.shape) == 1:
+                self.y_val = y_val.reshape(-1, 1)
+            else:
+                self.y_val = y_val
+        if X_test is not None:
+            self.X_test = X_test
+
+    @staticmethod
+    def _from_numpy(X):
+        """this is torch.from_numpy() that also allows
+        for tensors"""
+        if isinstance(X, torch.Tensor):
+            return X
+        return torch.from_numpy(X)
+
 
     def build_dataloaders(self, **kwargs) -> tuple:
-        """This function builds the dataloader.
+        """This method builds the dataloader.
 
         Args:
             kwargs (dict):
@@ -243,22 +267,26 @@ class DataLoaderFromArray:
         Returns:
             tuple of torch.DataLoader:
                 the tuple with the training, validation and
-                test dataloader directly useble in
+                test dataloader directly usable in
                 the pipeline class
         """
-        tr_data = [(torch.from_numpy(x).float(), y if isinstance(y, int) else
-                    torch.tensor(y).float()) for
-                    x, y in zip(self.X_train, self.y_train)]
+        tr_data = [(DataLoaderFromArray._from_numpy(x).float(),
+                    torch.tensor(y).long() if isinstance(y, int) or
+                                              ('__getitem__' in dir(y) and
+                                               (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
+            torch.tensor(y).float()) for x, y in zip(self.X_train, self.y_train)]
+
         try:
-            val_data = [(torch.from_numpy(x).float(),
-                         y if isinstance(y, int) else
-                         torch.tensor(y).float()) for x, y in zip(self.X_val,
-                                                                  self.y_val)]
-        except TypeError:
+            val_data = [(DataLoaderFromArray._from_numpy(x).float(),
+                         torch.tensor(y).long() if isinstance(y, np.int64) or
+                                                   ('__getitem__' in dir(y)
+                        and (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
+            torch.tensor(y).float()) for x, y in zip(self.X_val, self.y_val)]
+        except (TypeError, AttributeError):
             val_data = None
         try:
-            ts_data = [torch.from_numpy(x).float() for x in self.X_test]
-        except TypeError:
+            ts_data = [DataLoaderFromArray._from_numpy(x).float() for x in self.X_test]
+        except (TypeError, AttributeError):
             ts_data = None
 
         train_dataloader = DataLoader(tr_data,
@@ -268,3 +296,46 @@ class DataLoaderFromArray:
         test_dataloader = DataLoader(ts_data,
                                      **kwargs)
         return train_dataloader, val_dataloader, test_dataloader
+    
+    
+    
+class DlBuilderFromDataCloud(AbstractDataLoader):
+    """Class that loads data from Google Cloud Storage
+
+    Raises:
+        NotImplementedError: _description_
+    """
+    def __init__(self,
+                 dataset_name,
+                 download_directory):
+        self.dataset_name = dataset_name
+        self.download_directory = download_directory
+        dataset_cloud = DatasetCloud(dataset_name,
+                                download_directory=download_directory)
+        dataset_cloud.download()
+        del dataset_cloud
+        self.dl_builder = None
+        with open(join(self.download_directory, self.dataset_name, "metadata.json")) as f:
+            self.dataset_metadata = json.load(f)
+        if self.dataset_metadata['data_type'] == 'tabular':
+            if self.dataset_metadata['data_format'] == 'pytorch_tensor':
+                data = torch.load(join(self.download_directory, self.dataset_name, "data.pt"))
+                labels = torch.load(join(self.download_directory, self.dataset_name, "labels.pt"))
+                self.dl_builder = DataLoaderFromArray(data, labels)
+            elif self.dataset_metadata['data_format'] == 'numpy_array':
+                data = np.load(join(self.download_directory, self.dataset_name, "data.npy"))
+                labels = np.load(join(self.download_directory, self.dataset_name, "labels.npy"))
+                self.dl_builder = DataLoaderFromArray(data, labels)
+            else:
+                raise ValueError(f"Data format {self.dataset_metadata['data_format']} is not yet supported.")
+        else:
+            raise ValueError(f"Dataset type {self.dataset_metadata['data_type']} is not yet supported.")
+        
+    def __del__(self):
+        del self.dl_builder
+
+    def get_metadata(self):
+        return self.dataset_metadata
+    
+    def build_dataloaders(self, **kwargs):
+        return self.dl_builder.build_dataloaders(**kwargs)

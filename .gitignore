@@ -82,5 +82,7 @@ examples/curvatures.npy
 examples/diagrams_curvature.npy
 examples/diagrams_5000_1000_0_1.npy
 
-# virtual environment
-giotto-deep/*
+
+giotto-deep/
+
+runs/

@@ -29,4 +29,5 @@ sympy
 numba
 dotmap
 torchensemble
+sympy
 google-cloud-storage

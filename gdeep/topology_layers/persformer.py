@@ -4,11 +4,8 @@ import torch  # type: ignore
 import torch.nn as nn  # type: ignore
 from torch import Tensor  # type: ignore
 import torch.nn.functional as F
-from torch.nn import (Module, Linear,
-                      Sequential, ModuleList)
-from torch.nn.modules.activation import GELU
-from gdeep.topology_layers.modules import ISAB, PMA, SAB, FastAttention  # type: ignore
-from gdeep.topology_layers.attention_modules import AttentionLayer, InducedAttention, AttentionPooling
+from torch.nn import (Module, Linear)
+from gdeep.topology_layers.modules import _ISAB, _PMA, _SAB  # type: ignore
 
 
 class DeepSet(nn.Module):
@@ -347,6 +344,10 @@ class SetTransformer(Module):
     
 class Persformer(Module):
     """
+    Persformer architecture as described in
+    "Persformer: A Transformer Architecture for Topological Machine Learning"
+    https://arxiv.org/abs/2112.15210
+    
     Args:
         dim_input (int, optional):
             Dimension of input data for each element in the set. Defaults to 4.
@@ -383,7 +384,6 @@ class Persformer(Module):
             or induced attention with linear complexity (`induced_attention`). Defaults to "pytorch_self_attention_skip".
         layer_norm_pooling (str, optional):
             Use layer norm in the multi-head attention pooling layer. Defaults to "False".
-
     Raises:
         ValueError:
             [description]
@@ -422,20 +422,20 @@ class Persformer(Module):
         
         if attention_type=="induced_attention":
             self.enc = nn.Sequential(
-                ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                _ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
                         simplified_layer_norm = eval(simplified_layer_norm),
                         bias_attention=bias_attention, activation=activation),
-                *[ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
+                *[_ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
                         simplified_layer_norm = eval(simplified_layer_norm),
                         bias_attention=bias_attention, activation=activation)
                     for _ in range(num_layer_enc-1)],
             )
         elif attention_type=="self_attention":
             self.enc = nn.Sequential(
-                SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                _SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
                     simplified_layer_norm = eval(simplified_layer_norm),
                     bias_attention=bias_attention, activation=activation),
-                *[SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
+                *[_SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
                         simplified_layer_norm = eval(simplified_layer_norm),
                         bias_attention=bias_attention, activation=activation)
                     for _ in range(num_layer_enc-1)],
@@ -468,7 +468,7 @@ class Persformer(Module):
         enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
         self.dec = nn.Sequential(
             nn.Dropout(dropout_dec),
-            PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm_pooling),
+            _PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm_pooling),
                 simplified_layer_norm = eval(simplified_layer_norm),
                 bias_attention=bias_attention, activation=activation),
             nn.Dropout(dropout_dec),

@@ -1,8 +1,10 @@
 from .categorical_data import CategoricalDataCloud
 from .tori import Rotation, \
     CreateToriDataset, GenericDataset
+from .dataset_cloud import DatasetCloud
+from ._data_cloud import _DataCloud
 from .torch_datasets import TorchDataLoader, \
-    DataLoaderFromImages, DataLoaderFromArray
+    DataLoaderFromImages, DataLoaderFromArray, DlBuilderFromDataCloud
 from .preprocessing import PreprocessText, TextDataset, \
     PreprocessTextTranslation, TextDatasetTranslation, \
     PreprocessTextQA
@@ -28,5 +30,7 @@ __all__ = [
     'DataLoaderFromImages',
     'PreprocessTextTranslation',
     'TextDatasetTranslation',
-    'DataLoaderFromArray'
+    'DataLoaderFromArray',
+    'DatasetCloud',
+    'DlBuilderFromDataCloud'
     ]
