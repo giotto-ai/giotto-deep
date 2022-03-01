@@ -2,13 +2,13 @@ from google.cloud import storage  # type: ignore
 from os.path import isfile, join, isdir, exists
 from os import listdir, makedirs
 import sys
-import glob
 from typing import Union
 import logging
 
-from sympy import true
 
-class DataCloud():
+LOGGER = logging.getLogger(__name__)
+
+class _DataCloud():
     def __init__(
             self,
             bucket_name: str ="adversarial_attack",
@@ -82,7 +82,8 @@ class DataCloud():
             target_blob_name = source_file_name
         blob = self.bucket.blob(target_blob_name)
         if blob.exists():
-            raise RuntimeError(f"Blob {source_file_name} already exists.")
+            raise RuntimeError(f"Blob {target_blob_name} already exists.")
+        logging.getLogger().info("upload file %s", source_file_name)
         blob.upload_from_filename(source_file_name)
     
     def upload_folder(self,

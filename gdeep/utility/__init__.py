@@ -7,5 +7,5 @@ __all__ = [
     'optimisation',
     'ensemble_wrapper',
     'intersection_homology',
-    '_inner_refactor_scalars'
+    '_inner_refactor_scalars'  # This should be here
     ]

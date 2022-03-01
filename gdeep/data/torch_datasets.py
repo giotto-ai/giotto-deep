@@ -7,12 +7,15 @@ from . import CreateToriDataset
 import warnings
 import pandas as pd
 import os
+from os.path import join
+import json
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
 
 from abc import ABC, abstractmethod
 
+from gdeep.data import DatasetCloud
 
 class AbstractDataLoader(ABC):
     """The abstractr class to interface the
@@ -283,14 +286,36 @@ class DataLoaderFromArray(AbstractDataLoader):
     
     
     
-class DataLoaderFromDataCloud(AbstractDataLoader):
+class DlBuilderFromDataCloud(AbstractDataLoader):
     """Class that loads data from Google Cloud Storage
 
     Raises:
         NotImplementedError: _description_
     """
-    def __init__(self):
-        pass
+    def __init__(self,
+                 dataset_name,
+                 download_directory):
+        self.dataset_name = dataset_name
+        self.download_directory = download_directory
+        self.dataset_cloud = DatasetCloud(dataset_name,
+                                download_directory=download_directory)
+        self.dataset_cloud.download()
+        self.dl_builder = None
+        with open(join(self.download_directory, self.dataset_name, "metadata.json")) as f:
+            self.dataset_metadata = json.load(f)
+        if self.dataset_metadata['data_type'] == 'tabular':
+            if self.dataset_metadata['data_format'] == 'pytorch_tensor':
+                data = torch.load(join(self.download_directory, self.dataset_name, "data.pt"))
+                labels = torch.load(join(self.download_directory, self.dataset_name, "labels.pt"))
+                self.dl_builder = DataLoaderFromArray(np.array(data), np.array(labels))
+            else:
+                raise ValueError(f"Data format {self.dataset_metadata['data_format']} is not yet supported.")
+        else:
+            raise ValueError(f"Dataset type {self.dataset_metadata['data_type']} is not yet supported.")
+        
+    def __del__(self):
+        del self.dataset_cloud
+        del self.dl_builder
 
     def build_dataloaders(self):
-        pass
+        return self.dl_builder.build_dataloaders()

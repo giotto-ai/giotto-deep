@@ -1,20 +1,21 @@
-from .. import DataCloud
-from os.path import isfile, join, isdir, exists
+from gdeep.data import _DataCloud
+from os.path import join, exists
 from os import remove, makedirs
 import hashlib
 import google  # type: ignore
 import logging
 import random
 from shutil import rmtree
+import pytest
+from google.auth.exceptions import DefaultCredentialsError  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
-import pytest
 
 def credentials_error_logging(func):
     def inner():
         try:
             func()
-        except google.auth.exceptions.DefaultCredentialsError:
+        except DefaultCredentialsError:
             LOGGER.warning("GCP credentials failed.")
     return inner
 
@@ -35,7 +36,7 @@ def file_as_bytes(file):
 def test_download():
     """Test download of sample data from bucket
     """
-    data_cloud = DataCloud()
+    data_cloud = _DataCloud()
     file_name = "giotto-deep-big.png"
     data_cloud.download_file(file_name)
     
@@ -60,7 +61,7 @@ def test_download():
 def test_upload():
     """Test upload of sample file to bucket.
     """
-    data_cloud = DataCloud()
+    data_cloud = _DataCloud()
     
     # create temporary file to upload to bucket
     sample_file_name = "tmp.txt"
@@ -99,7 +100,7 @@ def test_upload():
 def test_upload_folder():
     """Test the upload of a folder to bucket and download the folder.
     """
-    data_cloud = DataCloud()
+    data_cloud = _DataCloud()
     
     # create temporary folder structure and temporary file to upload to bucket
     # tmp: tmp.txt
