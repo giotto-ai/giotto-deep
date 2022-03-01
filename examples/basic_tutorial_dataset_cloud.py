@@ -5,7 +5,7 @@ get_ipython().magic('autoreload 2')
 
 # %%
 import torch
-from gdeep.data import DatasetCloud, DlBuilderFromDataCloud
+from gdeep.data import DlBuilderFromDataCloud
 from os import remove
 from os.path import join
 

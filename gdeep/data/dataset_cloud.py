@@ -1,4 +1,4 @@
-from gdeep.data import _DataCloud
+from ._data_cloud import _DataCloud
 from typing import Union
 from os import remove
 from os.path import join, split, exists

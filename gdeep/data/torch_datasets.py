@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 from torchtext import datasets as textds
 from torchvision.transforms import ToTensor, Resize
-from . import CreateToriDataset
 import warnings
 import pandas as pd
 import os
@@ -15,7 +14,8 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-from gdeep.data import DatasetCloud
+from . import CreateToriDataset
+from .dataset_cloud import DatasetCloud
 
 class AbstractDataLoader(ABC):
     """The abstractr class to interface the
