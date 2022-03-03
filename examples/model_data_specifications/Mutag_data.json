@@ -1,0 +1,12 @@
+{
+    "balance_dataset": false,
+    "baseline_accuracy": 85.2,
+    "batch_size_train": 17,
+    "batch_size_val": 19,
+    "dataset_name": "MUTAG",
+    "num_classes": 2,
+    "num_homology_types": 4,
+    "num_jobs": 0,
+    "train_percentage": 0.8,
+    "data_split_seed": 24
+}
