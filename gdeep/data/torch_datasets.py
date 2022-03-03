@@ -302,8 +302,12 @@ class DataLoaderFromArray(AbstractDataLoader):
 class DlBuilderFromDataCloud(AbstractDataLoader):
     """Class that loads data from Google Cloud Storage
 
+    Args:
+        dataset_name (str): _description_
+        download_directory (str): _description_
+
     Raises:
-        NotImplementedError: _description_
+        NotImplementedError: Raised if data type is not supported.
     """
     def __init__(self,
                  dataset_name,
@@ -335,6 +339,11 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         del self.dl_builder
 
     def get_metadata(self):
+        """R
+
+        Returns:
+            Dict: dictionary of metadata
+        """
         return self.dataset_metadata
     
     def build_dataloaders(self, **kwargs):

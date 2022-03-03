@@ -1,0 +1,13 @@
+{
+    "comment": "REDDIT-MULTI-12k in https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets.",
+    "data_format": "pytorch_tensor",
+    "data_type": "tabular",
+    "input_size": [
+        4472,
+        6
+    ],
+    "name": "RedditMulti12kDataset",
+    "num_labels": 11,
+    "size": 11929,
+    "task_type": "classification"
+}

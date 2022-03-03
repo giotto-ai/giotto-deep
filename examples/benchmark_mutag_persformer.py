@@ -77,14 +77,52 @@ with open(os.path.join(model_data_file, 'Mutag_hyperparameter_space.json')) as c
     
 
 # %%
-x_pds, y = load_data_as_tensor(config_data.dataset_name)  # type: ignore
+load_name = "REDDIT12K"
+dataset_name = "RedditMulti12kDataset"
+comment = """REDDIT-MULTI-12k in https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets."""
+
+#x_pds, y = load_data_as_tensor(config_data.dataset_name)  # type: ignore
+x_pds, y = load_data_as_tensor(load_name, verbose=True)
 
 # Balance labels in dataset
 
-if config_data.balance_dataset:
-    x_pds, y = balance_binary_dataset(x_pds, y, verbose=True)
+# if config_data.balance_dataset:
+#     x_pds, y = balance_binary_dataset(x_pds, y, verbose=True)
 
-print('class balance: {:.2f}'.format((y.sum() / y.shape[0]).item()))
+# print('class balance: {:.2f}'.format((y.sum() / y.shape[0]).item()))
+
+# %%
+# Upload to datacloud
+from os import remove
+from gdeep.data import DatasetCloud
+
+# pickle data and labels
+data_filename = 'tmp_data.pt'
+labels_filename = 'tmp_labels.pt'
+torch.save(x_pds, data_filename)
+torch.save(y, labels_filename)
+
+## Upload dataset to Cloud
+dataset_cloud = DatasetCloud(dataset_name)
+
+# Specify the metadata of the dataset
+dataset_cloud.add_metadata(
+    name=dataset_name,
+    size_dataset=x_pds.shape[0],
+    num_labels=len(set([e.item() for e in list(y)])),
+    task_type="classification",
+    data_type="tabular",
+    data_format="pytorch_tensor",
+    input_size=tuple(x_pds.shape[1:]),
+    comment=comment
+)
+
+# upload dataset to Cloud
+dataset_cloud.upload(data_filename, labels_filename)
+
+remove(data_filename)
+remove(labels_filename)
+
 # %%
 # Set up dataset and dataloader
 
@@ -263,4 +301,11 @@ for i in range(1):
     plt.savefig('plots/' + 'orbit5k' + str(y[i].item()) + '.pdf')
     plt.show()
     print('y:', y[i])
+# %%
+import torch
+import h5py  # type: ignore
+diagrams_file = h5py.File("graph_data\REDDIT12K\REDDIT12K.hdf5", "r")
+for type_ in diagrams_file.keys():
+    print(torch.tensor(diagrams_file[type_]['11232']))
+
 # %%

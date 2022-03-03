@@ -53,8 +53,13 @@ def persistence_diagrams_to_sequence(
                                                  type_idx,
                                                  type_,
                                                  n_pts))
-        sequence_dict[graph_idx] = torch.cat(tensor_list,
-                                             axis=0)  # type: ignore
+        if(len(tensor_list) == 0):
+            print("No tensors found")
+            sequence_dict[graph_idx] = torch.zeros((1, 2 + len(types)))
+        else:
+            sequence_dict[graph_idx] = torch.cat(tensor_list,
+                                                axis=0)  # type: ignore
+        
     return sequence_dict
 
 
