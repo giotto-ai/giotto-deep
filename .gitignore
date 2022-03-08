@@ -24,6 +24,10 @@ examples/.*
 # Html files
 examples/*.html
 
+# Image/Video files
+*.png
+*.mp4
+
 # Data files
 *.pkl
 *.csv
