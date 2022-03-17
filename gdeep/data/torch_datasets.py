@@ -301,9 +301,29 @@ class DataLoaderFromArray(AbstractDataLoader):
     
 class DlBuilderFromDataCloud(AbstractDataLoader):
     """Class that loads data from Google Cloud Storage
+    
+    The purpose of this class is to create a PyTorch DataLoader
+    that can be used to load data from a dataset in Dataset Cloud.
+
+    The constructor takes the name of a dataset as a string, and a string
+    for the download directory. The constructor will download the dataset
+    to the download directory. The dataset is downloaded in the version
+    used by Datasets Cloud, which may be different from the version
+    used by the dataset's original developers.
+
+    The constructor returns a DataLoader that can be used to load data
+    from the dataset.
+    
+    Args:
+        dataset_name: a string for the name of a dataset
+        download_directory: a string for the download directory
+
+    Returns:
+        a DataLoader for the dataset
 
     Raises:
-        NotImplementedError: _description_
+        ValueError: If the dataset_name is not in Tensorflow Datasets
+        ValueError: If the download_directory is not a valid directory
     """
     def __init__(self,
                  dataset_name,
@@ -332,9 +352,12 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
             raise ValueError(f"Dataset type {self.dataset_metadata['data_type']} is not yet supported.")
         
     def __del__(self):
-        del self.dl_builder
+        pass
+        #del self.dl_builder
 
     def get_metadata(self):
+        """gets the dataset metadata from a class object. 
+        """
         return self.dataset_metadata
     
     def build_dataloaders(self, **kwargs):

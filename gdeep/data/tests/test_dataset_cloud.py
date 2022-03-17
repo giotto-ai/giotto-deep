@@ -72,6 +72,7 @@ def test_upload_and_download():
         dataset_cloud.add_metadata(
             name=dataset_name,
             size_dataset=size_dataset,
+            input_size=(input_dim,),
             num_labels=num_labels,
             data_type="tabular",
             data_format=data_format,

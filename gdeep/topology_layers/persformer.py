@@ -58,19 +58,19 @@ class Persformer(Module):
     """
     def __init__(
         self,
-        dim_input=6,  # dimension of input data for each element in the set
+        dim_input=2,  # dimension of input data for each element in the set
         num_outputs=1,
-        dim_output=5,  # number of classes
-        num_inds=32,  # number of induced points, see  Set Transformer paper
-        dim_hidden=128,
+        dim_output=2,  # number of classes
+        num_inds=2,  # number of induced points, see  Set Transformer paper
+        dim_hidden=16,
         num_heads="4",
         layer_norm="False",  # use layer norm
         pre_layer_norm="False", # use pre-layer norm
         simplified_layer_norm="True",
         dropout_enc=0.0,
         dropout_dec=0.0,
-        num_layer_enc=2,
-        num_layer_dec=3,
+        num_layer_enc=1,
+        num_layer_dec=1,
         activation="gelu",
         bias_attention="True",
         attention_type="induced_attention",
