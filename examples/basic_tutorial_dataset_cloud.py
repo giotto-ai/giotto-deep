@@ -44,6 +44,7 @@ def create_and_upload_dataset():
     # Specify the metadata of the dataset
     dataset_cloud.add_metadata(
         name=dataset_name,
+        input_size=(input_dim,),
         size_dataset=size_dataset,
         num_labels=num_labels,
         data_type="tabular",
@@ -79,6 +80,11 @@ train_dataloader, val_dataloader, test_dataloader = dl_cloud_builder.build_datal
 del train_dataloader, val_dataloader, test_dataloader
 
 # %%
+old_environ = dict(os.environ)
+old_environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/reinauer/Downloads/durable-pulsar-334312-10a010c12335.json'
+os.environ.clear()
+os.environ.update(old_environ)
+# %%
 # This is how you use the api to search for the best hyperparameters for the MutagDataset 
 # using the PersformerHyperparameterSearch class. The search is performed using the 
 # hpo_space file provided. The results are written to the path_writer directory.
@@ -94,7 +100,6 @@ hpo = PersformerHyperparameterSearch(dataset_name=dataset_name,
                                path_writer=path_writer)
 
 hpo.search()
-
 # %%
 # Check if the dataloader have the correct shape
 x, y = next(iter(train_dataloader))

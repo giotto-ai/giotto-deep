@@ -77,3 +77,5 @@ examples/diagrams_5000_1000_0_1.npy
 giotto-deep/
 
 runs/
+examples/tmp_data.pt
+examples/tmp_labels.pt

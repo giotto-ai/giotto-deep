@@ -26,13 +26,13 @@
     "schedulers_params": {
         "scheduler": ["get_cosine_with_hard_restarts_schedule_with_warmup"],
         "num_cycles": [1],
-        "num_training_steps": [150],
+        "num_training_steps": [10],
         "num_warmup_steps": [6]
     },
     "n_trials": 1,
     "cross_validation": true,
     "fold_mode": "StratifiedKFold",
-    "k_folds": 2,
+    "n_splits": 2,
     "shuffle": true,
     "search_metric": "accuracy"
 }

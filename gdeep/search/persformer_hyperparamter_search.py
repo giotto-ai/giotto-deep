@@ -1,4 +1,7 @@
 import torch
+from torch.optim import AdamW
+from transformers import get_cosine_with_hard_restarts_schedule_with_warmup
+from sklearn.model_selection import StratifiedKFold, KFold
 
 from dotmap import DotMap  # type:ignore
 
@@ -61,15 +64,23 @@ class PersformerHyperparameterSearch:
 
         # Initialize the Tensorflow writer
         writer = GiottoSummaryWriter(self.path_writer)
-
-        pipe = Pipeline(model, [train_dataloader, None], loss_fn, writer)
-
+        
+        # load hpo metadata
         with open(self.path_hpo_metadata) as config_data_file:
             hyperparameters_dicts = DotMap(load(config_data_file))
             dataloaders_params = hyperparameters_dicts.dataloaders_params
             models_hyperparams = hyperparameters_dicts.models_hyperparams
             optimizers_params = hyperparameters_dicts.optimizers_params
             schedulers_params = hyperparameters_dicts.schedulers_params
+
+        # Initialize pipeline        
+        pipe = Pipeline(model, [train_dataloader, None], loss_fn, writer,
+                            eval(
+                                hyperparameters_dicts.fold_mode + "(" +
+                                    str(hyperparameters_dicts.n_splits) + ", "+
+                                    "shuffle=" + str(hyperparameters_dicts.shuffle) + ")"
+                            )
+                        )
 
 
         pruner = NopPruner()
@@ -79,16 +90,14 @@ class PersformerHyperparameterSearch:
                             best_not_last=True,
                             pruner=pruner)
 
-
         # starting the hyperparameter search
-        search.start((eval(optimizers_params.optimizer),),
+        search.start((eval(optimizers_params.optimizer[0]),),
                     n_epochs=schedulers_params.num_training_steps[0],
                     cross_validation=hyperparameters_dicts.cross_validation,
-                    k_folds=hyperparameters_dicts.k_folds,
                     optimizers_params=optimizers_params,
                     dataloaders_params=dataloaders_params,
                     models_hyperparams=models_hyperparams,
-                    lr_scheduler=eval(schedulers_params.scheduler),
+                    lr_scheduler=eval(schedulers_params.scheduler[0]),
                     schedulers_params=schedulers_params)
 
         # Close the Tensorflow writer
