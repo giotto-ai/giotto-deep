@@ -234,10 +234,12 @@ class DataLoaderFromArray(AbstractDataLoader):
                  X_val: np.ndarray=None, y_val: np.ndarray=None, 
                  X_test: np.ndarray=None) -> None:
         self.X_train = X_train
-        if len(y_train.shape) == 1:
-            self.y_train = y_train.reshape(-1, 1)
-        else:
-            self.y_train = y_train
+        # @Matteo, this does not work well with cross_entropy loss
+        # if len(y_train.shape) == 1:
+        #     self.y_train = y_train.reshape(-1, 1)
+        # else:
+        #     self.y_train = y_train
+        self.y_train = y_train
         if X_val is not None:
             self.X_val = X_val
             if len(y_val.shape) == 1:
@@ -270,12 +272,9 @@ class DataLoaderFromArray(AbstractDataLoader):
                 test dataloader directly usable in
                 the pipeline class
         """
+        # @Matteo Here is an issue since x and y could also be torch tensors
         tr_data = [(DataLoaderFromArray._from_numpy(x).float(),
-                    torch.tensor(y).long() if isinstance(y, int) or
-                                              ('__getitem__' in dir(y) and
-                                               (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
-            torch.tensor(y).float()) for x, y in zip(self.X_train, self.y_train)]
-
+                    torch.tensor(y).long()) for x, y in zip(self.X_train, self.y_train)]
         try:
             val_data = [(DataLoaderFromArray._from_numpy(x).float(),
                          torch.tensor(y).long() if isinstance(y, np.int64) or
@@ -330,10 +329,13 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                  download_directory):
         self.dataset_name = dataset_name
         self.download_directory = download_directory
-        dataset_cloud = DatasetCloud(dataset_name,
-                                download_directory=download_directory)
-        dataset_cloud.download()
-        del dataset_cloud
+        # Only download if the download directory does not exist already
+        if not os.path.isdir(join(download_directory, self.dataset_name)):
+            print("Downloading dataset '%s'" % self.dataset_name)
+            dataset_cloud = DatasetCloud(dataset_name,
+                                    download_directory=download_directory)
+            dataset_cloud.download()
+            del dataset_cloud
         self.dl_builder = None
         with open(join(self.download_directory, self.dataset_name, "metadata.json")) as f:
             self.dataset_metadata = json.load(f)
@@ -341,6 +343,7 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
             if self.dataset_metadata['data_format'] == 'pytorch_tensor':
                 data = torch.load(join(self.download_directory, self.dataset_name, "data.pt"))
                 labels = torch.load(join(self.download_directory, self.dataset_name, "labels.pt"))
+
                 self.dl_builder = DataLoaderFromArray(data, labels)
             elif self.dataset_metadata['data_format'] == 'numpy_array':
                 data = np.load(join(self.download_directory, self.dataset_name, "data.npy"))

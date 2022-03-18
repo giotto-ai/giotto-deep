@@ -58,6 +58,7 @@ class PersformerHyperparameterSearch:
         model = Persformer()
         
         train_dataloader = self._get_data_loader()
+        
 
         # initialize loss
         loss_fn = torch.nn.CrossEntropyLoss()
@@ -91,13 +92,13 @@ class PersformerHyperparameterSearch:
                             pruner=pruner)
 
         # starting the hyperparameter search
-        search.start((eval(optimizers_params.optimizer[0]),),
+        search.start([eval(opt) for opt in hyperparameters_dicts.optimizer],
                     n_epochs=schedulers_params.num_training_steps[0],
                     cross_validation=hyperparameters_dicts.cross_validation,
                     optimizers_params=optimizers_params,
                     dataloaders_params=dataloaders_params,
                     models_hyperparams=models_hyperparams,
-                    lr_scheduler=eval(schedulers_params.scheduler[0]),
+                    lr_scheduler=eval(hyperparameters_dicts.scheduler[0]),
                     schedulers_params=schedulers_params)
 
         # Close the Tensorflow writer
