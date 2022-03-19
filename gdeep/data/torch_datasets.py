@@ -321,7 +321,7 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         a DataLoader for the dataset
 
     Raises:
-        ValueError: If the dataset_name is not in Tensorflow Datasets
+        ValueError: If the dataset_name is not in Datasets cloud
         ValueError: If the download_directory is not a valid directory
     """
     def __init__(self,
