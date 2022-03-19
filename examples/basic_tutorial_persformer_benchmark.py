@@ -4,16 +4,21 @@ get_ipython().magic('load_ext autoreload')
 get_ipython().magic('autoreload 2')
 
 from os.path import join
-from gdeep.topology_layers import HyperparameterSearch
-from gdeep.search import GiottoSummaryWriter
+from gdeep.search import PersformerHyperparameterSearch
 
-#%%
-dataset = "MutagDataset"
-hyperparameter_space = join("hyperparameter_space", "mutag.json")
+# %%
+# This is how you use the api to search for the best hyperparameters for the MutagDataset 
+# using the PersformerHyperparameterSearch class. The search is performed using the 
+# hpo_space file provided. The results are written to the path_writer directory.
 
-# Initialize the Tensorflow writer
-writer = GiottoSummaryWriter(join("runs","mutag_persformer_hpo"))
+dataset_name="MutagDataset"
+download_directory = join("data", "DatasetCloud")
+path_hpo_metadata = join('hpo_space', 'Mutag_hyperparameter_space.json')
+path_writer = join("run", "auto_ml")
 
-HyperparameterSearch(dataset=dataset,
-                     writer=writer,
-                     hyperparameter_space=hyperparameter_space)
+hpo = PersformerHyperparameterSearch(dataset_name=dataset_name,
+                               download_directory=download_directory,
+                               path_hpo_metadata=path_hpo_metadata,
+                               path_writer=path_writer)
+
+hpo.search()

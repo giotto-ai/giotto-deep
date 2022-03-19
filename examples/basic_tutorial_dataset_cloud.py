@@ -81,35 +81,3 @@ train_dataloader, val_dataloader, test_dataloader = dl_cloud_builder.build_datal
 del train_dataloader, val_dataloader, test_dataloader
 
 # %%
-old_environ = dict(os.environ)
-old_environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/reinauer/Downloads/durable-pulsar-334312-10a010c12335.json'
-os.environ.clear()
-os.environ.update(old_environ)
-# %%
-# This is how you use the api to search for the best hyperparameters for the MutagDataset 
-# using the PersformerHyperparameterSearch class. The search is performed using the 
-# hpo_space file provided. The results are written to the path_writer directory.
-
-dataset_name="MutagDataset"
-download_directory = join("data", "DatasetCloud")
-path_hpo_metadata = join('hpo_space', 'Mutag_hyperparameter_space.json')
-path_writer = join("run", "auto_ml")
-
-hpo = PersformerHyperparameterSearch(dataset_name=dataset_name,
-                               download_directory=download_directory,
-                               path_hpo_metadata=path_hpo_metadata,
-                               path_writer=path_writer)
-
-hpo.search()
-# %%
-data = torch.load(join('data/DatasetCloud/MutagDataset', 'data.pt'))
-labels = torch.load(join('data/DatasetCloud/MutagDataset', 'labels.pt'))
-
-print(data[:5].shape)
-
-torch.save(labels[:5], join('data/DatasetCloud/SmallMutagDataset', 'labels.pt'))
-torch.save(data[:5], join('data/DatasetCloud/SmallMutagDataset', 'data.pt'))
-
-# %%
-data = torch.load(join('data/DatasetCloud/SmallMutagDataset', 'data.pt'))
-# %%
