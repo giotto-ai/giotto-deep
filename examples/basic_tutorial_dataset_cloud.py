@@ -105,9 +105,11 @@ hpo.search()
 data = torch.load(join('data/DatasetCloud/MutagDataset', 'data.pt'))
 labels = torch.load(join('data/DatasetCloud/MutagDataset', 'labels.pt'))
 
-print(data[:2].shape)
+print(data[:5].shape)
 
-torch.save(labels[:2], join('data/DatasetCloud/SmallMutagDataset', 'labels.pt'))
-torch.save(data[:2], join('data/DatasetCloud/SmallMutagDataset', 'data.pt'))
+torch.save(labels[:5], join('data/DatasetCloud/SmallMutagDataset', 'labels.pt'))
+torch.save(data[:5], join('data/DatasetCloud/SmallMutagDataset', 'data.pt'))
 
+# %%
+data = torch.load(join('data/DatasetCloud/SmallMutagDataset', 'data.pt'))
 # %%

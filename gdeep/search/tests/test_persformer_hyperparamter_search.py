@@ -6,7 +6,7 @@ from os.path import join
 def test_start():
     """Test the start method of the PersformerHyperparameterSearch class."""
     dataset_name = 'SmallMutagDataset'
-    download_directory = join("examples","data", "DatasetCloud")
+    download_directory = join('gdeep','search', 'tests', 'data')
     path_hpo_metadata = join('gdeep','search', 'tests', 'data','hpo_metadata.json')
     path_writer = '.'
 

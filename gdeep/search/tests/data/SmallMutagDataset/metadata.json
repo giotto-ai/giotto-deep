@@ -1,0 +1,13 @@
+{
+    "comment": "The MUTAG graph dataset consists of 188 samples of chemical compounds with 7 discrete node attributes and 2 class labels..",
+    "data_format": "pytorch_tensor",
+    "data_type": "tabular",
+    "input_size": [
+        22,
+        6
+    ],
+    "name": "MutagDataset",
+    "num_labels": 2,
+    "size": 5,
+    "task_type": "classification"
+}
