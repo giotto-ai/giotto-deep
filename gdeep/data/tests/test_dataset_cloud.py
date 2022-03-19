@@ -32,7 +32,7 @@ def file_as_bytes(file):
     with file:
         return file.read()
 
-if "GOOGLE_APPLICATION_CREDENTIALS" in dict(os.environ):
+if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
     @credentials_error_logging
     def test_upload_and_download():
         for data_format in ['pytorch_tensor', 'numpy_array']:
