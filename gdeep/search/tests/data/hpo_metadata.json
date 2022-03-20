@@ -27,7 +27,7 @@
         "num_training_steps": [5],
         "num_warmup_steps": [6]
     },
-    "optimizer": ["AdamW"],
+    "optimizer": ["AdamW", "Adam"],
     "scheduler": ["get_cosine_with_hard_restarts_schedule_with_warmup"],
     "n_trials": 1,
     "cross_validation": true,

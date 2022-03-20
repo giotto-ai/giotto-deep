@@ -8,11 +8,22 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
+
+def check_public_access(use_public_access: bool):
+    def wrap(function):
+        def wrapper_function(*args, **kwargs):
+            if(use_public_access):
+                raise ValueError("DataCloud object has public access only!")
+            return function(*args, **kwargs)
+        return wrapper_function
+    return wrap
+
 class _DataCloud():
     def __init__(
             self,
             bucket_name: str ="adversarial_attack",
-            download_directory: str = join('examples', 'data', 'DataCloud')
+            download_directory: str = join('examples', 'data', 'DataCloud'),
+            use_public_access: bool = True
             ) -> None:
         """Download handle for Google Cloud Storage buckets.
 
@@ -21,9 +32,15 @@ class _DataCloud():
                 Defaults to "adversarial_attack".
             download_directory (str, optional): Directory of the downloaded files.
                 Defaults to join('examples', 'data', 'DataCloud').
+            public_access: (bool, optional): Whether or not to use public api access.
+                Defaults to True.
         """
         self.bucket_name = bucket_name
-        self.storage_client = storage.Client()
+        self.public_access = use_public_access
+        if use_public_access:
+            self.storage_client = storage.Client.create_anonymous_client()
+        else:
+            self.storage_client = storage.Client()
         self.bucket = self.storage_client.bucket(self.bucket_name)
         
         # Set up download path
@@ -70,6 +87,7 @@ class _DataCloud():
             
             blob.download_to_filename(join(self.download_directory,local_path))
         
+    @check_public_access(self.use_public_access)
     def upload_file(self,
                source_file_name: str,
                target_blob_name: Union[str, None] = None) -> None:
