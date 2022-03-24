@@ -8,17 +8,21 @@ from gdeep.search import PersformerHyperparameterSearch
 
 # %%
 # This is how you use the api to search for the best hyperparameters for the MutagDataset 
-# using the PersformerHyperparameterSearch class. The search is performed using the 
-# hpo_space file provided. The results are written to the path_writer directory.
+# using the PersformerHyperparameterSearch class. The search is performed using the hyperparameter
+# search space described in hpo_space file provided. Please the file to your own dataset.
+# The results are written to the path_writer directory.
+# To be able to use the google storage buckets please set up an authentication on your local machine.
 
-dataset_name="MutagDataset"
-download_directory = join("data", "DatasetCloud")
-path_hpo_metadata = join('hpo_space', 'Mutag_hyperparameter_space.json')
-path_writer = join("run", "auto_ml")
+dataset_name="MutagDataset"  # name of the dataset - has to exist in the datacloud buckets
+download_directory = join("data", "DatasetCloud")  # directory where the dataset is downloaded
+path_hpo_metadata = join('hpo_space', 'Mutag_hyperparameter_space.json')  # file describing the hyperparameter search space
+path_writer = join("run", "auto_ml")  # directory where the runs are stored using the tensorboard writer
 
+# Initialize the search object with the search parameters.
 hpo = PersformerHyperparameterSearch(dataset_name=dataset_name,
                                download_directory=download_directory,
                                path_hpo_metadata=path_hpo_metadata,
                                path_writer=path_writer)
 
+# Start the hyperparameter search.
 hpo.search()
