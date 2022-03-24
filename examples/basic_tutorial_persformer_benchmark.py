@@ -9,9 +9,9 @@ from gdeep.search import PersformerHyperparameterSearch
 # %%
 # This is how you use the api to search for the best hyperparameters for the MutagDataset 
 # using the PersformerHyperparameterSearch class. The search is performed using the hyperparameter
-# search space described in hpo_space file provided. Please the file to your own dataset.
+# search space described in hpo_space file provided. Please customize the file to your own dataset.
 # The results are written to the path_writer directory.
-# To be able to use the google storage buckets please set up an authentication on your local machine.
+# Important: To be able to access the google storage buckets please set up an api authentication key on your machine.
 
 dataset_name="MutagDataset"  # name of the dataset - has to exist in the datacloud buckets
 download_directory = join("data", "DatasetCloud")  # directory where the dataset is downloaded
