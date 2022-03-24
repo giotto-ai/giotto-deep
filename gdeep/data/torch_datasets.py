@@ -15,7 +15,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 from . import CreateToriDataset
-from .dataset_cloud import DatasetDownloader
+from .dataset_cloud import DatasetCloud
 
 class AbstractDataLoader(ABC):
     """The abstractr class to interface the
@@ -332,7 +332,7 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         # Only download if the download directory does not exist already
         if not os.path.isdir(join(download_directory, self.dataset_name)):
             print("Downloading dataset '%s'" % self.dataset_name)
-            dataset_cloud = DatasetDownloader(dataset_name,
+            dataset_cloud = DatasetCloud(dataset_name,
                                     download_directory=download_directory)
             dataset_cloud.download()
             del dataset_cloud
