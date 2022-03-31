@@ -109,3 +109,21 @@ def _inner_refactor_scalars(list_, cross_validation, k_folds):
             else:
                 out.append([value, t])
     return out
+
+
+def is_notebook() -> bool:
+    """Returns true if the code is running in a notebook
+    
+    Returns:
+        bool: True if running in a notebook
+    """
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
