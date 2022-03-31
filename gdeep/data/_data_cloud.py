@@ -87,7 +87,7 @@ class _DataCloud():
             
             blob.download_to_filename(join(self.download_directory,local_path))
         
-    @check_public_access(self.use_public_access)
+#    @check_public_access(self.use_public_access)
     def upload_file(self,
                source_file_name: str,
                target_blob_name: Union[str, None] = None) -> None:
