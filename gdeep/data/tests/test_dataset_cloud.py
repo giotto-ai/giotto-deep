@@ -114,7 +114,8 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             ## Upload dataset to Cloud
             dataset_name = "TmpSmallDataset"
             dataset_cloud = DatasetCloud(dataset_name,
-                                        download_directory=download_directory)
+                                        download_directory=download_directory,
+                                        use_public_access=False)
 
             # Specify the metadata of the dataset
             dataset_cloud._add_metadata(
