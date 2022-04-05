@@ -399,8 +399,10 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                                             self.dataset_name))) < 3):
             # Delete the download directory if it exists but does not contain
             # the wanted number of files
-            if len(os.listdir(join(self.download_directory,
-                                   self.dataset_name))) < 3: # type: ignore
+            if (os.path.isdir(join(self.download_directory, self.dataset_name))
+                and
+                len(os.listdir(join(self.download_directory,
+                                   self.dataset_name))) < 3): # type: ignore
                 print("Deleting the download directory because it does "+
                       "not contain the dataset")
                 shutil.rmtree(self.download_directory, ignore_errors=True)
