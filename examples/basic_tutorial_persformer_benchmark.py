@@ -1,4 +1,6 @@
-# %% 
+# %%
+# This snippet will deactivate autoreload if this file
+# is run as a script.
 from gdeep.utility import is_notebook
 
 if is_notebook():
@@ -8,14 +10,33 @@ if is_notebook():
 
 # %%
 from os.path import join
+
+# Import the GDeep hpo module
 from gdeep.search import PersformerHyperparameterSearch
 
+# %% [markdown]
+# ## Training a topological model with the Dataset Cloud
+# In this tutorial we will use the our custom datasets storage
+# on [Google Cloud Datastore](https://cloud.google.com/datastore/) to
+# load datasets and train a topological model.
+# The dataset cloud storage contain a variety of topological datasets
+# that can be easily used in GDeep.
+# We will use the Mutag dataset from the
+# [Mutagenicity Benchmark](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5276825/)
+# to do performance benchmarking for the Persformer model.
+# For this benchmark we will use the GDeep
+# [Persformer](https://doi.org/10.48550/arXiv.2112.15210) model,
+# the GDeep pipeline and the GDeep hyperparameter search.
+# With only a few lines of code we can train multiple topological models
+# with different hyperparameters and evaluate the performance of the model.
+
 # %%
-# This is how you use the api to search for the best hyperparameters for the MutagDataset 
-# using the PersformerHyperparameterSearch class. The search is performed using the hyperparameter
-# search space described in hpo_space file provided. Please customize the file to your own dataset.
+# This is how you use the api to search for the best hyperparameters for
+# the MutagDataset using the PersformerHyperparameterSearch class.
+# The search is performed using the hyperparameter
+# search space described in hpo_space file provided.
+# Please customize the file to your own dataset.
 # The results are written to the path_writer directory.
-# Important: To be able to access the google storage buckets please set up an api authentication key on your machine.
 
 dataset_name="MutagDataset"  # name of the dataset - has to exist in the datacloud buckets
 download_directory = join("data", "DatasetCloud")  # directory where the dataset is downloaded

@@ -1,4 +1,7 @@
 # %%
+
+# This snippet will deactivate autoreload if this file
+# is run as a script.
 from gdeep.utility.utils import is_notebook
 
 if is_notebook:
