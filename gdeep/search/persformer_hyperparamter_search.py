@@ -15,10 +15,11 @@ from gdeep.data import DlBuilderFromDataCloud
 from gdeep.pipeline import Pipeline
 
 class PersformerHyperparameterSearch:
-    """This class is used to perform hyperparameter search for Persfomer using cross-validation. 
-    The search is performed using the Giotto-Deep GridSearch class. The hyperparameter dictionaries
-    are loaded from the metadata file. The search is performed on the dataset specified in the
-    class constructor. The training data is downloaded from the DatasetCloud and the results are
+    """This class is used to perform hyperparameter search for Persfomer using 
+    cross-validation. The search is performed using the Giotto-Deep GridSearch 
+    class. The hyperparameter dictionaries are loaded from the metadata file.
+    The search is performed on the dataset specified in the class constructor.
+    The training data is downloaded from the DatasetCloud and the results are
     saved in the path provided in the constructor.
     
     Args:
