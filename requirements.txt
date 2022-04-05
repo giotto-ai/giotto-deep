@@ -16,7 +16,7 @@ torchvision==0.11.1
 transformers
 einops
 tensorboard
-captum
+captum==0.4.1
 psutil
 kaleido
 html2image
