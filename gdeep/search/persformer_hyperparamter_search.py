@@ -86,8 +86,9 @@ class PersformerHyperparameterSearch:
         pipe = Pipeline(model, [train_dataloader, None], loss_fn, writer,
                             eval(
                                 hyperparameters_dicts.fold_mode + "(" +
-                                    str(hyperparameters_dicts.n_splits) + ", "+
-                                    "shuffle=" + str(hyperparameters_dicts.shuffle) + ")"
+                                str(hyperparameters_dicts.n_splits) + ", "+
+                                "shuffle=" + str(hyperparameters_dicts.shuffle)
+                                + ")"
                             )
                         )
 
