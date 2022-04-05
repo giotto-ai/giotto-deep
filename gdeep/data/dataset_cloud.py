@@ -34,7 +34,7 @@ class DatasetCloud():
              dataset_name: str,
              bucket_name: str = "adversarial_attack",
              download_directory: Union[None, str] = None,
-             use_public_access: bool = False,
+             use_public_access: bool = True,
              path_credentials: Union[None, str] = None,
              ):
         self.name = dataset_name
