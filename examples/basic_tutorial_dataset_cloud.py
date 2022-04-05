@@ -13,13 +13,52 @@ from os import remove
 from os.path import join
 
 from gdeep.data import DlBuilderFromDataCloud, DatasetCloud
+from gdeep.utility.utils import get_checksum
 
-from gdeep.search import PersformerHyperparameterSearch
+
+# %%
+folder = "examples/data/DatasetCloud/SmallDataset"
+# Compute checksums for all files folder of type 'pt' and print them
+def print_checksums(folder):
+    """Prints the checksums of all files in folder of type 'pt'.
+    
+    Parameters
+    ----------
+    folder : str
+        The path to the folder.
+    
+    Returns
+    -------
+    None
+        This function does not return anything.
+    """
+    for file in os.listdir(folder):
+        if file.endswith(".pt"):
+            print(file, ":", get_checksum(join(folder, file)))
+
+print_checksums(folder)
+
 # %% [markdown]
-# In this tutorial we will use the our custome datasets
-# [Google Cloud Datastore](https://cloud.google.com/datastore/) to store our datasets.
-# 
+# ## Using the Dataset Cloud to train topological models
+# In this tutorial we will use the our custom datasets storage on
+# [Google Cloud Datastore](https://cloud.google.com/datastore/) to
+# to store and load our datasets.
+# The dataset cloud storage contain a variety of topological datasets that
+# can be easily used in GDeep.
 
+# %%
+# To see all publically available datasets, please use the following command:
+DatasetCloud("").get_existing_dataset()
+
+# %% [markdown]
+# ## Uploading and downloading datasets from the cloud
+# Using datasets from the cloud is very easy. The datasets are publicly
+# available and can be downloaded from the cloud without any registration.
+#
+# To upload a dataset to the cloud, you have to have a Google Cloud API key
+# to the Google Cloud Datastore bucket. If you are interested uploading your
+# own dataset, please contact us at
+# [raphael.reinauer@epfl.ch](mailto:raphael.reinauer@epfl.ch).
 # %%
 def create_and_upload_dataset():
     """The method above creates a dataset with random data and labels,
@@ -68,7 +107,10 @@ def create_and_upload_dataset():
     remove(labels_filename)
     
 create_and_upload_dataset()
-
+# %% [markdown]
+# ## Using the Dataset Cloud to train topological model
+# The datasets in the cloud are automatically downloaded and used by GDeep.
+# Only specify the dataset name and the path you want to save the model.
 # %%
 # Create dataloaders from data cloud
 # If you don't know what datasets exist in the cloud, just use an empty
@@ -83,8 +125,10 @@ dl_cloud_builder = DlBuilderFromDataCloud(dataset_name,
 print(dl_cloud_builder.get_metadata())
 
 # create the dataset from the downloaded dataset
-train_dataloader, val_dataloader, test_dataloader = dl_cloud_builder.build_dataloaders(batch_size=10)
+train_dataloader, val_dataloader, test_dataloader = \
+    dl_cloud_builder.build_dataloaders(batch_size=10)
 
 del train_dataloader, val_dataloader, test_dataloader
 
-# %%
+# %% [markdown]
+# Now you can train a model on the dataset using the created dataloaders.

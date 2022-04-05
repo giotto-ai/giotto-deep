@@ -11,32 +11,12 @@ import pytest
 import random
 from shutil import rmtree
 
+from gdeep.utility.utils import get_checksum
 
 LOGGER = logging.getLogger(__name__)
 
-def credentials_error_logging(func):
-    def inner():
-        try:
-            func()
-        except DefaultCredentialsError:
-            LOGGER.warning("GCP credentials failed.")
-    return inner
-
-
-def file_as_bytes(file):
-    """Returns a bytes object representing the file
-
-    Args:
-        file (str): File to read.
-
-    Returns:
-        _type_: Byte object
-    """
-    with file:
-        return file.read()
 
 if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
-    @credentials_error_logging
     def test_download():
         """Test download of sample data from bucket
         """
@@ -57,11 +37,10 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
 
         # check if downloaded file is correct
         assert "d4b12b2dc2bc199831ba803431184fcb" == \
-            hashlib.md5(file_as_bytes(open(file_path, 'rb'))).hexdigest()
+            get_checksum(file_path)
             
         remove(join(data_cloud.download_directory, file_name))
             
-    @credentials_error_logging
     def test_upload():
         """Test upload of sample file to bucket.
         """

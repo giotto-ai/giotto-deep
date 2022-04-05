@@ -104,6 +104,12 @@ class _DataCloud():
 
         Args:
             source_file_name (str): Filename of the local file to upload.
+            target_blob_name (Union[str, None], optional): Name of the target
+                Blob. Defaults to None.
+            make_public (bool, optional): Whether or not to make the uploaded
+                file public. Defaults to False.
+            overwrite (bool, optional): Whether or not to overwrite the target
+                Blob. Defaults to False.
         """
         if target_blob_name is None:
             target_blob_name = source_file_name
@@ -123,7 +129,10 @@ class _DataCloud():
 
         Args:
             source_folder (str): Folder to upload.
-            target_folder (Union[str, None], optional): Folder. Defaults to None.
+            target_folder (Union[str, None], optional): Folder. Defaults to
+                None.
+            make_public (bool, optional): Whether or not to make the uploaded
+                file public. Defaults to False.
         """
         
         assert isdir(source_folder)

@@ -1,6 +1,7 @@
 from IPython import get_ipython  # type: ignore
 import os
 import time
+import hashlib
 
 import torch
 from torch import nn
@@ -125,7 +126,7 @@ def is_notebook() -> bool:
     except NameError:
         return False      # Probably standard Python interpreter
     
-def file_as_bytes(file):
+def _file_as_bytes(file):
     """Returns a bytes object representing the file
 
     Args:
@@ -134,5 +135,16 @@ def file_as_bytes(file):
     Returns:
         bytes: Bytes object representing the file.
     """
-    with file:
-        return file.read()
+    with open(file, 'rb') as f:
+        return f.read()
+    
+def get_checksum(file):
+    """Returns the checksum of the file
+
+    Args:
+        file (str): Path to the file
+
+    Returns:
+        str: The checksum of the file.
+    """
+    return hashlib.md5(_file_as_bytes(file)).hexdigest()

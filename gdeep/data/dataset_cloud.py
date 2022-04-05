@@ -146,15 +146,22 @@ class DatasetCloud():
             wget.download(self.public_url + 'datasets.json', datasets_local)
             datasets = json.load(open(datasets_local))
             
+            # Remove duplicates. This has to be fixed in the future.
+            datasets = list(set(datasets))
+            
             # Remove the temporary file.
             remove(datasets_local)
             
             return datasets
         else:
-            return [blob.name.split('/')[0] 
+            existing_datasets = [blob.name.split('/')[0] 
                     for blob in self._data_cloud.bucket.list_blobs()
                     if blob.name != "giotto-deep-big.png" and
                     blob.name != "datasets.json"]
+            # Remove duplicates.
+            existing_datasets = list(set(existing_datasets))
+            
+            return existing_datasets
 
     def _update_dataset_list(self):
         """Updates the dataset list in the datasets.json file.
@@ -163,8 +170,6 @@ class DatasetCloud():
         
         # List of existing datasets in the cloud.
         existing_datasets = self.get_existing_dataset()
-        
-        # TODO: Do not append to the dataset list but replace it.
         
         # Save existing datasets to a json file.
         json_file = 'tmp_datasets.json'

@@ -1,4 +1,4 @@
-from gdeep.data import DatasetCloud
+from gdeep.data import DatasetCloud, dataset_cloud
 
 import hashlib
 import logging
@@ -13,52 +13,51 @@ from google.auth.exceptions import DefaultCredentialsError  # type: ignore
 import numpy as np
 import torch
 
-from gdeep.utility.utils import file_as_bytes
+from gdeep.utility.utils import get_checksum
 
 LOGGER = logging.getLogger(__name__)
-
 
 
 # Test public access for downloading datasets
 def test_public_access():
     # Download a small dataset from Google Cloud Storage
     dataset = "SmallDataset"
-    download_directory = join("examples", "data", "DatasetCloud", "Tmp",
-                              dataset)
+    download_directory = join("examples", "data", "DatasetCloud", "Tmp")
     
-    # Create directory if it does not exist
-    os.makedirs(download_directory, exist_ok=True)
+    # Remove download directory recursively if it exists
+    if exists(download_directory):
+        rmtree(download_directory)
+    
+    # Create download directory
+    os.makedirs(download_directory, exist_ok=False)
     
     
-    dataset_cloud = DatasetCloud(
-                                dataset,
-                                download_directory=download_directory,
-                                use_public_access=True)
+    dataset_cloud = DatasetCloud(dataset,
+                                 download_directory=download_directory,
+                                 use_public_access=True)
     dataset_cloud.download()
     
     # Check if the downloaded files (metadata.json, data.json, labels.json)
     # are correct
-    checksums = {"metadata.json": 1,
-                 "data.pt": 1,
-                 "labels.pt": 1,
+    checksums = {"data.pt": "2ef68a718e29134cbcbf46c9592f6168",
+                 "labels.pt": "d71992425033c6bf449d175db146a423",
                  }
     
     for file in checksums.keys():
-        assert file_as_bytes(open(join(download_directory, file), "rb")) == \
+        assert get_checksum(join(download_directory,
+                                       dataset,
+                                       file)) == \
             checksums[file], "File {} is corrupted.".format(file)
-    # Remove the downloaded files
-    for file in checksums.keys():
-        remove(join(download_directory, file))
-    # Remove the directory
-    os.rmdir(download_directory)
-    
-# TODO Test public access for downloading datasets
+    # Recursively remove download directory
+    rmtree(download_directory)
+
+
     
            
 def test_get_dataset_list():
     # Download directory will not be used as well ass the dataset
     # It's only used for initialization of the DatasetCloud object
-    download_directory = join("")
+    download_directory = ""
     dataset_cloud = DatasetCloud("SmallDataset",
                                  download_directory=download_directory,
                                  use_public_access=True)
@@ -66,11 +65,22 @@ def test_get_dataset_list():
     assert len(dataset_list) > 0, "Dataset list is empty."
     assert "SmallDataset" in dataset_list,\
         "Dataset list does not contain the dataset."
+        
+    # Test if the list does not contain duplicates
+    assert len(dataset_list) == len(set(dataset_list)),\
+        "Dataset list contains duplicates."
 
 
 
 
 if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
+    def test_update_dataset_list():
+        # Create DatasetCloud object
+        dataset_cloud = DatasetCloud("", use_public_access=False)
+        # Update the dataset list
+        dataset_cloud._update_dataset_list()
+        
+    
     def test_upload_and_download():
         for data_format in ['pytorch_tensor', 'numpy_array']:
             download_directory = join("examples", "data", "DatasetCloud")
@@ -131,9 +141,9 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             elif data_format == 'numpy_array':
                 downloaded_files = ["data.npy", "labels.npy", "metadata.json"]
             for file in downloaded_files:
-                hash_original = hashlib.md5(file_as_bytes(open('tmp_' + file, 'rb'))).hexdigest()
+                hash_original = get_checksum('tmp_' + file)
                 path_downloaded_file = join(download_directory, dataset_name, file)
-                hash_downloaded = hashlib.md5(file_as_bytes(open(path_downloaded_file, 'rb'))).hexdigest()
+                hash_downloaded = get_checksum(path_downloaded_file)
                 assert hash_original == hash_downloaded, "Original and downloaded files do not match."
                 
 
