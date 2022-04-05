@@ -28,3 +28,4 @@ torchensemble
 dotmap
 sympy
 google-cloud-storage
+wget
