@@ -119,7 +119,7 @@ download_directory = join("data", "DatasetCloud")
 dl_cloud_builder = DlBuilderFromDataCloud(dataset_name,
                                    download_directory)
 
-# You can display the metadata of the dataset
+# You can display the metadata of the dataset using the get_metadata() method
 print(dl_cloud_builder.get_metadata())
 
 # create the dataset from the downloaded dataset
