@@ -303,28 +303,33 @@ class DataLoaderFromArray(AbstractDataLoader):
 class DlBuilderFromDataCloud(AbstractDataLoader):
     """Class that loads data from Google Cloud Storage
     
-    The purpose of this class is to create a PyTorch DataLoader
-    that can be used to load data from a dataset in Dataset Cloud.
+    This class is useful to build dataloaders from a dataset stored in
+    the GDeep Dataset Cloud on Google Cloud Storage.
 
     The constructor takes the name of a dataset as a string, and a string
     for the download directory. The constructor will download the dataset
     to the download directory. The dataset is downloaded in the version
     used by Datasets Cloud, which may be different from the version
     used by the dataset's original developers.
-
-    The constructor returns a DataLoader that can be used to load data
-    from the dataset.
     
     Args:
-        dataset_name: a string for the name of a dataset
-        download_directory: a string for the download directory
+        dataset_name (str): The name of the dataset.
+        download_dir (str): The directory where the dataset will be downloaded.
+        use_public_access (bool): Whether to use public access. If you want
+            to use the Google Cloud Storage API, you must set this to True.
+            Please make sure you have the appropriate credentials.
+        path_to_credentials (str): Path to the credentials file.
+            Only used if public_access is False and credentials are not
+            provided. Defaults to None.
+        
 
     Returns:
-        a DataLoader for the dataset
+        torch.utils.data.DataLoader: The dataloader for the dataset.
 
     Raises:
-        ValueError: If the dataset_name is not in Datasets cloud
-        ValueError: If the download_directory is not a valid directory
+        ValueError: If the dataset_name is not a valid dataset that exists
+            in Datasets Cloud.
+        ValueError: If the download_directory is not a valid directory.
     """
     def __init__(self,
                  dataset_name: str,
@@ -339,32 +344,36 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
             print("Downloading dataset '%s'" % self.dataset_name)
             dataset_cloud = DatasetCloud(dataset_name,
                                     download_directory=download_directory,
-                                    
+                                    path_credentials=path_credentials,
                                     use_public_access = use_public_access,
                                     )
             dataset_cloud.download()
             del dataset_cloud
         self.dl_builder = None
-        with open(join(self.download_directory, self.dataset_name, "metadata.json")) as f:
+        with open(join(self.download_directory, self.dataset_name,
+                       "metadata.json")) as f:
             self.dataset_metadata = json.load(f)
         if self.dataset_metadata['data_type'] == 'tabular':
             if self.dataset_metadata['data_format'] == 'pytorch_tensor':
-                data = torch.load(join(self.download_directory, self.dataset_name, "data.pt"))
-                labels = torch.load(join(self.download_directory, self.dataset_name, "labels.pt"))
+                data = torch.load(join(self.download_directory, 
+                                       self.dataset_name, "data.pt"))
+                labels = torch.load(join(self.download_directory, 
+                                         self.dataset_name, "labels.pt"))
 
                 self.dl_builder = DataLoaderFromArray(data, labels)
             elif self.dataset_metadata['data_format'] == 'numpy_array':
-                data = np.load(join(self.download_directory, self.dataset_name, "data.npy"))
-                labels = np.load(join(self.download_directory, self.dataset_name, "labels.npy"))
+                data = np.load(join(self.download_directory,
+                                    self.dataset_name, "data.npy"))
+                labels = np.load(join(self.download_directory,
+                                      self.dataset_name, "labels.npy"))
                 self.dl_builder = DataLoaderFromArray(data, labels)
             else:
-                raise ValueError(f"Data format {self.dataset_metadata['data_format']} is not yet supported.")
+                raise ValueError("Data format {}"\
+                    .format(self.dataset_metadata['data_format']) +
+                                 "is not yet supported.")
         else:
-            raise ValueError(f"Dataset type {self.dataset_metadata['data_type']} is not yet supported.")
-        
-    def __del__(self):
-        pass
-        #del self.dl_builder
+            raise ValueError("Dataset type {} is not yet supported."\
+                .format(self.dataset_metadata['data_type']))
 
     def get_metadata(self):
         """gets the dataset metadata from a class object. 
