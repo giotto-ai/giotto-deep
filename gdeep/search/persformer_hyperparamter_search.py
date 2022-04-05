@@ -22,10 +22,15 @@ class PersformerHyperparameterSearch:
     saved in the path provided in the constructor.
     
     Args:
-        dataset_name (str): name of the dataset (dataset has to be contained in the DatasetCloud)
-        download_directory (str): directory where the dataset is downloaded/located
-        path_hpo_metadata (str): path to the metadata file
-        path_writer (str): path to where Tensorflow writer saves the results
+        dataset_name (str): name of the dataset to be used for the 
+        hyperparameter search. The dataset must be present in the DatasetCloud.
+        download_directory (str): directory where the dataset is
+        either downloaded or already present
+        path_hpo_metadata (str): path to the metadata file containing the
+            hyperparameter dictionaries specifying the search space and the
+            search metric
+        path_writer (str): path to the Tensorflow writer directory where the
+            Tensorflow summaries are saved during the search process
     """ 
     def __init__(self,
                 dataset_name,
@@ -38,22 +43,25 @@ class PersformerHyperparameterSearch:
         self.path_writer = path_writer
         
     def _get_data_loader(self):
+        """Returns the data loader for the dataset specified in the constructor.
+        """
         dl_cloud_builder = DlBuilderFromDataCloud(self.dataset_name,
                                    self.download_directory)
 
         # create the dataset from the downloaded dataset
-        train_dataloader, _, _ = dl_cloud_builder.build_dataloaders(batch_size=10)
+        train_dataloader, _, _ = dl_cloud_builder\
+            .build_dataloaders(batch_size=10)
         return train_dataloader
     
     
     def search(self):
-        """Starts the hyperparameter search.
-        
-        The start method initializes the model, loss function, and Tensorflow writer.
-        It then loads the hyperparameter dictionaries from the metadata file
-        and initializes the search object. Finally, it starts the hyperparameter search.
+        """Performs the hyperparameter search. The search is performed using
+        the Giotto-Deep GridSearch class. The hyperparameter dictionaries
+        are loaded from the metadata file. The search is performed on the
+        dataset specified in the class constructor. The training data is
+        downloaded from the DatasetCloud and the results are saved in the
+        path provided in the constructor.
         """
-        
         
         model = Persformer()
         

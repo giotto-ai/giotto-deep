@@ -30,6 +30,8 @@ class _DataCloud():
         public_access: (bool, optional): Whether or not to use public api access.
             Defaults to True.
         path_credentials (str, optional): Path to the credentials file.
+            Only used if public_access is False and credentials are not
+            provided. Defaults to None.
     """
     def __init__(
             self,
