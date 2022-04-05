@@ -25,7 +25,8 @@ class DatasetCloud():
         dataset will be downloaded to. Defaults to None.
         use_public_access (bool, optional): If True, the dataset will
             downloaded via public url. Defaults to False.
-        path_credentials (Union[None, str], optional): Path to the credentials file.
+        path_credentials (Union[None, str], optional): Path to the credentials
+            file.
             Only used if public_access is False and credentials are not
             provided. Defaults to None.
         """
