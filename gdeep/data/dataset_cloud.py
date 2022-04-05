@@ -35,7 +35,7 @@ class DatasetCloud():
              bucket_name: str = "adversarial_attack",
              download_directory: Union[None, str] = None,
              use_public_access: bool = True,
-             path_credentials: Union[None, str] = None,
+             path_to_credentials: Union[None, str] = None,
              ):
         self.name = dataset_name
         self.path_metadata = None
@@ -50,7 +50,7 @@ class DatasetCloud():
             self._data_cloud = _DataCloud(
                 bucket_name=bucket_name,
                 download_directory = self.download_directory,
-                path_credentials = path_credentials)
+                path_to_credentials = path_to_credentials)
         else:
             self.public_url = ("https://storage.googleapis.com/"
                                + bucket_name + "/")

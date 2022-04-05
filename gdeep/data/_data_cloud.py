@@ -38,15 +38,15 @@ class _DataCloud():
             bucket_name: str ="adversarial_attack",
             download_directory: str = join('examples', 'data', 'DataCloud'),
             use_public_access: bool = True,
-            path_credentials: Union[str, None] = None,
+            path_to_credentials: Union[str, None] = None,
             ) -> None:
         self.bucket_name = bucket_name
         self.public_access = use_public_access
-        if path_credentials is None:
+        if path_to_credentials is None:
             self.storage_client = storage.Client()
         else:
             credentials = service_account.Credentials.from_service_account_file(
-                path_credentials)
+                path_to_credentials)
             self.storage_client = storage.Client(credentials=credentials)
             
         self.bucket = self.storage_client.bucket(self.bucket_name)

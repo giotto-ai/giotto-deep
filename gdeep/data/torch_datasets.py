@@ -337,34 +337,17 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                  dataset_name: str,
                  download_directory: str,
                  use_public_access: bool=True,
-                 path_credentials: Union[None, str] = None,
+                 path_to_credentials: Union[None, str] = None,
                  ):
         self.dataset_name = dataset_name
         self.download_directory = download_directory
         
-        # Only download if the download directory does not exist already
-        # and if download directory contains at least three files
-        if (not os.path.isdir(join(download_directory, self.dataset_name)) or
-                             len(os.listdir(join(download_directory,
-                                            self.dataset_name))) < 3):
-            # Delete the download directory if it exists but does not contain
-            # the wanted number of files
-            if len(os.listdir(join(download_directory,
-                                   self.dataset_name))) < 3: # type: ignore
-                print("Deleting the download directory because it does "+
-                      "not contain the dataset")
-                shutil.rmtree(download_directory, ignore_errors=True)
-                
-            print("Downloading dataset '%s'" % self.dataset_name)
-            dataset_cloud = DatasetCloud(dataset_name,
-                                    download_directory=download_directory,
-                                    path_credentials=path_credentials,
-                                    use_public_access = use_public_access,
-                                    )
-            dataset_cloud.download()
-            del dataset_cloud
-        else:
-            print("Dataset '%s' already downloaded" % self.dataset_name)
+        # Download the dataset if it does not exist
+        self.download_directory
+        
+        self._download_dataset(use_public_access=use_public_access, 
+                               path_to_credentials = path_to_credentials)
+
         self.dl_builder = None
         with open(join(self.download_directory, self.dataset_name,
                        "metadata.json")) as f:
@@ -390,6 +373,40 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         else:
             raise ValueError("Dataset type {} is not yet supported."\
                 .format(self.dataset_metadata['data_type']))
+
+    def _download_dataset(self,
+                          path_to_credentials: Union[None, str] =None,
+                          use_public_access: bool=True,) -> None:
+        """Only download if the download directory does not exist already
+        and if download directory contains at least three files (metadata,
+        data, labels).
+        
+        Args:
+            path_to_credentials (str): Path to the credentials file.
+            use_public_access (bool): Whether to use public access. If you want
+                to use the Google Cloud Storage API, you must set this to True.
+        """
+        if (not os.path.isdir(join(self.download_directory, self.dataset_name))
+                            or len(os.listdir(join(self.download_directory,
+                                            self.dataset_name))) < 3):
+            # Delete the download directory if it exists but does not contain
+            # the wanted number of files
+            if len(os.listdir(join(self.download_directory,
+                                   self.dataset_name))) < 3: # type: ignore
+                print("Deleting the download directory because it does "+
+                      "not contain the dataset")
+                shutil.rmtree(self.download_directory, ignore_errors=True)
+                
+            print("Downloading dataset '%s'" % self.dataset_name)
+            dataset_cloud = DatasetCloud(self.dataset_name,
+                                    download_directory=self.download_directory,
+                                    path_to_credentials=path_to_credentials,
+                                    use_public_access = use_public_access,
+                                    )
+            dataset_cloud.download()
+            del dataset_cloud
+        else:
+            print("Dataset '%s' already downloaded" % self.dataset_name)
 
     def get_metadata(self):
         """gets the dataset metadata from a class object. 
