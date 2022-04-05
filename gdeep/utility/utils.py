@@ -1,7 +1,9 @@
-import torch
-from torch import nn
+from IPython import get_ipython  # type: ignore
 import os
 import time
+
+import torch
+from torch import nn
 
 
 def _are_compatible(model_dict, dataloaders_dict):
@@ -109,3 +111,28 @@ def _inner_refactor_scalars(list_, cross_validation, k_folds):
             else:
                 out.append([value, t])
     return out
+
+def is_notebook() -> bool:
+    """check if the current environment is a notebook"""
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+    
+def file_as_bytes(file):
+    """Returns a bytes object representing the file
+
+    Args:
+        file (str): Path to the file
+
+    Returns:
+        bytes: Bytes object representing the file.
+    """
+    with file:
+        return file.read()

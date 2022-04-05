@@ -1,3 +1,5 @@
+from typing import Union
+
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
@@ -325,15 +327,21 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         ValueError: If the download_directory is not a valid directory
     """
     def __init__(self,
-                 dataset_name,
-                 download_directory):
+                 dataset_name: str,
+                 download_directory: str,
+                 use_public_access: bool=True,
+                 path_credentials: Union[None, str] = None,
+                 ):
         self.dataset_name = dataset_name
         self.download_directory = download_directory
         # Only download if the download directory does not exist already
         if not os.path.isdir(join(download_directory, self.dataset_name)):
             print("Downloading dataset '%s'" % self.dataset_name)
             dataset_cloud = DatasetCloud(dataset_name,
-                                    download_directory=download_directory)
+                                    download_directory=download_directory,
+                                    
+                                    use_public_access = use_public_access,
+                                    )
             dataset_cloud.download()
             del dataset_cloud
         self.dl_builder = None

@@ -1,10 +1,11 @@
-from google.cloud import storage  # type: ignore
+import logging
 from os.path import isfile, join, isdir, exists
 from os import listdir, makedirs
 import sys
 from typing import Union
-import logging
 
+from google.cloud import storage  # type: ignore
+from google.oauth2 import service_account  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,28 +20,33 @@ def check_public_access(use_public_access: bool):
     return wrap
 
 class _DataCloud():
+    """Download handle for Google Cloud Storage buckets.
+
+    Args:
+        bucket_name (str, optional): Name of the Google Cloud Storage bucket.
+            Defaults to "adversarial_attack".
+        download_directory (str, optional): Directory of the downloaded files.
+            Defaults to join('examples', 'data', 'DataCloud').
+        public_access: (bool, optional): Whether or not to use public api access.
+            Defaults to True.
+        path_credentials (str, optional): Path to the credentials file.
+    """
     def __init__(
             self,
             bucket_name: str ="adversarial_attack",
             download_directory: str = join('examples', 'data', 'DataCloud'),
-            use_public_access: bool = True
+            use_public_access: bool = True,
+            path_credentials: Union[str, None] = None,
             ) -> None:
-        """Download handle for Google Cloud Storage buckets.
-
-        Args:
-            bucket_name (str, optional): Name of the Google Cloud Storage bucket.
-                Defaults to "adversarial_attack".
-            download_directory (str, optional): Directory of the downloaded files.
-                Defaults to join('examples', 'data', 'DataCloud').
-            public_access: (bool, optional): Whether or not to use public api access.
-                Defaults to True.
-        """
         self.bucket_name = bucket_name
         self.public_access = use_public_access
-        if use_public_access:
-            self.storage_client = storage.Client.create_anonymous_client()
-        else:
+        if path_credentials is None:
             self.storage_client = storage.Client()
+        else:
+            credentials = service_account.Credentials.from_service_account_file(
+                path_credentials)
+            self.storage_client = storage.Client(credentials=credentials)
+            
         self.bucket = self.storage_client.bucket(self.bucket_name)
         
         # Set up download path
@@ -80,17 +86,20 @@ class _DataCloud():
             file_split = blob.name.split("/")
             directory = "/".join(file_split[0:-1])
             if not exists(directory):
-                makedirs(join(self.download_directory, directory), exist_ok=True)
+                makedirs(join(self.download_directory, directory),
+                         exist_ok=True)
             logging.getLogger().info("Downloading blob %s", blob.name)
             
-            local_path =  blob.name.replace("/", "\\") if sys.platform == 'win32' else blob.name
+            local_path =  blob.name.replace("/", "\\") \
+                if sys.platform == 'win32' else blob.name
             
             blob.download_to_filename(join(self.download_directory,local_path))
         
-#    @check_public_access(self.use_public_access)
     def upload_file(self,
                source_file_name: str,
-               target_blob_name: Union[str, None] = None) -> None:
+               target_blob_name: Union[str, None] = None,
+               make_public: bool = False,
+               overwrite: bool = False) -> None:
         """Upload a local file to Google Cloud Storage bucket.
 
         Args:
@@ -99,13 +108,16 @@ class _DataCloud():
         if target_blob_name is None:
             target_blob_name = source_file_name
         blob = self.bucket.blob(target_blob_name)
-        if blob.exists():
+        if blob.exists() and not overwrite:
             raise RuntimeError(f"Blob {target_blob_name} already exists.")
         logging.getLogger().info("upload file %s", source_file_name)
         blob.upload_from_filename(source_file_name)
+        if make_public:
+            blob.make_public()
     
     def upload_folder(self,
-                      source_folder: str
+                      source_folder: str,
+                      make_public: bool = False,
                       ) -> None:
         """Upload a local folder to Google Cloud Storage bucket recursively.
 
@@ -119,10 +131,15 @@ class _DataCloud():
         files_and_folders = [f for f in listdir(source_folder)]
         for f in files_and_folders:
             if(isfile(join(source_folder, f))):
-                logging.getLogger().info("Create Blob %s", source_folder.replace("\\", "/"))
-                logging.getLogger().info("upload file %s", join(source_folder, f))
-                blob = self.bucket.blob(join(source_folder, f).replace("\\", "/"))
+                logging.getLogger()\
+                    .info("Create Blob %s", source_folder.replace("\\", "/"))
+                logging.getLogger()\
+                    .info("upload file %s", join(source_folder, f))
+                blob = self.bucket\
+                    .blob(join(source_folder, f).replace("\\", "/"))
                 blob.upload_from_filename(join(source_folder, f))
+                if make_public:
+                    blob.make_public()
             else:
                 self.upload_folder(join(source_folder, f))
         

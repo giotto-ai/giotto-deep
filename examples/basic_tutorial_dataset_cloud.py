@@ -1,8 +1,11 @@
-# %% 
-from IPython import get_ipython  # type: ignore
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
+# %%
+from gdeep.utility.utils import is_notebook
 
+if is_notebook:
+    # Autoreload modules
+    from IPython import get_ipython  # type: ignore
+    get_ipython().magic('load_ext autoreload')
+    get_ipython().magic('autoreload 2')
 # %%
 import torch
 import os
@@ -12,8 +15,12 @@ from os.path import join
 from gdeep.data import DlBuilderFromDataCloud, DatasetCloud
 
 from gdeep.search import PersformerHyperparameterSearch
-# %%
+# %% [markdown]
+# In this tutorial we will use the our custome datasets
+# [Google Cloud Datastore](https://cloud.google.com/datastore/) to store our datasets.
+# 
 
+# %%
 def create_and_upload_dataset():
     """The method above creates a dataset with random data and labels,
     saves it locally as pickled files, and then uploads it to the Cloud.
@@ -39,21 +46,21 @@ def create_and_upload_dataset():
     torch.save(labels, labels_filename)
 
     ## Upload dataset to Cloud
-    dataset_name = "SmallDataset"
+    dataset_name = "SmallDataset2"
     dataset_cloud = DatasetCloud(dataset_name)
 
     # Specify the metadata of the dataset
-    dataset_cloud.add_metadata(
+    dataset_cloud._add_metadata(
         name=dataset_name,
         input_size=(input_dim,),
         size_dataset=size_dataset,
         num_labels=num_labels,
         data_type="tabular",
-        data_format="pytorch_tensor"
+        data_format="pytorch_tensor",
     )
 
     # upload dataset to Cloud
-    dataset_cloud.upload(data_filename, labels_filename)
+    dataset_cloud._upload(data_filename, labels_filename)
 
     # remove the labels and data files
     # Warning: Only do this if you do want the local dataset to be deleted!

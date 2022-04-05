@@ -8,13 +8,6 @@ from google.auth.exceptions import DefaultCredentialsError  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
 
-def credentials_error_logging(func):
-    def inner():
-        try:
-            func()
-        except DefaultCredentialsError:
-            LOGGER.warning("GCP credentials failed.")
-    return inner
 
 if "GOOGLE_APPLICATION_CREDENTIALS" in dict(os.environ):
     def test_array():
@@ -49,7 +42,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(os.environ):
         dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
         
         
-    @credentials_error_logging
+
     def test_dlbuilderfromdatacloud():
         dataset_name = "SmallDataset"
         download_directory = join("examples", "data", "DatasetCloud")

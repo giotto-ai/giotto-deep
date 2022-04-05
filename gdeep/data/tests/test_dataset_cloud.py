@@ -1,39 +1,76 @@
 from gdeep.data import DatasetCloud
-import logging
-import pytest
-import torch
-import numpy as np
-from os import remove, environ
-from os.path import join
+
 import hashlib
+import logging
+import os
+from os import remove, environ
+from os.path import join, exists
+import pytest
 from shutil import rmtree
-from google.auth.exceptions import DefaultCredentialsError  # type: ignore
 import time
+
+from google.auth.exceptions import DefaultCredentialsError  # type: ignore
+import numpy as np
+import torch
+
+from gdeep.utility.utils import file_as_bytes
 
 LOGGER = logging.getLogger(__name__)
 
-def credentials_error_logging(func):
-    def inner():
-        try:
-            func()
-        except DefaultCredentialsError:
-            LOGGER.warning("GCP credentials failed.")
-    return inner
 
-def file_as_bytes(file):
-    """Returns a bytes object representing the file
 
-    Args:
-        file (str): File to read.
+# Test public access for downloading datasets
+def test_public_access():
+    # Download a small dataset from Google Cloud Storage
+    dataset = "SmallDataset"
+    download_directory = join("examples", "data", "DatasetCloud", "Tmp",
+                              dataset)
+    
+    # Create directory if it does not exist
+    os.makedirs(download_directory, exist_ok=True)
+    
+    
+    dataset_cloud = DatasetCloud(
+                                dataset,
+                                download_directory=download_directory,
+                                use_public_access=True)
+    dataset_cloud.download()
+    
+    # Check if the downloaded files (metadata.json, data.json, labels.json)
+    # are correct
+    checksums = {"metadata.json": 1,
+                 "data.pt": 1,
+                 "labels.pt": 1,
+                 }
+    
+    for file in checksums.keys():
+        assert file_as_bytes(open(join(download_directory, file), "rb")) == \
+            checksums[file], "File {} is corrupted.".format(file)
+    # Remove the downloaded files
+    for file in checksums.keys():
+        remove(join(download_directory, file))
+    # Remove the directory
+    os.rmdir(download_directory)
+    
+# TODO Test public access for downloading datasets
+    
+           
+def test_get_dataset_list():
+    # Download directory will not be used as well ass the dataset
+    # It's only used for initialization of the DatasetCloud object
+    download_directory = join("")
+    dataset_cloud = DatasetCloud("SmallDataset",
+                                 download_directory=download_directory,
+                                 use_public_access=True)
+    dataset_list = dataset_cloud.get_existing_dataset()
+    assert len(dataset_list) > 0, "Dataset list is empty."
+    assert "SmallDataset" in dataset_list,\
+        "Dataset list does not contain the dataset."
 
-    Returns:
-        _type_: Byte object
-    """
-    with file:
-        return file.read()
+
+
 
 if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
-    @credentials_error_logging
     def test_upload_and_download():
         for data_format in ['pytorch_tensor', 'numpy_array']:
             download_directory = join("examples", "data", "DatasetCloud")
@@ -70,7 +107,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                                         download_directory=download_directory)
 
             # Specify the metadata of the dataset
-            dataset_cloud.add_metadata(
+            dataset_cloud._add_metadata(
                 name=dataset_name,
                 size_dataset=size_dataset,
                 input_size=(input_dim,),
@@ -80,7 +117,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             )
 
             # upload dataset to Cloud
-            dataset_cloud.upload(data_filename, labels_filename)
+            dataset_cloud._upload(data_filename, labels_filename)
 
             # download dataset from Cloud to ´example/data/DataCloud/SmallDataset/´
             dataset_cloud.download()
@@ -110,3 +147,4 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             # remove the metadata file
             # will get deleted automatically when dataset_cloud is out of scope.
             del dataset_cloud
+            

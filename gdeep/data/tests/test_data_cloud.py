@@ -1,13 +1,16 @@
+# %%
 from gdeep.data import _DataCloud
-from os.path import join, exists
-from os import remove, makedirs, environ
-import hashlib
+
 import google  # type: ignore
+from google.auth.exceptions import DefaultCredentialsError  # type: ignore
+import hashlib
 import logging
+from os import remove, makedirs, environ
+from os.path import join, exists
+import pytest
 import random
 from shutil import rmtree
-import pytest
-from google.auth.exceptions import DefaultCredentialsError  # type: ignore
+
 
 LOGGER = logging.getLogger(__name__)
 
