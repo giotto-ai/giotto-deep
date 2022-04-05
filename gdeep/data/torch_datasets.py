@@ -1,5 +1,6 @@
 from typing import Union
 from sympy import false
+import shutil
 
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -351,8 +352,17 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         
         # Only download if the download directory does not exist already
         # and if download directory contains at least three files
-        if (not os.path.isdir(join(download_directory, self.dataset_name)) and
-                             len(os.listdir(download_directory)) >= 3):
+        if (not os.path.isdir(join(download_directory, self.dataset_name)) or
+                             len(os.listdir(join(download_directory,
+                                            self.dataset_name))) < 3):
+            # Delete the download directory if it exists but does not contain
+            # the wanted number of files
+            if len(os.listdir(join(download_directory,
+                                   self.dataset_name))) < 3: # type: ignore
+                print("Deleting the download directory because it does "+
+                      "not contain the dataset")
+                shutil.rmtree(download_directory, ignore_errors=True)
+                
             print("Downloading dataset '%s'" % self.dataset_name)
             dataset_cloud = DatasetCloud(dataset_name,
                                     download_directory=download_directory,
@@ -361,6 +371,8 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                                     )
             dataset_cloud.download()
             del dataset_cloud
+        else:
+            print("Dataset '%s' already downloaded" % self.dataset_name)
         self.dl_builder = None
         with open(join(self.download_directory, self.dataset_name,
                        "metadata.json")) as f:
