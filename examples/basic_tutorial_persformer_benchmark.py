@@ -1,8 +1,12 @@
 # %% 
-from IPython import get_ipython  # type: ignore
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
+from gdeep.utility import is_notebook
 
+if is_notebook():
+    from IPython import get_ipython  # type: ignore
+    get_ipython().magic('load_ext autoreload')
+    get_ipython().magic('autoreload 2')
+
+# %%
 from os.path import join
 from gdeep.search import PersformerHyperparameterSearch
 
