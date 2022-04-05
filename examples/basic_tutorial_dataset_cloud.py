@@ -1,3 +1,16 @@
+# %% [markdown]
+# Basic tutorial: Dataset Cloud
+#### Author: Raphael Reinauer
+#### Date: 2022-04-05
+#This short tutorial shows how to use the DatasetCloud class to upload and
+# download topological datasets in the GDeep framework.
+
+# The main steps of the tutorial are the following:
+# 1. Upload the dataset to the Cloud
+# 2. Download the dataset from the Cloud
+# 3. Automatically create dataloaders for the dataset by specifying the
+#    dataset name (the dataset will be automatically downloaded from the
+#    Cloud)
 # %%
 
 # This snippet will deactivate autoreload if this file
@@ -9,37 +22,17 @@ if is_notebook:
     from IPython import get_ipython  # type: ignore
     get_ipython().magic('load_ext autoreload')
     get_ipython().magic('autoreload 2')
-# %%
-import torch
+
+# Include necessary imports
 import os
 from os import remove
 from os.path import join
 
+import torch
+
 from gdeep.data import DlBuilderFromDataCloud, DatasetCloud
 from gdeep.utility.utils import get_checksum
 
-
-# %%
-folder = "examples/data/DatasetCloud/SmallDataset"
-# Compute checksums for all files folder of type 'pt' and print them
-def print_checksums(folder):
-    """Prints the checksums of all files in folder of type 'pt'.
-    
-    Parameters
-    ----------
-    folder : str
-        The path to the folder.
-    
-    Returns
-    -------
-    None
-        This function does not return anything.
-    """
-    for file in os.listdir(folder):
-        if file.endswith(".pt"):
-            print(file, ":", get_checksum(join(folder, file)))
-
-print_checksums(folder)
 
 # %% [markdown]
 # ## Using the Dataset Cloud to train topological models

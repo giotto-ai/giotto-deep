@@ -1,6 +1,19 @@
+# %% [markdown]
+# Basic tutorial: Training a topological model
+#### Author: Raphael Reinauer
+#### Date: 2022-04-05
+# This short tutorial shows how to use the GDeep framework to train topological
+# models using the topological datasets provided by the GDeep dataset cloud.
+
+# The main steps of the tutorial are the following:
+# 1. Specify the dataset you want to use.
+# 2. Specify the model and the hyperparameter space you want to use.
+# 3. Run a large scale hyperparameter search to find the good hyperparameters.
+
 # %%
 # This snippet will deactivate autoreload if this file
 # is run as a script.
+
 from gdeep.utility import is_notebook
 
 if is_notebook():
@@ -8,7 +21,7 @@ if is_notebook():
     get_ipython().magic('load_ext autoreload')
     get_ipython().magic('autoreload 2')
 
-# %%
+# Include necessary imports
 from os.path import join
 
 # Import the GDeep hpo module
