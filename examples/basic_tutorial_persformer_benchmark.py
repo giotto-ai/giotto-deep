@@ -1,5 +1,5 @@
 # %% [markdown]
-# Basic tutorial: Training a topological model
+# #Basic tutorial: Training a topological model
 #### Author: Raphael Reinauer
 #### Date: 2022-04-05
 # This short tutorial shows how to use the GDeep framework to train topological

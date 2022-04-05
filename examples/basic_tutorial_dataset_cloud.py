@@ -1,8 +1,8 @@
 # %% [markdown]
-# Basic tutorial: Dataset Cloud
+# #Basic tutorial: Dataset Cloud
 #### Author: Raphael Reinauer
 #### Date: 2022-04-05
-#This short tutorial shows how to use the DatasetCloud class to upload and
+# This short tutorial shows how to use the DatasetCloud class to upload and
 # download topological datasets in the GDeep framework.
 
 # The main steps of the tutorial are the following:
