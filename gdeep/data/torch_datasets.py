@@ -1,4 +1,5 @@
 from typing import Union
+from sympy import false
 
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -347,8 +348,11 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                  ):
         self.dataset_name = dataset_name
         self.download_directory = download_directory
+        
         # Only download if the download directory does not exist already
-        if not os.path.isdir(join(download_directory, self.dataset_name)):
+        # and if download directory contains at least three files
+        if (not os.path.isdir(join(download_directory, self.dataset_name)) and
+                             len(os.listdir(download_directory)) >= 3):
             print("Downloading dataset '%s'" % self.dataset_name)
             dataset_cloud = DatasetCloud(dataset_name,
                                     download_directory=download_directory,

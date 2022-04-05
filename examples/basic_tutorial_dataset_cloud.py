@@ -101,8 +101,10 @@ def create_and_upload_dataset():
     # Warning: Only do this if you do want the local dataset to be deleted!
     remove(data_filename)
     remove(labels_filename)
-    
-create_and_upload_dataset()
+# Please only run this function if you have a Google Cloud API key
+# This is not a requirement for uploading data to the Dataset Cloud.    
+
+# create_and_upload_dataset()
 # %% [markdown]
 # ## Using the Dataset Cloud to train topological model
 # The datasets in the cloud are automatically downloaded and used by GDeep.
