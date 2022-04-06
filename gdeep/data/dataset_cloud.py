@@ -29,6 +29,7 @@ class DatasetCloud():
             file.
             Only used if public_access is False and credentials are not
             provided. Defaults to None.
+        make_public (bool, optional): If True, the dataset will be made public
         """
     def __init__(self,
              dataset_name: str,
@@ -36,8 +37,13 @@ class DatasetCloud():
              download_directory: Union[None, str] = None,
              use_public_access: bool = True,
              path_to_credentials: Union[None, str] = None,
+             make_public: bool = True,
              ):
-        self.name = dataset_name
+        # Non-public datasets start with "private_"
+        if make_public or use_public_access:
+            self.name = dataset_name
+        else:
+            self.name = "private_" + dataset_name
         self.path_metadata = None
         self.use_public_access = use_public_access
         if download_directory is None:
@@ -54,6 +60,7 @@ class DatasetCloud():
         else:
             self.public_url = ("https://storage.googleapis.com/"
                                + bucket_name + "/")
+        self.make_public = make_public
         
     def __del__(self):
         """This function deletes the metadata file if it exists.
@@ -165,6 +172,10 @@ class DatasetCloud():
             # Remove duplicates.
             existing_datasets = list(set(existing_datasets))
             
+            # Remove dataset that are not public, i.e. start with "private_".
+            existing_datasets = [dataset for dataset in existing_datasets
+                                    if not dataset.startswith("private_")]
+            
             return existing_datasets
 
     def _update_dataset_list(self):
@@ -228,7 +239,7 @@ class DatasetCloud():
         assert filetype in ('pt', 'npy'), "File type not supported."
         self._data_cloud.upload_file(path, str(self.metadata['name'])
                                      + '/data.' + filetype,
-                                     make_public=True,)
+                                     make_public=self.make_public,)
     
     def _upload_label(self,
                  path: str,) -> None:
@@ -248,7 +259,7 @@ class DatasetCloud():
         assert filetype in ('pt', 'npy'), "File type not supported."
         self._data_cloud.upload_file(path, str(self.metadata['name']) 
                                      +'/labels.' + filetype,
-                                     make_public=True,)
+                                     make_public=self.make_public,)
     
     def _upload_metadata(self,
                         path: Union[str, None]=None):
@@ -263,12 +274,12 @@ class DatasetCloud():
             Exception: If no metadata exists, an exception will be raised."""
         self._check_public_access()
         if self.metadata == None:
-            raise Exception("No metadata to upload. Please create metadata"
-                            + "using create_metadata.")  #NOSONAR
+            raise Exception("No metadata to upload. " #NOSONAR
+                            + "Please create metadata using create_metadata.")
         self._data_cloud.upload_file(
             path, str(self.metadata['name']) + '/'  # type: ignore
             + 'metadata.json',
-            make_public=True)
+            make_public=self.make_public)
         
     def _add_metadata(self,
                      size_dataset: int,

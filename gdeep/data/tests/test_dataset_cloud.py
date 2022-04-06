@@ -101,7 +101,8 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                 torch.save(labels, labels_filename)
             elif data_format == 'numpy_array':
                 data = np.random.rand(size_dataset, input_dim)
-                labels = np.random.randint(0, num_labels, (size_dataset,), dtype=np.long)
+                labels = np.random.randint(0, num_labels, (size_dataset,),
+                                           dtype=np.long)
 
                 # pickle data and labels
                 data_filename = 'tmp_data.npy'
@@ -145,7 +146,8 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                 hash_original = get_checksum('tmp_' + file)
                 path_downloaded_file = join(download_directory, dataset_name, file)
                 hash_downloaded = get_checksum(path_downloaded_file)
-                assert hash_original == hash_downloaded, "Original and downloaded files do not match."
+                assert hash_original == hash_downloaded, \
+                    "Original and downloaded files do not match."
                 
 
             # remove the labels and data files
