@@ -5,12 +5,9 @@ import logging
 import os
 from os import remove, environ
 from os.path import join, exists
-import pytest
 from shutil import rmtree
-import time
 
-from google.auth.exceptions import DefaultCredentialsError  # type: ignore
-import numpy as np
+import numpy as np  # type: ignore
 import torch
 
 from gdeep.utility.utils import get_checksum
@@ -61,7 +58,7 @@ def test_get_dataset_list():
     dataset_cloud = DatasetCloud("SmallDataset",
                                  download_directory=download_directory,
                                  use_public_access=True)
-    dataset_list = dataset_cloud.get_existing_dataset()
+    dataset_list = dataset_cloud.get_existing_datasets()
     assert len(dataset_list) > 0, "Dataset list is empty."
     assert "SmallDataset" in dataset_list,\
         "Dataset list does not contain the dataset."

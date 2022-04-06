@@ -248,7 +248,7 @@ class DatasetCloud():
         if filetype in ['pt', 'npy']:
             self._data_cloud.upload_file(path,
                                          (self.metadata['name'] + # type: ignore
-                                            '/data' + filetype),
+                                            '/data.' + filetype),
                                          make_public=self.make_public,
                                          overwrite=False,
                                          )
@@ -276,7 +276,7 @@ class DatasetCloud():
         if filetype in ['pt', 'npy']:
             self._data_cloud.upload_file(path,
                                          (self.metadata['name'] + # type: ignore
-                                            '/labels' + filetype),
+                                            '/labels.' + filetype),
                                          make_public=self.make_public,
                                          overwrite=False,
                                          )

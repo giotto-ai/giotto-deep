@@ -29,3 +29,4 @@ dotmap
 sympy
 google-cloud-storage
 wget
+ipython
