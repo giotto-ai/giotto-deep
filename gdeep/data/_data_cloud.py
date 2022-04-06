@@ -2,15 +2,18 @@ import logging
 from os.path import isfile, join, isdir, exists, getsize
 from os import listdir, makedirs
 import sys
-from typing import Union
+from typing import Union, List
 
 from google.cloud import storage  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
+from gdeep.utility.utils import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+
 LOGGER = logging.getLogger(__name__)
 
 
-def check_public_access(use_public_access: bool):
+def _check_public_access(use_public_access: bool):
+    """Check if the public access is enabled."""
     def wrap(function):
         def wrapper_function(*args, **kwargs):
             if(use_public_access):
@@ -27,7 +30,7 @@ class _DataCloud():
             Defaults to "adversarial_attack".
         download_directory (str, optional): Directory of the downloaded files.
             Defaults to join('examples', 'data', 'DataCloud').
-        public_access: (bool, optional): Whether or not to use public api access.
+        use_public_access: (bool, optional): Whether or not to use public api access.
             Defaults to True.
         path_credentials (str, optional): Path to the credentials file.
             Only used if public_access is False and credentials are not
@@ -35,20 +38,21 @@ class _DataCloud():
     """
     def __init__(
             self,
-            bucket_name: str ="adversarial_attack",
-            download_directory: str = join('examples', 'data', 'DataCloud'),
+            bucket_name: str = DATASET_BUCKET_NAME,
+            download_directory: str = DEFAULT_DOWNLOAD_DIR,
             use_public_access: bool = True,
             path_to_credentials: Union[str, None] = None,
             ) -> None:
         self.bucket_name = bucket_name
-        self.public_access = use_public_access
+        self.use_public_access = use_public_access
         if path_to_credentials is None:
             self.storage_client = storage.Client()
         else:
             credentials = service_account.Credentials.from_service_account_file(
                 path_to_credentials)
             self.storage_client = storage.Client(credentials=credentials)
-            
+        
+        print(self.bucket_name)
         self.bucket = self.storage_client.bucket(self.bucket_name)
         
         # Set up download path
@@ -58,6 +62,18 @@ class _DataCloud():
         if not exists(self.download_directory):
               makedirs(self.download_directory)
 
+    def list_blobs(self) -> List[str]:
+        """List all blobs in the bucket.
+        
+        Returns:
+            List[str]: List of blobs in the bucket.
+        """
+        # Assert that the bucket does not use public access
+        if self.use_public_access:
+            raise ValueError("DataCloud object can only list blobs"
+                             "when using private access!")
+        blobs = self.bucket.list_blobs()
+        return [blob.name for blob in blobs]
         
         
     def download_file(self,
@@ -105,12 +121,16 @@ class _DataCloud():
         """Upload a local file to Google Cloud Storage bucket.
 
         Args:
-            source_file_name (str): Filename of the local file to upload.
-            target_blob_name (Union[str, None], optional): Name of the target
+            source_file_name (str):
+            Filename of the local file to upload.
+            target_blob_name (Union[str, None], optional):
+            Name of the target
                 Blob. Defaults to None.
-            make_public (bool, optional): Whether or not to make the uploaded
+            make_public (bool, optional):
+            Whether or not to make the uploaded
                 file public. Defaults to False.
-            overwrite (bool, optional): Whether or not to overwrite the target
+            overwrite (bool, optional):
+            Whether or not to overwrite the target
                 Blob. Defaults to False.
         """
         if target_blob_name is None:

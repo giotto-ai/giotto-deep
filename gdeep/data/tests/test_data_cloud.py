@@ -13,7 +13,7 @@ import pytest
 import random
 from shutil import rmtree
 
-from gdeep.utility.utils import get_checksum
+from gdeep.utility.utils import get_checksum, DATASET_BUCKET_NAME
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
     # Check if the credentials are valid and if the bucket can be accessed
     client = storage.Client()
-    if Bucket(client, 'adversarial_attack').exists():
+    if Bucket(client, DATASET_BUCKET_NAME).exists():
         def test_download():
             """Test download of sample data from bucket
             """

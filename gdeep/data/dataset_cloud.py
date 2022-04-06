@@ -8,6 +8,8 @@ from typing import List, Tuple, Union
 
 import wget  # type: ignore
 
+from gdeep.utility.utils import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+
 class DatasetCloud():
     """DatasetCloud class to handle the download and upload
     of datasets to the DataCloud.
@@ -20,9 +22,9 @@ class DatasetCloud():
     Args:
         dataset_name (str): Name of the dataset to be downloaded or uploaded.
         bucket_name (str, optional): Name of the bucket in the DataCloud.
-        Defaults to "adversarial_attack".
+        Defaults to DATASET_BUCKET_NAME.
         download_directory (Union[None, str], optional): Directory where the
-        dataset will be downloaded to. Defaults to None.
+        dataset will be downloaded to. Defaults to DEFAULT_DOWNLOAD_DIR.
         use_public_access (bool, optional): If True, the dataset will
             downloaded via public url. Defaults to False.
         path_credentials (Union[None, str], optional): Path to the credentials
@@ -33,7 +35,7 @@ class DatasetCloud():
         """
     def __init__(self,
              dataset_name: str,
-             bucket_name: str = "adversarial_attack",
+             bucket_name: str = DATASET_BUCKET_NAME,
              download_directory: Union[None, str] = None,
              use_public_access: bool = True,
              path_to_credentials: Union[None, str] = None,
@@ -48,7 +50,9 @@ class DatasetCloud():
         self.path_metadata = None
         self.use_public_access = use_public_access
         if download_directory is None:
-            self.download_directory = join('examples', 'data', 'DataCloud')
+            # If download_directory is None, the dataset will be downloaded
+            # to the default directory.
+            self.download_directory = DEFAULT_DOWNLOAD_DIR
         else:
             self.download_directory = download_directory
         
@@ -57,6 +61,7 @@ class DatasetCloud():
             self._data_cloud = _DataCloud(
                 bucket_name=bucket_name,
                 download_directory = self.download_directory,
+                use_public_access=use_public_access,
                 path_to_credentials = path_to_credentials)
         else:
             self.public_url = ("https://storage.googleapis.com/"
@@ -82,6 +87,7 @@ class DatasetCloud():
             self._download_using_url()
         else:
             self._download_using_api()
+            
         
     def _download_using_api(self):
         """Downloads the dataset using the DataCloud API.
@@ -123,7 +129,7 @@ class DatasetCloud():
     
     def _download_using_url(self):
         # List of existing datasets in the cloud.
-        existing_datasets = self.get_existing_dataset()
+        existing_datasets = self.get_existing_datasets()
         
         # Check if requested dataset exists in the cloud.
         assert self.name in existing_datasets,\
@@ -146,7 +152,7 @@ class DatasetCloud():
         wget.download(self.public_url + self.name + "/labels.pt",
                     join(self.download_directory, self.name, "labels.pt"))
         
-    def get_existing_dataset(self) -> List[str]:
+    def get_existing_datasets(self) -> List[str]:
         """Returns a list of datasets in the cloud.
 
         Returns:
@@ -166,10 +172,10 @@ class DatasetCloud():
             
             return datasets
         else:
-            existing_datasets = [blob.name.split('/')[0] 
-                    for blob in self._data_cloud.bucket.list_blobs()
-                    if blob.name != "giotto-deep-big.png" and
-                    blob.name != "datasets.json"]
+            existing_datasets = [blob_name.split('/')[0] 
+                    for blob_name in self._data_cloud.list_blobs()
+                    if blob_name != "giotto-deep-big.png" and
+                    blob_name != "datasets.json"]
             # Remove duplicates.
             existing_datasets = list(set(existing_datasets))
             
@@ -185,7 +191,7 @@ class DatasetCloud():
         self._check_public_access()
         
         # List of existing datasets in the cloud.
-        existing_datasets = self.get_existing_dataset()
+        existing_datasets = self.get_existing_datasets()
         
         # Save existing datasets to a json file.
         json_file = 'tmp_datasets.json'
@@ -237,10 +243,17 @@ class DatasetCloud():
         self._check_public_access()
         
         filetype = DatasetCloud._get_filetype(path)
-        assert filetype in ('pt', 'npy'), "File type not supported."
-        self._data_cloud.upload_file(path, str(self.metadata['name'])
-                                     + '/data.' + filetype,
-                                     make_public=self.make_public,)
+        
+        # Check if the file type is supported
+        if filetype in ['pt', 'npy']:
+            self._data_cloud.upload_file(path,
+                                         (self.metadata['name'] + # type: ignore
+                                            '/data' + filetype),
+                                         make_public=self.make_public,
+                                         overwrite=False,
+                                         )
+        else:
+            raise ValueError("File type {} is not supported.".format(filetype))
     
     def _upload_label(self,
                  path: str,) -> None:
@@ -253,14 +266,23 @@ class DatasetCloud():
             None
 
         Raises:
-            AssertionError: if the path is not valid or the filetype is not 
-            supported.
+            ValueError: If the file type is not supported.
         """
+        self._check_public_access()
+        
         filetype = DatasetCloud._get_filetype(path)
-        assert filetype in ('pt', 'npy'), "File type not supported."
-        self._data_cloud.upload_file(path, str(self.metadata['name']) 
-                                     +'/labels.' + filetype,
-                                     make_public=self.make_public,)
+        
+        # Check if the file type is supported
+        if filetype in ['pt', 'npy']:
+            self._data_cloud.upload_file(path,
+                                         (self.metadata['name'] + # type: ignore
+                                            '/labels' + filetype),
+                                         make_public=self.make_public,
+                                         overwrite=False,
+                                         )
+        else:
+            raise ValueError("File type {} is not supported.".format(filetype))
+
     
     def _upload_metadata(self,
                         path: Union[str, None]=None):
@@ -346,9 +368,7 @@ class DatasetCloud():
         self._check_public_access()
         
         # List of existing datasets in the cloud.
-        existing_datasets = set([blob.name.split('/')[0]
-                            for blob in self._data_cloud.bucket.list_blobs()\
-                            if blob.name != "giotto-deep-big.png"])
+        existing_datasets = self.get_existing_datasets()
         if self.name in existing_datasets:
             raise ValueError("Dataset {} already exists in the cloud."\
                 .format(self.name) +
