@@ -14,7 +14,7 @@ def test_start():
     path_hpo_metadata = join('gdeep','search', 'tests', 'data','hpo_metadata.json')
     path_writer = None
     
-    # Get all directories in the root directory
+    # Get all subdirectories of the root directory
     directories = [d for d in listdir(ROOT_DIR) if os.path.isdir(join(ROOT_DIR, d))]
     
     # Get all files in the root directory
@@ -24,16 +24,18 @@ def test_start():
 
     hpo.search()
     
-    # Delete the writer directory
-    writer_directory = join(ROOT_DIR, 'runs')
-    rmtree(writer_directory)
+    # Get all subdirectories of the root directory
+    new_directories = [d for d in listdir(ROOT_DIR) if os.path.isdir(join(ROOT_DIR, d))]
+    
+    # Get all files in the root directory
+    new_files = [f for f in listdir(ROOT_DIR) if os.path.isfile(join(ROOT_DIR, f))]
     
     # Delete all newly created directories
-    for directory in directories:
+    for directory in new_directories:
         if directory not in directories:
             rmtree(join(ROOT_DIR, directory))
 
     # Delete all newly created files
-    for file in files:
+    for file in new_files:
         if file not in files:
             remove(join(ROOT_DIR, file))
