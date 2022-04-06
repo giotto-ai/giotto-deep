@@ -40,7 +40,8 @@ class DatasetCloud():
              make_public: bool = True,
              ):
         # Non-public datasets start with "private_"
-        if make_public or use_public_access:
+        if make_public or use_public_access or \
+            dataset_name.startswith("private_"):
             self.name = dataset_name
         else:
             self.name = "private_" + dataset_name
