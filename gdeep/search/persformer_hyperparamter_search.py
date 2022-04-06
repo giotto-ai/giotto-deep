@@ -31,7 +31,7 @@ class PersformerHyperparameterSearch:
             hyperparameter dictionaries specifying the search space and the
             search metric
         path_writer (str): path to the Tensorflow writer directory where the
-            Tensorflow summaries are saved during the search process
+            Tensorflow summaries are saved during the search process.
     """ 
     def __init__(self,
                 dataset_name,
