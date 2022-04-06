@@ -44,7 +44,7 @@ from gdeep.utility.utils import get_checksum
 
 # %%
 # To see all publically available datasets, please use the following command:
-DatasetCloud("").get_existing_dataset()
+DatasetCloud("").get_existing_datasets()
 
 # %% [markdown]
 # ## Uploading and downloading datasets from the cloud
