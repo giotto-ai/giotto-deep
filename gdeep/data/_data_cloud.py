@@ -1,5 +1,5 @@
 import logging
-from os.path import isfile, join, isdir, exists
+from os.path import isfile, join, isdir, exists, getsize
 from os import listdir, makedirs
 import sys
 from typing import Union
@@ -119,6 +119,12 @@ class _DataCloud():
         if blob.exists() and not overwrite:
             raise RuntimeError(f"Blob {target_blob_name} already exists.")
         logging.getLogger().info("upload file %s", source_file_name)
+        # Check if source_file_name is bigger than 5GB
+        if isfile(source_file_name) and\
+            getsize(source_file_name) > 5000000000:
+            raise ValueError("File is bigger than 5GB")
+                     
+        
         blob.upload_from_filename(source_file_name)
         if make_public:
             blob.make_public()
