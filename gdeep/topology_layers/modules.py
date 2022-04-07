@@ -8,7 +8,7 @@ import math
 from einops import rearrange # type: ignore
 
 
-class MAB(nn.Module):
+class _MAB(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False, bias_attention=True, activation='gelu',
                  simplified_layer_norm=True):
         super().__init__()
@@ -48,26 +48,26 @@ class MAB(nn.Module):
         return O
 
 
-class SAB(nn.Module):
+class _SAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, ln=False, bias_attention=True,
                  activation='gelu', simplified_layer_norm=True):
         super().__init__()
-        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
+        self.mab = _MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
                        activation=activation, simplified_layer_norm=simplified_layer_norm)
 
     def forward(self, X):
         return self.mab(X, X)
 
 
-class ISAB(nn.Module):
+class _ISAB(nn.Module):
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False, bias_attention=True,
                  activation='gelu', simplified_layer_norm=True):
         super().__init__()
         self.I = nn.Parameter(torch.Tensor(1, num_inds, dim_out))
         nn.init.xavier_uniform_(self.I)
-        self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
+        self.mab0 = _MAB(dim_out, dim_in, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
                         activation=activation, simplified_layer_norm=simplified_layer_norm)
-        self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
+        self.mab1 = _MAB(dim_in, dim_out, dim_out, num_heads, ln=ln, bias_attention=bias_attention,
                         activation=activation, simplified_layer_norm=simplified_layer_norm)
 
     def forward(self, X):
@@ -75,19 +75,19 @@ class ISAB(nn.Module):
         return self.mab1(X, H)
 
 
-class PMA(nn.Module):
+class _PMA(nn.Module):
     def __init__(self, dim, num_heads, num_seeds, ln=False, bias_attention=True,
                  activation='gelu', simplified_layer_norm=True):
         super().__init__()
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
         nn.init.xavier_uniform_(self.S)
-        self.mab = MAB(dim, dim, dim, num_heads, ln=ln, bias_attention=bias_attention,
+        self.mab = _MAB(dim, dim, dim, num_heads, ln=ln, bias_attention=bias_attention,
                        activation=activation, simplified_layer_norm=simplified_layer_norm)
 
     def forward(self, X):
         return self.mab(self.S.repeat(X.size(0), 1, 1), X)
 
-class FastAttention(nn.Module):
+class _FastAttention(nn.Module):
     """https://github.com/lucidrains/fast-transformer-pytorch/blob/main/fast_transformer_pytorch/fast_transformer_pytorch.py"""
     def __init__(
         self,

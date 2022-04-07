@@ -1,18 +1,25 @@
+from typing import Union, Tuple, Dict, Any
+from sympy import false
+import shutil
+
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 from torchtext import datasets as textds
 from torchvision.transforms import ToTensor, Resize
-from . import CreateToriDataset
 import warnings
 import pandas as pd
 import os
+from os.path import join
+import json
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 import numpy as np
 
 from abc import ABC, abstractmethod
 
+from . import CreateToriDataset
+from .dataset_cloud import DatasetCloud
 
 class AbstractDataLoader(ABC):
     """The abstractr class to interface the
@@ -235,6 +242,7 @@ class DataLoaderFromArray(AbstractDataLoader):
             self.y_train = y_train.reshape(-1, 1)
         else:
             self.y_train = y_train
+        self.y_train = y_train
         if X_val is not None:
             self.X_val = X_val
             if len(y_val.shape) == 1:
@@ -252,6 +260,14 @@ class DataLoaderFromArray(AbstractDataLoader):
             return X
         return torch.from_numpy(X)
 
+    @staticmethod
+    def _long_or_float(y):
+        if isinstance(y, torch.Tensor):
+            return y
+        if isinstance(y, np.float16) or isinstance(y, np.float32) or isinstance(y, np.float64):
+            return torch.tensor(y).float()
+        return torch.tensor(y).long()
+
 
     def build_dataloaders(self, **kwargs) -> tuple:
         """This method builds the dataloader.
@@ -268,17 +284,15 @@ class DataLoaderFromArray(AbstractDataLoader):
                 the pipeline class
         """
         tr_data = [(DataLoaderFromArray._from_numpy(x).float(),
-                    torch.tensor(y).long() if isinstance(y, int) or
-                                              ('__getitem__' in dir(y) and
-                                               (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
-            torch.tensor(y).float()) for x, y in zip(self.X_train, self.y_train)]
-
+                    DataLoaderFromArray._long_or_float(y)) for x, y in zip(self.X_train, self.y_train)]
         try:
             val_data = [(DataLoaderFromArray._from_numpy(x).float(),
-                         torch.tensor(y).long() if isinstance(y, np.int64) or
-                                                   ('__getitem__' in dir(y)
-                        and (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
-            torch.tensor(y).float()) for x, y in zip(self.X_val, self.y_val)]
+                        DataLoaderFromArray._long_or_float(y)) for x, y in zip(self.X_val, self.y_val)]
+            #val_data = [(DataLoaderFromArray._from_numpy(x).float(),
+            #             torch.tensor(y).long() if isinstance(y, np.int64) or
+            #                                       ('__getitem__' in dir(y)
+            #            and (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
+            #torch.tensor(y).float()) for x, y in zip(self.X_val, self.y_val)]
         except (TypeError, AttributeError):
             val_data = None
         try:
@@ -296,14 +310,148 @@ class DataLoaderFromArray(AbstractDataLoader):
     
     
     
-class DataLoaderFromDataCloud(AbstractDataLoader):
-    """Class that loads data from the GCP datacloud
+class DlBuilderFromDataCloud(AbstractDataLoader):
+    """Class that loads data from Google Cloud Storage
+    
+    This class is useful to build dataloaders from a dataset stored in
+    the GDeep Dataset Cloud on Google Cloud Storage.
+
+    The constructor takes the name of a dataset as a string, and a string
+    for the download directory. The constructor will download the dataset
+    to the download directory. The dataset is downloaded in the version
+    used by Datasets Cloud, which may be different from the version
+    used by the dataset's original developers.
+    
+    Args:
+        dataset_name (str):
+            The name of the dataset.
+        download_dir (str):
+            The directory where the dataset will be downloaded.
+        use_public_access (bool):
+            Whether to use public access. If you want
+            to use the Google Cloud Storage API, you must set this to True.
+            Please make sure you have the appropriate credentials.
+        path_to_credentials (str):
+            Path to the credentials file.
+            Only used if public_access is False and credentials are not
+            provided. Defaults to None.
+        
+
+    Returns:
+        torch.utils.data.DataLoader: The dataloader for the dataset.
 
     Raises:
-        NotImplementedError: _description_
+        ValueError:
+            If the dataset_name is not a valid dataset that exists
+            in Datasets Cloud.
+        ValueError:
+            If the download_directory is not a valid directory.
     """
-    def __init__(self):
-        pass
+    def __init__(self,
+                 dataset_name: str,
+                 download_directory: str,
+                 use_public_access: bool=True,
+                 path_to_credentials: Union[None, str] = None,
+                 ):
+        self.dataset_name = dataset_name
+        self.download_directory = download_directory
+        
+        # Download the dataset if it does not exist
+        self.download_directory
+        
+        self._download_dataset(use_public_access=use_public_access, 
+                               path_to_credentials = path_to_credentials)
 
-    def build_dataloaders(self):
-        pass
+        self.dl_builder = None
+        
+        # Load the metadata of the dataset
+        with open(join(self.download_directory, self.dataset_name,
+                       "metadata.json")) as f:
+            self.dataset_metadata = json.load(f)
+            
+        # Load the data and labels of the dataset
+        if self.dataset_metadata['data_type'] == 'tabular':
+            if self.dataset_metadata['data_format'] == 'pytorch_tensor':
+                data = torch.load(join(self.download_directory, 
+                                       self.dataset_name, "data.pt"))
+                labels = torch.load(join(self.download_directory, 
+                                         self.dataset_name, "labels.pt"))
+
+                self.dl_builder = DataLoaderFromArray(data, labels)
+            elif self.dataset_metadata['data_format'] == 'numpy_array':
+                data = np.load(join(self.download_directory,
+                                    self.dataset_name, "data.npy"))
+                labels = np.load(join(self.download_directory,
+                                      self.dataset_name, "labels.npy"))
+                self.dl_builder = DataLoaderFromArray(data, labels)
+            else:
+                raise ValueError("Data format {}"\
+                    .format(self.dataset_metadata['data_format']) +
+                                 "is not yet supported.")
+        else:
+            raise ValueError("Dataset type {} is not yet supported."\
+                .format(self.dataset_metadata['data_type']))
+
+    def _download_dataset(self,
+                          path_to_credentials: Union[None, str] =None,
+                          use_public_access: bool=True,) -> None:
+        """Only download if the download directory does not exist already
+        and if download directory contains at least three files (metadata,
+        data, labels).
+        
+        Args:
+            path_to_credentials (str):
+                Path to the credentials file.
+            use_public_access (bool):
+                Whether to use public access. If you want
+                to use the Google Cloud Storage API, you must set this to True.
+                
+        Returns:
+            None
+        """
+        if (not os.path.isdir(join(self.download_directory, self.dataset_name))
+                            or len(os.listdir(join(self.download_directory,
+                                            self.dataset_name))) < 3):
+            # Delete the download directory if it exists but does not contain
+            # the wanted number of files
+            if (os.path.isdir(join(self.download_directory, self.dataset_name))
+                and
+                len(os.listdir(join(self.download_directory,
+                                   self.dataset_name))) < 3): # type: ignore
+                print("Deleting the download directory because it does "+
+                      "not contain the dataset")
+                shutil.rmtree(self.download_directory, ignore_errors=True)
+                
+            print("Downloading dataset {} to {}"\
+                    .format(self.dataset_name, self.download_directory))
+            dataset_cloud = DatasetCloud(self.dataset_name,
+                                    download_directory=self.download_directory,
+                                    path_to_credentials=path_to_credentials,
+                                    use_public_access = use_public_access,
+                                    )
+            dataset_cloud.download()
+            del dataset_cloud
+        else:
+            print("Dataset '%s' already downloaded" % self.dataset_name)
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """ Returns the metadata of the dataset.
+        
+        Returns:
+            Dict[str, Any]:
+                The metadata of the dataset.
+        """
+        return self.dataset_metadata
+    
+    def build_dataloaders(self, **kwargs)\
+        -> Tuple[DataLoader, DataLoader, DataLoader]:
+        """Builds the dataloaders for the dataset.
+        
+        Args:
+            **kwargs: Arguments for the dataloader builder.
+            
+        Returns:
+            Tuple[DataLoader, DataLoader, DataLoader]:
+                The dataloaders for the dataset (train, validation, test).
+        """
+        return self.dl_builder.build_dataloaders(**kwargs) # type: ignore

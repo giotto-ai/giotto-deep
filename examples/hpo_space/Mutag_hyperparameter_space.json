@@ -1,0 +1,38 @@
+{
+    "dataloaders_params": {
+        "batch_size": [8, 32, 2]
+    },
+    "models_hyperparams": {
+        "activation": ["gelu"],
+        "bias_attention": ["False"],
+        "dropout_dec": [0.0, 0.5, 0.05],
+        "dropout_enc": [0.0, 0.5, 0.05],
+        "hidden_dim": ["16"],
+        "dim_input": [6],
+        "num_inds": ["16"],
+        "layer_norm": ["False"],
+        "layer_norm_pooling": [ "False"],
+        "n_layer_dec": [1],
+        "n_layer_enc": [2],
+        "num_heads": ["2"],
+        "attention_type": ["self_attention"],
+        "dim_output": [2]
+    },
+    "optimizers_params": {
+        "lr": [0.00001, 0.1, null, true],
+        "weight_decay": [0.000001, 0.1, null, true]
+    },
+    "schedulers_params": {
+        "num_cycles": [1],
+        "num_training_steps": [5],
+        "num_warmup_steps": [6]
+    },
+    "optimizer": ["AdamW"],
+    "scheduler": ["get_cosine_with_hard_restarts_schedule_with_warmup"],
+    "n_trials": 1,
+    "cross_validation": true,
+    "fold_mode": "StratifiedKFold",
+    "n_splits": 2,
+    "shuffle": true,
+    "search_metric": "accuracy"
+}
