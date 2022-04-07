@@ -12,15 +12,10 @@
 
 # %%
 # This snippet will deactivate autoreload if this file
-# is run as a script.
+# is run as a script and activate it if it is run as a notebook.
+from gdeep.utility.utils import autoreload_if_notebook
 
-from gdeep.utility import is_notebook
-
-if is_notebook():
-    from IPython import get_ipython  # type: ignore
-    get_ipython().magic('load_ext autoreload')
-    get_ipython().magic('autoreload 2')
-
+autoreload_if_notebook()
 # Include necessary imports
 from os.path import join
 

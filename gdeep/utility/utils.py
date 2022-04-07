@@ -114,7 +114,12 @@ def _inner_refactor_scalars(list_, cross_validation, k_folds):
     return out
 
 def is_notebook() -> bool:
-    """check if the current environment is a notebook"""
+    """Check if the current environment is a notebook
+    
+    Returns:
+        bool:
+            True if the environment is a notebook, False otherwise
+    """
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
@@ -126,14 +131,26 @@ def is_notebook() -> bool:
     except NameError:
         return False      # Probably standard Python interpreter
     
-def _file_as_bytes(file):
+def autoreload_if_notebook() -> None:
+    """Autoreload the modules if the environment is a notebook
+    
+    Returns:
+        None
+    """
+    from IPython import get_ipython  # type: ignore
+    get_ipython().magic('load_ext autoreload')
+    get_ipython().magic('autoreload 2')
+    
+def _file_as_bytes(file) -> bytes:
     """Returns a bytes object representing the file
 
     Args:
-        file (str): Path to the file
+        file (str):
+            Path to the file
 
     Returns:
-        bytes: Bytes object representing the file.
+        bytes:
+            Bytes object representing the file.
     """
     with open(file, 'rb') as f:
         return f.read()
@@ -142,10 +159,12 @@ def get_checksum(file):
     """Returns the checksum of the file
 
     Args:
-        file (str): Path to the file
+        file (str):
+            Path to the file
 
     Returns:
-        str: The checksum of the file.
+        str:
+            The checksum of the file.
     """
     return hashlib.md5(_file_as_bytes(file)).hexdigest()
 
