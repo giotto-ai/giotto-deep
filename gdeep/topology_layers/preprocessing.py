@@ -14,8 +14,14 @@ def convert_gudhi_extended_persistence_to_persformer_input(
             
     Returns:
         np.ndarray:
-            The diagrams in Persformers's input format.
+            The diagrams in Persformers's input format. This is a numpy array
+            with shape (num_diagrams, num_points, 2 + 4) where the first one
+            is the index of the diagram, the second one is the index of the
+            of the point, and the last one is the birth and death time of the
+            point and the one-hot vector of the extended persistence type.
+            The diagrams are padded with zeros to have the same length.
     """
+    
     input_size = len(diagrams)
     # For each diagram, one-hot encode the four different labels
     # and concatenate them to a single np.array for each diagram
