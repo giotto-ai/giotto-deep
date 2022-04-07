@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple, Dict, Any
 from sympy import false
 import shutil
 
@@ -323,12 +323,16 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
     used by the dataset's original developers.
     
     Args:
-        dataset_name (str): The name of the dataset.
-        download_dir (str): The directory where the dataset will be downloaded.
-        use_public_access (bool): Whether to use public access. If you want
+        dataset_name (str):
+            The name of the dataset.
+        download_dir (str):
+            The directory where the dataset will be downloaded.
+        use_public_access (bool):
+            Whether to use public access. If you want
             to use the Google Cloud Storage API, you must set this to True.
             Please make sure you have the appropriate credentials.
-        path_to_credentials (str): Path to the credentials file.
+        path_to_credentials (str):
+            Path to the credentials file.
             Only used if public_access is False and credentials are not
             provided. Defaults to None.
         
@@ -337,9 +341,11 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         torch.utils.data.DataLoader: The dataloader for the dataset.
 
     Raises:
-        ValueError: If the dataset_name is not a valid dataset that exists
+        ValueError:
+            If the dataset_name is not a valid dataset that exists
             in Datasets Cloud.
-        ValueError: If the download_directory is not a valid directory.
+        ValueError:
+            If the download_directory is not a valid directory.
     """
     def __init__(self,
                  dataset_name: str,
@@ -357,9 +363,13 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                                path_to_credentials = path_to_credentials)
 
         self.dl_builder = None
+        
+        # Load the metadata of the dataset
         with open(join(self.download_directory, self.dataset_name,
                        "metadata.json")) as f:
             self.dataset_metadata = json.load(f)
+            
+        # Load the data and labels of the dataset
         if self.dataset_metadata['data_type'] == 'tabular':
             if self.dataset_metadata['data_format'] == 'pytorch_tensor':
                 data = torch.load(join(self.download_directory, 
@@ -390,9 +400,14 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         data, labels).
         
         Args:
-            path_to_credentials (str): Path to the credentials file.
-            use_public_access (bool): Whether to use public access. If you want
+            path_to_credentials (str):
+                Path to the credentials file.
+            use_public_access (bool):
+                Whether to use public access. If you want
                 to use the Google Cloud Storage API, you must set this to True.
+                
+        Returns:
+            None
         """
         if (not os.path.isdir(join(self.download_directory, self.dataset_name))
                             or len(os.listdir(join(self.download_directory,
@@ -407,7 +422,8 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                       "not contain the dataset")
                 shutil.rmtree(self.download_directory, ignore_errors=True)
                 
-            print("Downloading dataset '%s'" % self.dataset_name)
+            print("Downloading dataset {} to {}"\
+                    .format(self.dataset_name, self.download_directory))
             dataset_cloud = DatasetCloud(self.dataset_name,
                                     download_directory=self.download_directory,
                                     path_to_credentials=path_to_credentials,
@@ -418,10 +434,24 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
         else:
             print("Dataset '%s' already downloaded" % self.dataset_name)
 
-    def get_metadata(self):
-        """gets the dataset metadata from a class object. 
+    def get_metadata(self) -> Dict[str, Any]:
+        """ Returns the metadata of the dataset.
+        
+        Returns:
+            Dict[str, Any]:
+                The metadata of the dataset.
         """
         return self.dataset_metadata
     
-    def build_dataloaders(self, **kwargs):
-        return self.dl_builder.build_dataloaders(**kwargs)
+    def build_dataloaders(self, **kwargs)\
+        -> Tuple[DataLoader, DataLoader, DataLoader]:
+        """Builds the dataloaders for the dataset.
+        
+        Args:
+            **kwargs: Arguments for the dataloader builder.
+            
+        Returns:
+            Tuple[DataLoader, DataLoader, DataLoader]:
+                The dataloaders for the dataset (train, validation, test).
+        """
+        return self.dl_builder.build_dataloaders(**kwargs) # type: ignore

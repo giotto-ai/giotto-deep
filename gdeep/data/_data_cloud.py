@@ -26,15 +26,25 @@ class _DataCloud():
     """Download handle for Google Cloud Storage buckets.
 
     Args:
-        bucket_name (str, optional): Name of the Google Cloud Storage bucket.
+        bucket_name (str, optional):
+            Name of the Google Cloud Storage bucket.
             Defaults to "adversarial_attack".
-        download_directory (str, optional): Directory of the downloaded files.
+        download_directory (str, optional):
+            Directory of the downloaded files.
             Defaults to join('examples', 'data', 'DataCloud').
-        use_public_access: (bool, optional): Whether or not to use public api access.
+        use_public_access: (bool, optional):
+            Whether or not to use public api access.
             Defaults to True.
-        path_credentials (str, optional): Path to the credentials file.
+        path_credentials (str, optional):
+            Path to the credentials file.
             Only used if public_access is False and credentials are not
             provided. Defaults to None.
+            
+        Raises:
+            ValueError: If the bucket does not exist.
+            
+        Returns:
+            None
     """
     def __init__(
             self,
@@ -66,7 +76,8 @@ class _DataCloud():
         """List all blobs in the bucket.
         
         Returns:
-            List[str]: List of blobs in the bucket.
+            List[str]:
+                List of blobs in the bucket.
         """
         # Assert that the bucket does not use public access
         if self.use_public_access:
@@ -81,7 +92,15 @@ class _DataCloud():
         """Download a blob from Google Cloud Storage bucket.
 
         Args:
-            source_blob_name (str): Name of the blob to download.
+            source_blob_name (str):
+                Name of the blob to download.
+        
+        Raises:
+            ValueError:
+                If the blob does not exist.
+            
+        Returns:
+            None
         """
         blob = self.bucket.blob(blob_name)
         blob.download_to_filename(join(self.download_directory, blob_name))
@@ -93,7 +112,15 @@ class _DataCloud():
         Warning: This function does not download empty subdirectories.
 
         Args:
-            blob_name (str): Name of the blob folder to download.
+            blob_name (str):
+                Name of the blob folder to download.
+        
+        Raises:
+            RuntimeError:
+                If the folder does not exist.
+        
+        Returns:
+            None
         """
         # Get list of files in the blob
         blobs = self.bucket.list_blobs(prefix=blob_name)
@@ -122,16 +149,21 @@ class _DataCloud():
 
         Args:
             source_file_name (str):
-            Filename of the local file to upload.
+                Filename of the local file to upload.
             target_blob_name (Union[str, None], optional):
-            Name of the target
-                Blob. Defaults to None.
+                Name of the target Blob. Defaults to None.
             make_public (bool, optional):
-            Whether or not to make the uploaded
+                Whether or not to make the uploaded
                 file public. Defaults to False.
-            overwrite (bool, optional):
+                overwrite (bool, optional):
             Whether or not to overwrite the target
                 Blob. Defaults to False.
+            
+        Raises:
+            RuntimeError: If the target Blob already exists.
+            
+        Returns:
+            None
         """
         if target_blob_name is None:
             target_blob_name = source_file_name
@@ -156,11 +188,20 @@ class _DataCloud():
         """Upload a local folder to Google Cloud Storage bucket recursively.
 
         Args:
-            source_folder (str): Folder to upload.
-            target_folder (Union[str, None], optional): Folder. Defaults to
-                None.
-            make_public (bool, optional): Whether or not to make the uploaded
+            source_folder (str):
+                Folder to upload.
+            target_folder (Union[str, None], optional):
+                Folder. Defaults to None.
+            make_public (bool, optional):
+                Whether or not to make the uploaded
                 file public. Defaults to False.
+        
+        Raises:
+            ValueError:
+                If the source folder is not a directory.
+            
+        Returns:
+            None
         """
         
         assert isdir(source_folder)
@@ -182,11 +223,18 @@ class _DataCloud():
         
     
     def delete_blob(self,
-                    blob_name: str):
+                    blob_name: str) -> None:
         """Deletes a single Blob from Google Cloud Storage
 
         Args:
-            blob_name (str): The name of the Blob to delete
+            blob_name (str):
+                The name of the Blob to delete
+                
+        Raises:
+            RuntimeError: If the Blob does not exist.
+        
+        Returns:
+            None
         """
         blob = self.bucket.blob(blob_name)
         blob.delete()
@@ -196,7 +244,15 @@ class _DataCloud():
         """Deletes a Blob and all its children from Google Cloud Storage.
 
         Args:
-            blobs_name (str): Name of the parent Blob to delete.
+            blobs_name (str):
+                Name of the parent Blob to delete.
+                
+        Raises:
+            ValueError: 
+                If the Blob does not exist.
+            
+        Returns:
+            None
         """
         blobs = self.bucket.list_blobs(prefix=blobs_name)
         for blob in blobs:

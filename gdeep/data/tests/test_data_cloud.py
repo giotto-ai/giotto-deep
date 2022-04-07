@@ -23,8 +23,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
     client = storage.Client()
     if Bucket(client, DATASET_BUCKET_NAME).exists():
         def test_download():
-            """Test download of sample data from bucket
-            """
+            """Test download of sample data from bucket"""
             data_cloud = _DataCloud()
             file_name = "giotto-deep-big.png"
             data_cloud.download_file(file_name)
@@ -48,8 +47,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             remove(join(data_cloud.download_directory, file_name))
                 
         def test_upload():
-            """Test upload of sample file to bucket.
-            """
+            """Test upload of sample file to bucket."""
             data_cloud = _DataCloud()
             
             # create temporary file to upload to bucket
@@ -88,8 +86,8 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             remove(file_path)
 
         def test_upload_folder():
-            """Test the upload of a folder to bucket and download the folder.
-            """
+            """Test the upload of a folder to bucket and download the 
+            folder."""
             data_cloud = _DataCloud()
             
             # create temporary folder structure and temporary file to upload

@@ -1,3 +1,4 @@
+from sympy import N
 import torch
 from torch.optim import AdamW, Adam, SGD
 from transformers import get_cosine_with_hard_restarts_schedule_with_warmup # type: ignore
@@ -23,28 +24,40 @@ class PersformerHyperparameterSearch:
     saved in the path provided in the constructor.
     
     Args:
-        dataset_name (str): name of the dataset to be used for the 
-        hyperparameter search. The dataset must be present in the DatasetCloud.
-        download_directory (str): directory where the dataset is
-        either downloaded or already present
-        path_hpo_metadata (str): path to the metadata file containing the
+        dataset_name (str):
+            name of the dataset to be used for the 
+            hyperparameter search. The dataset must be present in the
+            DatasetCloud.
+        download_directory (str):
+            directory where the dataset is
+            either downloaded or already present
+        path_hpo_metadata (str):
+            path to the metadata file containing the
             hyperparameter dictionaries specifying the search space and the
             search metric
-        path_writer (str): path to the Tensorflow writer directory where the
+        path_writer (str):
+            path to the Tensorflow writer directory where the
             Tensorflow summaries are saved during the search process.
+            
+    Returns:
+        None
     """ 
     def __init__(self,
                 dataset_name,
                 download_directory,
                 path_hpo_metadata,
-                path_writer):
+                path_writer) -> None:
         self.dataset_name = dataset_name
         self.download_directory = download_directory
         self.path_hpo_metadata = path_hpo_metadata
         self.path_writer = path_writer
         
-    def _get_data_loader(self):
+    def _get_data_loader(self) -> torch.utils.data.DataLoader:
         """Returns the data loader for the dataset specified in the constructor.
+        
+        Returns:
+            torch.utils.data.DataLoader:
+            data loader for the dataset specified in the constructor
         """
         dl_cloud_builder = DlBuilderFromDataCloud(self.dataset_name,
                                    self.download_directory)
@@ -55,13 +68,16 @@ class PersformerHyperparameterSearch:
         return train_dataloader
     
     
-    def search(self):
+    def search(self) -> None:
         """Performs the hyperparameter search. The search is performed using
         the Giotto-Deep GridSearch class. The hyperparameter dictionaries
         are loaded from the metadata file. The search is performed on the
         dataset specified in the class constructor. The training data is
         downloaded from the DatasetCloud and the results are saved in the
         path provided in the constructor.
+        
+        Returns:
+            None
         """
         
         model = Persformer()

@@ -20,18 +20,30 @@ class DatasetCloud():
     locally, it will be created when downloading the dataset.
 
     Args:
-        dataset_name (str): Name of the dataset to be downloaded or uploaded.
-        bucket_name (str, optional): Name of the bucket in the DataCloud.
-        Defaults to DATASET_BUCKET_NAME.
-        download_directory (Union[None, str], optional): Directory where the
-        dataset will be downloaded to. Defaults to DEFAULT_DOWNLOAD_DIR.
-        use_public_access (bool, optional): If True, the dataset will
+        dataset_name (str):
+            Name of the dataset to be downloaded or uploaded.
+        bucket_name (str, optional):
+            Name of the bucket in the DataCloud.
+            Defaults to DATASET_BUCKET_NAME.
+        download_directory (Union[None, str], optional):
+            Directory where the
+            dataset will be downloaded to. Defaults to DEFAULT_DOWNLOAD_DIR.
+        use_public_access (bool, optional):
+            If True, the dataset will
             downloaded via public url. Defaults to False.
-        path_credentials (Union[None, str], optional): Path to the credentials
-            file.
+        path_credentials (Union[None, str], optional):
+            Path to the credentials file.
             Only used if public_access is False and credentials are not
             provided. Defaults to None.
-        make_public (bool, optional): If True, the dataset will be made public
+        make_public (bool, optional):
+            If True, the dataset will be made public
+            
+        Raises:
+            ValueError:
+                Dataset does not exits in cloud.
+        
+        Returns:
+            None
         """
     def __init__(self,
              dataset_name: str,
@@ -40,7 +52,7 @@ class DatasetCloud():
              use_public_access: bool = True,
              path_to_credentials: Union[None, str] = None,
              make_public: bool = True,
-             ):
+             ) -> None:
         # Non-public datasets start with "private_"
         if make_public or use_public_access or \
             dataset_name.startswith("private_"):
@@ -68,20 +80,22 @@ class DatasetCloud():
                                + bucket_name + "/")
         self.make_public = make_public
         
-    def __del__(self):
+    def __del__(self) -> None:
         """This function deletes the metadata file if it exists.
 
         Returns:
             None
         """
-        if not self.path_metadata == None:
-            remove(self.path_metadata)
+        if self.path_metadata != None:
+            remove(self.path_metadata)  # type: ignore
+        return None
             
-    def download(self):
+    def download(self) -> None:
         """Download a dataset from the DataCloud.
 
         Raises:
-            ValueError: Dataset does not exits in cloud.
+            ValueError:
+                Dataset does not exits in cloud.
         """
         if self.use_public_access:
             self._download_using_url()
@@ -89,11 +103,18 @@ class DatasetCloud():
             self._download_using_api()
             
         
-    def _download_using_api(self):
+    def _download_using_api(self) -> None:
         """Downloads the dataset using the DataCloud API.
         If the dataset does not exist in the bucket, an exception will
         be raised. If the dataset exists locally in the download directory,
         the dataset will not be downloaded again.
+        
+        Raises:
+            ValueError:
+                Dataset does not exits in cloud.
+        
+        Returns:
+            None
         """
         self._check_public_access()
         # List of existing datasets in the cloud.
@@ -121,13 +142,28 @@ class DatasetCloud():
         """
         return exists(join(self.download_directory, self.name))
     
-    def _create_dataset_folder(self):
+    def _create_dataset_folder(self) -> None:
         """Creates a folder with the dataset name in the download directory.
+        
+        Returns:
+            None
         """
         if not exists(join(self.download_directory, self.name)):
             os.makedirs(join(self.download_directory, self.name))
     
-    def _download_using_url(self):
+    def _download_using_url(self) -> None:
+        """ Download the dataset using the public url.
+        If the dataset does not exist in the bucket, an exception will
+        be raised. If the dataset exists locally in the download directory,
+        the dataset will not be downloaded again.
+        
+        Raises:
+            ValueError:
+                Dataset does not exits in cloud.
+        
+        Returns:
+            None
+        """
         # List of existing datasets in the cloud.
         existing_datasets = self.get_existing_datasets()
         
@@ -156,7 +192,8 @@ class DatasetCloud():
         """Returns a list of datasets in the cloud.
 
         Returns:
-            List[str]: List of datasets in the cloud.
+            List[str]:
+                List of datasets in the cloud.
         """
         if self.use_public_access:
             datasets_local = "tmp_datasets.json"
@@ -185,8 +222,11 @@ class DatasetCloud():
             
             return existing_datasets
 
-    def _update_dataset_list(self):
+    def _update_dataset_list(self) -> None:
         """Updates the dataset list in the datasets.json file.
+        
+        Returns:
+            None
         """
         self._check_public_access()
         
@@ -215,10 +255,12 @@ class DatasetCloud():
         """Returns the file extension from a given path.
     
         Args:
-            path: A string path.
+            path:
+                A string path.
         
         Returns:
-            The file extension from the given path.
+            str: 
+                The file extension.
         
         Raises:
             None.
@@ -236,10 +278,16 @@ class DatasetCloud():
         """Uploads the data file to a Cloud Storage bucket.
 
         Args:
-        path: The path to the data file.
+        path:
+            The path to the data file.
 
         Raises:
-        ValueError: If the file type is not supported."""
+        ValueError:
+            If the file type is not supported.
+        
+        Returns:
+            None
+        """
         self._check_public_access()
         
         filetype = DatasetCloud._get_filetype(path)
@@ -260,13 +308,16 @@ class DatasetCloud():
         """Uploads a set of labels to a remote dataset.
 
         Args:
-            path: the path to the labels file.
+            path:
+                the path to the labels file.
+        
+        Raises:
+            ValueError:
+                If the file type is not supported.
 
         Returns:
             None
 
-        Raises:
-            ValueError: If the file type is not supported.
         """
         self._check_public_access()
         
@@ -285,16 +336,22 @@ class DatasetCloud():
 
     
     def _upload_metadata(self,
-                        path: Union[str, None]=None):
+                        path: Union[str, None]=None) -> None:
         """Uploads the metadata dictionary to the location specified in the
         metadata. The metadata dictionary is generated using create_metadata.
         
         Args:
-            path (str): The path to the data cloud folder. If none, path will
-            be set to the default path.
+            path (str):
+                The path to the data cloud folder. If none, path will
+                be set to the default path.
             
         Raises:
-            Exception: If no metadata exists, an exception will be raised."""
+            Exception:
+                If no metadata exists, an exception will be raised.
+                
+        Returns:
+            None
+        """
         self._check_public_access()
         if self.metadata == None:
             raise Exception("No metadata to upload. " #NOSONAR
@@ -313,22 +370,29 @@ class DatasetCloud():
                      name: Union[None, str]=None,
                      data_format: Union[None, str]=None,
                      comment: Union[None, str]=None,
-                     ):
+                     ) -> None:
         """This function accepts various metadata for the dataset and stores it 
         in a temporary JSON file.
 
         Args:
-            size_dataset (int): The size of the dataset (in terms of the number
-            of samples).
-            input_size (Tuple[int, ...]): The size of each sample in the 
-            dataset.
-            num_labels (Union[None, int]): The number of classes in the dataset.
-            data_type (str): The type of data in the dataset.
-            task_type (str): The task type of the dataset.
-            name (Union[None, str]): The name of the dataset.
-            data_format (Union[None, str]): The format of the data in the
-            dataset.
-            comment (Union[None, str]): A comment describing the dataset.
+            size_dataset (int):
+                The size of the dataset (in terms of the number
+                of samples).
+            input_size (Tuple[int, ...]):
+                The size of each sample in the 
+                dataset.
+            num_labels (Union[None, int]):
+                The number of classes in the dataset.
+            data_type (str):
+                The type of data in the dataset.
+            task_type (str):
+                The task type of the dataset.
+            name (Union[None, str]):
+                The name of the dataset.
+            data_format (Union[None, str]):
+                The format of the data in the dataset.
+            comment (Union[None, str]):
+                A comment describing the dataset.
 
         Returns:
             None
@@ -355,7 +419,7 @@ class DatasetCloud():
                        path_data: str,
                        path_label: str,
                        path_metadata: Union[str, None] = None,
-                       ):
+                       ) -> None:
         """Uploads a dataset to the cloud.
 
         Args:
@@ -364,7 +428,11 @@ class DatasetCloud():
             path_metadata (Optional[str]): Path to the metadata file.
 
         Raises:
-            ValueError: If the dataset already exists in the cloud."""
+            ValueError: If the dataset already exists in the cloud.
+        
+        Returns:
+            None    
+        """
         self._check_public_access()
         
         # List of existing datasets in the cloud.
