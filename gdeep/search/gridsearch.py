@@ -301,8 +301,12 @@ class Gridsearch(Pipeline):
                                          n_accumulated_grads,
                                          writer_tag
                                          )
-        self.scalars_dict[str(trial.datetime_start).replace(":","-")] = [self.pipe.val_loss_list_hparam,
-                                                        self.pipe.val_acc_list_hparam]
+
+        # dict of the loss per epoch of the training here above. If CV, multiple scalars are stored
+        scalars_dict_value = [self.pipe.val_loss_list_hparam,
+                              self.pipe.val_acc_list_hparam]
+        scalar_dict_key = str(trial.datetime_start).replace(":","-")
+        self.scalars_dict[scalar_dict_key] = scalars_dict_value
         # release the run_name
         self.pipe.run_name = None
         best_loss = self.pipe.best_val_loss
@@ -316,6 +320,13 @@ class Gridsearch(Pipeline):
                                  trial_id=str(trial.datetime_start).replace(":","-"),
                                  optimizer=self.pipe.optimizer,
                                  store_pickle=self.store_pickle)
+
+        # save results to tensorboard
+        model_name, dataset_name = self._extract_model_and_dataset_name(writer_tag)
+
+        self._store_trial_to_tb(trial, scalars_dict_value, scalar_dict_key, model_name,
+                                dataset_name, loss, accuracy)
+
         # returns
         if self.search_metric == "loss":
             #if self.best_not_last:
@@ -333,6 +344,20 @@ class Gridsearch(Pipeline):
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return accuracy
+
+    def _extract_model_and_dataset_name(self, writer_tag):
+        """Extract the model and dataset anme from the writer_tag"""
+        index_ds = writer_tag.find("Dataset:")
+        if index_ds == -1:
+            dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__
+        else:
+            dataset_name = writer_tag[index_ds + 8:writer_tag.find("|Model:")]
+        index_md = writer_tag.find("|Model:")
+        if index_md == -1:
+            model_name = self.pipe.model.__class__.__name__
+        else:
+            model_name = writer_tag[index_md + 7:writer_tag.find("/")]
+        return model_name, dataset_name
 
     def start(self,
               optimizers,
@@ -435,7 +460,7 @@ class Gridsearch(Pipeline):
                                 store_grad_layer_hist,
                                 n_accumulated_grads,
                                 writer_tag="")
-        self._store_to_tensorboard()
+        # self._store_to_tensorboard()
 
 
     def _inner_optimisat_fun(self, model, dataloaders,
@@ -532,6 +557,84 @@ class Gridsearch(Pipeline):
         except AttributeError:
             print("*" * 20 + " RESULTS " + 20 * "*"+"\n" +string_to_print)
 
+    def _store_to_list_each_step(self, trial, model_name,
+                                 dataset_name, loss=np.inf,
+                                 accuracy=-1, list_res: list=None) -> list:
+        """Private method to store all the HPO parameters
+        of one trial
+        
+        Args:
+            trial (optuna.trial):
+                the trial at hand
+            model_name (str):
+                name of the model
+            dataset_name (str):
+                name of the dataset
+            loss (float, default np.inf)
+                the value of the loss for the current trial
+            accuracy (float, default -1):
+                the value of the accuracy for te current trial
+            list_res (list):
+                list of results
+
+        Returns:
+            list:
+                list of HPOs and metrics. the first element is the
+                run name and the last two are the metrics (loss 
+                and accuracy)
+        """
+        if list_res is None:
+            list_res = []
+        temp_list = []
+        for val in trial.params.values():
+            temp_list.append(val)
+        if self.search_metric == "loss":
+            try:
+                loss = trial.value
+            except AttributeError:
+                loss = loss
+            list_res.append([str(trial.datetime_start).replace(":","-"), model_name,
+                                  dataset_name] + temp_list + [loss, -1])
+        else:
+            try:
+                accuracy = trial.value
+            except AttributeError:
+                accuracy = accuracy
+            list_res.append([str(trial.datetime_start).replace(":","-"), model_name,
+                                  dataset_name] + temp_list + [np.inf, accuracy])
+        return list_res
+
+    def _store_trial_to_tb(self, trial, scalars_dict_value,
+                           scalar_dict_key, model_name,
+                           dataset_name, loss, accuracy):
+        """store hyperparameters of a single trial to
+        tensorboard
+        """
+        list_res = self._store_to_list_each_step(trial, model_name,
+                                                 dataset_name, loss, accuracy)
+
+        keys = ["model", "dataset"] + \
+               list(trial.params.keys())
+
+        # average over the scalars_dict
+        scalars_dict_avg = self._refactor_scalars(scalars_dict_value)
+        # dict of parameters
+        dictio = {k: (int(v) if isinstance(v, np.int64) or isinstance(v, np.int32) else v) for k, v in zip(keys, list_res[0][1:-2])}
+
+        try:
+            self.writer.add_hparams(dictio,
+                                    {"loss": list_res[0][-2],
+                                     "accuracy": list_res[0][-1]},
+                                    run_name=scalar_dict_key,
+                                    scalars_lists=scalars_dict_avg,
+                                    best_not_last=self.best_not_last_gs)
+        except KeyError:  # this happens when trials have been pruned
+            pass
+
+        self.writer.flush()
+
+
+
     def _results(self, model_name="model", dataset_name="dataset"):
         """This method returns the dataframe with all the results of
         the gridsearch. It also saves the figures in the writer.
@@ -568,15 +671,8 @@ class Gridsearch(Pipeline):
             warnings.warn("No best trial found.")
         
         for tria in trials:
-            temp_list = []
-            for val in tria.params.values():
-                temp_list.append(val)
-            if self.search_metric == "loss":
-                self.list_res.append([str(tria.datetime_start).replace(":","-"), model_name,
-                                      dataset_name] + temp_list + [tria.value, -1])
-            else:
-                self.list_res.append([str(tria.datetime_start).replace(":","-"), model_name,
-                                      dataset_name] + temp_list + [np.inf, tria.value])
+            self._store_to_list_each_step(tria, model_name, dataset_name,
+                                          tria.value, tria.value, self.list_res)
 
         self.df_res = pd.DataFrame(self.list_res, columns=["run_name", "model", "dataset"] +
                               list(trial_best.params.keys())+["loss", "accuracy"])
@@ -622,27 +718,27 @@ class Gridsearch(Pipeline):
         corr = np.corrcoef(np.array(list_of_arrays))
         return corr, labels
 
-    def _store_to_tensorboard(self):
-        """Store the hyperparameters to tensorboard"""
-        # average over the scalars_dict
-        scalars_dict_avg = dict()
-        for k, l1l2 in self.scalars_dict.items():
-            scalars_dict_avg[k] = self._refactor_scalars(l1l2)
-        for i in range(len(self.df_res)):
-            dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][1:-2]).items()}
-            try:
-                self.writer.add_hparams(dictio,
-                                        {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
-                                         self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
-                                        run_name=self.df_res.iloc[i][0],
-                                        scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]],
-                                        best_not_last=self.best_not_last_gs)
-            except KeyError:  # this happens when trials have been pruned
-                pass
-        
-        self.writer.flush()
-        
-        return self.df_res
+    #def _store_to_tensorboard(self):
+    #    """Store the hyperparameters to tensorboard"""
+    #    # average over the scalars_dict
+    #    scalars_dict_avg = dict()
+    #    for k, l1l2 in self.scalars_dict.items():
+    #        scalars_dict_avg[k] = self._refactor_scalars(l1l2)
+    #    for i in range(len(self.df_res)):
+    #        dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][1:-2]).items()}
+    #        try:
+    #            self.writer.add_hparams(dictio,
+    #                                    {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
+    #                                     self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
+    #                                    run_name=self.df_res.iloc[i][0],
+    #                                    scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]],
+    #                                    best_not_last=self.best_not_last_gs)
+    #        except KeyError:  # this happens when trials have been pruned
+    #            pass
+    #
+    #    self.writer.flush()
+    #
+    #    return self.df_res
 
     def _refactor_scalars(self, two_lists):
         """private method to transform a list with
