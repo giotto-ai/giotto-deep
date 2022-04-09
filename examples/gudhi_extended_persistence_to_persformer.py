@@ -1,7 +1,38 @@
+# %%
+
+from copyreg import pickle
+from gdeep.utility.utils import autoreload_if_notebook
+from gdeep.utility.constants import ROOT_DIR
+
+autoreload_if_notebook()
+
+import os
 from typing import List, Tuple
 
 import numpy as np
 
+# %%
+
+# Load sample data
+path_to_data = os.path.join(ROOT_DIR, "gdeep", "topology_layers",
+                                "tests", "data")
+
+# load lists in diagrams.pkl and labels.pkl
+with open(os.path.join(path_to_data, "diagrams.pkl"), "rb") as f:
+    diagrams = np.load(f, allow_pickle=True)
+    # diagrams has the type List[List[Tuple[int, Tuple[float, float]]]]
+    # where the first element is the index of the diagram, the second element
+    # are the four different extended persistence types, and the third element
+    # is a list of pairs (homology_dim, (birth, death))
+with open(os.path.join(path_to_data, "labels.pkl"), "rb") as f:
+    labels = np.load(f, allow_pickle=True)  # List[int] of size 5
+    
+input_size = len(diagrams)
+
+assert len(diagrams) == len(labels),\
+    "The number of diagrams and labels must be the same"
+    
+# %%
 def convert_gudhi_extended_persistence_to_persformer_input(
     diagrams: List[List[Tuple[int, Tuple[float, float]]]]) -> np.ndarray:
     """Convert the diagrams from Gudhi's extended persistence format to
@@ -22,7 +53,6 @@ def convert_gudhi_extended_persistence_to_persformer_input(
             The diagrams are padded with zeros to have the same length.
     """
     
-    input_size = len(diagrams)
     # For each diagram, one-hot encode the four different labels
     # and concatenate them to a single np.array for each diagram
     encoded_diagrams_list = []
@@ -52,4 +82,13 @@ def convert_gudhi_extended_persistence_to_persformer_input(
         encoded_diagrams[i, :len(diagram)] = encoded_diagrams_list[i]
     
     return encoded_diagrams
+    
+encoded_diagrams = \
+    convert_gudhi_extended_persistence_to_persformer_input(diagrams)
+    
+assert encoded_diagrams.shape == (input_size, 5577, 6),\
+    "The shape of the encoded diagrams is incorrect"
 
+
+
+# %%

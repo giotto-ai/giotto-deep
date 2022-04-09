@@ -8,7 +8,9 @@ from typing import List, Tuple, Union
 
 import wget  # type: ignore
 
-from gdeep.utility.utils import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+
+from gdeep.utility.constants import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+from gdeep.utility.utils import get_checksum
 
 class DatasetCloud():
     """DatasetCloud class to handle the download and upload
@@ -68,14 +70,12 @@ class DatasetCloud():
         else:
             self.download_directory = download_directory
         
-        # Don't create the bucket if using public access.
-        if not use_public_access:
-            self._data_cloud = _DataCloud(
-                bucket_name=bucket_name,
-                download_directory = self.download_directory,
-                use_public_access=use_public_access,
-                path_to_credentials = path_to_credentials)
-        else:
+        self._data_cloud = _DataCloud(
+            bucket_name=bucket_name,
+            download_directory = self.download_directory,
+            use_public_access=use_public_access,
+            path_to_credentials = path_to_credentials)
+        if use_public_access:
             self.public_url = ("https://storage.googleapis.com/"
                                + bucket_name + "/")
         self.make_public = make_public
@@ -91,18 +91,47 @@ class DatasetCloud():
         return None
             
     def download(self) -> None:
-        """Download a dataset from the DataCloud.
+        """Download a dataset from the DataCloud. If the dataset does not
+        exist in the cloud, an exception will be raised. If the dataset
+        exists locally in the download directory, the dataset will not be
+        downloaded again.
 
         Raises:
             ValueError:
                 Dataset does not exits in cloud.
+            ValueError:
+                Dataset exists locally but checksums do not match.
         """
+        # Check if the checksums of the local and remote files match.
+        # TODO: Check checksums of the local and remote files.
+        # if not self._are_checksums_equal():
+        #     raise ValueError("Checksums of local and remote" +
+        #                      "files do not match. If you want to" +
+        #                      "overwrite the local files, delete" +
+        #                      "the local files first.")
         if self.use_public_access:
             self._download_using_url()
         else:
             self._download_using_api()
-            
-        
+    
+    # def _are_checksums_equal(self) -> bool:
+    #     """Check if the checksums of the local and remote files match.
+
+    #     Returns:
+    #         bool: True if the checksums match, False otherwise.
+    #     """
+    #     # Check if all the files in the local directory are present in the
+    #     # remote directory and if the checksums match.
+    #     for filename in os.listdir(join(self.download_directory, self.name)): ###Correct
+    #         local_checksum = get_checksum(filename)
+    #         remote_checksum = self._data_cloud.get_checksum(filename)
+    #         if remote_checksum == None:
+    #             raise ValueError("Dataset does not have checksum for "
+    #                                 + filename + ".")
+    #         if local_checksum != remote_checksum:
+    #             return False
+    #     return True
+  
     def _download_using_api(self) -> None:
         """Downloads the dataset using the DataCloud API.
         If the dataset does not exist in the bucket, an exception will
@@ -122,7 +151,7 @@ class DatasetCloud():
                                  for blob in
                                  self._data_cloud.bucket.list_blobs()\
             if blob.name != "giotto-deep-big.png"])
-        if not self.name in existing_datasets:
+        if self.name not in existing_datasets:
             raise ValueError("Dataset {} does not exist in the cloud."\
                 .format(self.name) +
                              "Available datasets are: {}."\
@@ -181,12 +210,17 @@ class DatasetCloud():
                     
         # Download the dataset (metadata.json, data.pt, labels.pt) 
         # by using the public URL.
-        wget.download(self.public_url + self.name + "/metadata.json",
-                    join(self.download_directory, self.name, 'metadata.json'))
-        wget.download(self.public_url + self.name + "/data.pt",
-                    join(self.download_directory, self.name, "data.pt"))
-        wget.download(self.public_url + self.name + "/labels.pt",
-                    join(self.download_directory, self.name, "labels.pt"))
+        self._data_cloud.download_file(self.name + "/metadata.json")
+        # load the metadata.json file to get the filetype
+        with open(join(self.download_directory,  # type: ignore
+                       self.name, 'metadata.json')) as f:
+            metadata = json.load(f)
+        if metadata['data_format'] == "pytorch_tensor":
+            filetype = "pt"
+        elif metadata['data_format'] == "numpy_array":
+            filetype = "npy"
+        self._data_cloud.download_file(self.name + "/data." + filetype)
+        self._data_cloud.download_file(self.name + "/labels." + filetype)
         
     def get_existing_datasets(self) -> List[str]:
         """Returns a list of datasets in the cloud.

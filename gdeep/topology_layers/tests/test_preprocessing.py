@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from gdeep.utility.utils import ROOT_DIR
+from gdeep.utility.constants import ROOT_DIR
 
 def test_convert_gudhi_extended_persistence_to_persformer_input() -> None:
     """Test the function 
@@ -39,3 +39,4 @@ def test_convert_gudhi_extended_persistence_to_persformer_input() -> None:
     
     assert encoded_diagrams.shape == (input_size, 5577, 6),\
         "The shape of the encoded diagrams is incorrect"
+        

@@ -29,7 +29,7 @@
     },
     "optimizer": ["AdamW"],
     "scheduler": ["get_cosine_with_hard_restarts_schedule_with_warmup"],
-    "n_trials": 1,
+    "n_trials": 4,
     "cross_validation": true,
     "fold_mode": "StratifiedKFold",
     "n_splits": 2,

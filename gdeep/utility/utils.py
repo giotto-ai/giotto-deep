@@ -155,7 +155,7 @@ def _file_as_bytes(file) -> bytes:
     with open(file, 'rb') as f:
         return f.read()
     
-def get_checksum(file):
+def get_checksum(file: str) -> str:
     """Returns the checksum of the file
 
     Args:
@@ -167,16 +167,3 @@ def get_checksum(file):
             The checksum of the file.
     """
     return hashlib.md5(_file_as_bytes(file)).hexdigest()
-
-# Define the root directory of the project which is parent of the parent of 
-# the current directory
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        os.pardir, os.pardir))
-
-# Define the default dataset download directory
-DEFAULT_DOWNLOAD_DIR = os.path.join(ROOT_DIR, "examples", "data",
-                                    "DatasetCloud")
-
-# Define the default dataset bucket on Google Cloud Storage where the datasets
-# are stored
-DATASET_BUCKET_NAME = "adversarial_attack"

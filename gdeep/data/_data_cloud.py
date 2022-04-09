@@ -1,13 +1,16 @@
 import logging
 from os.path import isfile, join, isdir, exists, getsize
 from os import listdir, makedirs
+import requests  # type: ignore
 import sys
 from typing import Union, List
 
 from google.cloud import storage  # type: ignore
 from google.oauth2 import service_account  # type: ignore
+import wget  # type: ignore
 
-from gdeep.utility.utils import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+from gdeep.utility.constants import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+from gdeep.utility.utils import get_checksum
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,22 +58,55 @@ class _DataCloud():
             ) -> None:
         self.bucket_name = bucket_name
         self.use_public_access = use_public_access
-        if path_to_credentials is None:
-            self.storage_client = storage.Client()
+        if not self.use_public_access:
+            # Get storage client
+            if path_to_credentials is None:
+                self.storage_client = storage.Client()
+            else:
+                credentials = service_account.Credentials.\
+                    from_service_account_file(path_to_credentials)
+                self.storage_client = storage.Client(credentials=credentials)
+            self.bucket = self.storage_client.bucket(self.bucket_name)
         else:
-            credentials = service_account.Credentials.from_service_account_file(
-                path_to_credentials)
-            self.storage_client = storage.Client(credentials=credentials)
-        
-        print(self.bucket_name)
-        self.bucket = self.storage_client.bucket(self.bucket_name)
+            self.public_url = ("https://storage.googleapis.com/" + 
+                               bucket_name + "/")
         
         # Set up download path
         self.download_directory = download_directory
         
         # Create a new directory because it does not exist 
-        if not exists(self.download_directory):
+        if not exists(self.download_directory) \
+            and self.download_directory != "":
               makedirs(self.download_directory)
+              
+    # def get_checksum(self, filename: str) -> str:
+    #     """Get the checksum of a file in the bucket as a hex string.
+
+    #     Args:
+    #         filename (str):
+    #             Name of the file.
+
+    #     Raises:
+    #         ValueError:
+    #             If the file does not exist.
+        
+    #     Returns:
+    #         str:
+    #             The checksum of the file.
+    #     """
+    #     if self.use_public_access:
+    #         url = self.public_url + filename
+    #         # Get remote md5 checksum from url in hexadecimal format.
+    #         response = requests.get(url, stream=True)
+    #         response.raw.decode_content = True
+    #         checksum = response.headers["Content-MD5"]
+    #     else:
+    #         blob = self.bucket.blob(filename)
+    #         # Check if blob exists
+    #         checksum = blob.md5_hash
+    #     if checksum is None:
+    #         raise ValueError("Blob {} does have a checksum!".format(filename))
+    #     return checksum
 
     def list_blobs(self) -> List[str]:
         """List all blobs in the bucket.
@@ -88,12 +124,15 @@ class _DataCloud():
         
         
     def download_file(self,
-                 blob_name: str) -> None:
+                 blob_name: str,
+                 download_directory: Union[str, None]=None) -> None:
         """Download a blob from Google Cloud Storage bucket.
 
         Args:
             source_blob_name (str):
                 Name of the blob to download.
+            download_directory (str, optional):
+                Directory to download the blob to.
         
         Raises:
             ValueError:
@@ -102,8 +141,14 @@ class _DataCloud():
         Returns:
             None
         """
-        blob = self.bucket.blob(blob_name)
-        blob.download_to_filename(join(self.download_directory, blob_name))
+        if download_directory is None:
+            download_directory = self.download_directory
+        if self.use_public_access:
+            url = self.public_url + blob_name
+            wget.download(url, join(download_directory, blob_name))
+        else:
+            blob = self.bucket.blob(blob_name)
+            blob.download_to_filename(join(download_directory, blob_name))
         
     def download_folder(self,
                         blob_name: str) -> None:
@@ -122,6 +167,7 @@ class _DataCloud():
         Returns:
             None
         """
+        assert not self.use_public_access, "Public access is not supported!"
         # Get list of files in the blob
         blobs = self.bucket.list_blobs(prefix=blob_name)
         for blob in blobs:
@@ -175,7 +221,11 @@ class _DataCloud():
         if isfile(source_file_name) and\
             getsize(source_file_name) > 5000000000:
             raise ValueError("File is bigger than 5GB")
-                     
+        
+        # Compute MD5 checksum of the file and add it to the metadata of the
+        # blob
+        # TODO: Compute MD5 checksum of the file and add it to the metadata of
+        # the blob
         
         blob.upload_from_filename(source_file_name)
         if make_public:
