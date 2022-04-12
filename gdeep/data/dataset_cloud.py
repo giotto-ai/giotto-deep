@@ -328,7 +328,6 @@ class DatasetCloud():
                                             '/data.' + filetype),
                                          make_public=self.make_public,
                                          overwrite=False,
-                                         use_checksum=True,
                                          )
         else:
             raise ValueError("File type {} is not supported.".format(filetype))

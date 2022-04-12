@@ -26,4 +26,9 @@ dc2 = _DataCloud(DATASET_BUCKET_NAME,
 
 dc2.download_file(target_name)
 
-#
+# %%
+from gdeep.data import _DataCloud
+data_cloud = _DataCloud(use_public_access=False)
+file_name = "giotto-deep-big.png"
+data_cloud.download_file(file_name)
+# %%
