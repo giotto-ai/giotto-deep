@@ -81,35 +81,6 @@ class _DataCloud():
         if not exists(self.download_directory) \
             and self.download_directory != "":
               makedirs(self.download_directory)
-              
-    # def get_checksum(self, filename: str) -> str:
-    #     """Get the checksum of a file in the bucket as a hex string.
-
-    #     Args:
-    #         filename (str):
-    #             Name of the file.
-
-    #     Raises:
-    #         ValueError:
-    #             If the file does not exist.
-        
-    #     Returns:
-    #         str:
-    #             The checksum of the file.
-    #     """
-    #     if self.use_public_access:
-    #         url = self.public_url + filename
-    #         # Get remote md5 checksum from url in hexadecimal format.
-    #         response = requests.get(url, stream=True)
-    #         response.raw.decode_content = True
-    #         checksum = response.headers["Content-MD5"]
-    #     else:
-    #         blob = self.bucket.blob(filename)
-    #         # Check if blob exists
-    #         checksum = blob.md5_hash
-    #     if checksum is None:
-    #         raise ValueError("Blob {} does have a checksum!".format(filename))
-    #     return checksum
 
     def list_blobs(self) -> List[str]:
         """List all blobs in the bucket.
