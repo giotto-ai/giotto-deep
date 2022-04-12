@@ -1,4 +1,8 @@
+from ctypes import Union
+import imp
 from IPython import get_ipython  # type: ignore
+
+import base64
 import os
 import time
 import hashlib
@@ -155,15 +159,32 @@ def _file_as_bytes(file) -> bytes:
     with open(file, 'rb') as f:
         return f.read()
     
-def get_checksum(file: str) -> str:
+def get_checksum(file: str, encoding: str = "hex"):
     """Returns the checksum of the file
 
     Args:
         file (str):
             Path to the file
+            
+    Raises:
+        ValueError: if the file does not exist
+        ValueError: if the encoding is not supported
+        
 
     Returns:
-        str:
-            The checksum of the file.
+            The checksum of the file. If the file does not exist,
+            None is returned.
     """
-    return hashlib.md5(_file_as_bytes(file)).hexdigest()
+    # Check if file exists
+    if not os.path.exists(file):
+        raise ValueError("File {} does not exist".format(file))
+    if encoding == "hex":
+        return hashlib.md5(_file_as_bytes(file)).hexdigest()
+    elif encoding == "base64":
+        return base64.b64encode(
+            bytes.fromhex(hashlib.md5(_file_as_bytes(file)).hexdigest())
+            )
+    else:
+        raise ValueError("encoding must be either 'hex' or 'base64'")
+
+

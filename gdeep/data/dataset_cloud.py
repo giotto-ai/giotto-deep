@@ -115,7 +115,8 @@ class DatasetCloud():
             self._download_using_api()
     
     # def _are_checksums_equal(self) -> bool:
-    #     """Check if the checksums of the local and remote files match.
+    #     """Check if the checksums of the local and remote files of the dataset
+    #     match
 
     #     Returns:
     #         bool: True if the checksums match, False otherwise.
@@ -123,7 +124,7 @@ class DatasetCloud():
     #     # Check if all the files in the local directory are present in the
     #     # remote directory and if the checksums match.
     #     for filename in os.listdir(join(self.download_directory, self.name)): ###Correct
-    #         local_checksum = get_checksum(filename)
+    #         local_checksum = get_checksum(join(self.download_directory, )
     #         remote_checksum = self._data_cloud.get_checksum(filename)
     #         if remote_checksum == None:
     #             raise ValueError("Dataset does not have checksum for "
@@ -156,14 +157,11 @@ class DatasetCloud():
                 .format(self.name) +
                              "Available datasets are: {}."\
                                  .format(existing_datasets))
-        if self._check_dataset_exists_locally():
-            print("Dataset {} already exists".format(self.name) +
-                  "in the download directory.")
-        else:
+        if not self._does_dataset_exist_locally():
             self._create_dataset_folder()
         self._data_cloud.download_folder(self.name + '/')
     
-    def _check_dataset_exists_locally(self) -> bool:
+    def _does_dataset_exist_locally(self) -> bool:
         """Check if the dataset exists locally.
 
         Returns:
@@ -201,11 +199,8 @@ class DatasetCloud():
             ("Dataset {} does not exist in the cloud.".format(self.name) +
              "Available datasets are: {}.".format(existing_datasets))
         
-        # Check if dataset exists locally
-        if self._check_dataset_exists_locally():
-            print("Dataset {} already exists".format(self.name) +
-                  "in the download directory.")
-        else:
+        # If the dataset does not exist locally, create the dataset folder.
+        if not self._does_dataset_exist_locally():
             self._create_dataset_folder()
                     
         # Download the dataset (metadata.json, data.pt, labels.pt) 
@@ -333,6 +328,7 @@ class DatasetCloud():
                                             '/data.' + filetype),
                                          make_public=self.make_public,
                                          overwrite=False,
+                                         use_checksum=True,
                                          )
         else:
             raise ValueError("File type {} is not supported.".format(filetype))

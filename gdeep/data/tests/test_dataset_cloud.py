@@ -157,4 +157,3 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             # remove the metadata file
             # will get deleted automatically when dataset_cloud is out of scope.
             del dataset_cloud
-            

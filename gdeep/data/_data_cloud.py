@@ -1,9 +1,11 @@
 import logging
+import msvcrt
 from os.path import isfile, join, isdir, exists, getsize
 from os import listdir, makedirs
 import requests  # type: ignore
 import sys
 from typing import Union, List
+import time
 
 from google.cloud import storage  # type: ignore
 from google.oauth2 import service_account  # type: ignore
@@ -13,7 +15,7 @@ from gdeep.utility.constants import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
 from gdeep.utility.utils import get_checksum
 
 LOGGER = logging.getLogger(__name__)
-
+LOGGER.setLevel(logging.WARNING)
 
 def _check_public_access(use_public_access: bool):
     """Check if the public access is enabled."""
@@ -130,7 +132,8 @@ class _DataCloud():
 
         Args:
             source_blob_name (str):
-                Name of the blob to download.
+                Name of the blob to download. The name is relative to the
+                root of the bucket.
             download_directory (str, optional):
                 Directory to download the blob to.
         
@@ -145,10 +148,41 @@ class _DataCloud():
             download_directory = self.download_directory
         if self.use_public_access:
             url = self.public_url + blob_name
-            wget.download(url, join(download_directory, blob_name))
-        else:
-            blob = self.bucket.blob(blob_name)
-            blob.download_to_filename(join(download_directory, blob_name))
+        # If the file exists, compare checksums
+        if isfile(join(download_directory, blob_name)):
+            # Get remote md5 checksum from url in base64 format.
+            if self.use_public_access:
+                response = requests.get(url, stream=True)
+                response.raw.decode_content = True
+                checksum_remote = response.headers["Content-MD5"]
+            else:
+                blob = self.bucket.blob(blob_name)
+                checksum_remote = blob.md5_hash
+                
+            checksum_local = get_checksum(
+                join(download_directory, blob_name),
+                encoding="base64"
+                )
+            if checksum_remote != checksum_local:
+                # Ask user if they want to download the file
+                answer = input(
+                    "File {} already exists and checksums don't match! "\
+                    .format(join(download_directory, blob_name)) +
+                    "Do you want to overwrite it? [y/N]")
+                if answer.lower() not in  ["y", "yes"]:
+                    return
+            else: 
+                LOGGER.info("File {} already exists and checksums match!"\
+                    .format(join(download_directory, blob_name)))
+                return
+            # Download file
+            print("Downloading file {} to {}".format(
+                blob_name, download_directory))
+            if self.use_public_access:
+                wget.download(url, join(download_directory, blob_name))
+            else:
+                blob.download_to_filename(join(download_directory, blob_name),
+                                          checksum="md5")
         
     def download_folder(self,
                         blob_name: str) -> None:
@@ -158,7 +192,8 @@ class _DataCloud():
 
         Args:
             blob_name (str):
-                Name of the blob folder to download.
+                Name of the blob folder to download. The name is relative to
+                the root of the bucket.
         
         Raises:
             RuntimeError:
@@ -167,7 +202,9 @@ class _DataCloud():
         Returns:
             None
         """
-        assert not self.use_public_access, "Public access is not supported!"
+        assert not self.use_public_access, ("Downloading folders is not"
+                                            "is not supported with public"
+                                            "access!")
         # Get list of files in the blob
         blobs = self.bucket.list_blobs(prefix=blob_name)
         for blob in blobs:
@@ -184,7 +221,8 @@ class _DataCloud():
             local_path =  blob.name.replace("/", "\\") \
                 if sys.platform == 'win32' else blob.name
             
-            blob.download_to_filename(join(self.download_directory,local_path))
+            blob.download_to_filename(join(self.download_directory,local_path),
+                                      checksum="md5")
         
     def upload_file(self,
                source_file_name: str,
@@ -197,7 +235,8 @@ class _DataCloud():
             source_file_name (str):
                 Filename of the local file to upload.
             target_blob_name (Union[str, None], optional):
-                Name of the target Blob. Defaults to None.
+                Name of the target blob relative to the root of the bucket.
+                Defaults to None.
             make_public (bool, optional):
                 Whether or not to make the uploaded
                 file public. Defaults to False.
@@ -222,12 +261,11 @@ class _DataCloud():
             getsize(source_file_name) > 5000000000:
             raise ValueError("File is bigger than 5GB")
         
-        # Compute MD5 checksum of the file and add it to the metadata of the
-        # blob
-        # TODO: Compute MD5 checksum of the file and add it to the metadata of
+        # Compute MD5 checksum of the file and add it to the metadata of
         # the blob
+        blob.md5_hash = get_checksum(source_file_name, encoding="base64")
         
-        blob.upload_from_filename(source_file_name)
+        blob.upload_from_filename(source_file_name, checksum="md5")
         if make_public:
             blob.make_public()
     
@@ -241,7 +279,8 @@ class _DataCloud():
             source_folder (str):
                 Folder to upload.
             target_folder (Union[str, None], optional):
-                Folder. Defaults to None.
+                Name of the target folder relative to the root of the bucket.
+                Defaults to None.
             make_public (bool, optional):
                 Whether or not to make the uploaded
                 file public. Defaults to False.
@@ -253,23 +292,34 @@ class _DataCloud():
         Returns:
             None
         """
-        
-        assert isdir(source_folder)
+        # Get list of files and subdirectories in the folder
+        files = [join(source_folder, f) for f in listdir(source_folder)]
+        # Upload files
+        for file in files:
+            if isdir(file):
+                self.upload_folder(join(source_folder, file), make_public)
+                continue
+            target_name = self.bucket\
+                    .blob(join(source_folder, file).replace("\\", "/"))
+            self.upload_file(file,
+                             target_blob_name=target_name,
+                             make_public=make_public)
 
-        files_and_folders = [f for f in listdir(source_folder)]
-        for f in files_and_folders:
-            if(isfile(join(source_folder, f))):
-                logging.getLogger()\
-                    .info("Create Blob %s", source_folder.replace("\\", "/"))
-                logging.getLogger()\
-                    .info("upload file %s", join(source_folder, f))
-                blob = self.bucket\
-                    .blob(join(source_folder, f).replace("\\", "/"))
-                blob.upload_from_filename(join(source_folder, f))
-                if make_public:
-                    blob.make_public()
-            else:
-                self.upload_folder(join(source_folder, f))
+        # files_and_folders = [f for f in listdir(source_folder)]
+        # for f in files_and_folders:
+        #     if(isfile(join(source_folder, f))):
+        #         logging.getLogger()\
+        #             .info("Create Blob %s", source_folder.replace("\\", "/"))
+        #         logging.getLogger()\
+        #             .info("upload file %s", join(source_folder, f))
+        #         blob = self.bucket\
+        #             .blob(join(source_folder, f).replace("\\", "/"))
+        #         blob.upload_from_filename(join(source_folder, f),
+        #                                   checksum="md5")
+        #         if make_public:
+        #             blob.make_public()
+        #     else:
+        #         self.upload_folder(join(source_folder, f))
         
     
     def delete_blob(self,
