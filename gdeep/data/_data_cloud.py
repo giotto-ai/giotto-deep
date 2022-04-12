@@ -166,20 +166,20 @@ class _DataCloud():
                 if checksum_remote != checksum_local:
                     # Ask user if they want to download the file
                     answer = input(
-                        "File {} already exists and checksums don't match! "\
-                        .format(join(download_directory, blob_name)) +
+                        f"File {join(download_directory, blob_name)} already" +
+                        "exists and checksums don't match! " +
                         "Do you want to overwrite it? [y/N]")
                     if answer.lower() not in  ["y", "yes"]:
                         return
                 else: 
-                    print("File {} already exists and checksums match! "
-                                "Skipping download.".format(
-                                    join(download_directory, blob_name)))
+                    print(f"File {join(download_directory, blob_name)} " +
+                          "already exists and checksums match! " +
+                                "Skipping download.")
                     return
             else:
-                print("File {} already exists and remote checksum is "
-                            "None! Downloading anyway.".format(
-                                join(download_directory, blob_name)))
+                print(f"File {join(download_directory, blob_name)} already" +
+                      "exists and remote checksum is " +
+                            "None! Downloading anyway.")
         # Download file
         print("Downloading file {} to {}".format(
             blob_name, download_directory))
