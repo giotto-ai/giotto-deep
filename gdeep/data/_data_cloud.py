@@ -7,7 +7,7 @@ import sys
 from typing import Union, List
 import time
 
-import google
+import google  # type: ignore
 from google.cloud import storage  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 import wget  # type: ignore
