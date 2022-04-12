@@ -102,37 +102,11 @@ class DatasetCloud():
             ValueError:
                 Dataset exists locally but checksums do not match.
         """
-        # Check if the checksums of the local and remote files match.
-        # TODO: Check checksums of the local and remote files.
-        # if not self._are_checksums_equal():
-        #     raise ValueError("Checksums of local and remote" +
-        #                      "files do not match. If you want to" +
-        #                      "overwrite the local files, delete" +
-        #                      "the local files first.")
         if self.use_public_access:
             self._download_using_url()
         else:
             self._download_using_api()
-    
-    # def _are_checksums_equal(self) -> bool:
-    #     """Check if the checksums of the local and remote files of the dataset
-    #     match
 
-    #     Returns:
-    #         bool: True if the checksums match, False otherwise.
-    #     """
-    #     # Check if all the files in the local directory are present in the
-    #     # remote directory and if the checksums match.
-    #     for filename in os.listdir(join(self.download_directory, self.name)): ###Correct
-    #         local_checksum = get_checksum(join(self.download_directory, )
-    #         remote_checksum = self._data_cloud.get_checksum(filename)
-    #         if remote_checksum == None:
-    #             raise ValueError("Dataset does not have checksum for "
-    #                                 + filename + ".")
-    #         if local_checksum != remote_checksum:
-    #             return False
-    #     return True
-  
     def _download_using_api(self) -> None:
         """Downloads the dataset using the DataCloud API.
         If the dataset does not exist in the bucket, an exception will
