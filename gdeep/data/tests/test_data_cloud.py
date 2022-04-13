@@ -13,7 +13,8 @@ import pytest
 import random
 from shutil import rmtree
 
-from gdeep.utility.utils import get_checksum, DATASET_BUCKET_NAME
+from gdeep.utility.utils import get_checksum
+from gdeep.utility.constants import DATASET_BUCKET_NAME
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
     if Bucket(client, DATASET_BUCKET_NAME).exists():
         def test_download():
             """Test download of sample data from bucket"""
-            data_cloud = _DataCloud()
+            data_cloud = _DataCloud(use_public_access=False)
             file_name = "giotto-deep-big.png"
             data_cloud.download_file(file_name)
             
@@ -33,9 +34,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             non_existing_file_name: str = "giotto-deep-bigs.png"
             with pytest.raises(google.api_core.exceptions.NotFound):
                 data_cloud.download_file(non_existing_file_name)
-            remove(join(data_cloud.download_directory, non_existing_file_name))
-                
-            
+
             # check if downloaded file exists
             file_path = join(data_cloud.download_directory, file_name)
             assert exists(file_path)
@@ -48,7 +47,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                 
         def test_upload():
             """Test upload of sample file to bucket."""
-            data_cloud = _DataCloud()
+            data_cloud = _DataCloud(use_public_access=False)
             
             # create temporary file to upload to bucket
             sample_file_name = "tmp.txt"
@@ -88,7 +87,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
         def test_upload_folder():
             """Test the upload of a folder to bucket and download the 
             folder."""
-            data_cloud = _DataCloud()
+            data_cloud = _DataCloud(use_public_access=False)
             
             # create temporary folder structure and temporary file to upload
             # to bucket
@@ -101,7 +100,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             
             tmp_files = []
             
-            sample_dir = 'tmp'
+            sample_dir = "tmp"
             makedirs(sample_dir)
             tmp_files.append(join(sample_dir, "tmp.txt"))
             
@@ -131,7 +130,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                 assert exists(file)
             
             # upload sample file to bucket
-            data_cloud.upload_folder(sample_dir)
+            data_cloud.upload_folder(sample_dir, "tmp")
             
             # delete local tmp folder
             rmtree(sample_dir)
@@ -140,7 +139,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             data_cloud.download_folder(sample_dir)
             
             # delete folder in bucket
-            data_cloud.delete_blobs(sample_dir)
+            data_cloud.delete_blobs("tmp")
             
             # check if downloaded folder is correct
             

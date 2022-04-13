@@ -83,3 +83,7 @@ examples/tmp_data.pt
 examples/tmp_labels.pt
 events.*
 state_dicts/*
+
+# Include pkl test data
+!gdeep/topology_layers/tests/data/diagrams.pkl
+!gdeep/topology_layers/tests/data/labels.pkl

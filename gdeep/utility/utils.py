@@ -1,4 +1,8 @@
+from ctypes import Union
+import imp
 from IPython import get_ipython  # type: ignore
+
+import base64
 import os
 import time
 import hashlib
@@ -155,28 +159,32 @@ def _file_as_bytes(file) -> bytes:
     with open(file, 'rb') as f:
         return f.read()
     
-def get_checksum(file):
+def get_checksum(file: str, encoding: str = "hex"):
     """Returns the checksum of the file
 
     Args:
         file (str):
             Path to the file
+            
+    Raises:
+        ValueError: if the file does not exist
+        ValueError: if the encoding is not supported
+        
 
     Returns:
-        str:
-            The checksum of the file.
+            The checksum of the file. If the file does not exist,
+            None is returned.
     """
-    return hashlib.md5(_file_as_bytes(file)).hexdigest()
+    # Check if file exists
+    if not os.path.exists(file):
+        raise ValueError("File {} does not exist".format(file))
+    if encoding == "hex":
+        return hashlib.md5(_file_as_bytes(file)).hexdigest()
+    elif encoding == "base64":
+        return base64.b64encode(
+            bytes.fromhex(hashlib.md5(_file_as_bytes(file)).hexdigest())
+            )
+    else:
+        raise ValueError("encoding must be either 'hex' or 'base64'")
 
-# Define the root directory of the project which is parent of the parent of 
-# the current directory
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        os.pardir, os.pardir))
 
-# Define the default dataset download directory
-DEFAULT_DOWNLOAD_DIR = os.path.join(ROOT_DIR, "examples", "data",
-                                    "DatasetCloud")
-
-# Define the default dataset bucket on Google Cloud Storage where the datasets
-# are stored
-DATASET_BUCKET_NAME = "adversarial_attack"
