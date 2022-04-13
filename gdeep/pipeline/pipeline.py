@@ -198,7 +198,8 @@ class Pipeline:
         """Private method to run the loop
         over the batches for the optimisation"""
 
-        self.prof.start()
+        if not self.prof is None:
+            self.prof.start()
         for batch, (X, y) in enumerate(dl_tr):
             def closure():
                 loss2 = self.loss_fn(self.model(X), y)
@@ -239,7 +240,8 @@ class Pipeline:
             if not self.prof is None:
                 self.prof.step()
 
-        self.prof.stop()
+        if not self.prof is None:
+            self.prof.stop()
 
         # accuracy:
         correct /= size
@@ -412,8 +414,8 @@ class Pipeline:
                                 './runs/' + type(self.model).__name__ + str(datetime.today()),
                                 worker_name='worker'),
                             record_shapes=True,
-                            profile_memory=True,
-                            with_stack=True
+                            profile_memory=True
+                            #with_stack=True
                 )
             except AssertionError:
                 pass
