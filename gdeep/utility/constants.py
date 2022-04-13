@@ -16,4 +16,4 @@ DATASET_BUCKET_NAME = "adversarial_attack"
 
 # Define the default dataset download directory where the graph
 # datasets from the PyG (PyTorch Geometric) library are stored
-DEFAULT_GRAPH_DIR = os.path.join(ROOT_DIR, "example", "data", "graph_datasets")
+DEFAULT_GRAPH_DIR = os.path.join(ROOT_DIR, "examples", "data", "GraphDatasets")

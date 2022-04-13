@@ -30,3 +30,6 @@ sympy
 google-cloud-storage
 wget
 ipython
+torch-geometric
+torch-scatter
+torch-sparse

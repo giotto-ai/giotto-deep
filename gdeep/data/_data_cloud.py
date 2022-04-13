@@ -15,8 +15,6 @@ import wget  # type: ignore
 from gdeep.utility.constants import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
 from gdeep.utility.utils import get_checksum
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.WARNING)
 
 def _check_public_access(use_public_access: bool):
     """Check if the public access is enabled."""
