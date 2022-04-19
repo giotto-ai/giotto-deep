@@ -788,7 +788,7 @@ class Pipeline:
     def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
                                     dl_val_old, optimizers_param,
                                     lr_scheduler, scheduler,
-                                    prof, check_optuna, search_metric,
+                                    check_optuna, search_metric,
                                     trial, cross_validation=False):
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
@@ -807,9 +807,6 @@ class Pipeline:
                 a learning rate scheduler
             scheduler (torch.optim):
                 the actual scheduler
-            prof (bool, default=False):
-                whether or not you want to activate the
-                profiler
             check_optuna (bool):
                 boolean to store the optuna results of
                 the trial
