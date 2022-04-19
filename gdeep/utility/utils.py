@@ -1,7 +1,14 @@
-import torch
-from torch import nn
+from ctypes import Union
+import imp
+from IPython import get_ipython  # type: ignore
+
+import base64
 import os
 import time
+import hashlib
+
+import torch
+from torch import nn
 
 
 def _are_compatible(model_dict, dataloaders_dict):
@@ -109,3 +116,75 @@ def _inner_refactor_scalars(list_, cross_validation, k_folds):
             else:
                 out.append([value, t])
     return out
+
+def is_notebook() -> bool:
+    """Check if the current environment is a notebook
+    
+    Returns:
+        bool:
+            True if the environment is a notebook, False otherwise
+    """
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+    
+def autoreload_if_notebook() -> None:
+    """Autoreload the modules if the environment is a notebook
+    
+    Returns:
+        None
+    """
+    from IPython import get_ipython  # type: ignore
+    get_ipython().magic('load_ext autoreload')
+    get_ipython().magic('autoreload 2')
+    
+def _file_as_bytes(file) -> bytes:
+    """Returns a bytes object representing the file
+
+    Args:
+        file (str):
+            Path to the file
+
+    Returns:
+        bytes:
+            Bytes object representing the file.
+    """
+    with open(file, 'rb') as f:
+        return f.read()
+    
+def get_checksum(file: str, encoding: str = "hex"):
+    """Returns the checksum of the file
+
+    Args:
+        file (str):
+            Path to the file
+            
+    Raises:
+        ValueError: if the file does not exist
+        ValueError: if the encoding is not supported
+        
+
+    Returns:
+            The checksum of the file. If the file does not exist,
+            None is returned.
+    """
+    # Check if file exists
+    if not os.path.exists(file):
+        raise ValueError("File {} does not exist".format(file))
+    if encoding == "hex":
+        return hashlib.md5(_file_as_bytes(file)).hexdigest()
+    elif encoding == "base64":
+        return base64.b64encode(
+            bytes.fromhex(hashlib.md5(_file_as_bytes(file)).hexdigest())
+            )
+    else:
+        raise ValueError("encoding must be either 'hex' or 'base64'")
+
+
