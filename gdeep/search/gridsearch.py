@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import numpy as np
 import time
-from gdeep.utility import _are_compatible, _inner_refactor_scalars
+from gdeep.utility import _are_compatible, _inner_refactor_scalars, KnownWarningSilencer
 from optuna.trial import TrialState
 from gdeep.pipeline import Pipeline
 from gdeep.search import Benchmark, _benchmarking_param
@@ -715,7 +715,8 @@ class Gridsearch(Pipeline):
                 list_of_arrays.append(vals)
                 labels.append(col)
         #print(list_of_arrays)
-        corr = np.corrcoef(np.array(list_of_arrays))
+        with KnownWarningSilencer() as var1:
+            corr = np.corrcoef(np.array(list_of_arrays))
         return corr, labels
 
     #def _store_to_tensorboard(self):
