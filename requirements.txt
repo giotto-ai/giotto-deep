@@ -33,3 +33,4 @@ ipython
 torch-geometric
 torch-scatter
 torch-sparse
+gudhi

@@ -188,3 +188,15 @@ def get_checksum(file: str, encoding: str = "hex"):
         raise ValueError("encoding must be either 'hex' or 'base64'")
 
 
+def flatten_list_of_lists(list_: list) -> list:
+    """Flatten a list of lists
+
+    Args:
+        list_ (list):
+            the list to flatten
+
+    Returns:
+        list:
+            the flattened list
+    """
+    return [item for sublist in list_ for item in sublist]

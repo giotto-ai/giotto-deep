@@ -2,14 +2,17 @@ from typing import List, Tuple
 
 import numpy as np
 
+from gdeep.utility.utils import flatten_list_of_lists
+
 def convert_gudhi_extended_persistence_to_persformer_input(
     diagrams: List[List[Tuple[int, Tuple[float, float]]]]) -> np.ndarray:
-    """Convert the diagrams from Gudhi's extended persistence format to
-    PersFormal's input format.
+    """Convert the diagrams from Gudhi's extended persistence of graphs format
+    to PersFormal's input format.
     
     Args:
         diagrams (List[List[Tuple[int, Tuple[float, float]]]]):
-            The persistence diagrams in Gudhi's extended persistence format.
+            The persistence diagrams in Gudhi's extended persistence format
+            of a list of graphs.
             See https://gudhi.inria.fr/python/latest/simplex_tree_ref.html#gudhi.SimplexTree.extended_persistence  # noqa
             
     Returns:
@@ -53,3 +56,36 @@ def convert_gudhi_extended_persistence_to_persformer_input(
     
     return encoded_diagrams
 
+def _convert_single_graph_extended_persistence_to_one_hot_array(
+    diagram: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]) -> np.ndarray:
+    """Convert an extended persistence diagram of a single graph to an
+    array with one-hot encoded homology type.
+
+    Args:
+        diagram (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]):
+            The diagram of an extended persistence of a single graph.
+    
+    Returns:
+        np.ndarray:
+            The diagram in one-hot encoded homology type of size
+            (num_points, 6).
+    """
+    # Get the length of each array
+    lengths = [len(array) for array in diagram]
+    
+    if lengths == [0, 0, 0, 0]:
+        return np.zeros((0, 6))
+    
+    # One-hot encode the homology type
+    homology_type: np.ndarray = np.array(flatten_list_of_lists(
+        [[i] * lengths[i] for i in range(4)]
+        ))
+    homology_type_one_hot = np.zeros((sum(lengths), 4))
+    homology_type_one_hot[np.arange(sum(lengths)), homology_type] = 1
+    
+    # Concatenate the arrays
+    diagram_one_hot = np.concatenate([sub_diagram for sub_diagram in diagram],
+                                     axis=0)
+    diagram_one_hot = np.concatenate([diagram_one_hot, homology_type_one_hot],
+                                     axis=1)
+    return diagram_one_hot

@@ -1,7 +1,10 @@
+from typing import Tuple
 import numpy as np
 import gudhi as gd  # type: ignore
 
-def graph_extended_persistence_gudhi(A, filtration_val):
+def graph_extended_persistence_gudhi(A: np.ndarray,
+                                     filtration_val: np.ndarray)\
+    -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     num_vertices = A.shape[0]
     (xs, ys) = np.where(np.triu(A))
     st = gd.SimplexTree()
