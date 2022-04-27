@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 import numpy as np
 import torch
@@ -21,6 +21,7 @@ class PersistenceDiagramFromGraphDataset(Dataset):
                  dataset_name: str,
                  diffusion_parameter: float,
                  root: str = DEFAULT_GRAPH_DIR,
+                 transform: Callable = None
                  ):
         """
         Initialize the dataset.
@@ -34,6 +35,7 @@ class PersistenceDiagramFromGraphDataset(Dataset):
         self.diffusion_parameter = diffusion_parameter
         self.root = root
         self.output_dir = os.path.join(root, dataset_name)
+        self.transform = transform
         
         # Check if the dataset exists in the specified directory
         if not os.path.exists(os.path.join(root, dataset_name)):
@@ -103,87 +105,88 @@ class PersistenceDiagramFromGraphDataset(Dataset):
         """
         return len(self.labels)
     
-    def __getitem__(self, idx: int) -> np.ndarray:
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Return the persistence diagram of the graph in the dataset at the
-        specified index.
+        Return the persistence diagram and the corresponding label of the
+        specified graph.
         
         Args:
             idx: The index of the graph in the dataset.
-            
+        
         Returns:
-            The persistence diagram of the graph in the dataset at the specified
-            index.
+            The persistence diagram and the corresponding label of the specified
+            graph.
         """
-        # Load the persistence diagrams
-        return np.load(
+        # Load the persistence diagram
+        persistence_diagram = np.load(
             os.path.join(self.output_dir, "diagrams",
                          f"graph_{idx}_persistence_diagram.npy")
-            ), self.labels[idx]
+            )
         
+        # Load the label
+        label = self.labels[idx][1]
         
-    def collate_fn(self, batch: List[np.ndarray]) -> Tuple[torch.Tensor, 
+        # Convert the persistence diagram to a tensor
+        persistence_diagram_tensor = torch.tensor(
+            persistence_diagram,
+            dtype=torch.float32
+            )
+        
+        # Convert the label to a tensor
+        label_tensor = torch.tensor(
+            label,
+            dtype=torch.long
+            )
+        
+        # Apply the transformation
+        if self.transform is not None:
+            persistence_diagram_tensor = self.transform(
+                persistence_diagram_tensor
+                )
+        
+        return persistence_diagram_tensor, label_tensor
+         
+        
+    def collate_fn(self, batch: List[Tuple[torch.Tensor, torch.Tensor]])\
+                                                  -> Tuple[torch.Tensor,
+                                                           torch.Tensor, 
                                                            torch.Tensor]:
         """
-        Collate the persistence diagrams of the graphs in the batch.
+        Collate a batch of persistence diagrams and labels by padding the
+        persistence diagrams to the same length.
         
         Args:
-            batch: The batch of persistence diagrams.
+            batch: A list of tuples of the form (persistence_diagram, label).
             
         Returns:
-            The batch of persistence diagrams as a tensor.
+            persistence_diagrams: A tensor of the form (batch_size, 
+                                   persistence_diagram_length).
+            masks: A tensor of the form (batch_size, 
+                   persistence_diagram_length).
+            labels: A tensor of the form (batch_size, 1).
         """
-        # TODO: Implement this method
-        pass
-    
-    
-# dataset_name = "REDDIT-BINARY"
-# diffusion_parameter: float = 10.0
-
-# # Check if DEFAULT_GRAPH_DIR exists
-# if not os.path.exists(DEFAULT_GRAPH_DIR):
-#     raise ValueError("The directory {} does not exist!")
-
-# # Load the dataset
-# graph_dataset = TUDataset(root=DEFAULT_GRAPH_DIR,
-#                  name=dataset_name,
-#                  use_node_attr=False,
-#                  use_edge_attr=False)
-
-# # Compute the heat kernel signature and the extended persistence of all the
-# # graphs in the dataset and save them in a file
-
-# # Define directory where to save the results
-# output_dir = os.path.join(DEFAULT_GRAPH_DIR, dataset_name + 
-#                           "_extended_persistence")
-# # Create the directory if it does not exist
-# if not os.path.exists(output_dir):
-#     os.makedirs(output_dir)
-#     os.makedirs(os.path.join(output_dir, "diagrams"))
-# else:
-#     raise ValueError("Output directory already exists!")
-
-
-# labels: List[Tuple[int, int]] = []
-
-# for graph_idx, graph in enumerate(graph_dataset):
-#     if graph_idx % 100 == 0:
-#         print(f"Processing graph {graph_idx}")
-    
-#     # Get the adjacency matrix
-#     adj_mat: np.ndarray = to_dense_adj(graph.edge_index)[0].numpy()
-    
-#     # Compute the extended persistence
-#     persistence_diagram_one_hot = \
-#         graph_extended_persistence_hks(adj_mat, 
-#                                        diffusion_parameter=diffusion_parameter)
-    
-
-#     # Save the persistence diagram in a file
-#     np.save(
-#         (os.path.join(output_dir, "diagrams",
-#                       f"graph_{graph_idx}_persistence_diagram.npy")),
-#         persistence_diagram_one_hot
-#         )
-#     labels.append((graph_idx, graph.y.item()))
+        # Get the lengths of the persistence diagrams
+        lengths = torch.tensor([len(persistence_diagram) for 
+                                persistence_diagram, _ in batch])
+        
+        # Pad the persistence diagrams to the maximum length of the batch
+        max_length = int(lengths.max().item())
+        persistence_diagrams = torch.zeros(
+            len(batch), max_length, dtype=torch.float32
+            )
+        masks = torch.zeros(
+            len(batch), max_length, dtype=torch.float32
+            )
+        
+        for idx, (persistence_diagram, _) in enumerate(batch):
+            persistence_diagrams[idx, :len(persistence_diagram)] = \
+                persistence_diagram
+            masks[idx, :len(persistence_diagram)] = 1.0
+            
+        # Convert the labels to a tensor
+        labels = torch.tensor([label.item() for _, label in batch], 
+                              dtype=torch.long
+                              )
+        
+        return persistence_diagrams, masks, labels
     
