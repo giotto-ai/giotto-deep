@@ -34,3 +34,4 @@ torch-geometric
 torch-scatter
 torch-sparse
 gudhi
+tqdm

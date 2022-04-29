@@ -1,0 +1,2 @@
+class LayerNormStyle():
+    pass
