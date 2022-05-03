@@ -2,6 +2,7 @@ import os
 from typing import List, Tuple, Callable, Union
 
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from torch_geometric.datasets import TUDataset  # type: ignore
@@ -17,19 +18,13 @@ class PersistenceDiagramFromGraphDataset(Dataset):
     This class is used to load the persistence diagrams of the graphs in a
     dataset. All graph datasets in the TUDataset class are supported.
     """
-    dataset_name: str
-    diffusion_parameter: float
-    labels: List[Tuple[int, int]] = []
-    transform: Union[Callable[[torch.Tensor], torch.Tensor],
-                                  None]= None
-    num_homology_types: int = 4
     
     def __init__(self,
                  dataset_name: str,
                  diffusion_parameter: float,
                  root: str = DEFAULT_GRAPH_DIR,
                  transform: Union[Callable[[torch.Tensor], torch.Tensor],
-                                  None]= None
+                                  None] = None
                  ):
         """
         Initialize the dataset.
@@ -39,12 +34,14 @@ class PersistenceDiagramFromGraphDataset(Dataset):
             diffusion_parameter: The diffusion parameter of the heat kernel
                 signature. These are usually chosen to be as {0.1, 1.0, 10.0}.
         """
-        self.dataset_name = dataset_name
-        self.diffusion_parameter = diffusion_parameter
-        self.root = root
-        self.output_dir = os.path.join(root,
+        self.dataset_name: str = dataset_name
+        self.diffusion_parameter: float = diffusion_parameter
+        self.num_homology_types: int = 4
+        self.root: str = root
+        self.output_dir: str = os.path.join(root,
                                        dataset_name + "_extended_persistence")
-        self.transform = transform
+        self.transform: Union[Callable[[torch.Tensor], torch.Tensor],
+                                  None] = transform
         
         # Check if the dataset exists in the specified directory
         if not os.path.exists(self.output_dir):
@@ -52,10 +49,11 @@ class PersistenceDiagramFromGraphDataset(Dataset):
             self.preprocess()
             
         # Load the labels
-        self.labels = list(np.loadtxt(
+        self.labels: pd.DataFrame = pd.read_csv(
             os.path.join(self.output_dir, "labels.csv"),
-            dtype=np.int32
-            ))
+            header=None,
+            names=["graph_id", "label"]
+            )
         
     def __repr__(self) -> str:
         """
@@ -67,11 +65,16 @@ class PersistenceDiagramFromGraphDataset(Dataset):
         return f"{self.__class__.__name__}(dataset_name={self.dataset_name}, " \
                 f"diffusion_parameter={self.diffusion_parameter}, " \
                 f"root={self.root}, transform={self.transform})"
-                
 
-    def preprocess(self):
+
+    def preprocess(self) -> None:
         """
-        Preprocess the dataset and save the persistence diagrams in a file.
+        Preprocess the dataset and save the persistence diagrams and the labels
+        in the output directory.
+        The persistence diagrams are computed using the heat kernel signature
+        method and then each diagram is saved in a separate npy file in the
+        diagrams subdirectory of the output directory.
+        The labels are saved in a csv file in the output directory.
         
         Args:
             output_dir: The directory where to save the persistence diagrams.
@@ -112,13 +115,13 @@ class PersistenceDiagramFromGraphDataset(Dataset):
                 persistence_diagram_one_hot
                 )
             
-            labels.append((graph_idx, graph.y.item()))
+            # Save the label
+            labels.append((graph_idx, graph.y))
 
         # Save the labels in a csv file
-        np.savetxt(
-            (os.path.join(self.output_dir, "labels.csv")),
-            labels,
-            fmt="%d"
+        pd.DataFrame(labels, columns=["graph_idx", "label"]).to_csv(
+            os.path.join(self.output_dir, "labels.csv"),
+            index=False
             )
         
     def __len__(self) -> int:
@@ -146,7 +149,7 @@ class PersistenceDiagramFromGraphDataset(Dataset):
             )
         
         # Load the label
-        label = self.labels[idx][1]
+        label: int = int(self.labels.loc[idx, "label"])
         
         # Convert the persistence diagram to a tensor
         persistence_diagram_tensor = torch.tensor(
@@ -208,9 +211,8 @@ class PersistenceDiagramFromGraphDataset(Dataset):
             masks[idx, :length] = 1.0
             
         # Convert the labels to a tensor
-        labels = torch.tensor([label.item() for _, label in batch], 
-                              dtype=torch.long
-                              )
+        labels = torch.tensor([label for _, label in batch],
+                                dtype=torch.long
+                                )
         
         return persistence_diagrams, masks, labels
-    

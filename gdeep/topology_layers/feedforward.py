@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Union, TypeVar, List, Optional, Dict, Any
+from typing import Union, TypeVar, List, Optional, Dict, Any, Type
 
 import torch
 import torch.nn as nn
 
 from gdeep.topology_layers.components import build_activation
+from gdeep.topology_layers.components import LayerNormStyle
 
 # Define Type Self
 Self = TypeVar("Self", bound="Feedforward")
@@ -26,7 +27,7 @@ class FeedforwardConfig:
     dim_feedforward: int
     activation: str
     dropout: float
-    layer_norm: str
+    layer_norm_style: LayerNormStyle
     layer_factor: float
     bias: bool
     
@@ -35,7 +36,7 @@ class FeedforwardConfig:
         dim_model: int,
         activation: str = "gelu",
         dropout: float = 0.1,
-        layer_norm: str = "post",
+        layer_norm_style: LayerNormStyle = LayerNormStyle.NONE,
         layer_factor: float = 1.0,
         bias: bool = True,
         ) -> None:
@@ -43,7 +44,7 @@ class FeedforwardConfig:
         self.dim_model = dim_model
         self.activation = activation
         self.dropout = dropout
-        self.layer_norm = layer_norm
+        self.layer_norm_style = layer_norm_style
         self.layer_factor = layer_factor
         self.bias = bias
         
@@ -81,16 +82,16 @@ class Feedforward(nn.Module):
     
     @classmethod
     def from_config(
-        cls: Type[Self],
+        cls: Type['Feedforward'],
         config: FeedforwardConfig,
-        ) -> Self:
+        ) -> 'Feedforward':
         
         return cls(
             config.dim_model,
             config.dim_feedforward,
             config.activation,
             config.dropout,
-            config.layer_norm,
+            config.layer_norm_style,
             )
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
