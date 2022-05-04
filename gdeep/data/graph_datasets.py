@@ -4,7 +4,6 @@ from typing import List, Tuple, Callable, Union
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
 from torch_geometric.datasets import TUDataset  # type: ignore
 from torch_geometric.utils import to_dense_adj  # type: ignore
 from tqdm import tqdm
@@ -12,8 +11,10 @@ from tqdm import tqdm
 from gdeep.extended_persistence.heat_kernel_signature import \
     graph_extended_persistence_hks
 from gdeep.utility.constants import DEFAULT_GRAPH_DIR
+from gdeep import PersistenceDiagramDataset
 
-class PersistenceDiagramFromGraphDataset(Dataset):
+
+class PersistenceDiagramFromGraphDataset(PersistenceDiagramDataset):
     """
     This class is used to load the persistence diagrams of the graphs in a
     dataset. All graph datasets in the TUDataset class are supported.
@@ -107,12 +108,18 @@ class PersistenceDiagramFromGraphDataset(Dataset):
                 graph_extended_persistence_hks(adj_mat, 
                                                diffusion_parameter=
                                                self.diffusion_parameter)
+            # Sort the diagram by the persistence lifetime, i.e. the second
+            # column minus the first column
+            sorted_diagram = PersistenceDiagramFromGraphDataset.\
+                _sort_diagram_by_lifetime(
+                persistence_diagram_one_hot
+                )
             
             # Save the persistence diagram in a file
             np.save(
                 (os.path.join(self.output_dir, "diagrams",
                               f"graph_{graph_idx}_persistence_diagram.npy")),
-                persistence_diagram_one_hot
+                sorted_diagram
                 )
             
             # Save the label
@@ -123,6 +130,13 @@ class PersistenceDiagramFromGraphDataset(Dataset):
             os.path.join(self.output_dir, "labels.csv"),
             index=False
             )
+
+    @staticmethod
+    def _sort_diagram_by_lifetime(diagram: np.ndarray) -> np.ndarray:
+        return diagram[
+                    (diagram[:, 1] -
+                        diagram[:, 0]).argsort()
+                ]
         
     def __len__(self) -> int:
         """

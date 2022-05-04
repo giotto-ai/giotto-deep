@@ -5,14 +5,18 @@ from sklearn.model_selection import train_test_split
 import torch
 
 from gdeep.data.graph_datasets import PersistenceDiagramFromGraphDataset
+from gdeep.data.preprocessed_persistence_diagrams import \
+    _create_preprocessing_transform
 
 def create_dataloaders(dataset_name: str,
                        diffusion_parameter: float = 10.0,
                        batch_size: int = 32,
                        test_size = 0.2,
                        random_state: int = 42,
+                       normalize_persistence_diagrams: bool = True,
+                       num_points_to_keep: Optional[int] = None,
                        ) -> Tuple[torch.utils.data.DataLoader,
-                                                 torch.utils.data.DataLoader]:
+                                  torch.utils.data.DataLoader]:
     """ Create the dataloaders for the dataset.
 
     Args:
@@ -38,6 +42,17 @@ def create_dataloaders(dataset_name: str,
         test_size=test_size,
         random_state=random_state
     )
+    
+    if normalize_persistence_diagrams or num_points_to_keep is not None:
+        # Create the transform to normalize the persistence diagrams
+        transform = _create_preprocessing_transform(
+            dataset,
+            train_idx,
+            normalize_features=normalize_persistence_diagrams,
+            num_points_to_keep=num_points_to_keep
+            )
+    
+    dataloader.set_stateful_transform(transform)
 
     # Create the dataloaders
     train_loader = torch.utils.data.DataLoader(
