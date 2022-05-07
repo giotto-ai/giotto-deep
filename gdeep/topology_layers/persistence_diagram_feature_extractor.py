@@ -13,33 +13,31 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     """Feature extractor for persistence diagrams.
 
     The feature extractor can be saved to a file and loaded from a file using
-    the `save_pretrained` and `load_pretrained` methods.
+    the `save_pretrained` and `from_pretrained` methods.
     
     Examples::
         from gdeep.topology_layers import PersistenceDiagramFeatureExtractor
         from gdeep.utility.constants import DEFAULT_DATA_DIR
 
-        
+
         persistence_diagrams = np.random.rand(2, 10, 2)
-        
+
         mean = np.array([[0.5, 0.5]])
         std = np.array([[0.1, 0.1]])
-        
+
         pd_extractor = PersistenceDiagramFeatureExtractor(
             mean=mean,
             std=std,
-            number_of_homology_dimensions=4,
+            number_of_homology_dimensions=1,
             number_of_most_persistent_features=3,
         )
 
-        pd_extractor.save_pretrained(DEFAULT_DATA_DIR)  # Save the extractor to a file.
-        pd_extractor.load_pretrained(DEFAULT_DATA_DIR)  # Load the extractor from a file.
 
-        features = pd_extractor(diagrams)
-        
+        features = pd_extractor(persistence_diagrams)
+
         input_values = features['input_values']
         attention_masks = features['attention_mask']
-        
+                
     """
     mean: np.ndarray
     std: np.ndarray
