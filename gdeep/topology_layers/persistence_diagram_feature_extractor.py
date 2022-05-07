@@ -18,12 +18,28 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     Examples::
         from gdeep.topology_layers import PersistenceDiagramFeatureExtractor
         from gdeep.utility.constants import DEFAULT_DATA_DIR
-        feature_extractor = PersistenceDiagramFeatureExtractor([0.0], [1.0])
 
-        feature_extractor.save_pretrained(DEFAULT_DATA_DIR)
-        feature_extractor.load_pretrained(DEFAULT_DATA_DIR)
         
-        x = torch.tensor([[[0.0, 1.0], [1.0, 0.0]]])
+        persistence_diagrams = np.random.rand(2, 10, 2)
+        
+        mean = np.array([[0.5, 0.5]])
+        std = np.array([[0.1, 0.1]])
+        
+        pd_extractor = PersistenceDiagramFeatureExtractor(
+            mean=mean,
+            std=std,
+            number_of_homology_dimensions=4,
+            number_of_most_persistent_features=3,
+        )
+
+        pd_extractor.save_pretrained(DEFAULT_DATA_DIR)  # Save the extractor to a file.
+        pd_extractor.load_pretrained(DEFAULT_DATA_DIR)  # Load the extractor from a file.
+
+        features = pd_extractor(diagrams)
+        
+        input_values = features['input_values']
+        attention_masks = features['attention_mask']
+        
     """
     mean: np.ndarray
     std: np.ndarray
