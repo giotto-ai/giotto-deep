@@ -7,7 +7,7 @@ from typing import Union, List
 from google.cloud import storage  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 
-from gdeep.utility.utils import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
+from gdeep.utility import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
 
 LOGGER = logging.getLogger(__name__)
 

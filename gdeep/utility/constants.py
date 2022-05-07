@@ -5,6 +5,9 @@ import os
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         os.pardir, os.pardir))
 
+# Define the default data directory
+DEFAULT_DATA_DIR = os.path.join(ROOT_DIR, 'examples', 'data')
+
 # Define the default dataset download directory
 DEFAULT_DOWNLOAD_DIR = os.path.join(ROOT_DIR, "examples", "data",
                                     "DatasetCloud")
