@@ -157,27 +157,3 @@ def test_persistence_diagram_feature_extractor():
             (0.22057831 - 2.0) / 2.2
             ]])
     )
-
-# %%
-from gdeep.topology_layers import PersistenceDiagramFeatureExtractor
-from gdeep.utility.constants import DEFAULT_DATA_DIR
-
-
-persistence_diagrams = np.random.rand(2, 10, 2)
-
-mean = np.array([[0.5, 0.5]])
-std = np.array([[0.1, 0.1]])
-
-pd_extractor = PersistenceDiagramFeatureExtractor(
-    mean=mean,
-    std=std,
-    number_of_homology_dimensions=1,
-    number_of_most_persistent_features=3,
-)
-
-
-features = pd_extractor(persistence_diagrams)
-
-input_values = features['input_values']
-attention_masks = features['attention_mask']
-# %%
