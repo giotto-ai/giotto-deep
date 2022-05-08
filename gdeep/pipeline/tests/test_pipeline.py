@@ -7,7 +7,10 @@ from gdeep.data import TorchDataLoader
 from gdeep.search import GiottoSummaryWriter
 import numpy as np
 from gdeep.data import DataLoaderFromArray, TorchDataLoader
+from gdeep.search import clean_up_files
 
+
+@clean_up_files
 def test_pipe_1():
     # model
     class model1(nn.Module):

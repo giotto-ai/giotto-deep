@@ -6,7 +6,7 @@ import base64
 import os
 import time
 import hashlib
-
+import warnings
 import torch
 from torch import nn
 
@@ -200,3 +200,18 @@ def flatten_list_of_lists(list_: list) -> list:
             the flattened list
     """
     return [item for sublist in list_ for item in sublist]
+
+
+class KnownWarningSilencer:
+    """silence all warnings within this ``with``
+    statement with this class"""
+
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        warnings.filterwarnings("ignore")
+        return self
+
+    def __exit__(self, type, value, traceback):
+        warnings.filterwarnings("default")

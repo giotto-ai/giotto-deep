@@ -209,7 +209,7 @@ class PersistenceGradient():
                 pass
         return persistence_pairs_array, phi, homology_dims
     
-    def _computing_persistence_with_gph(self, X):
+    def _computing_persistence_with_gph(self, X: torch.Tensor) -> list:
         """This method accepts the pointcloud and returns the
         persistence diagram in the following form
         $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
@@ -220,7 +220,7 @@ class PersistenceGradient():
         gradient descent.
 
         Args:
-            X (np.array): 
+            X (torch.tensor):
                 point cloud
 
         Returns:

@@ -1,6 +1,6 @@
 from .utils import _are_compatible, save_model_and_optimizer, \
     ensemble_wrapper, _inner_refactor_scalars, is_notebook, \
-        autoreload_if_notebook
+        autoreload_if_notebook, KnownWarningSilencer
 from .constants import ROOT_DIR, DEFAULT_DATA_DIR, DATASET_BUCKET_NAME, \
     DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME, DEFAULT_GRAPH_DIR
 
@@ -18,5 +18,6 @@ __all__ = [
     'DATASET_BUCKET_NAME',
     'DEFAULT_DOWNLOAD_DIR',
     'DATASET_BUCKET_NAME',
-    'DEFAULT_GRAPH_DIR'
+    'DEFAULT_GRAPH_DIR',
+    'KnownWarningSilencer',
     ]
