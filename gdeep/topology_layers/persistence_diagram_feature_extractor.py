@@ -24,6 +24,8 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     the `save_pretrained` and `from_pretrained` methods.
     
     Examples::
+        import numpy as np
+    
         from gdeep.topology_layers import PersistenceDiagramFeatureExtractor
         from gdeep.utility.constants import DEFAULT_DATA_DIR
 
@@ -45,10 +47,13 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
 
         # save the extractor to a file
         pd_extractor.save_pretrained('.')
-
+        
+        del pd_extractor
+        pd_extractor = PersistenceDiagramFeatureExtractor.\
+            from_pretrained('preprocessor_config.json')
+                
         input_values = features['input_values']
         attention_masks = features['attention_mask']
-                
     """
     mean: np.ndarray
     std: np.ndarray
@@ -57,27 +62,33 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     
     def __init__(self,
                  number_of_homology_dimensions: int,
-                 mean: Union[np.ndarray, None] = None,
-                 std: Union[np.ndarray, None] = None,
+                 mean: Union[np.ndarray, List[List[float]], None] = None,
+                 std: Union[np.ndarray,  List[List[float]], None] = None,
                  number_of_most_persistent_features: Optional[int] = None,
+                 **kwargs,
                  ):
         assert number_of_homology_dimensions > 0, \
             "The number of most persistent features must be greater than 0."
         self.number_of_homology_dimensions = number_of_homology_dimensions
         if mean is None:
             self.mean = np.array([[0.0, 0.0]] * self.number_of_homology_dimensions)
-        else:
+        elif isinstance(mean, np.ndarray):
             self.mean = mean
+        else:
+            self.mean = np.array(mean)
         if std is None:
             self.std = np.array([[1.0, 1.0]] * self.number_of_homology_dimensions)
-        else:
+        elif isinstance(std, np.ndarray):
             self.std = std
+        else:
+            self.std = np.array(std)
         assert self.mean.shape == (self.number_of_homology_dimensions, 2), \
             "The mean must be a 2-dimensional array."
         assert self.std.shape == (self.number_of_homology_dimensions, 2), \
             "The std must be a 2-dimensional array."
         self.number_of_most_persistent_features = \
             number_of_most_persistent_features
+        super().__init__(**kwargs)
     
     def __call__(self,
                  raw_persistence_diagrams: Union[np.ndarray, torch.Tensor,
