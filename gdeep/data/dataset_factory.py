@@ -64,6 +64,6 @@ def get_dataset(key, **kwargs):
         torch.utils.data.Dataset: The dataset
     """
     factory = DatasetFactory()
-    factory.register_builder("Torchvision", TorchvisionDatasetBuilder)
-    factory.register_builder("Tori", TorchvisionDatasetBuilder)
+    factory.register_builder("Torchvision", TorchvisionDatasetBuilder())
+    factory.register_builder("Tori", TorchvisionDatasetBuilder())
     return factory.build(key, **kwargs)
