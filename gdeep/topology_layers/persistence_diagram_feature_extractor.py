@@ -19,7 +19,7 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         from gdeep.topology_layers import PersistenceDiagramFeatureExtractor
         from gdeep.utility.constants import DEFAULT_DATA_DIR
 
-
+        # Create persistence diagram with one homology dimension.
         persistence_diagrams = np.random.rand(2, 10, 2)
 
         mean = np.array([[0.5, 0.5]])
@@ -34,6 +34,9 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
 
 
         features = pd_extractor(persistence_diagrams)
+
+        # save the extractor to a file
+        pd_extractor.save_pretrained('.')
 
         input_values = features['input_values']
         attention_masks = features['attention_mask']
@@ -80,7 +83,13 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         Args:
             raw_persistence_diagrams: Either a single persistence diagram or a
             list of raw persistence diagrams.
+            padding_length: The length of the padding.
+            return_tensors: The return type. Either 'np' or 'pt'.
         """
+        assert return_tensors in ['np', 'pt'], \
+            "The return_tensors must be either 'np' or 'pt'.\n" \
+            "Tensorflow is not supported yet."
+        
         list_persistence_diagrams: List[np.ndarray] = []
         if isinstance(raw_persistence_diagrams, np.ndarray):
             if(raw_persistence_diagrams.ndim == 2):
@@ -128,10 +137,9 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         normalized_persistence_diagrams = self._normalize_persistence_diagrams(
             raw_persistence_diagrams
         )
-        
         return_values = {'input_values': normalized_persistence_diagrams,
-                          'attention_mask': attention_masks}
-        return BatchFeature(return_values)
+                        'attention_mask': attention_masks}
+        return BatchFeature(return_values, return_tensors)
 
     def _normalize_persistence_diagrams(self,
                                         persistence_diagrams: np.ndarray,
