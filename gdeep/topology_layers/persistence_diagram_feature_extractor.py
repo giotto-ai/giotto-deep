@@ -6,6 +6,14 @@ from transformers import BatchFeature
 from transformers.feature_extraction_sequence_utils import (
     FeatureExtractionMixin
 )
+# TODO: Use Explicit enum for return_tensors argument such that it is clear that
+# the user is not allowed to pass an invalid value and the type checker will
+# catch it.
+# class TensorReturnType(ExplicitEnum):
+#    PYTORCH = "pt"
+#    NUMPY = "np"
+#    TENSORFLOW = "tf"
+#    TORCH = "torch"
 
 
 
@@ -133,7 +141,7 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                     self.number_of_most_persistent_features
                 )
         
-        # TODO: Filter the persistence diagrams by treshold.
+        # TODO : Filter the persistence diagrams by treshold.
         
         # Normalize the persistence diagrams.
         normalized_persistence_diagrams = self._normalize_persistence_diagrams(
