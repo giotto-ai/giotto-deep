@@ -133,6 +133,8 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                     self.number_of_most_persistent_features
                 )
         
+        # TODO: Filter the persistence diagrams by treshold.
+        
         # Normalize the persistence diagrams.
         normalized_persistence_diagrams = self._normalize_persistence_diagrams(
             raw_persistence_diagrams
