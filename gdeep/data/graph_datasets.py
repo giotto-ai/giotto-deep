@@ -1,5 +1,6 @@
 import os
-from typing import List, Tuple, Callable, Union
+from typing import List, Tuple, Callable, Union, Optional
+from types import FunctionType
 
 import numpy as np
 import pandas as pd
@@ -7,24 +8,29 @@ import torch
 from torch_geometric.datasets import TUDataset  # type: ignore
 from torch_geometric.utils import to_dense_adj  # type: ignore
 from tqdm import tqdm
+from torch.utils.data import Dataset
 
 from gdeep.extended_persistence.heat_kernel_signature import \
     graph_extended_persistence_hks
 from gdeep.utility.constants import DEFAULT_GRAPH_DIR
-from gdeep import PersistenceDiagramDataset
+from gdeep.utility._typing_utils import torch_transform
 
 
-class PersistenceDiagramFromGraphDataset(PersistenceDiagramDataset):
+Tensor = torch.Tensor
+
+class PersistenceDiagramFromGraphDataset(Dataset):
     """
     This class is used to load the persistence diagrams of the graphs in a
     dataset. All graph datasets in the TUDataset class are supported.
     """
+    transform: Union[Callable[[Tensor], Tensor], None]
     
     def __init__(self,
                  dataset_name: str,
                  diffusion_parameter: float,
                  root: str = DEFAULT_GRAPH_DIR,
                  transform: Union[Callable[[torch.Tensor], torch.Tensor],
+                                  Callable[[np.ndarray], np.ndarray],
                                   None] = None
                  ):
         """
@@ -40,9 +46,17 @@ class PersistenceDiagramFromGraphDataset(PersistenceDiagramDataset):
         self.num_homology_types: int = 4
         self.root: str = root
         self.output_dir: str = os.path.join(root,
-                                       dataset_name + "_extended_persistence")
-        self.transform: Union[Callable[[torch.Tensor], torch.Tensor],
-                                  None] = transform
+                                       dataset_name + "_" + 
+                                       str(diffusion_parameter) +
+                                       "_extended_persistence")
+        
+        # Check if transform is a function mapping a numpy array to a numpy array
+        # if so, transform it to a callable that takes a tensor and returns a
+        # tensor
+        if transform is not None:
+            self.transform = torch_transform(transform)
+        else:
+            self.transform = None
         
         # Check if the dataset exists in the specified directory
         if not os.path.exists(self.output_dir):

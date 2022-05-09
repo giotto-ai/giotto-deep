@@ -10,7 +10,7 @@ from .preprocessing import PreprocessText, TextDataset, \
     PreprocessTextQA
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
-
+from .graph_datasets import PersistenceDiagramFromGraphDataset
 
 __all__ = [
     'Rotation',
@@ -30,5 +30,6 @@ __all__ = [
     'TextDatasetTranslation',
     'DataLoaderFromArray',
     'DatasetCloud',
-    'DlBuilderFromDataCloud'
+    'DlBuilderFromDataCloud',
+    'PersistenceDiagramFromGraphDataset',
     ]
