@@ -42,9 +42,6 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
             number_of_most_persistent_features=3,
         )
 
-
-        features = pd_extractor(persistence_diagrams)
-
         # save the extractor to a file
         pd_extractor.save_pretrained('.')
         
@@ -52,6 +49,8 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         pd_extractor = PersistenceDiagramFeatureExtractor.\
             from_pretrained('preprocessor_config.json')
                 
+        features = pd_extractor(persistence_diagrams)
+        
         input_values = features['input_values']
         attention_masks = features['attention_mask']
     """

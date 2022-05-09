@@ -1,0 +1,17 @@
+{
+  "feature_extractor_type": "PersistenceDiagramFeatureExtractor",
+  "mean": [
+    [
+      0.5,
+      0.5
+    ]
+  ],
+  "number_of_homology_dimensions": 1,
+  "number_of_most_persistent_features": 3,
+  "std": [
+    [
+      0.1,
+      0.1
+    ]
+  ]
+}
