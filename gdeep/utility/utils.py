@@ -199,6 +199,7 @@ def flatten_list_of_lists(list_: list) -> list:
         list:
             the flattened list
     """
+<<<<<<< HEAD
     return [item for sublist in list_ for item in sublist]
 
 
@@ -215,3 +216,6 @@ class KnownWarningSilencer:
 
     def __exit__(self, type, value, traceback):
         warnings.filterwarnings("default")
+=======
+    return [item for sublist in list_ for item in sublist]
+>>>>>>> persformer_benchmark

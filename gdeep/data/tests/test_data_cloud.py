@@ -3,7 +3,6 @@ from gdeep.data import _DataCloud
 import google  # type: ignore
 from google.cloud import storage  # type: ignore
 from google.cloud.storage import Bucket  # type: ignore
-from google.auth.exceptions import DefaultCredentialsError  # type: ignore
 import hashlib
 import logging
 from os import remove, makedirs, environ
@@ -15,7 +14,6 @@ from shutil import rmtree
 from gdeep.utility import DATASET_BUCKET_NAME
 from gdeep.utility.utils import get_checksum
 
-LOGGER = logging.getLogger(__name__)
 
 
 if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):

@@ -1,7 +1,5 @@
 from gdeep.data import DatasetCloud, dataset_cloud
 
-import hashlib
-import logging
 import os
 from os import remove, environ
 from os.path import join, exists
@@ -12,7 +10,6 @@ import torch
 
 from gdeep.utility.utils import get_checksum
 
-LOGGER = logging.getLogger(__name__)
 
 
 # Test public access for downloading datasets

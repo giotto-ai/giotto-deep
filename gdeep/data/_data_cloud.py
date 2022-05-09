@@ -7,7 +7,7 @@ import sys
 from typing import Union, List
 import time
 
-import google
+import google  # type: ignore
 from google.cloud import storage  # type: ignore
 from google.oauth2 import service_account  # type: ignore
 import wget  # type: ignore
@@ -15,8 +15,6 @@ import wget  # type: ignore
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
 from gdeep.utility.utils import get_checksum
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.WARNING)
 
 def _check_public_access(use_public_access: bool):
     """Check if the public access is enabled."""
