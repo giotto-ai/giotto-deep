@@ -1,8 +1,8 @@
-from typing import Tuple, List, Callable, Union, Any
-
 from inspect import signature
-from numpy import ndarray
+from typing import Any, Callable, List, Tuple, Union
+
 import torch
+from numpy import ndarray
 
 Tensor = torch.Tensor
 
@@ -20,7 +20,7 @@ def torch_transform(transform: Union[Callable[[Tensor], Tensor],
     """
     if get_parameter_types(transform)[0] is Tensor and\
         get_return_type(transform) is Tensor:
-        return transform
+        return transform  # type: ignore
     elif get_parameter_types(transform)[0] is ndarray and\
         get_return_type(transform) is ndarray:
         return lambda x: torch.tensor(transform(x.numpy()))
@@ -28,8 +28,9 @@ def torch_transform(transform: Union[Callable[[Tensor], Tensor],
         raise ValueError("Transform must be a function that takes a tensor or"
                             "an array and returns a tensor or an array."
                             "Please provide type annotations.")
+
         
-def get_parameter_types(func: Callable) -> List[type]:
+def get_parameter_types(func: Callable) -> List[Any]:
     """ Returns a list of the types of the parameters of a function. 
     
     Args:
@@ -40,7 +41,7 @@ def get_parameter_types(func: Callable) -> List[type]:
     """
     return [t.annotation for t in signature(func).parameters.values()]
     
-def get_return_type(func: Callable) -> type:
+def get_return_type(func: Callable) -> Any:
     """ Returns the type of the return value of a function.
      
     Args:

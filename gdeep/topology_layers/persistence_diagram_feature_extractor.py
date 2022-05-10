@@ -1,11 +1,11 @@
-from typing import List, Union, Optional, Tuple
+from typing import List, Optional, Tuple, Union, Any, TypeVar
 
 import numpy as np
 import torch
 from transformers import BatchFeature
-from transformers.feature_extraction_sequence_utils import (
+from transformers.feature_extraction_sequence_utils import \
     FeatureExtractionMixin
-)
+
 # TODO: Use Explicit enum for return_tensors argument such that it is clear that
 # the user is not allowed to pass an invalid value and the type checker will
 # catch it.
@@ -15,7 +15,11 @@ from transformers.feature_extraction_sequence_utils import (
 #    TENSORFLOW = "tf"
 #    TORCH = "torch"
 
+array2d = np.ndarray[Any, Any]
+array3d = np.ndarray[Any, Any]  #TODO: Add type annotation for 3d array
 
+MultiplePersistenceDiagrams = Union[np.ndarray, torch.Tensor, 
+                                    List[np.ndarray], List[torch.Tensor]]
 
 class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     """Feature extractor for persistence diagrams.
@@ -54,21 +58,37 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         input_values = features['input_values']
         attention_masks = features['attention_mask']
     """
-    mean: np.ndarray
-    std: np.ndarray
+    mean: array2d
+    std: array2d
     number_of_homology_dimensions: int
     number_of_most_persistent_features: Optional[int]
+    threshold: Optional[float]
     
     def __init__(self,
                  number_of_homology_dimensions: int,
-                 mean: Union[np.ndarray, List[List[float]], None] = None,
-                 std: Union[np.ndarray,  List[List[float]], None] = None,
+                 mean: Union[array2d, List[List[float]], None] = None,
+                 std: Union[array2d,  List[List[float]], None] = None,
                  number_of_most_persistent_features: Optional[int] = None,
+                 treshold: Optional[float] = None,
                  **kwargs,
                  ):
         assert number_of_homology_dimensions > 0, \
             "The number of most persistent features must be greater than 0."
         self.number_of_homology_dimensions = number_of_homology_dimensions
+        self._set_normalizing_parameters(mean, std)
+        assert self.mean.shape == (self.number_of_homology_dimensions, 2), \
+            "The mean must be a 2-dimensional array."
+        assert self.std.shape == (self.number_of_homology_dimensions, 2), \
+            "The std must be a 2-dimensional array."
+        self.number_of_most_persistent_features = \
+            number_of_most_persistent_features
+        assert treshold is None or (0.0 <= treshold), \
+            "The threshold must be between non-negative"
+        self.treshold = treshold
+        
+        super().__init__(**kwargs)
+
+    def _set_normalizing_parameters(self, mean, std):
         if mean is None:
             self.mean = np.array([[0.0, 0.0]] * self.number_of_homology_dimensions)
         elif isinstance(mean, np.ndarray):
@@ -81,18 +101,9 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
             self.std = std
         else:
             self.std = np.array(std)
-        assert self.mean.shape == (self.number_of_homology_dimensions, 2), \
-            "The mean must be a 2-dimensional array."
-        assert self.std.shape == (self.number_of_homology_dimensions, 2), \
-            "The std must be a 2-dimensional array."
-        self.number_of_most_persistent_features = \
-            number_of_most_persistent_features
-        super().__init__(**kwargs)
     
     def __call__(self,
-                 raw_persistence_diagrams: Union[np.ndarray, torch.Tensor,
-                                                 List[np.ndarray],
-                                                 List[torch.Tensor]],
+                 raw_persistence_diagrams: MultiplePersistenceDiagrams,
                  padding_length: Optional[int] = None,
                  return_tensors: Optional[str] = 'np',
                  ) -> BatchFeature:
@@ -103,14 +114,95 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
             list of raw persistence diagrams.
             padding_length: The length of the padding.
             return_tensors: The return type. Either 'np' or 'pt'.
+            
+        Returns:
+            BatchFeature: The processed features in the following format:
+            {'input_values': np.ndarray, 'attention_mask': np.ndarray}
+            where the input_values is a 3-dimensional array of shape
+            (batch_size, number_of_points_in_persistence_diagram,
+            2 + number_of_homology_dimensions)
+            and the attention_mask is a 2-dimensional array of shape
+            (batch_size, number_of_points_in_persistence_diagram).
         """
         assert return_tensors in ['np', 'pt'], \
             "The return_tensors must be either 'np' or 'pt'.\n" \
             "Tensorflow is not supported yet."
         
+        persistence_diagrams_list = \
+            self._get_persistence_diagrams_list(raw_persistence_diagrams)
+            
+        # Check that the list_persistence_diagrams is a list of persistence
+        # diagrams with the correct number of homology dimensions.
+        assert self._check_persistence_diagrams(persistence_diagrams_list), \
+            "The persistence diagrams are not valid."
+            
+        # Filter the persistence diagrams by treshold.
+        if self.treshold is not None:
+            persistence_diagrams_list = \
+                [PersistenceDiagramFeatureExtractor._filter_by_treshold(
+                    persistence_diagram, self.treshold
+                ) for persistence_diagram in persistence_diagrams_list]
+            
+        persistence_diagrams: array3d
+        # Pad the persistence diagrams.
+        if len(persistence_diagrams_list) > 1 or \
+            padding_length is not None:
+            persistence_diagrams, attention_masks = \
+                self._pad_persistence_diagrams(
+                    persistence_diagrams_list, padding_length
+                )
+        else:
+            # If there is only one persistence diagram and there is no padding.
+            # -> Transform the persistence diagrams to a 3-dimensional array.
+            persistence_diagrams = np.array(persistence_diagrams_list)
+            
+        assert persistence_diagrams.ndim == 3, \
+            "The persistence diagrams must be 3-dimensional."
+            
+        # Filter k-most persistent features.
+        if self.number_of_most_persistent_features is not None:
+            persistence_diagrams, attention_masks = \
+                self._get_most_persistent_features(
+                    persistence_diagrams,
+                    attention_masks,
+                    self.number_of_most_persistent_features
+                )
+        
+        
+        # Normalize the persistence diagrams.
+        persistence_diagrams = self._normalize_persistence_diagrams(
+            persistence_diagrams
+        )
+        return_values = {'input_values': persistence_diagrams,
+                        'attention_mask': attention_masks}
+        return BatchFeature(return_values, return_tensors)
+    
+    @staticmethod
+    def _filter_by_treshold(persistence_diagram: array2d,
+                            treshold: float) -> array2d:
+        """Filter the persistence diagram by lifetime treshold.
+           Note: If the birth time is greater than the death time,
+              the lifetime is set to birth time - death time.
+        Args:
+            persistence_diagram: The persistence diagram.
+            treshold: The treshold.
+            
+        Returns:
+            array2d: The filtered persistence diagram.
+        """
+        absolute_lifetime = np.abs(persistence_diagram[:, 1] 
+                                   - persistence_diagram[:, 0])
+        return persistence_diagram[absolute_lifetime > treshold]
+    
+         
+
+    def _get_persistence_diagrams_list(self, 
+                                       raw_persistence_diagrams: \
+                                           MultiplePersistenceDiagrams
+        ) -> List[array2d]:
         list_persistence_diagrams: List[np.ndarray] = []
         if isinstance(raw_persistence_diagrams, np.ndarray):
-            if(raw_persistence_diagrams.ndim == 2):
+            if(raw_persistence_diagrams.nide == 2):
                 list_persistence_diagrams = [raw_persistence_diagrams]
             elif(raw_persistence_diagrams.ndim == 3):
                 list_persistence_diagrams = raw_persistence_diagrams.tolist()
@@ -134,36 +226,59 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                     )
                 else:
                     list_persistence_diagrams.append(x)
-                    
-                    
-        # Pad the persistence diagrams.
-        raw_persistence_diagrams, attention_masks = \
-            self._pad_persistence_diagrams(
-                list_persistence_diagrams, padding_length
-            )
-            
-        # Filter k-most persistent features.
-        if self.number_of_most_persistent_features is not None:
-            raw_persistence_diagrams, attention_masks = \
-                self._get_most_persistent_features(
-                    raw_persistence_diagrams,
-                    attention_masks,
-                    self.number_of_most_persistent_features
-                )
-        
-        # TODO : Filter the persistence diagrams by treshold.
-        
-        # Normalize the persistence diagrams.
-        normalized_persistence_diagrams = self._normalize_persistence_diagrams(
-            raw_persistence_diagrams
-        )
-        return_values = {'input_values': normalized_persistence_diagrams,
-                        'attention_mask': attention_masks}
-        return BatchFeature(return_values, return_tensors)
+        return list_persistence_diagrams
 
+    def _check_persistence_diagrams(self,
+                                    list_persistence_diagrams: List[np.ndarray],
+                                    ) -> bool:
+        """Check if the persistence diagrams all have correct number of
+        homology dimensions.
+
+        Args:
+            list_persistence_diagrams (List[np.ndarray]): The persistence
+            diagrams.
+
+        Returns:
+            bool: True if the persistence diagrams all have correct number of
+            homology dimensions.
+        """
+        for persistence_diagram in list_persistence_diagrams:
+            if persistence_diagram.ndim != 2:
+                return False
+            elif self.number_of_homology_dimensions == 1:
+                return persistence_diagram.shape[-1] == 2
+            if persistence_diagram.shape[-1] != \
+                2 + self.number_of_homology_dimensions:
+                return False
+        return True
+
+    # @staticmethod
+    # def _get_number_of_persistence_diagrams(persistence_diagrams: 
+    #     Union[np.ndarray, torch.Tensor,
+    #           List[np.ndarray], List[torch.Tensor]]) -> int:
+    #     """Return the number of persistence diagrams.
+        
+    #     Args:
+    #         persistence_diagrams: Either an array of tensors of a single or 
+    #         multiple persistence diagram or a list of persistence diagrams.
+        
+    #     Returns:
+    #         The number of persistence diagrams.
+    #     """
+    #     if isinstance(persistence_diagrams, np.ndarray) or \
+    #         isinstance(persistence_diagrams, torch.Tensor):
+    #         if(persistence_diagrams.ndim == 2):
+    #             return 1
+    #         else:
+    #             return persistence_diagrams.shape[0]
+    #     else:
+    #         return len(persistence_diagrams)
+        
+        
     def _normalize_persistence_diagrams(self,
-                                        persistence_diagrams: np.ndarray,
-    ) -> np.ndarray:
+                                        persistence_diagrams: \
+                                        array3d,
+    ) -> array3d:
         """Normalize the first tow coordinates of persistence diagrams per
         homology dimension.
 
@@ -198,10 +313,11 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         return persistence_diagrams
     
     def _get_most_persistent_features(self,
-                                      persistence_diagrams: np.ndarray,
-                                      attention_mask: np.ndarray,
+                                      persistence_diagrams: array3d,
+                                      attention_mask: array2d,
                                       number_of_most_persistent_features: int
-                                      ) -> Tuple[np.ndarray, np.ndarray]:
+                                      ) -> Tuple[array3d, \
+                                          array2d]:
         """Return the most persistent features of the persistence diagrams.
         
         Args:
@@ -230,9 +346,11 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                           for i in range(len(args))], axis=0))
         
     def _pad_persistence_diagrams(self,
-                                  raw_persistence_diagrams: List[np.ndarray],
+                                  raw_persistence_diagrams: List[np.ndarray[Any,
+                                                                            Any]],
                                   padding_length: Optional[int] = None,
-                                    ) -> Tuple[np.ndarray, np.ndarray]:
+                                    ) -> Tuple[array3d, \
+                                          array2d]:
         """Pad the persistence diagrams to the same length.
         
         Args:
