@@ -201,7 +201,7 @@ class DatasetCloud():
             datasets_local = "tmp_datasets.json"
             # Download the dataset list json file using the public URL.
             wget.download(self.public_url + 'datasets.json', datasets_local)
-            datasets = json.load(open(datasets_local))
+            datasets: List[str] = json.load(open(datasets_local))
             
             # Remove duplicates. This has to be fixed in the future.
             datasets = list(set(datasets))

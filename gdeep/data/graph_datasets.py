@@ -4,6 +4,7 @@ from types import FunctionType
 
 import numpy as np
 import pandas as pd
+from requests import HTTPError
 import torch
 from torch_geometric.datasets import TUDataset  # type: ignore
 from torch_geometric.utils import to_dense_adj  # type: ignore
@@ -61,7 +62,7 @@ class PersistenceDiagramFromGraphDataset(Dataset):
         # Check if the dataset exists in the specified directory
         if not os.path.exists(self.output_dir):
             print(f"Dataset {dataset_name} does not exist!")
-            self.preprocess()
+            self._preprocess()
             
         # Load the labels
         self.labels: pd.DataFrame = pd.read_csv(
@@ -82,7 +83,7 @@ class PersistenceDiagramFromGraphDataset(Dataset):
                 f"root={self.root}, transform={self.transform})"
 
 
-    def preprocess(self) -> None:
+    def _preprocess(self) -> None:
         """
         Preprocess the dataset and save the persistence diagrams and the labels
         in the output directory.
@@ -93,19 +94,27 @@ class PersistenceDiagramFromGraphDataset(Dataset):
         
         Args:
             output_dir: The directory where to save the persistence diagrams.
-        """
+        """        
+        # Load the dataset
+        try:
+            self.graph_dataset = TUDataset(root=DEFAULT_GRAPH_DIR,
+                                        name=self.dataset_name,
+                                        use_node_attr=False,
+                                        use_edge_attr=False)
+        except HTTPError as e:
+             if e.code == 404:
+                raise ValueError(f"Dataset {self.dataset_name} does not exist!")
+             else:
+                raise e
+        
         # Create the directory if it does not exist
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
             os.makedirs(os.path.join(self.output_dir, "diagrams"))
         else:
+            # This should not be reached
             raise ValueError("Output directory already exists!")
-        
-        # Load the dataset
-        self.graph_dataset = TUDataset(root=DEFAULT_GRAPH_DIR,
-                                    name=self.dataset_name,
-                                    use_node_attr=False,
-                                    use_edge_attr=False)
+            
         num_graphs = len(self.graph_dataset)
         
         labels: List[Tuple[int, int]] = []
@@ -147,10 +156,12 @@ class PersistenceDiagramFromGraphDataset(Dataset):
 
     @staticmethod
     def _sort_diagram_by_lifetime(diagram: np.ndarray) -> np.ndarray:
-        return diagram[
+        filtered_diagram: np.ndarray = \
+            diagram[
                     (diagram[:, 1] -
                         diagram[:, 0]).argsort()
                 ]
+        return filtered_diagram
         
     def __len__(self) -> int:
         """

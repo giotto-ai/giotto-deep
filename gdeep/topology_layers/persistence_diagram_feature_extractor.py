@@ -1,4 +1,5 @@
 from typing import List, Optional, Tuple, Union, Any, TypeVar
+import sys
 
 import numpy as np
 import torch
@@ -15,8 +16,14 @@ from transformers.feature_extraction_sequence_utils import \
 #    TENSORFLOW = "tf"
 #    TORCH = "torch"
 
-array2d = np.ndarray[Any, Any]
-array3d = np.ndarray[Any, Any]  #TODO: Add type annotation for 3d array
+# Check python version
+if (sys.version_info.major, sys.version_info.minor) < (3, 9):
+    array2d = np.ndarray
+    array3d = np.ndarray
+else:
+    #TODO: Add type annotation for 3d array
+    array2d = np.ndarray[Any, Any]  # type: ignore
+    array3d = np.ndarray[Any, Any]  # type: ignore
 
 MultiplePersistenceDiagrams = Union[np.ndarray, torch.Tensor, 
                                     List[np.ndarray], List[torch.Tensor]]
@@ -89,8 +96,10 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         
         super().__init__(**kwargs)
 
-    def _set_normalizing_parameters(self, mean: array2d,
-                                    std: array2d) -> None:
+    def _set_normalizing_parameters(self, 
+                                    mean: Union[array2d, List[List[float]], None],
+                                    std: Union[array2d, List[List[float]], None],
+                                    ) -> None:
         if mean is None:
             self.mean = np.array([[0.0, 0.0]] * self.number_of_homology_dimensions)
         elif isinstance(mean, np.ndarray):
@@ -194,7 +203,8 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         """
         absolute_lifetime = np.abs(persistence_diagram[:, 1] 
                                    - persistence_diagram[:, 0])
-        return persistence_diagram[absolute_lifetime > treshold]
+        filtered_diagram: array2d = persistence_diagram[absolute_lifetime > treshold]
+        return filtered_diagram
     
          
 
@@ -229,10 +239,11 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     @staticmethod
     def persistence_diagram_list_from_array(raw_persistence_diagrams: array3d) -> \
         List[array2d]:
-        if(raw_persistence_diagrams.nide == 2):
+        if(raw_persistence_diagrams.ndim == 2):
             return [raw_persistence_diagrams]
         elif(raw_persistence_diagrams.ndim == 3):
-            return raw_persistence_diagrams.tolist()
+            return [raw_persistence_diagrams[i] \
+                for i in range(raw_persistence_diagrams.shape[0])]
         else:
             raise ValueError("The persistence diagrams must be 2- or 3-dimensional.")
 
@@ -354,8 +365,7 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                           for i in range(len(args))], axis=0))
         
     def _pad_persistence_diagrams(self,
-                                  raw_persistence_diagrams: List[np.ndarray[Any,
-                                                                            Any]],
+                                  raw_persistence_diagrams: List[array2d],
                                   padding_length: Optional[int] = None,
                                     ) -> Tuple[array3d, \
                                           array2d]:

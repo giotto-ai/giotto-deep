@@ -238,4 +238,4 @@ class GraphClassifier(nn.Module):
         x = nn.ReLU()(self.ff_1(x))
         x = nn.ReLU()(self.ff_2(x))
         x = self.ff_3(x)
-        return x
+        return x  # type: ignore
