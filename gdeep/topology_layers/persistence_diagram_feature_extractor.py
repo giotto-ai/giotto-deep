@@ -21,6 +21,7 @@ array3d = np.ndarray[Any, Any]  #TODO: Add type annotation for 3d array
 MultiplePersistenceDiagrams = Union[np.ndarray, torch.Tensor, 
                                     List[np.ndarray], List[torch.Tensor]]
 
+#TODO: Add MinMaxScaler
 class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
     """Feature extractor for persistence diagrams.
 
@@ -88,7 +89,8 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         
         super().__init__(**kwargs)
 
-    def _set_normalizing_parameters(self, mean, std):
+    def _set_normalizing_parameters(self, mean: array2d,
+                                    std: array2d) -> None:
         if mean is None:
             self.mean = np.array([[0.0, 0.0]] * self.number_of_homology_dimensions)
         elif isinstance(mean, np.ndarray):
@@ -202,12 +204,8 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
         ) -> List[array2d]:
         list_persistence_diagrams: List[np.ndarray] = []
         if isinstance(raw_persistence_diagrams, np.ndarray):
-            if(raw_persistence_diagrams.nide == 2):
-                list_persistence_diagrams = [raw_persistence_diagrams]
-            elif(raw_persistence_diagrams.ndim == 3):
-                list_persistence_diagrams = raw_persistence_diagrams.tolist()
-            else:
-                raise ValueError("The persistence diagrams must be 2- or 3-dimensional.")
+            list_persistence_diagrams =\
+                self.__class__.persistence_diagram_list_from_array(raw_persistence_diagrams)
         elif isinstance(raw_persistence_diagrams, torch.Tensor):
             if(raw_persistence_diagrams.ndim == 2):
                 list_persistence_diagrams = [raw_persistence_diagrams.detach().cpu()\
@@ -227,6 +225,16 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                 else:
                     list_persistence_diagrams.append(x)
         return list_persistence_diagrams
+
+    @staticmethod
+    def persistence_diagram_list_from_array(raw_persistence_diagrams: array3d) -> \
+        List[array2d]:
+        if(raw_persistence_diagrams.nide == 2):
+            return [raw_persistence_diagrams]
+        elif(raw_persistence_diagrams.ndim == 3):
+            return raw_persistence_diagrams.tolist()
+        else:
+            raise ValueError("The persistence diagrams must be 2- or 3-dimensional.")
 
     def _check_persistence_diagrams(self,
                                     list_persistence_diagrams: List[np.ndarray],
@@ -386,4 +394,3 @@ class PersistenceDiagramFeatureExtractor(FeatureExtractionMixin):
                 f"std={self.std}, " \
                 f"homology_dimensions={self.number_of_homology_dimensions}, " \
                 f"number_of_most_persistent_features={self.number_of_most_persistent_features})"
-        
