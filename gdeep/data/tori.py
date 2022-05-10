@@ -94,57 +94,8 @@ class CreateToriDataset:
             return GenericDataset(*tup, target_transform=torch.tensor)
 
     @staticmethod
-    def _make_torus_point_cloud(label: int, n_points: int,
-                                noise: float,
-                                rotation: Rotation,
-                                base_point: np.array,
-                                radius: float = 1.):
-        """Generate point cloud of a single torus
-
-        Args:
-            label (int):
-                label of the data points
-            n_points (int):
-                number of sample points for each direction
-            noise (float):
-                noise
-            rotation (Rotation):
-                rotation class
-            base_point (np.array):
-                center of the torus
-            radius (float):
-                radius of the torus
-
-        Returns:
-            (np.array, np.array):
-                data_points, labels
-        """
-        torus_point_clouds = \
-            np.asarray(
-                [
-                    [
-                     (2 + radius*np.cos(s)) * np.cos(t) + noise *
-                     (np.random.rand(1)[0] - 0.5),
-                     (2 + radius*np.cos(s)) * np.sin(t) + noise *
-                     (np.random.rand(1)[0] - 0.5),
-                     radius*np.sin(s) + noise *
-                     (np.random.rand(1)[0] - 0.5),
-                    ]
-                    for t in range(n_points)
-                    for s in range(n_points)])
-        
-        torus_point_clouds = np.einsum("ij,kj->ki",  rotation.rotation_matrix(), torus_point_clouds)
-
-        torus_point_clouds += base_point
-
-        # label tori with 2
-        torus_labels = label * np.ones(n_points**2)
-
-        return torus_point_clouds, torus_labels
-
-    @staticmethod
-    def _make_torus_point_cloud2(label: int, n_points: int, noise: float,
-                                rotation: Rotation, base_point: np.array,
+    def _make_torus_point_cloud(label: int, n_points: int, noise: float,
+                                rotation: Rotation, base_point: np.ndarray,
                                 radius1: float = 1., radius2: float = 1.):
         """Generate point cloud of a single torus using
         2 radii for its definition
@@ -192,6 +143,37 @@ class CreateToriDataset:
         torus_labels = label * np.ones(n_points ** 2)
 
         return torus_point_clouds, torus_labels
+    
+    @staticmethod
+    def _make_torus_point_cloud_fixed_radius(label: int, n_points: int,
+                                noise: float,
+                                rotation: Rotation,
+                                base_point: np.ndarray,
+                                radius: float = 1.):
+        """Generate point cloud of a single torus
+
+        Args:
+            label (int):
+                label of the data points
+            n_points (int):
+                number of sample points for each direction
+            noise (float):
+                noise
+            rotation (Rotation):
+                rotation class
+            base_point (np.array):
+                center of the torus
+            radius (float):
+                radius of the torus
+
+        Returns:
+            (np.array, np.array):
+                data_points, labels
+        """
+        return CreateToriDataset.\
+            _make_torus_point_cloud(label, n_points, noise,
+                                        rotation, base_point, radius,
+                                        radius)
 
     def _make_two_tori_dataset(self, entangled: bool = True,
                                n_pts: int = 10) -> tuple:
@@ -210,25 +192,25 @@ class CreateToriDataset:
         torus_labels = {}
         if entangled:
             torus_point_cloud[0], torus_labels[0] = \
-                self._make_torus_point_cloud(0, n_pts, 0.0,
+                self._make_torus_point_cloud_fixed_radius(0, n_pts, 0.0,
                                              Rotation(1, 2,
                                                       math.pi/2),
                                              np.array([[0, 0, 0]]),
                                              radius=.3)
             torus_point_cloud[1], torus_labels[1] = \
-                self._make_torus_point_cloud(1, n_pts, 0.0,
+                self._make_torus_point_cloud_fixed_radius(1, n_pts, 0.0,
                                              Rotation(1, 2, 0),
                                              np.array([[2, 0, 0]]),
                                              radius=.3)
         else:
             torus_point_cloud[0], torus_labels[0] = \
-                self._make_torus_point_cloud(0, n_pts, 0.0,
+                self._make_torus_point_cloud_fixed_radius(0, n_pts, 0.0,
                                              Rotation(1, 2,
                                                       math.pi/2),
                                              np.array([[0, 0, 0]]),
                                              radius=.3)
             torus_point_cloud[1], torus_labels[1] = \
-                self._make_torus_point_cloud(1, n_pts, 0.0,
+                self._make_torus_point_cloud_fixed_radius(1, n_pts, 0.0,
                                              Rotation(1, 2, 0),
                                              np.array([[6, 0, 0]]),
                                              radius=.3)
@@ -256,12 +238,14 @@ class CreateToriDataset:
             (tuple):
                 the tuple for data and labels
         """
-        data1, labels1 = self._make_torus_point_cloud2(0, n_pts,
+        data1, labels1 = self._make_torus_point_cloud(0, n_pts,
                                                        0.1, Rotation(0, 1, 0),
-                                                       [0, 0, 0], 2., .5)
-        data2, labels2 = self._make_torus_point_cloud2(1, n_pts, 0.1,
+                                                       np.array([0, 0, 0]), 
+                                                       2., .5)
+        data2, labels2 = self._make_torus_point_cloud(1, n_pts, 0.1,
                                                        Rotation(1, 2, 180),
-                                                       [2, 0, 0], 2., .5)
+                                                       np.array([2, 0, 0]), 
+                                                       2., .5)
 
         translations = [[i*10, j*10, k*10] for i in range(m) for j
                         in range(m) for k in range(m)]
