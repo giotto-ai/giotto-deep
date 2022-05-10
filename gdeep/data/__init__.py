@@ -8,8 +8,7 @@ from .torch_datasets import TorchDataLoader, \
 from .preprocessing import PreprocessText, TextDataset, \
     PreprocessTextTranslation, TextDatasetTranslation, \
     PreprocessTextQA
-from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
-    OrbitsGenerator, DataLoaderKwargs
+from .parallel_orbit import OrbitsGenerator, DataLoaderKwargs
 from .graph_datasets import PersistenceDiagramFromGraphDataset
 
 __all__ = [
