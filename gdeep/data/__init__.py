@@ -11,7 +11,7 @@ from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
 from .preprocessing_pipes import AbstractPreprocessing, Normalisation, \
     PreprocessTextTranslation, PreprocessTextData, PreprocessingPipeline, \
-    PreprocessTextQA, PreprocessText, PreprocessTextLabel
+    PreprocessTextQA, PreprocessTextLabel, PreprocessTextQATarget
 
 
 
@@ -22,6 +22,7 @@ __all__ = [
     'CreateToriDataset',
     'GenericDataset',
     'PreprocessText',
+    'PreprocessTextQATarget',
     'TextDataset',
     'PreprocessingPipeline',
     'PreprocessTextQA',

@@ -5,8 +5,6 @@ from torchtext.data.utils import get_tokenizer
 from torch.nn.functional import pad
 from collections import Counter
 from torchtext.vocab import Vocab
-#from transformers.feature_extraction_sequence_utils import \
-#     FeatureExtractionMixin
 import warnings
 import os
 import json
@@ -68,13 +66,13 @@ class Normalisation(AbstractPreprocessing):
         self.is_fitted = True
         self.save_pretrained(".")
 
-    def transform(self, batch: Tensor) -> Tensor:
+    def transform(self, datum: Tensor) -> Tensor:
         if not self.is_fitted:
             self.load_pretrained(".")
         if not all(self.stddev>0):
             warnings.warn("The standard deviation contains zeros! Adding 1e-7")
             self.stddev = self.stddev + 1e-7
-        out = torch.stack([(batch[i] - self.mean)/(self.stddev) for i in range(batch.shape[0])])
+        out = (datum - self.mean)/(self.stddev)
         return out
 
     def _mean(self, data, dim, keep_dim):
@@ -146,7 +144,7 @@ class PreprocessTextData(AbstractPreprocessing):
 
         self.vocabulary = vocabulary
         self.MAX_LENGTH = 0
-        self.check_calibration = False
+        self.is_fitted = False
 
     def fit_to_data(self, data):
         """Method to extract global data, like to length of
@@ -166,25 +164,25 @@ class PreprocessTextData(AbstractPreprocessing):
         # self.vocabulary = Vocab(counter, min_freq=1)
         if self.vocabulary is None:
             self.vocabulary = Vocab(counter)
-        self.check_calibration = True
+        self.is_fitted = True
         self.save_pretrained(".")
 
-    def transform(self, batch: torch.Tensor) -> list:
+    def transform(self, datum: torch.Tensor) -> list:
         """This method is applied to each batch and
         transforms it following the rule below
 
         Args:
-            batch (torch.tensor):
-                a minibatch
+            datum (torch.tensor):
+                a single datum
         """
-        if not self.check_calibration:
+        if not self.is_fitted:
             self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
                                    self.tokenizer(x)]
 
         pad_item = self.vocabulary["."]
 
-        _text = batch
+        _text = datum
         if isinstance(_text, tuple) or isinstance(_text, list):
             _text = _text[0]
         processed_text = torch.tensor(text_pipeline(_text),
@@ -203,10 +201,10 @@ class PreprocessTextLabel(AbstractPreprocessing):
     def fit_to_data(self, dataset):
         pass
 
-    def transform(self, batch: torch.Tensor) -> torch.Tensor:
+    def transform(self, datum: torch.Tensor) -> torch.Tensor:
         label_pipeline = lambda x: torch.tensor(x, dtype=torch.long) - 1
 
-        _label = batch
+        _label = datum
         try:
             label_pipeline(_label).to(DEVICE)
         except TypeError:
@@ -217,362 +215,180 @@ class PreprocessTextLabel(AbstractPreprocessing):
         return out
 
 
-class PreprocessText:
-    """Class to preprocess text dataloaders
-
-    Args:
-        dataloaders (string):
-            train and test dataloaders. Labels are
-            expected to be tensors
-        tokenizer (torch Tokenizer):
-            the tokenizer of the source text
-        kwargs (dict):
-            keyword arguments for the ``Vocab``
-    """
-
-    def __init__(self, dataloaders,
-                 tokenizer=None, vocabulary=None,
-                 **kwargs):
-        self.dataloaders = (list(dataloaders[0]), list(dataloaders[1]))
-        if tokenizer is None:
-            self.tokenizer = get_tokenizer('basic_english')
-        else:
-            self.tokenizer = tokenizer
-        counter = Counter()  # for the text
-        for (label, text) in self.dataloaders[0]:
-            if isinstance(text, tuple) or isinstance(text, list):
-                text = text[0]
-            counter.update(self.tokenizer(text))
-        # self.vocabulary = Vocab(counter, min_freq=1)
-        if vocabulary is None:
-            self.vocabulary = Vocab(counter, **kwargs)
-        else:
-            self.vocabulary = vocabulary
-
-    def _loop_over_dataloader(self, dl):
-        """helper function for the creation of dataset"""
-
-        label_pipeline = lambda x: int(x) - 1
-        text_pipeline = lambda x: [self.vocabulary[token] for token in
-                                   self.tokenizer(x)]
-
-        label_list, text_list = [], []
-        MAX_LENGTH = 0
-        pad_item = self.vocabulary["."]
-
-        for (_label, _text) in dl:
-            try:
-                label_list.append(label_pipeline(_label.to(DEVICE)))
-            except TypeError:
-                if isinstance(_label, tuple) or isinstance(_label, list):
-                    _label = _label[0]
-                label_list.append(label_pipeline(_label.to(DEVICE)))
-
-            if isinstance(_text, tuple) or isinstance(_text, list):
-                _text = _text[0]
-            processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64).to(DEVICE)
-            MAX_LENGTH = max(MAX_LENGTH, processed_text.shape[0])
-            text_list.append(processed_text)
-        # convert to tensors
-        label_list = torch.tensor(label_list).to(DEVICE)
-        text_list = torch.stack([torch.cat([item,
-                                            pad_item *
-                                            torch.ones(MAX_LENGTH -
-                                                       item.shape[0]
-                                                       ).to(DEVICE)])
-                                 for item in text_list]).to(DEVICE)
-        return text_list, label_list
-
-    def _build_dataset(self):
-        """private method to prepare the datasets"""
-
-        text_list, label_list = self._loop_over_dataloader(self.dataloaders[0])
-        self.training_data = TextDataset(text_list, label_list)
-        text_list, label_list = self._loop_over_dataloader(self.dataloaders[1])
-        self.test_data = TextDataset(text_list, label_list)
-
-    def build_dataloaders(self, **kwargs) -> tuple:
-        """This method return the dataloaders of the tokenised
-        sentences, each converted to a list of integers via the
-        vocabulary. Hence, data can thus be treated as point data.
-
-        Args:
-            kwargs (dict):
-                keyword arguments to add to the DataLoaders
-        Returns:
-            (tuple):
-                training_dataloader, test_dataloader
-        """
-        self._build_dataset()
-        train_dataloader = DataLoader(self.training_data,
-                                      **kwargs)
-        test_dataloader = DataLoader(self.test_data,
-                                     **kwargs)
-        return train_dataloader, test_dataloader
-
-    def collate_fn(self, batch):
-        label_list, text_list, offsets = [], [], [0]
-        label_pipeline = lambda x: int(x) - 1
-        text_pipeline = lambda x: [self.vocabulary[token] for token in
-                                   self.tokenizer(x)]
-        for (_label, _text) in batch:
-            label_list.append(label_pipeline(_label))
-            processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64).to(DEVICE)
-            text_list.append(processed_text)
-            offsets.append(processed_text.size(0))
-        label_list = torch.tensor(label_list, dtype=torch.int64).to(DEVICE)
-        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0).to(DEVICE)
-        text_list = torch.cat(text_list).to(DEVICE)
-        return text_list, label_list, offsets
-
-
-
-
-
-
-
-
-
-
-
-class PreprocessTextTranslation(PreprocessText):
+class PreprocessTextTranslation(AbstractPreprocessing):
     """Class to preprocess text dataloaders for translation
     tasks
 
         Args:
-            name (string):
-                check the available datasets at
-                https://pytorch.org/vision/stable/datasets.html
-            n_pts (int):
-                number of points in customly generated
-                point clouds
+            vocabulary (torch Vocabulary):
+                the vocubulary; it can be built of it can be
+                given.
             tokenizer (torch Tokenizer):
                 the tokenizer of the source text
             tokenizer_lab (torch Tokenizer):
                 the tokenizer of the target text
         """
 
-    def __init__(self, dataloaders,
+    def __init__(self, vocabulary=None,
+                 vocabulary_target=None,
                  tokenizer=None,
-                 tokenizer_lab=None):
-        self.dataloaders = (list(dataloaders[0]), list(dataloaders[1]))
+                 tokenizer_target=None):
+
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
             self.tokenizer = tokenizer
-        if tokenizer_lab is None:
-            self.tokenizer_lab = get_tokenizer('basic_english')
+        if tokenizer_target is None:
+            self.tokenizer_target = get_tokenizer('basic_english')
         else:
-            self.tokenizer_lab = tokenizer_lab
+            self.tokenizer_target = tokenizer_target
+        self.vocabulary = vocabulary
+        self.vocabulary_target = vocabulary_target
+        self.MAX_LENGTH = 0
+        self.is_fitted = False
+
+    def fit_to_data(self, data):
         counter = Counter()  # for the text
-        counter_lab = Counter()  # for the labels
-        for (label, text) in self.dataloaders[0]:
-            if isinstance(text, tuple) or isinstance(text, list):
-                text = text[0]
-            counter.update(self.tokenizer(text))
-            if isinstance(label, tuple) or isinstance(label, list):
-                label = label[0]
-            counter_lab.update(self.tokenizer_lab(label))
+        counter_target = Counter()  # for the text
+        for text in data:
+            counter.update(self.tokenizer(text[0]))
+            counter_target.update(self.tokenizer_target(text[1]))
+            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(text[0])))
+            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer_target(text[1])))
         # self.vocabulary = Vocab(counter, min_freq=1)
-        self.vocabulary = Vocab(counter)
-        self.vocabulary_lab = Vocab(counter_lab)
+        if self.vocabulary is None:
+            self.vocabulary = Vocab(counter)
+        if self.vocabulary_target is None:
+            self.vocabulary_target = Vocab(counter_target)
+        self.is_fitted = True
+        self.save_pretrained(".")
 
-    def _loop_over_dataloader(self, dl):
-        """helper function for the creation of dataset"""
+    def transform(self, datum):
+        """This method is applied to each batch and
+                transforms it following the rule below
 
-        label_pipeline = lambda x: int(x) - 1
+                Args:
+                    datum (torch.tensor):
+                        a single datum
+                """
+        if not self.is_fitted:
+            self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
                                    self.tokenizer(x)]
-        label_pipeline_str = lambda x: [self.vocabulary_lab[token] for token in
-                                        self.tokenizer_lab(x)]
+        text_pipeline_target = lambda x: [self.vocabulary_target[token] for token in
+                                   self.tokenizer_target(x)]
 
-        label_list, text_list = [], []
-        MAX_LENGTH = 0
         pad_item = self.vocabulary["."]
-        pad_item_lab = self.vocabulary_lab["."]
+        pad_item_target = self.vocabulary_target["."]
 
-        for (_label, _text) in dl:
-            try:
-                label_list.append(label_pipeline(_label))
-            except TypeError:
-                if isinstance(_label, tuple) or isinstance(_label, list):
-                    _label = _label[0]
-                processed_label = torch.tensor(label_pipeline_str(_label),
-                                               dtype=torch.int64).to(DEVICE)
-                MAX_LENGTH = max(MAX_LENGTH, processed_label.shape[0])
-                label_list.append(processed_label)
-            if isinstance(_text, tuple) or isinstance(_text, list):
-                _text = _text[0]
-            processed_text = torch.tensor(text_pipeline(_text),
-                                          dtype=torch.int64).to(DEVICE)
-            MAX_LENGTH = max(MAX_LENGTH, processed_text.shape[0])
-            text_list.append(processed_text)
-            # offset_list.append(processed_text.size(0))
-        try:
-            label_list = torch.tensor(label_list).to(DEVICE)
-        except (TypeError, ValueError):
-            label_list = torch.stack([torch.cat([item,
-                                                 pad_item_lab *
-                                                 torch.ones(MAX_LENGTH -
-                                                            item.shape[0]
-                                                            ).to(DEVICE)])
-                                      for item in label_list]).to(DEVICE)
-        text_list = torch.stack([torch.cat([item,
-                                            pad_item *
-                                            torch.ones(MAX_LENGTH -
-                                                       item.shape[0]
-                                                       ).to(DEVICE)])
-                                 for item in text_list]).to(DEVICE)
-        return text_list, label_list
-
-    def build_dataloaders(self, **kwargs) -> tuple:
-        """This method return the dataloaders of the tokenised
-        sentences, each converted to a list of integers via the
-        vocabulary. Hence, data can thus be treated as point data.
-
-        Args:
-            kwargs (dict):
-                keyword arguments to add to the DataLoaders
-        Returns:
-            (tuple):
-                training_dataloader, test_dataloader
-        """
-        text_list, label_list = self._loop_over_dataloader(self.dataloaders[0])
-        self.training_data = TextDataset(torch.stack((text_list, label_list), dim=1), label_list)
-        text_list, label_list = self._loop_over_dataloader(self.dataloaders[1])
-        self.test_data = TextDataset(torch.stack((text_list, label_list), dim=1), label_list)
-
-        train_dataloader = DataLoader(self.training_data,
-                                      **kwargs)
-        test_dataloader = DataLoader(self.test_data,
-                                     **kwargs)
-        return train_dataloader, test_dataloader
+        processed_text = torch.tensor(text_pipeline(datum[0]),
+                                      dtype=torch.int64).to(DEVICE)
+        processed_text_target = torch.tensor(text_pipeline(datum[1]),
+                                      dtype=torch.int64).to(DEVICE)
+        # convert to tensors (padded)
+        out = torch.cat([processed_text,
+                         pad_item * torch.ones(self.MAX_LENGTH - processed_text.shape[0]
+                                               ).to(DEVICE)])
+        out_target = torch.cat([processed_text_target,
+                         pad_item_target * torch.ones(self.MAX_LENGTH - processed_text_target.shape[0]
+                                               ).to(DEVICE)])
+        return out, out_target
 
 
-class PreprocessTextQA(PreprocessText):
+class PreprocessTextQA(AbstractPreprocessing):
     """Class to preprocess text dataloaders for Q&A
     tasks
 
         Args:
-            dataloaders (list):
-                list of dataloaders, e.g. (train, test).
+            vocabulary (torch Vocab):
+                the torch vocabulary
             tokenizer (torch Tokenizer):
                 the tokenizer of the source text
 
     """
 
-    def __init__(self, dataloaders,
+    def __init__(self, vocabulary=None,
                  tokenizer=None):
-        self.dataloaders = (list(dataloaders[0]), list(dataloaders[1]))
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
             self.tokenizer = tokenizer
+        self.vocabulary = vocabulary
+        self.MAX_LENGTH = 0
+        self.is_fitted = False
+
+    def fit_to_data(self, data):
+
         counter = Counter()  # for the text
-        for (context, question, answer, init_position) in self.dataloaders[0]:
+        for (context, question, answer, init_position) in data:
             if isinstance(context, tuple) or isinstance(context, list):
                 context = context[0]
             counter.update(self.tokenizer(context))
+            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(context)))
             if isinstance(question, tuple) or isinstance(question, list):
                 question = question[0]
             counter.update(self.tokenizer(question))
-            if isinstance(answer, tuple) or isinstance(answer, list):
-                answer = answer[0]
-                if isinstance(answer, tuple) or isinstance(answer, list):
-                    answer = answer[0]
-            counter.update(self.tokenizer(answer))
-        # self.vocabulary = Vocab(counter, min_freq=1)
-        self.vocabulary = Vocab(counter)
+            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(question)))
+            #if isinstance(answer, tuple) or isinstance(answer, list):
+            #    answer = answer[0]
+            #    if isinstance(answer, tuple) or isinstance(answer, list):
+            #        answer = answer[0]
+            #counter.update(self.tokenizer(answer))
+            #self.MAX_LENGTH_ANSWER = max(self.MAX_LENGTH_ANSWER, len(self.tokenizer(answer)))
+        if self.vocabulary is None:
+            self.vocabulary = Vocab(counter)
+        self.pad_item = self.vocabulary["."]
+        self.is_fitted = False
+        self.save_pretrained(".")
 
-    def _add_to_list(self, _answer, text_pipeline, MAX_LENGTH, answer_list):
-        """Adding an item to the list and making sure the item
-        is in the right format"""
-        if isinstance(_answer, tuple) or isinstance(_answer, list):
-            _answer = _answer[0]
-            if isinstance(_answer, tuple) or isinstance(_answer, list):
-                _answer = _answer[0]
-        processed_answer = torch.tensor(text_pipeline(_answer),
-                                        dtype=torch.int64).to(DEVICE)
-        MAX_LENGTH = max(MAX_LENGTH, processed_answer.shape[0])
-        answer_list.append(processed_answer)
-        return MAX_LENGTH
-
-    def _convert_list_to_tensor(self, answer_list, MAX_LENGTH, pad_item):
-        """convert to tensor a list by padding"""
-        try:
-            answer_tensor = torch.tensor(answer_list).to(DEVICE)
-        except (TypeError, ValueError):
-            answer_tensor = torch.stack([torch.cat([item,
-                                                    pad_item *
-                                                    torch.ones(MAX_LENGTH -
-                                                               item.shape[0]
-                                                               ).to(DEVICE)])
-                                         for item in answer_list]).to(DEVICE)
-        return answer_tensor
-
-    def _convert_to_token_index(self, _pos, _context):
-        """This private method converts the chartacter index to the token index"""
-        if isinstance(_context, tuple) or isinstance(_context, list):
-            _context = _context[0]
-
-        if isinstance(_pos, tuple) or isinstance(_pos, list):
-            _pos = _pos[0]
-        return len(self.tokenizer(_context[:_pos]))
-
-    def _loop_over_dataloader(self, dl):
-        """helper function for the creation of dataset"""
-
+    def transform(self, datum):
+        if not self.is_fitted:
+            self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
                                    self.tokenizer(x)]
 
-        question_list, context_list, pos_init_list, pos_end_list = [], [], [], []
-        max_length_0, max_length_1, max_length_2 = 0, 0, 1
-        self.pad_item = self.vocabulary["."]
-        for (_context, _question, _answer, _pos) in dl:
-            max_length_0 = self._add_to_list(_context, text_pipeline, max_length_0, context_list)
-            max_length_1 = self._add_to_list(_question, text_pipeline, max_length_1, question_list)
-            pos_init_list.append(self._convert_to_token_index(_pos, _context))
-            pos_end_list.append(self._convert_to_token_index(_pos[0] + len(_answer[0][0]), _context))
+        processed_context = torch.tensor(text_pipeline(datum[0]),
+                                      dtype=torch.int64).to(DEVICE)
+        out_context = torch.cat([processed_context,
+                         self.pad_item * torch.ones(self.MAX_LENGTH - processed_context.shape[0]
+                                               ).to(DEVICE)])
+        processed_question = torch.tensor(text_pipeline(datum[1]),
+                                         dtype=torch.int64).to(DEVICE)
 
-        context_list = self._convert_list_to_tensor(context_list, max_length_0, self.pad_item)
-        question_list = self._convert_list_to_tensor(question_list, max_length_1, self.pad_item)
-        pos_init_list = self._convert_list_to_tensor(pos_init_list, max_length_2, self.pad_item)
-        pos_end_list = self._convert_list_to_tensor(pos_end_list, max_length_2, self.pad_item)
+        out_question = torch.cat([processed_question,
+                         self.pad_item * torch.ones(self.MAX_LENGTH - processed_question.shape[0]
+                                               ).to(DEVICE)])
 
-        return question_list, context_list, pos_init_list, pos_end_list
+        return out_context, out_question
 
-    def build_dataloaders(self, **kwargs) -> tuple:
-        """This method return the dataloaders of the tokenised
-        sentences, each converted to a list of integers via the
-        vocabulary. Hence, data can thus be treated as point data.
+
+class PreprocessTextQATarget(AbstractPreprocessing):
+    """Class to preprocess text dataloaders for Q&A
+    tasks
 
         Args:
-            kwargs (dict):
-                keyword arguments to add to the DataLoaders
-        Returns:
-            (tuple):
-                training_dataloader, test_dataloader
-        """
-        MAX_LENGTH = 0
-        padding_fn = lambda x: pad(x, (0, MAX_LENGTH - x.shape[1]), 'constant', self.pad_item)
-        question_list, context_list, pos_init_list, pos_end_list = self._loop_over_dataloader(self.dataloaders[0])
-        MAX_LENGTH = max((context_list.shape[1], question_list.shape[1]))
+            vocabulary (torch Vocab):
+                the torch vocabulary
+            tokenizer (torch Tokenizer):
+                the tokenizer of the source text
 
-        datum = torch.stack(list(map(padding_fn, (context_list, question_list))), dim=2)
-        label = torch.stack((pos_init_list, pos_end_list), dim=1)
-        self.training_data = TextDatasetQA(datum, label)
-        question_list, context_list, pos_init_list, pos_end_list = self._loop_over_dataloader(self.dataloaders[1])
-        MAX_LENGTH = max((context_list.shape[1], question_list.shape[1]))
+    """
 
-        datum = torch.stack(list(map(padding_fn, (context_list, question_list))), dim=2)
-        label = torch.stack((pos_init_list, pos_end_list), dim=1)
-        # print(datum.shape)  # expected to be (n_samples, MAX_LENGHT, 3)
-        self.test_data = TextDatasetQA(datum, label)
+    def __init__(self, tokenizer=None):
+        if tokenizer is None:
+            self.tokenizer = get_tokenizer('basic_english')
+        else:
+            self.tokenizer = tokenizer
+        self.MAX_LENGTH = 0
+        self.is_fitted = False
 
-        train_dataloader = DataLoader(self.training_data,
-                                      **kwargs)
-        test_dataloader = DataLoader(self.test_data,
-                                     **kwargs)
-        return train_dataloader, test_dataloader
+    def fit_to_data(self, data):
+        pass
+
+    def transform(self, datum):
+
+        pos_init_char = datum[3][0]
+        pos_init = len(self.tokenizer(datum[0][:pos_init_char]))
+        pos_end = pos_init + len(self.tokenizer(datum[2][0]))
+
+        return torch.tensor(pos_init, dtype=torch.long), torch.tensor(pos_end, dtype=torch.long)

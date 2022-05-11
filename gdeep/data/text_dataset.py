@@ -25,19 +25,15 @@ class TextDataset(Dataset):
 
     def __init__(self, dataset,
                  transform=None,  # Optional[...]
-                 target_transform=None,
-                 pos_transform=None):
+                 target_transform=None):
         self.dataset = dataset
         self.transform = transform
         self.target_transform = target_transform
-        self.pos_transform = pos_transform
         # initialise the preprocessing
         if self.transform:
             self.transform.fit_to_data(self.dataset)
         if self.target_transform:
             self.target_transform.fit_to_data(self.dataset)
-        if self.pos_transform:
-            self.pos_transform.fit_to_data(self.dataset)
 
     def __len__(self):
         return len(self.dataset)
@@ -71,14 +67,23 @@ class TextDatasetTranslation(TextDataset):
             act on the single images
         target_transform (Callable):
             act on the single label
+
+    Returns:
+        tensor, tensor:
+            the first tensor has three dimensions, ``(BS, 2, MAX_LENGTH)``;
+            this tensor represents the stacking of both the tokenisation
+            of the source and target sentence.
     """
 
     def __getitem__(self, idx):
-        text0 = self.dataset[idx]
+        text = self.dataset[idx]
         if self.transform:
-            text = self.transform.transform(text[0]), self.transform(text[1])
-        sample = [(text[0].to(torch.long), text[1].to(torch.long)), label.to(torch.long)]
-        return sample
+            text = self.transform.transform(text)
+        # unique tensor containing both tensors of the target and source
+        sample = torch.stack([text[0].to(torch.long), text[1].to(torch.long)])
+        y = text[1].to(torch.long).clone().detach()
+
+        return (sample, y)
 
 
 class TextDatasetQA(TextDataset):
@@ -97,16 +102,13 @@ class TextDatasetQA(TextDataset):
     """
 
     def __getitem__(self, idx):
-        context, question = self.data[idx][:,0], self.data[idx][:,1]
-        pos_init, pos_end = self.targets[idx][0], self.targets[idx][1]
+
         if self.transform:
-            context = self.transform.batch_transform(context)
-            question = self.transform.batch_transform(question)
-        if self.pos_transform:
-            pos_init = self.pos_transform.batch_transform(pos_init)
-            pos_end = self.pos_transform.batch_transform(pos_end)
+            context, question = self.transform.transform(self.dataset[idx])
+        if self.target_transform:
+            pos_init, pos_end = self.target_transform.transform(self.dataset[idx])
         #sample = [(context.to(torch.long), question.to(torch.long)), (pos, answer.to(torch.long))]
-        sample = [torch.stack((context,question)).to(torch.long),
-                  torch.stack((pos_init,pos_end)).to(torch.long)]
+        sample = [torch.stack((context, question)).to(torch.long),
+                  torch.stack((pos_init, pos_end)).to(torch.long)]
         return sample
 
