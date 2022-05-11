@@ -5,11 +5,15 @@ from .dataset_cloud import DatasetCloud
 from ._data_cloud import _DataCloud
 from .torch_datasets import TorchDataLoader, \
     DataLoaderFromImages, DataLoaderFromArray, DlBuilderFromDataCloud
-from .preprocessing import PreprocessText, TextDataset, \
-    PreprocessTextTranslation, TextDatasetTranslation, \
-    PreprocessTextQA
+from .text_dataset import TextDataset, TextDatasetQA, \
+    TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
+from .preprocessing_pipes import AbstractPreprocessing, Normalisation, \
+    PreprocessTextTranslation, PreprocessTextData, PreprocessingPipeline, \
+    PreprocessTextQA, PreprocessText, PreprocessTextLabel
+
+
 
 
 __all__ = [
@@ -19,7 +23,12 @@ __all__ = [
     'GenericDataset',
     'PreprocessText',
     'TextDataset',
+    'PreprocessingPipeline',
     'PreprocessTextQA',
+    'TextDatasetTranslation',
+    'PreprocessTextLabel',
+    'PreprocessTextData',
+    'TextDatasetQA',
     'TorchDataLoader',
     'generate_orbit_parallel',
     'create_pd_orbits',

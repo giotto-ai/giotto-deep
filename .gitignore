@@ -20,6 +20,7 @@ examples/*.nbconvert.ipynb
 examples/runs/*
 examples/data/*
 examples/.*
+examples/*.json
 
 # Html files
 examples/*.html

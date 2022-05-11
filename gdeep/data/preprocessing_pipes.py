@@ -1,9 +1,18 @@
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
+from abc import ABC, abstractmethod
 from torchtext.data.utils import get_tokenizer
 from torch.nn.functional import pad
 from collections import Counter
 from torchtext.vocab import Vocab
+#from transformers.feature_extraction_sequence_utils import \
+#     FeatureExtractionMixin
+import warnings
+import os
+import json
+import jsonpickle
+
+Tensor = torch.Tensor
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -11,104 +20,201 @@ else:
     DEVICE = torch.device("cpu")
 
 
-class TextDataset(Dataset):
-    """This class is the base class for the text-datasets
+class AbstractPreprocessing(ABC):
+    """The abstract class to define the interface of preprocessing
+    """
+    @abstractmethod
+    def transform(self, *args, **kwargs):
+        """This method deals with datum-wise transformations. This
+        method is called in the Datasets to transform the output
+        of ``__getitem__``"""
+        pass
+
+    @abstractmethod
+    def fit_to_data(self, *args, **kwargs):
+        """This method deals with getting dataset-level information.
+        """
+        pass
+
+    def save_pretrained(self, path):
+        with open(os.path.join(path, self.__class__.__name__ + ".json"), "w") as outfile:
+            whole_class = jsonpickle.encode(self)
+            json.dump(whole_class, outfile)
+
+    def load_pretrained(self, path):
+        try:
+            with open(os.path.join(path,self.__class__.__name__ + ".json"), "r") as infile:
+                whole_class = json.load(infile)
+                self = jsonpickle.decode(whole_class)
+        except FileNotFoundError:
+            warnings.warn("The transformation file does not exist; attempting to run"
+                          " the transformation anyway...")
+
+class Normalisation(AbstractPreprocessing):
+    """This class runs the standard normalisation on all the dimensions of
+    the input tensor. For example, in case of images where each item is of
+    shape ``(BS, C, H, W)``, the average will and the standard deviations
+    will be tensors of shape ``(C, H, W)``
+    """
+    is_fitted: bool
+    mean: Tensor
+
+    def __init__(self):
+        self.is_fitted = False
+
+    def fit_to_data(self, data: Tensor):
+        self.mean = self._mean(data, 0, False)
+        self.stddev = self._stddev(data, 0, False)
+        self.is_fitted = True
+        self.save_pretrained(".")
+
+    def transform(self, batch: Tensor) -> Tensor:
+        if not self.is_fitted:
+            self.load_pretrained(".")
+        if not all(self.stddev>0):
+            warnings.warn("The standard deviation contains zeros! Adding 1e-7")
+            self.stddev = self.stddev + 1e-7
+        out = torch.stack([(batch[i] - self.mean)/(self.stddev) for i in range(batch.shape[0])])
+        return out
+
+    def _mean(self, data, dim, keep_dim):
+        if isinstance(data, torch.utils.data.Dataset):
+            data=next(iter(DataLoader(data, batch_size=len(data))))[0]
+        return torch.mean(data.float(), dim, keep_dim)
+
+    def _stddev(self, data, dim, keep_dim):
+        if isinstance(data, torch.utils.data.Dataset):
+            data=next(iter(DataLoader(data, batch_size=len(data))))[0]
+        return torch.std(data.float(), dim, keep_dim)
+
+
+class PreprocessingPipeline(AbstractPreprocessing):
+    """class to compose preprocessing classes
 
     Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        targets (list):
-            list of labels
-        transform (Callable):
-            act on the single images
-        target_transform (Callable):
-            act on the single label
+        list_of_cls (list):
+            list of class instances
     """
+    def __init__(self, list_of_preproc_and_datatypes):
+        self.list_of_cls = list_of_preproc_and_datatypes
+        
+    def fit_to_data(self, data, **kwargs):
+        for (preproc_cls, data_type_class) in self.list_of_cls:
+            preproc_cls.fit_to_data(data, **kwargs)
+            data = data_type_class(data, preproc_cls, **kwargs)
 
-    def __init__(self, data, targets,
-                 transform=None,
-                 target_transform=None,
-                 pos_transform=None):
-        self.targets = targets
-        self.data = data
-        self.transform = transform
-        self.target_transform = target_transform
-        self.pos_transform = pos_transform
+    def transform(self, batch):
+        for (cls, dt) in self.list_of_cls:
+            batch = cls.transform(batch)
+        return batch
 
-    def __len__(self):
-        return len(self.targets)
+    def __len__(self) -> int:
+        return len(self.list_of_cls)
 
-    def __getitem__(self, idx):
-        text = self.data[idx]
-        label = self.targets[idx]
-        if self.transform:
-            text = self.transform(text)
-        if self.target_transform:
-            label = self.target_transform(label)
-        sample = [text.to(torch.long), label.to(torch.long)]
-        return sample
+    def __getitem__(self, index: int):
+        return self.list_of_cls[index]
 
-class TextDatasetTranslation(TextDataset):
-    """This class is the base class for the text-datasets
+    def __iter__(self):
+        return iter(self.list_of_cls)
+
+    def __repr__(self) -> str:
+        return f'Pipeline({self.list_of_cls})'
+
+    def __add__(self, other):
+        return PreprocessingPipeline(self.list_of_cls + other.list_of_cls)
+
+
+class PreprocessTextData(AbstractPreprocessing):
+    """Preprocessing class. This class is useful to convert the data format
+    ``(label, text)`` into the proper tensor format ``( word_embedding, label)``
 
     Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        targets (list):
-            list of labels
-        transform (Callable):
-            act on the single images
-        target_transform (Callable):
-            act on the single label
+        tokenizer (torch Tokenizer):
+            the tokenizer of the source text
+        vocabulary (torch Vocabulary):
+            the vocubulary; it can be built of it can be
+            given.
+        kwargs (dict):
+            keyword arguments for the ``Vocab``
     """
+    def __init__(self, tokenizer=None,
+                 vocabulary=None):
+        if tokenizer is None:
+            self.tokenizer = get_tokenizer('basic_english')
+        else:
+            self.tokenizer = tokenizer
 
-    def __init__(self, *args, **kwargs):
-        super(TextDatasetTranslation, self).__init__(*args, **kwargs)
+        self.vocabulary = vocabulary
+        self.MAX_LENGTH = 0
+        self.check_calibration = False
 
-    def __getitem__(self, idx):
-        text = self.data[idx]
-        label = self.targets[idx]
-        if self.transform:
-            text = self.transform(text[0]), self.transform(text[1])
-        if self.target_transform:
-            label = self.target_transform(label)
-        sample = [(text[0].to(torch.long), text[1].to(torch.long)), label.to(torch.long)]
-        return sample
+    def fit_to_data(self, data):
+        """Method to extract global data, like to length of
+        the sentences to be able to pad.
+
+        Args:
+            data (torch dataset):
+                the data in the format ``(label, text)``
+        """
+
+        counter = Counter()  # for the text
+        for (label, text) in data:
+            if isinstance(text, tuple) or isinstance(text, list):
+                text = text[0]
+            counter.update(self.tokenizer(text))
+            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(text)))
+        # self.vocabulary = Vocab(counter, min_freq=1)
+        if self.vocabulary is None:
+            self.vocabulary = Vocab(counter)
+        self.check_calibration = True
+        self.save_pretrained(".")
+
+    def transform(self, batch: torch.Tensor) -> list:
+        """This method is applied to each batch and
+        transforms it following the rule below
+
+        Args:
+            batch (torch.tensor):
+                a minibatch
+        """
+        if not self.check_calibration:
+            self.load_pretrained(".")
+        text_pipeline = lambda x: [self.vocabulary[token] for token in
+                                   self.tokenizer(x)]
+
+        pad_item = self.vocabulary["."]
+
+        _text = batch
+        if isinstance(_text, tuple) or isinstance(_text, list):
+            _text = _text[0]
+        processed_text = torch.tensor(text_pipeline(_text),
+                                      dtype=torch.int64).to(DEVICE)
+        # convert to tensors (padded)
+        out = torch.cat([processed_text,
+                   pad_item * torch.ones(self.MAX_LENGTH - processed_text.shape[0]
+                                              ).to(DEVICE)])
+        return out
 
 
-class TextDatasetQA(TextDataset):
-    """This class is the base class for the text-datasets
+class PreprocessTextLabel(AbstractPreprocessing):
+    def __init__(self, tokenizer=None, **kwargs):
+        pass
 
-    Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        targets (list):
-            list of labels
-        transform (Callable):
-            act on the context and question
-        target_transform (Callable):
-            act on the single label
-    """
+    def fit_to_data(self, dataset):
+        pass
 
-    def __init__(self, *args, **kwargs):
-        super(TextDatasetQA, self).__init__(*args, **kwargs)
+    def transform(self, batch: torch.Tensor) -> torch.Tensor:
+        label_pipeline = lambda x: torch.tensor(x, dtype=torch.long) - 1
 
-    def __getitem__(self, idx):
-        context, question = self.data[idx][:,0], self.data[idx][:,1]
-        pos_init, pos_end = self.targets[idx][0], self.targets[idx][1]
-        if self.transform:
-            context = self.transform(context)
-            question = self.transform(question)
-        if self.pos_transform:
-            pos_init = self.pos_transform(pos_init)
-            pos_end = self.pos_transform(pos_end)
-        #sample = [(context.to(torch.long), question.to(torch.long)), (pos, answer.to(torch.long))]
-        sample = [torch.stack((context,question)).to(torch.long),
-                  torch.stack((pos_init,pos_end)).to(torch.long)]
-        return sample
+        _label = batch
+        try:
+            label_pipeline(_label).to(DEVICE)
+        except TypeError:
+            if isinstance(_label, tuple) or isinstance(_label, list):
+                _label = _label[0]
+        out = label_pipeline(_label).to(DEVICE)
+
+        return out
 
 
 class PreprocessText:
@@ -123,8 +229,10 @@ class PreprocessText:
         kwargs (dict):
             keyword arguments for the ``Vocab``
     """
+
     def __init__(self, dataloaders,
-                 tokenizer=None, **kwargs):
+                 tokenizer=None, vocabulary=None,
+                 **kwargs):
         self.dataloaders = (list(dataloaders[0]), list(dataloaders[1]))
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
@@ -136,8 +244,10 @@ class PreprocessText:
                 text = text[0]
             counter.update(self.tokenizer(text))
         # self.vocabulary = Vocab(counter, min_freq=1)
-        self.vocabulary = Vocab(counter, **kwargs)
-
+        if vocabulary is None:
+            self.vocabulary = Vocab(counter, **kwargs)
+        else:
+            self.vocabulary = vocabulary
 
     def _loop_over_dataloader(self, dl):
         """helper function for the creation of dataset"""
@@ -170,7 +280,7 @@ class PreprocessText:
                                             pad_item *
                                             torch.ones(MAX_LENGTH -
                                                        item.shape[0]
-                                            ).to(DEVICE)])
+                                                       ).to(DEVICE)])
                                  for item in text_list]).to(DEVICE)
         return text_list, label_list
 
@@ -181,7 +291,7 @@ class PreprocessText:
         self.training_data = TextDataset(text_list, label_list)
         text_list, label_list = self._loop_over_dataloader(self.dataloaders[1])
         self.test_data = TextDataset(text_list, label_list)
-        
+
     def build_dataloaders(self, **kwargs) -> tuple:
         """This method return the dataloaders of the tokenised
         sentences, each converted to a list of integers via the
@@ -217,6 +327,16 @@ class PreprocessText:
         text_list = torch.cat(text_list).to(DEVICE)
         return text_list, label_list, offsets
 
+
+
+
+
+
+
+
+
+
+
 class PreprocessTextTranslation(PreprocessText):
     """Class to preprocess text dataloaders for translation
     tasks
@@ -233,6 +353,7 @@ class PreprocessTextTranslation(PreprocessText):
             tokenizer_lab (torch Tokenizer):
                 the tokenizer of the target text
         """
+
     def __init__(self, dataloaders,
                  tokenizer=None,
                  tokenizer_lab=None):
@@ -265,7 +386,7 @@ class PreprocessTextTranslation(PreprocessText):
         text_pipeline = lambda x: [self.vocabulary[token] for token in
                                    self.tokenizer(x)]
         label_pipeline_str = lambda x: [self.vocabulary_lab[token] for token in
-                                   self.tokenizer_lab(x)]
+                                        self.tokenizer_lab(x)]
 
         label_list, text_list = [], []
         MAX_LENGTH = 0
@@ -279,7 +400,7 @@ class PreprocessTextTranslation(PreprocessText):
                 if isinstance(_label, tuple) or isinstance(_label, list):
                     _label = _label[0]
                 processed_label = torch.tensor(label_pipeline_str(_label),
-                                              dtype=torch.int64).to(DEVICE)
+                                               dtype=torch.int64).to(DEVICE)
                 MAX_LENGTH = max(MAX_LENGTH, processed_label.shape[0])
                 label_list.append(processed_label)
             if isinstance(_text, tuple) or isinstance(_text, list):
@@ -293,16 +414,16 @@ class PreprocessTextTranslation(PreprocessText):
             label_list = torch.tensor(label_list).to(DEVICE)
         except (TypeError, ValueError):
             label_list = torch.stack([torch.cat([item,
-                                                pad_item_lab *
-                                                torch.ones(MAX_LENGTH -
-                                                           item.shape[0]
-                                                           ).to(DEVICE)])
-                                     for item in label_list]).to(DEVICE)
+                                                 pad_item_lab *
+                                                 torch.ones(MAX_LENGTH -
+                                                            item.shape[0]
+                                                            ).to(DEVICE)])
+                                      for item in label_list]).to(DEVICE)
         text_list = torch.stack([torch.cat([item,
                                             pad_item *
                                             torch.ones(MAX_LENGTH -
                                                        item.shape[0]
-                                            ).to(DEVICE)])
+                                                       ).to(DEVICE)])
                                  for item in text_list]).to(DEVICE)
         return text_list, label_list
 
@@ -341,6 +462,7 @@ class PreprocessTextQA(PreprocessText):
                 the tokenizer of the source text
 
     """
+
     def __init__(self, dataloaders,
                  tokenizer=None):
         self.dataloaders = (list(dataloaders[0]), list(dataloaders[1]))
@@ -383,11 +505,11 @@ class PreprocessTextQA(PreprocessText):
             answer_tensor = torch.tensor(answer_list).to(DEVICE)
         except (TypeError, ValueError):
             answer_tensor = torch.stack([torch.cat([item,
-                                                 pad_item *
-                                                 torch.ones(MAX_LENGTH -
-                                                            item.shape[0]
-                                                            ).to(DEVICE)])
-                                      for item in answer_list]).to(DEVICE)
+                                                    pad_item *
+                                                    torch.ones(MAX_LENGTH -
+                                                               item.shape[0]
+                                                               ).to(DEVICE)])
+                                         for item in answer_list]).to(DEVICE)
         return answer_tensor
 
     def _convert_to_token_index(self, _pos, _context):
@@ -411,8 +533,8 @@ class PreprocessTextQA(PreprocessText):
         for (_context, _question, _answer, _pos) in dl:
             max_length_0 = self._add_to_list(_context, text_pipeline, max_length_0, context_list)
             max_length_1 = self._add_to_list(_question, text_pipeline, max_length_1, question_list)
-            pos_init_list.append(self._convert_to_token_index(_pos,_context))
-            pos_end_list.append(self._convert_to_token_index(_pos[0]+len(_answer[0][0]), _context))
+            pos_init_list.append(self._convert_to_token_index(_pos, _context))
+            pos_end_list.append(self._convert_to_token_index(_pos[0] + len(_answer[0][0]), _context))
 
         context_list = self._convert_list_to_tensor(context_list, max_length_0, self.pad_item)
         question_list = self._convert_list_to_tensor(question_list, max_length_1, self.pad_item)
@@ -434,11 +556,11 @@ class PreprocessTextQA(PreprocessText):
                 training_dataloader, test_dataloader
         """
         MAX_LENGTH = 0
-        padding_fn = lambda x: pad(x,(0,MAX_LENGTH-x.shape[1]),'constant',self.pad_item)
+        padding_fn = lambda x: pad(x, (0, MAX_LENGTH - x.shape[1]), 'constant', self.pad_item)
         question_list, context_list, pos_init_list, pos_end_list = self._loop_over_dataloader(self.dataloaders[0])
         MAX_LENGTH = max((context_list.shape[1], question_list.shape[1]))
 
-        datum = torch.stack(list(map(padding_fn,(context_list, question_list))), dim=2)
+        datum = torch.stack(list(map(padding_fn, (context_list, question_list))), dim=2)
         label = torch.stack((pos_init_list, pos_end_list), dim=1)
         self.training_data = TextDatasetQA(datum, label)
         question_list, context_list, pos_init_list, pos_end_list = self._loop_over_dataloader(self.dataloaders[1])
