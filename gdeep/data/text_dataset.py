@@ -1,31 +1,50 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from typing import Tuple
+from typing import Tuple, Optional, Union
+from .preprocessing_interface import AbstractPreprocessing
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
 
+Tensor = torch.Tensor
+
 
 class TextDataset(Dataset):
-    """This class is the base class for the text-datasets
+    """This class is the base class for the text-datasets.
+    The source dataset for this class are expected to be
+    dataset of the form ``(label, string)``.
 
     Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        targets (list):
-            list of labels
-        transform (class instance):
-            the instance of the class of preprocessing
-        target_transform (Callable):
-            the instance of the class of preprocessing
+        dataset (torch Dataset):
+            The source dataset for this class.
+            It is expected to be a
+            dataset of the form ``(label, string)``.
+        transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
+        target_transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
+
+    Examples::
+
+        from gdeep.data import TorchDataLoader
+        from gdeep.data import TextDataset, PreprocessTextData, PreprocessTextLabel
+
+        dl = TorchDataLoader(name="AG_NEWS", convert_to_map_dataset=True)
+        dl_tr, dl_ts = dl.build_dataloaders()
+
+        textds = TextDataset(dl_tr.dataset,
+                             PreprocessTextData(),
+                             PreprocessTextLabel())
+
     """
 
-    def __init__(self, dataset,
-                 transform=None,  # Optional[...]
-                 target_transform=None):
+    def __init__(self, dataset: Dataset,
+                 transform: Optional[AbstractPreprocessing]=None,  # Optional[...]
+                 target_transform: Optional[AbstractPreprocessing]=None):
         self.dataset = dataset
         self.transform = transform
         self.target_transform = target_transform
@@ -38,7 +57,12 @@ class TextDataset(Dataset):
     def __len__(self):
         return len(self.dataset)
 
-    def __getitem__(self, idx : int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx : int) -> Tuple[Tensor, Tensor]:
+        """The output of this method is a tuple of
+        Two tensors. The first one is the tensor
+        of tokenised words (i.e. a tensor of type ``torch.long``
+        that contains the indices of the tokens within
+        the vocabulary)"""
         text = self.dataset[idx][1]
         label = self.dataset[idx][0]
         if self.transform:
@@ -49,33 +73,49 @@ class TextDataset(Dataset):
         if isinstance(label, torch.Tensor):
             if text is None: 
                 print(text, label, idx)
-            sample = [text.to(torch.long), label.to(torch.long)]
+            sample = (text.to(torch.long), label.to(torch.long))
         else:
-            sample = [text.to(torch.long), torch.tensor(label, dtype=torch.long)]
+            sample = (text.to(torch.long), torch.tensor(label, dtype=torch.long))
         return sample
 
 class TextDatasetTranslation(TextDataset):
-    """This class is the base class for the text-datasets
+    """This class is the class for the text datasets
+    dealing with translation tasks. The source data is expected
+    to be of the form ``(string, string)`` containing the
+    senteces to translate (left string translates into right string).
 
     Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        targets (list):
-            list of labels
-        transform (Callable):
-            act on the single images
-        target_transform (Callable):
-            act on the single label
+        dataset (torch Dataset):
+            The source dataset for this class.
+            It is expected to be a
+            dataset of the form ``(label, string)``.
+        transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
+        target_transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
 
     Returns:
         tensor, tensor:
             the first tensor has three dimensions, ``(BS, 2, MAX_LENGTH)``;
             this tensor represents the stacking of both the tokenisation
             of the source and target sentence.
+
+    Examples::
+
+        from gdeep.data import TorchDataLoader
+        from gdeep.data import TextDatasetTranslation, PreprocessTextTranslation
+
+        dl = TorchDataLoader(name="Multi30k", convert_to_map_dataset=True)
+        dl_tr, dl_ts = dl.build_dataloaders()
+
+        textds = TextDatasetTranslation(dl_tr.dataset,
+            PreprocessTextTranslation(), None)
+
     """
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         text = self.dataset[idx]
         if self.transform:
             text = self.transform.transform(text)
@@ -87,21 +127,47 @@ class TextDatasetTranslation(TextDataset):
 
 
 class TextDatasetQA(TextDataset):
-    """This class is the base class for the text-datasets
+    """This class is the class for the text datasets
+    dealing with Q&A tasks. The source data is expected
+    to be of the form ``(string, string, list[string], list[int])`` containing the
+    senteces ``(context, question, [answer(s)],
+    [initial position (in characters) of the answer(s)]))``.
 
     Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        targets (list):
-            list of labels
-        transform (Callable):
-            act on the context and question
-        target_transform (Callable):
-            act on the single label
+        dataset (torch Dataset):
+            The source dataset for this class.
+            It is expected to be a
+            dataset of the form ``(label, string)``.
+        transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
+        target_transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
+
+    Returns:
+        tensor, tensor:
+            the first tensor has three dimensions, ``(BS, 2, MAX_LENGTH)``;
+            this tensor represents the stacking of both the tokenisation
+            of the context and question sentence.
+            The second tensor is just the batch of pairs of start and
+            end positions of the answers
+
+    Examples::
+
+        from gdeep.data import TorchDataLoader
+        from gdeep.data import  TextDatasetQA, PreprocessTextQA, PreprocessTextQATarget
+
+        dl = TorchDataLoader(name="SQuAD2", convert_to_map_dataset=True)
+        dl_tr, dl_ts = dl.build_dataloaders()
+
+        textds = TextDatasetQA(dl_tr_str.dataset,
+                               PreprocessTextQA(),
+                               PreprocessTextQATarget())
+
     """
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx:int) -> Tuple[Tensor, Tensor]:
 
         if self.transform:
             context, question = self.transform.transform(self.dataset[idx])

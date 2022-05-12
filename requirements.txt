@@ -30,3 +30,4 @@ sympy
 google-cloud-storage
 wget
 ipython
+jsonpickle

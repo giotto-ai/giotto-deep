@@ -1,5 +1,6 @@
 import torch
-from torch.utils.data import DataLoader
+from typing import Union, Tuple
+from torch.utils.data import DataLoader, Dataset
 from abc import ABC, abstractmethod
 from torchtext.data.utils import get_tokenizer
 from torch.nn.functional import pad
@@ -9,7 +10,9 @@ import warnings
 import os
 import json
 import jsonpickle
+from .preprocessing_interface import AbstractPreprocessing
 
+# type definition
 Tensor = torch.Tensor
 
 if torch.cuda.is_available():
@@ -17,36 +20,6 @@ if torch.cuda.is_available():
 else:
     DEVICE = torch.device("cpu")
 
-
-class AbstractPreprocessing(ABC):
-    """The abstract class to define the interface of preprocessing
-    """
-    @abstractmethod
-    def transform(self, *args, **kwargs):
-        """This method deals with datum-wise transformations. This
-        method is called in the Datasets to transform the output
-        of ``__getitem__``"""
-        pass
-
-    @abstractmethod
-    def fit_to_data(self, *args, **kwargs):
-        """This method deals with getting dataset-level information.
-        """
-        pass
-
-    def save_pretrained(self, path):
-        with open(os.path.join(path, self.__class__.__name__ + ".json"), "w") as outfile:
-            whole_class = jsonpickle.encode(self)
-            json.dump(whole_class, outfile)
-
-    def load_pretrained(self, path):
-        try:
-            with open(os.path.join(path,self.__class__.__name__ + ".json"), "r") as infile:
-                whole_class = json.load(infile)
-                self = jsonpickle.decode(whole_class)
-        except FileNotFoundError:
-            warnings.warn("The transformation file does not exist; attempting to run"
-                          " the transformation anyway...")
 
 class Normalisation(AbstractPreprocessing):
     """This class runs the standard normalisation on all the dimensions of
@@ -56,6 +29,7 @@ class Normalisation(AbstractPreprocessing):
     """
     is_fitted: bool
     mean: Tensor
+    stddev: Tensor
 
     def __init__(self):
         self.is_fitted = False
@@ -75,25 +49,42 @@ class Normalisation(AbstractPreprocessing):
         out = (datum - self.mean)/(self.stddev)
         return out
 
-    def _mean(self, data, dim, keep_dim):
-        if isinstance(data, torch.utils.data.Dataset):
+    def _mean(self, data: Union[Tensor, Dataset], dim:int, keep_dim:bool) -> Tensor:
+        """compute the mean of the whole dataset"""
+        if isinstance(data, Dataset):
             data=next(iter(DataLoader(data, batch_size=len(data))))[0]
         return torch.mean(data.float(), dim, keep_dim)
 
-    def _stddev(self, data, dim, keep_dim):
-        if isinstance(data, torch.utils.data.Dataset):
+    def _stddev(self, data: Union[Tensor, Dataset], dim:int, keep_dim:bool) -> Tensor:
+        """compute the stddev of the whole dataset"""
+        if isinstance(data, Dataset):
             data=next(iter(DataLoader(data, batch_size=len(data))))[0]
         return torch.std(data.float(), dim, keep_dim)
 
 
 class PreprocessingPipeline(AbstractPreprocessing):
-    """class to compose preprocessing classes
+    """class to compose preprocessing classes. The
+    order is very important, and to make sure that the output of
+    one preprocessing is acceptable as input for the
+    following preprocessing
 
     Args:
-        list_of_cls (list):
-            list of class instances
+        list_of_preproc_and_datatypes (list):
+            list of tuples in which the the first
+            element if the class instance of the
+            AbstractPreprocessing and the second element
+            is the Dataset class (not the instance!)
+
+    Examples::
+
+        from gdeep.data import PreprocessingPipeline, Normalisation
+        from gdeep.data import PreprocessTextData, TextDataset
+
+        PreprocessingPipeline(((PreprocessTextData(), TextDataset),
+                               (Normalisation(), lambda x, __:x)))
+
     """
-    def __init__(self, list_of_preproc_and_datatypes):
+    def __init__(self, list_of_preproc_and_datatypes:list):
         self.list_of_cls = list_of_preproc_and_datatypes
         
     def fit_to_data(self, data, **kwargs):
@@ -101,7 +92,7 @@ class PreprocessingPipeline(AbstractPreprocessing):
             preproc_cls.fit_to_data(data, **kwargs)
             data = data_type_class(data, preproc_cls, **kwargs)
 
-    def transform(self, batch):
+    def transform(self, batch:Tensor) -> Tensor:
         for (cls, dt) in self.list_of_cls:
             batch = cls.transform(batch)
         return batch
@@ -132,8 +123,7 @@ class PreprocessTextData(AbstractPreprocessing):
         vocabulary (torch Vocabulary):
             the vocubulary; it can be built of it can be
             given.
-        kwargs (dict):
-            keyword arguments for the ``Vocab``
+
     """
     def __init__(self, tokenizer=None,
                  vocabulary=None):
@@ -151,7 +141,7 @@ class PreprocessTextData(AbstractPreprocessing):
         the sentences to be able to pad.
 
         Args:
-            data (torch dataset):
+            data (iterable):
                 the data in the format ``(label, text)``
         """
 
@@ -167,13 +157,14 @@ class PreprocessTextData(AbstractPreprocessing):
         self.is_fitted = True
         self.save_pretrained(".")
 
-    def transform(self, datum: torch.Tensor) -> list:
+    def transform(self, datum: tuple) -> Tensor:
         """This method is applied to each batch and
         transforms it following the rule below
 
         Args:
-            datum (torch.tensor):
-                a single datum
+            datum (tuple):
+                a single datum, being it a tuple
+                with ``(label, text)``
         """
         if not self.is_fitted:
             self.load_pretrained(".")
@@ -201,7 +192,7 @@ class PreprocessTextLabel(AbstractPreprocessing):
     def fit_to_data(self, dataset):
         pass
 
-    def transform(self, datum: torch.Tensor) -> torch.Tensor:
+    def transform(self, datum: Tensor) -> Tensor:
         label_pipeline = lambda x: torch.tensor(x, dtype=torch.long) - 1
 
         _label = datum
@@ -221,12 +212,29 @@ class PreprocessTextTranslation(AbstractPreprocessing):
 
         Args:
             vocabulary (torch Vocabulary):
-                the vocubulary; it can be built of it can be
+                the vocubulary of the source text;
+                it can be built automatically or it can be
+                given.
+            vocabulary_target (torch Vocabulary):
+                the vocubulary of the target text;
+                it can be built automatically or it can be
                 given.
             tokenizer (torch Tokenizer):
                 the tokenizer of the source text
-            tokenizer_lab (torch Tokenizer):
+            tokenizer_target (torch Tokenizer):
                 the tokenizer of the target text
+
+    Examples::
+
+        from gdeep.data import TorchDataLoader
+        from gdeep.data import TextDatasetTranslation, PreprocessTextTranslation
+
+        dl = TorchDataLoader(name="Multi30k", convert_to_map_dataset=True)
+        dl_tr, dl_ts = dl.build_dataloaders()
+
+        textds = TextDatasetTranslation(dl_tr.dataset,
+            PreprocessTextTranslation(), None)
+
         """
 
     def __init__(self, vocabulary=None,
@@ -265,12 +273,13 @@ class PreprocessTextTranslation(AbstractPreprocessing):
 
     def transform(self, datum):
         """This method is applied to each batch and
-                transforms it following the rule below
+        transforms it following the rule below
 
-                Args:
-                    datum (torch.tensor):
-                        a single datum
-                """
+        Args:
+            datum (torch.tensor):
+                a single datum
+        """
+
         if not self.is_fitted:
             self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
@@ -299,11 +308,23 @@ class PreprocessTextQA(AbstractPreprocessing):
     """Class to preprocess text dataloaders for Q&A
     tasks
 
-        Args:
-            vocabulary (torch Vocab):
-                the torch vocabulary
-            tokenizer (torch Tokenizer):
-                the tokenizer of the source text
+    Args:
+        vocabulary (torch Vocab):
+            the torch vocabulary
+        tokenizer (torch Tokenizer):
+            the tokenizer of the source text
+
+    Examples::
+
+        from gdeep.data import TorchDataLoader
+        from gdeep.data import  TextDatasetQA, PreprocessTextQA, PreprocessTextQATarget
+
+        dl = TorchDataLoader(name="SQuAD2", convert_to_map_dataset=True)
+        dl_tr, dl_ts = dl.build_dataloaders()
+
+        textds = TextDatasetQA(dl_tr_str.dataset,
+                               PreprocessTextQA(),
+                               PreprocessTextQATarget())
 
     """
 
@@ -341,7 +362,7 @@ class PreprocessTextQA(AbstractPreprocessing):
         self.is_fitted = False
         self.save_pretrained(".")
 
-    def transform(self, datum):
+    def transform(self, datum:tuple) -> Tuple[Tensor, Tensor]:
         if not self.is_fitted:
             self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
@@ -367,8 +388,6 @@ class PreprocessTextQATarget(AbstractPreprocessing):
     tasks
 
         Args:
-            vocabulary (torch Vocab):
-                the torch vocabulary
             tokenizer (torch Tokenizer):
                 the tokenizer of the source text
 

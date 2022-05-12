@@ -9,10 +9,10 @@ from .text_dataset import TextDataset, TextDatasetQA, \
     TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
-from .preprocessing_pipes import AbstractPreprocessing, Normalisation, \
+from .preprocessing_pipes import Normalisation, \
     PreprocessTextTranslation, PreprocessTextData, PreprocessingPipeline, \
     PreprocessTextQA, PreprocessTextLabel, PreprocessTextQATarget
-
+from .preprocessing_interface import AbstractPreprocessing
 
 
 
@@ -21,9 +21,9 @@ __all__ = [
     'CategoricalDataCloud',
     'CreateToriDataset',
     'GenericDataset',
-    'PreprocessText',
     'PreprocessTextQATarget',
     'TextDataset',
+    'AbstractPreprocessing',
     'PreprocessingPipeline',
     'PreprocessTextQA',
     'TextDatasetTranslation',
