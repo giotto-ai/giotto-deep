@@ -1,0 +1,13 @@
+{
+    "comment": null,
+    "data_format": "pytorch_tensor",
+    "data_type": "tabular",
+    "input_size": [
+        22,
+        6
+    ],
+    "name": "SmallMutagDataset",
+    "num_labels": 2,
+    "size": 5,
+    "task_type": "classification"
+}

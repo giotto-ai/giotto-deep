@@ -13,6 +13,7 @@ from gdeep.models import ModelExtractor
 from gdeep.utility import _inner_refactor_scalars
 from ..utility.optimisation import MissingClosureError
 import optuna
+from datetime import datetime
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -76,6 +77,7 @@ class Pipeline:
         from torch import nn
         from torch.optim import SGD
         from sklearn.model_selection import StratifiedKFold
+        from gdeep.models import FFNet
         from gdeep.pipeline import Pipeline
         from gdeep.data import TorchDataLoader
         from gdeep.search import GiottoSummaryWriter
@@ -131,6 +133,8 @@ class Pipeline:
         self.val_loss_list_hparam = []
         self.val_acc_list_hparam = []
         self.best_not_last = False
+        # profiler
+        self.prof = None
 
         if not KFold_class:
             self.KFold_class = KFold(5, shuffle=True)
@@ -193,6 +197,9 @@ class Pipeline:
                             correct):
         """Private method to run the loop
         over the batches for the optimisation"""
+
+        if not self.prof is None:
+            self.prof.start()
         for batch, (X, y) in enumerate(dl_tr):
             def closure():
                 loss2 = self.loss_fn(self.model(X), y)
@@ -229,6 +236,13 @@ class Pipeline:
                 pass
             t_loss = self._optimisation_step(dl_tr, steps, loss, 
                                     t_loss, correct, batch, closure)
+        
+            if not self.prof is None:
+                self.prof.step()
+
+        if not self.prof is None:
+            self.prof.stop()
+
         # accuracy:
         correct /= size
         t_loss /= steps
@@ -383,27 +397,29 @@ class Pipeline:
     def _init_profiler(self, profiling, cross_validation, n_epochs, k_folds):
         """initialise the profler for profiling"""
         # profiling
-        prof = None
         if not cross_validation:
             active = n_epochs-2
         else:
             active = k_folds*(n_epochs-2)
+
+        active = 10
         if profiling:
             try:
-                prof = torch.profiler.profile(
-                        activities=[
-                            torch.profiler.ProfilerActivity.CPU,
-                            torch.profiler.ProfilerActivity.CUDA],
-                        schedule=torch.profiler.schedule(wait=1, warmup=1, active=active),
-                        on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs',
-                                                                                worker_name='worker'),
-                        record_shapes=True,
-                        #profile_memory=True,
-                        with_stack=True
+                self.prof = torch.profiler.profile(
+                            activities=[
+                                torch.profiler.ProfilerActivity.CPU,
+                                torch.profiler.ProfilerActivity.CUDA],
+                            schedule=torch.profiler.schedule(wait=1, warmup=1, active=active, repeat=1),
+                            on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                                os.path.join('.','runs', (self.model.__class__.__name__ +
+                                                          str(datetime.today())).replace(":","-")),
+                                worker_name='worker'),
+                            record_shapes=True,
+                            profile_memory=True
+                            #with_stack=True
                 )
             except AssertionError:
                 pass
-        return prof
     
     def _init_optimizer_and_scheduler(self, keep_training, cross_validation,
                                       optimizer, optimizers_param,
@@ -534,9 +550,9 @@ class Pipeline:
             check_optuna = False
 
         # profiling
-        prof = self._init_profiler(profiling, 
-                                   cross_validation, 
-                                   n_epochs, self.KFold_class.n_splits)
+        self._init_profiler(profiling, 
+                            cross_validation, 
+                            n_epochs, self.KFold_class.n_splits)
         
         # remove sampler to avoid conflicts with indexing
         # we will re-introduce the sampler when creating the indexing list
@@ -597,7 +613,6 @@ class Pipeline:
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
                 labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
-            #print(data_idx)
 
             for fold, (tr_idx, val_idx) in enumerate(self.KFold_class.split(data_idx, labels_for_split)):
                 # prints for class balance
@@ -627,14 +642,14 @@ class Pipeline:
                 if parallel_tpu == False:
                     valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                            dl_val, lr_scheduler, self.scheduler,
-                                                           prof, check_optuna, search_metric,
+                                                           check_optuna, search_metric,
                                                            trial, cross_validation,
                                                            writer_tag + "/fold = " + str(fold+1))
                 else:
                     valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                        dl_val, optimizers_param, lr_scheduler,
                                                        self.scheduler,
-                                                       prof, check_optuna, search_metric,
+                                                       check_optuna, search_metric,
                                                        trial, cross_validation)
 
                 mean_val_loss.append(valloss)
@@ -659,13 +674,13 @@ class Pipeline:
             if parallel_tpu == False:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, self.scheduler,
-                                                   prof, check_optuna, search_metric,
+                                                   check_optuna, search_metric,
                                                    trial, 0, writer_tag)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, optimizers_param, lr_scheduler,
                                                    self.scheduler,
-                                                   prof, check_optuna, search_metric,
+                                                   check_optuna, search_metric,
                                                    trial, 0)
 
         try:
@@ -680,7 +695,7 @@ class Pipeline:
         
     def _training_loops(self, n_epochs, dl_tr,
                         dl_val, lr_scheduler, scheduler,
-                        prof, check_optuna, search_metric,
+                        check_optuna, search_metric,
                         trial, cross_validation=False, writer_tag=""):
         """private method to run the trainign loops
         
@@ -702,9 +717,6 @@ class Pipeline:
                 a learning rate scheduler class
             scheduler (torch.optim):
                 the actual scheduler instance
-            prof (bool, default=False):
-                whether or not you want to activate the
-                profiler
             check_optuna (bool):
                 boolean to store the optuna results of
                 the trial
@@ -762,8 +774,6 @@ class Pipeline:
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
                 scheduler.step()
-            if not prof is None:
-                prof.step()
             # pruning trials
             if check_optuna and not cross_validation:
                 if search_metric == "loss":
@@ -779,7 +789,7 @@ class Pipeline:
     def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
                                     dl_val_old, optimizers_param,
                                     lr_scheduler, scheduler,
-                                    prof, check_optuna, search_metric,
+                                    check_optuna, search_metric,
                                     trial, cross_validation=False):
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
@@ -798,9 +808,6 @@ class Pipeline:
                 a learning rate scheduler
             scheduler (torch.optim):
                 the actual scheduler
-            prof (bool, default=False):
-                whether or not you want to activate the
-                profiler
             check_optuna (bool):
                 boolean to store the optuna results of
                 the trial
@@ -939,8 +946,8 @@ class Pipeline:
               
                 if not lr_scheduler is None:
                     scheduler.step()
-                if not prof is None:
-                    prof.step()
+                if not self.prof is None:
+                    self.prof.step()
 
                 if check_optuna and not cross_validation:
                     if search_metric == "loss":

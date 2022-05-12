@@ -275,6 +275,59 @@ on tensorboard</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.search.PersformerHyperparameterSearch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">PersformerHyperparameterSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_hpo_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_writer</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.PersformerHyperparameterSearch" title="Permalink to this definition"></a></dt>
+<dd><p>This class is used to perform hyperparameter search for Persfomer using 
+cross-validation. The search is performed using the Giotto-Deep GridSearch 
+class. The hyperparameter dictionaries are loaded from the metadata file.
+The search is performed on the dataset specified in the class constructor.
+The training data is downloaded from the DatasetCloud and the results are
+saved in the path provided in the constructor.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_name (str):</dt><dd><p>name of the dataset to be used for the 
+hyperparameter search. The dataset must be present in the
+DatasetCloud.</p>
+</dd>
+<dt>download_directory (str):</dt><dd><p>directory where the dataset is
+either downloaded or already present</p>
+</dd>
+<dt>path_hpo_metadata (str):</dt><dd><p>path to the metadata file containing the
+hyperparameter dictionaries specifying the search space and the
+search metric</p>
+</dd>
+<dt>path_writer (str):</dt><dd><p>path to the Tensorflow writer directory where the
+Tensorflow summaries are saved during the search process.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.search.PersformerHyperparameterSearch.search">
+<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.search.PersformerHyperparameterSearch.search" title="Permalink to this definition"></a></dt>
+<dd><p>Performs the hyperparameter search. The search is performed using
+the Giotto-Deep GridSearch class. The hyperparameter dictionaries
+are loaded from the metadata file. The search is performed on the
+dataset specified in the class constructor. The training data is
+downloaded from the DatasetCloud and the results are saved in the
+path provided in the constructor.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.search.clean_up_files">
+<span class="sig-prename descclassname"><span class="pre">gdeep.search.</span></span><span class="sig-name descname"><span class="pre">clean_up_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.search.clean_up_files" title="Permalink to this definition"></a></dt>
+<dd><p>Decorator to remove all the files created by the method it decorates</p>
+</dd></dl>
+
 </section>
 
 

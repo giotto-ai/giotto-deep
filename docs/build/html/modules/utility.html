@@ -82,7 +82,14 @@
              
   <section id="utility">
 <h1>Utility<a class="headerlink" href="#utility" title="Permalink to this headline"></a></h1>
-<span class="target" id="module-gdeep.utility"></span><dl class="py function">
+<span class="target" id="module-gdeep.utility"></span><dl class="py class">
+<dt class="sig sig-object py" id="gdeep.utility.KnownWarningSilencer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">KnownWarningSilencer</span></span><a class="headerlink" href="#gdeep.utility.KnownWarningSilencer" title="Permalink to this definition"></a></dt>
+<dd><p>silence all warnings within this <code class="docutils literal notranslate"><span class="pre">with</span></code>
+statement with this class</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="gdeep.utility.ensemble_wrapper">
 <span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">ensemble_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clss</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.utility.ensemble_wrapper" title="Permalink to this definition"></a></dt>
 <dd><p>function to wrap the ensemble estimators
@@ -95,6 +102,19 @@ as you would normally do for the original
 <dt>Args</dt><dd><dl class="simple">
 <dt>clss (type):</dt><dd><p>the class of the estimator, like
 <code class="docutils literal notranslate"><span class="pre">VotingClassifier</span></code> for example</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.is_notebook">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">is_notebook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#gdeep.utility.is_notebook" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the current environment is a notebook</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>bool:</dt><dd><p>True if the environment is a notebook, False otherwise</p>
 </dd>
 </dl>
 </dd>

@@ -111,6 +111,7 @@ info at <a class="reference external" href="https://scikit-learn.org/stable/modu
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 <span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">SGD</span>
 <span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">StratifiedKFold</span>
+<span class="kn">from</span> <span class="nn">gdeep.models</span> <span class="kn">import</span> <span class="n">FFNet</span>
 <span class="kn">from</span> <span class="nn">gdeep.pipeline</span> <span class="kn">import</span> <span class="n">Pipeline</span>
 <span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">TorchDataLoader</span>
 <span class="kn">from</span> <span class="nn">gdeep.search</span> <span class="kn">import</span> <span class="n">GiottoSummaryWriter</span>
@@ -168,7 +169,7 @@ we use the training dataloader in <code class="docutils literal notranslate"><sp
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.pipeline.Pipeline.parallel_tpu_training_loops">
-<span class="sig-name descname"><span class="pre">parallel_tpu_training_loops</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl_tr_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl_val_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_optuna</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.pipeline.Pipeline.parallel_tpu_training_loops" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parallel_tpu_training_loops</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl_tr_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl_val_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_optuna</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.pipeline.Pipeline.parallel_tpu_training_loops" title="Permalink to this definition"></a></dt>
 <dd><p>Experimental function to run all the training cycles
 on colab TPUs in parallel.
 Note: <code class="docutils literal notranslate"><span class="pre">cross_validation</span></code> parameter as well as
@@ -185,9 +186,6 @@ parameters, e.g. <cite>{‘batch_size’: 32}</cite></p>
 <dt>lr_scheduler (torch.optim):</dt><dd><p>a learning rate scheduler</p>
 </dd>
 <dt>scheduler (torch.optim):</dt><dd><p>the actual scheduler</p>
-</dd>
-<dt>prof (bool, default=False):</dt><dd><p>whether or not you want to activate the
-profiler</p>
 </dd>
 <dt>check_optuna (bool):</dt><dd><p>boolean to store the optuna results of
 the trial</p>

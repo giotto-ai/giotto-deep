@@ -20,9 +20,14 @@ examples/*.nbconvert.ipynb
 examples/runs/*
 examples/data/*
 examples/.*
+examples/*.json
 
 # Html files
 examples/*.html
+
+# Image/Video files
+*.png
+*.mp4
 
 # Data files
 *.pkl
@@ -69,5 +74,17 @@ examples/curvatures.npy
 examples/diagrams_curvature.npy
 examples/diagrams_5000_1000_0_1.npy
 
-
+# virtualenv
 giotto-deep/
+venv/
+
+examples/model_data_specifications
+runs/
+examples/tmp_data.pt
+examples/tmp_labels.pt
+events.*
+state_dicts/*
+
+# Include pkl test data
+!gdeep/topology_layers/tests/data/diagrams.pkl
+!gdeep/topology_layers/tests/data/labels.pkl
