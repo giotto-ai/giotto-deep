@@ -70,7 +70,7 @@ class TextDataset(Dataset):
             #if idx < 8: print(text)
         if self.target_transform:
             label = self.target_transform.transform(label)
-        if isinstance(label, torch.Tensor):
+        if isinstance(label, Tensor):
             if text is None: 
                 print(text, label, idx)
             sample = (text.to(torch.long), label.to(torch.long))

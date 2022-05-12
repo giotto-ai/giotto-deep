@@ -1,5 +1,5 @@
 import torch
-from typing import Union, Tuple
+from typing import Union, Tuple, Generic, NewType
 from torch.utils.data import DataLoader, Dataset
 from abc import ABC, abstractmethod
 from torchtext.data.utils import get_tokenizer
@@ -11,9 +11,11 @@ import os
 import json
 import jsonpickle
 from .preprocessing_interface import AbstractPreprocessing
+from torchvision.transforms import ToTensor, Resize
 
 # type definition
 Tensor = torch.Tensor
+T = NewType("T")
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -34,9 +36,9 @@ class Normalisation(AbstractPreprocessing):
     def __init__(self):
         self.is_fitted = False
 
-    def fit_to_data(self, data: Tensor):
-        self.mean = self._mean(data, 0, False)
-        self.stddev = self._stddev(data, 0, False)
+    def fit_to_data(self, dataset: Union[Dataset, Tensor]) -> None:
+        self.mean = self._mean(dataset, 0, False)
+        self.stddev = self._stddev(dataset, 0, False)
         self.is_fitted = True
         self.save_pretrained(".")
 
@@ -49,17 +51,17 @@ class Normalisation(AbstractPreprocessing):
         out = (datum - self.mean)/(self.stddev)
         return out
 
-    def _mean(self, data: Union[Tensor, Dataset], dim:int, keep_dim:bool) -> Tensor:
+    def _mean(self, dataset: Union[Dataset, Tensor], dim:int, keep_dim:bool) -> Tensor:
         """compute the mean of the whole dataset"""
-        if isinstance(data, Dataset):
-            data=next(iter(DataLoader(data, batch_size=len(data))))[0]
-        return torch.mean(data.float(), dim, keep_dim)
+        if isinstance(dataset, Dataset):
+            dataset=next(iter(DataLoader(dataset, batch_size=len(dataset))))[0]
+        return torch.mean(dataset.float(), dim, keep_dim)
 
-    def _stddev(self, data: Union[Tensor, Dataset], dim:int, keep_dim:bool) -> Tensor:
+    def _stddev(self, dataset: Union[Dataset, Tensor], dim:int, keep_dim:bool) -> Tensor:
         """compute the stddev of the whole dataset"""
-        if isinstance(data, Dataset):
-            data=next(iter(DataLoader(data, batch_size=len(data))))[0]
-        return torch.std(data.float(), dim, keep_dim)
+        if isinstance(dataset, Dataset):
+            dataset=next(iter(DataLoader(dataset, batch_size=len(dataset))))[0]
+        return torch.std(dataset.float(), dim, keep_dim)
 
 
 class PreprocessingPipeline(AbstractPreprocessing):
@@ -411,3 +413,26 @@ class PreprocessTextQATarget(AbstractPreprocessing):
         pos_end = pos_init + len(self.tokenizer(datum[2][0]))
 
         return torch.tensor(pos_init, dtype=torch.long), torch.tensor(pos_end, dtype=torch.long)
+
+
+class PreprocessImageClassification(AbstractPreprocessing):
+    """Class to preprocess image files for classification
+      tasks
+
+          Args:
+              size (int or sequence):
+                  Desired output size. If size is a sequence like (h, w),
+                  output size will be matched to this. If size is an int,
+                  smaller edge of the image will be matched to this number.
+                  I.e, if height > width, then image will be rescaled to
+                  ``(size * height / width, size)``.
+
+      """
+    def __init__(self, size: Union[int, tuple]) -> None:
+        self.size = size
+
+    def fit_to_data(self, dataset:Dataset) -> None:
+        pass
+
+    def transform(self, datum: Tensor) -> Tensor:
+        return ToTensor()(Resize(size)(datum))

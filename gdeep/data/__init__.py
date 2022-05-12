@@ -3,8 +3,8 @@ from .tori import Rotation, \
     CreateToriDataset, GenericDataset
 from .dataset_cloud import DatasetCloud
 from ._data_cloud import _DataCloud
-from .torch_datasets import TorchDataLoader, \
-    DataLoaderFromImages, DataLoaderFromArray, DlBuilderFromDataCloud
+from .torch_datasets import TorchDataLoader, BuildDataloaders, \
+    DatasetImageClassificationFromFiles, DataLoaderFromArray, DlBuilderFromDataCloud
 from .text_dataset import TextDataset, TextDatasetQA, \
     TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
@@ -23,6 +23,7 @@ __all__ = [
     'GenericDataset',
     'PreprocessTextQATarget',
     'TextDataset',
+    'BuildDataloaders',
     'AbstractPreprocessing',
     'PreprocessingPipeline',
     'PreprocessTextQA',
@@ -35,7 +36,7 @@ __all__ = [
     'create_pd_orbits',
     'OrbitsGenerator',
     'DataLoaderKwargs',
-    'DataLoaderFromImages',
+    'DatasetImageClassificationFromFiles',
     'PreprocessTextTranslation',
     'TextDatasetTranslation',
     'DataLoaderFromArray',

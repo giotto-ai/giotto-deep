@@ -1,7 +1,7 @@
 from typing import Union, Tuple, Dict, Any
 from sympy import false
 import shutil
-
+from .preprocessing_interface import AbstractPreprocessing
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
@@ -20,6 +20,8 @@ from abc import ABC, abstractmethod
 
 from . import CreateToriDataset
 from .dataset_cloud import DatasetCloud
+
+Tensor = torch.Tensor
 
 class AbstractDataLoader(ABC):
     """The abstractr class to interface the
@@ -51,6 +53,31 @@ class MapDataset(Dataset):
 
     def __len__(self):
         return len(self.data_list)
+
+
+class BuildDataloaders:
+    """This class builds, out of a tuple of datasets, the
+    corresponding dataloaders.
+
+    Args:
+        tuple_of_datasets (tuple of Dataset):
+            the tuple eith the traiing, validation and test
+            datasets. Also one or two elemennts are acceptable:
+            they will be considered as training first and
+            validation afterwards.
+    """
+    def __init__(self, tuple_of_datasets: Tuple) -> None:
+        self.tuple_of_datasets = tuple_of_datasets
+
+    def build_dataloaders(self, *args, **kwargs) -> list:
+        """This method accepts the arguments of the torch
+        Dataloader and applies them when creating the
+        tuple
+        """
+        out = []
+        for dataset in self.tuple_of_datasets:
+            out.append(DataLoader(dataset, *args, **kwargs))
+        return out
 
 
 class TorchDataLoader(AbstractDataLoader):
@@ -131,126 +158,84 @@ class TorchDataLoader(AbstractDataLoader):
         test_dataloader = DataLoader(self.test_data,
                                      **kwargs)
         return train_dataloader, test_dataloader
-        
 
-class DataLoaderFromImages(AbstractDataLoader):
-    """This class is useful to build dataloaders
-    from different images you have in a folder
+
+class DatasetImageClassificationFromFiles(Dataset):
+    """This class is useful to build a dataset
+    directly from image files
     
     Args:
-        training_folder (string):
+        img_folder (string):
             The path to the folder where the training
             images are located
-        test_folder (string):
-            The path to the folder where the
-            test images are located
         labels_file (string):
             The path and file name of the labels.
-            It shall be a csv file with two columns.
+            It shall be a ``.csv`` file with two columns.
             The first columns contains the name of the
             image and the second one contains the
             label value
+        transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
+        target_transform (AbstractPreprocessing):
+            the instance of the class of preprocessing.
+            It inherits from ``AbstractPreprocessing``
     """
-    def __init__(self, training_folder=".",
-                 test_folder=".",
-                 labels_file="labels.csv"):
-        self.training_folder = training_folder
-        self.test_folder = test_folder
-        self.labels_file = labels_file
-        
-    def build_dataloaders(self, size: tuple=(128, 128), **kwargs) -> tuple:
-        """This method builds the dataloader.
+    def __init__(self, img_folder: str=".",
+                 labels_file:str="labels.csv",
+                 transform: Optional[AbstractPreprocessing]=None,  # Optional[...]
+                 target_transform: Optional[AbstractPreprocessing]=None) -> None:
+        self.img_folder = img_folder
+        self.img_labels = pd.read_csv(labels_file)
+        self.transform = transform
+        self.target_transform = target_transform
 
-        Args:
-            size (tuple):
-                a tuple (h,w) to convert all images
-                to the same size
-            kwargs (dict):
-                additional arguments to pass to the
-                DataLoaders
+    def __len__(self):
+        return len(self.img_labels)
 
-        Returns:
-            tuple of torch.DataLoader:
-                the tuple with thhe training and
-                test dataloader directly usable in
-                the pipeline class
-        """
-        CWD = os.getcwd()
-        df = pd.read_csv(self.labels_file)
-        os.chdir(self.training_folder)  # fail if not-found
-        tr_data = []
-        list_of_file_names = os.listdir()
-        for name in tqdm(list_of_file_names):
-            try:
-                image = Image.open(name)
-                imageT = ToTensor()(Resize(size)(image))
-                label = df[df[df.columns[0]]==name][df.columns[-1]].to_numpy()[0]
-                tr_data.append((imageT, label))
-                image.close()
-            except:
-                warnings.warn("This file could not be " +
-                              "loaded due to incompatible format: " +
-                              name)
-            
-        os.chdir(CWD)
-        os.chdir(self.test_folder)  # fail if not-found
-        ts_data = []
-        list_of_file_names = os.listdir()
-        for name in list_of_file_names:
-            try:
-                image = Image.open(name)
-            except UnidentifiedImageError:
-                warnings.warn(f"The image {name} canot be loaded. Skipping it.")
-            imageT = ToTensor()(Resize(size)(image))
-            ts_data.append(imageT)
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])
+        try:
+            image = Image.open(img_path)
+        except UnidentifiedImageError:
+            warnings.warn(f"The image {img_path} canot be loaded. Skipping it.")
+            return None, None
 
-        train_dataloader = DataLoader(tr_data,
-                                      **kwargs)
-        test_dataloader = DataLoader(ts_data,
-                                     **kwargs)
-        os.chdir(CWD)
-        return train_dataloader, test_dataloader
+        label = self.img_labels.iloc[idx, 1]
+        if self.transform:
+            imageT = self.transform(image)
+        if self.target_transform:
+            label = self.target_transform(label)
+        image.close()
+        return imageT, label
 
 
-class DataLoaderFromArray(AbstractDataLoader):
+class DatasetFromArray(Dataset):
     """This class is useful to build dataloaders
     from a array of X and y. Tensors are also supported.
 
     Args:
-        X_train (np.array):
-            The training data
-        y_train (np.array):
-            The training labels
-        X_val (np.array):
-            The validation data
-        y_val (np.array):
-            The validation labels
-        X_test (np.array):
-            The test data
-        labels_file (string):
-            The path and file name of the labels.
-            It shall be a csv file with two columns.
-            The first columns contains the name of the
-            image and the second one contains the
-            label value
+        X (np.array or torch.Tensor):
+            The data. The first dimension is the datum index
+        y (np.array or torch.Tensor):
+            The labels, need to match the first dimension
+            with the data
+
     """
-    def __init__(self, X_train: np.ndarray, y_train: np.ndarray, 
-                 X_val: np.ndarray=None, y_val: np.ndarray=None, 
-                 X_test: np.ndarray=None) -> None:
-        self.X_train = X_train
-        if len(y_train.shape) == 1:
-            self.y_train = y_train.reshape(-1, 1)
+    def __init__(self, X: Union[Tensor, np.ndarray],
+                 y: Union[Tensor, np.ndarray],
+                 transform=None, target_transform=None) -> None:
+        self.X = self._from_numpy(X)
+        if len(y.shape) == 1:
+            y = self._from_numpy(y.reshape(-1, 1))
         else:
-            self.y_train = y_train
-        self.y_train = y_train
-        if X_val is not None:
-            self.X_val = X_val
-            if len(y_val.shape) == 1:
-                self.y_val = y_val.reshape(-1, 1)
-            else:
-                self.y_val = y_val
-        if X_test is not None:
-            self.X_test = X_test
+            y = self._from_numpy(y)
+
+        self.y = _long_or_float(y)
+        self.transform = transform
+        self.target_transform = target_transform
+        self.transform.fit_to_data(X)
+        self.target_transform.fit_to_data(y)
 
     @staticmethod
     def _from_numpy(X):
@@ -268,48 +253,18 @@ class DataLoaderFromArray(AbstractDataLoader):
             return torch.tensor(y).float()
         return torch.tensor(y).long()
 
+    def __len__(self):
+        return self.y.shape[0]
 
-    def build_dataloaders(self, **kwargs) -> tuple:
-        """This method builds the dataloader.
+    def __getitem__(self, idx:int) -> Tuple[Tensor, Tensor]:
+        if self.target_transform:
+            y = self.target_transform(self.y[idx])
+        if self.transform:
+            X = self.transform(self.X[idx])
 
-        Args:
-            kwargs (dict):
-                additional arguments to pass to the
-                DataLoaders
+        return X, y
 
-        Returns:
-            tuple of torch.DataLoader:
-                the tuple with the training, validation and
-                test dataloader directly usable in
-                the pipeline class
-        """
-        tr_data = [(DataLoaderFromArray._from_numpy(x).float(),
-                    DataLoaderFromArray._long_or_float(y)) for x, y in zip(self.X_train, self.y_train)]
-        try:
-            val_data = [(DataLoaderFromArray._from_numpy(x).float(),
-                        DataLoaderFromArray._long_or_float(y)) for x, y in zip(self.X_val, self.y_val)]
-            #val_data = [(DataLoaderFromArray._from_numpy(x).float(),
-            #             torch.tensor(y).long() if isinstance(y, np.int64) or
-            #                                       ('__getitem__' in dir(y)
-            #            and (isinstance(y[0], np.int32) or isinstance(y[0], np.int64))) else
-            #torch.tensor(y).float()) for x, y in zip(self.X_val, self.y_val)]
-        except (TypeError, AttributeError):
-            val_data = None
-        try:
-            ts_data = [DataLoaderFromArray._from_numpy(x).float() for x in self.X_test]
-        except (TypeError, AttributeError):
-            ts_data = None
 
-        train_dataloader = DataLoader(tr_data,
-                                      **kwargs)
-        val_dataloader = DataLoader(val_data,
-                                     **kwargs)
-        test_dataloader = DataLoader(ts_data,
-                                     **kwargs)
-        return train_dataloader, val_dataloader, test_dataloader
-    
-    
-    
 class DlBuilderFromDataCloud(AbstractDataLoader):
     """Class that loads data from Google Cloud Storage
     
