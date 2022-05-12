@@ -411,7 +411,8 @@ class Pipeline:
                                 torch.profiler.ProfilerActivity.CUDA],
                             schedule=torch.profiler.schedule(wait=1, warmup=1, active=active, repeat=1),
                             on_trace_ready=torch.profiler.tensorboard_trace_handler(
-                                './runs/' + type(self.model).__name__ + str(datetime.today()),
+                                os.path.join('.','runs', (self.model.__class__.__name__ +
+                                                          str(datetime.today())).replace(":","-")),
                                 worker_name='worker'),
                             record_shapes=True,
                             profile_memory=True
