@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Tuple
 
 from torch.utils.data import Dataset
 
@@ -15,8 +15,8 @@ class TransformingDataset(Dataset[Any]):
     def append_transform(self, transform: Callable[[Any], Any]) -> None:
         self.transform = lambda x: transform(self.transform(x))
     
-    def __getitem__(self, idx: int):
-        return self.transform(self.dataset[idx])
+    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+        return self.transform(self.dataset[idx][0]), self.dataset[idx][0]
     
     def __len__(self) -> int:
         return len(self.dataset)  # type: ignore
