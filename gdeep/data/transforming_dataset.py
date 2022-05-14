@@ -1,8 +1,6 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Tuple, Sized
 
 from torch.utils.data import Dataset
-
-
 
 class TransformingDataset(Dataset[Any]):
     dataset: Dataset[Any]
@@ -19,4 +17,9 @@ class TransformingDataset(Dataset[Any]):
         return self.transform(self.dataset[idx][0]), self.dataset[idx][0]
     
     def __len__(self) -> int:
-        return len(self.dataset)  # type: ignore
+        if isinstance(self.dataset, Sized):
+            return len(self.dataset)
+        else:
+            raise NotImplementedError("The dataset does not implement __len__")
+    
+
