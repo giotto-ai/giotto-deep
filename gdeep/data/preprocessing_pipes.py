@@ -56,9 +56,9 @@ def _compute_mean_of_dataset(dataset: Dataset[Tensor]) -> Tensor:
     mean: Tensor = torch.zeros(dataset[0].shape, dtype=torch.float64, device=DEVICE)
     for idx in range(len(dataset)):  # type: ignore
         if idx == 0:
-            mean += dataset[idx]
+            mean += dataset[idx][0]
         else:
-            mean = (mean * idx + dataset[idx]) / (idx + 1)
+            mean = (mean * idx + dataset[idx][0]) / (idx + 1)
     return mean
 
 def _compute_stddev_of_dataset(dataset: Dataset[Tensor], mean: Tensor) -> Tensor:
