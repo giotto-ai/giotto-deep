@@ -15,7 +15,6 @@ from torchvision.transforms import ToTensor, Resize
 
 # type definition
 Tensor = torch.Tensor
-T = NewType("T")
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -42,10 +41,10 @@ class Normalisation(AbstractPreprocessing):
         self.is_fitted = True
         self.save_pretrained(".")
 
-    def transform(self, datum: Tensor) -> Tensor:
+    def __call__(self, datum: Tensor) -> Tensor:
         if not self.is_fitted:
             self.load_pretrained(".")
-        if not all(self.stddev>0):
+        if not torch.all(self.stddev > 0):
             warnings.warn("The standard deviation contains zeros! Adding 1e-7")
             self.stddev = self.stddev + 1e-7
         out = (datum - self.mean)/(self.stddev)
@@ -79,25 +78,28 @@ class PreprocessingPipeline(AbstractPreprocessing):
 
     Examples::
 
+        from torch.utils.data import Dataset
         from gdeep.data import PreprocessingPipeline, Normalisation
         from gdeep.data import PreprocessTextData, TextDataset
 
-        PreprocessingPipeline(((PreprocessTextData(), TextDataset),
-                               (Normalisation(), lambda x, __:x)))
+        PreprocessingPipeline(((PreprocessTextData(), None, TextDataset),
+                               (Normalisation(), None, BasicDataset)))
 
     """
-    def __init__(self, list_of_preproc_and_datatypes:list):
-        self.list_of_cls = list_of_preproc_and_datatypes
+    def __init__(self, list_of_transforms_and_datatypes:list):
+        self.list_of_cls = list_of_transforms_and_datatypes
         
-    def fit_to_data(self, data, **kwargs):
-        for (preproc_cls, data_type_class) in self.list_of_cls:
-            preproc_cls.fit_to_data(data, **kwargs)
-            data = data_type_class(data, preproc_cls, **kwargs)
+    def fit_to_data(self, dataset):
+        for (transform, target_transform, data_type_class, *args) in self.list_of_cls:
+            dataset = data_type_class(*args, dataset=dataset,
+                                      transform=transform,
+                                      target_transform=target_transform)
 
-    def transform(self, batch:Tensor) -> Tensor:
-        for (cls, dt) in self.list_of_cls:
-            batch = cls.transform(batch)
-        return batch
+
+    def __call__(self, datum:Tensor) -> Tensor:
+        for (transform, _, _, *_) in self.list_of_cls:
+            datum = transform(datum)
+        return datum
 
     def __len__(self) -> int:
         return len(self.list_of_cls)
@@ -109,7 +111,7 @@ class PreprocessingPipeline(AbstractPreprocessing):
         return iter(self.list_of_cls)
 
     def __repr__(self) -> str:
-        return f'Pipeline({self.list_of_cls})'
+        return f'PreprocessingPipeline({self.list_of_cls})'
 
     def __add__(self, other):
         return PreprocessingPipeline(self.list_of_cls + other.list_of_cls)
@@ -159,7 +161,7 @@ class PreprocessTextData(AbstractPreprocessing):
         self.is_fitted = True
         self.save_pretrained(".")
 
-    def transform(self, datum: tuple) -> Tensor:
+    def __call__(self, datum: tuple) -> Tensor:
         """This method is applied to each batch and
         transforms it following the rule below
 
@@ -194,7 +196,7 @@ class PreprocessTextLabel(AbstractPreprocessing):
     def fit_to_data(self, dataset):
         pass
 
-    def transform(self, datum: Tensor) -> Tensor:
+    def __call__(self, datum: Tensor) -> Tensor:
         label_pipeline = lambda x: torch.tensor(x, dtype=torch.long) - 1
 
         _label = datum
@@ -273,7 +275,7 @@ class PreprocessTextTranslation(AbstractPreprocessing):
         self.is_fitted = True
         self.save_pretrained(".")
 
-    def transform(self, datum):
+    def __call__(self, datum):
         """This method is applied to each batch and
         transforms it following the rule below
 
@@ -364,7 +366,7 @@ class PreprocessTextQA(AbstractPreprocessing):
         self.is_fitted = False
         self.save_pretrained(".")
 
-    def transform(self, datum:tuple) -> Tuple[Tensor, Tensor]:
+    def __call__(self, datum:tuple) -> Tuple[Tensor, Tensor]:
         if not self.is_fitted:
             self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
@@ -406,7 +408,7 @@ class PreprocessTextQATarget(AbstractPreprocessing):
     def fit_to_data(self, data):
         pass
 
-    def transform(self, datum):
+    def __call__(self, datum):
 
         pos_init_char = datum[3][0]
         pos_init = len(self.tokenizer(datum[0][:pos_init_char]))
@@ -434,5 +436,5 @@ class PreprocessImageClassification(AbstractPreprocessing):
     def fit_to_data(self, dataset:Dataset) -> None:
         pass
 
-    def transform(self, datum: Tensor) -> Tensor:
-        return ToTensor()(Resize(size)(datum))
+    def __call__(self, datum: Tensor) -> Tensor:
+        return ToTensor()(Resize(self.size)(datum))

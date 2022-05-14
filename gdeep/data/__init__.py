@@ -3,27 +3,32 @@ from .tori import Rotation, \
     CreateToriDataset, GenericDataset
 from .dataset_cloud import DatasetCloud
 from ._data_cloud import _DataCloud
-from .torch_datasets import TorchDataLoader, BuildDataloaders, \
-    DatasetImageClassificationFromFiles, DataLoaderFromArray, DlBuilderFromDataCloud
+from .torch_datasets import TorchDataLoader, BuildDataLoaders, \
+    DatasetImageClassificationFromFiles, DatasetFromArray, \
+    DlBuilderFromDataCloud, TransformableDataset, BasicDataset
 from .text_dataset import TextDataset, TextDatasetQA, \
     TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
 from .preprocessing_pipes import Normalisation, \
     PreprocessTextTranslation, PreprocessTextData, PreprocessingPipeline, \
-    PreprocessTextQA, PreprocessTextLabel, PreprocessTextQATarget
-from .preprocessing_interface import AbstractPreprocessing
+    PreprocessTextQA, PreprocessTextLabel, PreprocessTextQATarget, \
+    PreprocessImageClassification
+from .preprocessing_interface import AbstractPreprocessing, IdentityTransform
 
 
 
 __all__ = [
     'Rotation',
     'CategoricalDataCloud',
+    'PreprocessImageClassification',
     'CreateToriDataset',
     'GenericDataset',
+    'BasicDataset',
+    'TransformableDataset',
     'PreprocessTextQATarget',
     'TextDataset',
-    'BuildDataloaders',
+    'BuildDataLoaders',
     'AbstractPreprocessing',
     'PreprocessingPipeline',
     'PreprocessTextQA',
@@ -39,7 +44,7 @@ __all__ = [
     'DatasetImageClassificationFromFiles',
     'PreprocessTextTranslation',
     'TextDatasetTranslation',
-    'DataLoaderFromArray',
+    'DatasetFromArray',
     'DatasetCloud',
     'DlBuilderFromDataCloud'
     ]

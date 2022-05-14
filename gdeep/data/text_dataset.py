@@ -2,6 +2,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from typing import Tuple, Optional, Union
 from .preprocessing_interface import AbstractPreprocessing
+from .torch_datasets import TransformableDataset
+
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -11,7 +13,7 @@ else:
 Tensor = torch.Tensor
 
 
-class TextDataset(Dataset):
+class TextDataset(TransformableDataset):
     """This class is the base class for the text-datasets.
     The source dataset for this class are expected to be
     dataset of the form ``(label, string)``.
@@ -43,16 +45,13 @@ class TextDataset(Dataset):
     """
 
     def __init__(self, dataset: Dataset,
-                 transform: Optional[AbstractPreprocessing]=None,  # Optional[...]
-                 target_transform: Optional[AbstractPreprocessing]=None):
+                 transform=None,
+                 target_transform=None):
+        super().__init__(transform=transform, target_transform=target_transform)
         self.dataset = dataset
-        self.transform = transform
-        self.target_transform = target_transform
         # initialise the preprocessing
-        if self.transform:
-            self.transform.fit_to_data(self.dataset)
-        if self.target_transform:
-            self.target_transform.fit_to_data(self.dataset)
+        self.transform.fit_to_data(self.dataset)
+        self.target_transform.fit_to_data(self.dataset)
 
     def __len__(self):
         return len(self.dataset)
@@ -65,17 +64,12 @@ class TextDataset(Dataset):
         the vocabulary)"""
         text = self.dataset[idx][1]
         label = self.dataset[idx][0]
-        if self.transform:
-            text = self.transform.transform(text)
-            #if idx < 8: print(text)
-        if self.target_transform:
-            label = self.target_transform.transform(label)
-        if isinstance(label, Tensor):
-            if text is None: 
-                print(text, label, idx)
+        text = self.transform(text)
+        label = self.target_transform(label)
+        if isinstance(label, Tensor) and isinstance(text, Tensor):
             sample = (text.to(torch.long), label.to(torch.long))
         else:
-            sample = (text.to(torch.long), torch.tensor(label, dtype=torch.long))
+            sample = (text, torch.tensor(label, dtype=torch.long))
         return sample
 
 class TextDatasetTranslation(TextDataset):
@@ -118,7 +112,7 @@ class TextDatasetTranslation(TextDataset):
     def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         text = self.dataset[idx]
         if self.transform:
-            text = self.transform.transform(text)
+            text = self.transform(text)
         # unique tensor containing both tensors of the target and source
         sample = torch.stack([text[0].to(torch.long), text[1].to(torch.long)])
         y = text[1].to(torch.long).clone().detach()
@@ -169,10 +163,8 @@ class TextDatasetQA(TextDataset):
 
     def __getitem__(self, idx:int) -> Tuple[Tensor, Tensor]:
 
-        if self.transform:
-            context, question = self.transform.transform(self.dataset[idx])
-        if self.target_transform:
-            pos_init, pos_end = self.target_transform.transform(self.dataset[idx])
+        context, question = self.transform(self.dataset[idx])
+        pos_init, pos_end = self.target_transform(self.dataset[idx])
         #sample = [(context.to(torch.long), question.to(torch.long)), (pos, answer.to(torch.long))]
         sample = [torch.stack((context, question)).to(torch.long),
                   torch.stack((pos_init, pos_end)).to(torch.long)]

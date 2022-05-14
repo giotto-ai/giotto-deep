@@ -1,4 +1,7 @@
-from gdeep.data import DataLoaderFromArray, TorchDataLoader, DlBuilderFromDataCloud
+from gdeep.data import DatasetImageClassificationFromFiles, \
+    BuildDataLoaders, DatasetFromArray, DlBuilderFromDataCloud
+
+from gdeep.data import PreprocessImageClassification
 import os
 from os.path import join
 import numpy as np
@@ -11,37 +14,38 @@ LOGGER = logging.getLogger(__name__)
 
 
 def test_array():
-    """test class DataLoaderFromArray"""
+    """test class DatasetFromArray"""
     X = np.random.rand(10,4)
     y = np.random.randint(3, size=10)
-    X1 = np.random.rand(8, 5)
-    y1 = np.random.randint(3, size=8)
-    dl = DataLoaderFromArray(X, y)
-    dl2 = DataLoaderFromArray(X, y, X1, y1)
-    dl.build_dataloaders()
-    v1, v2, v3 = dl2.build_dataloaders()
-    assert torch.norm(next(iter(v1))[0] - torch.tensor(X[0])) < 1e-6
-    assert next(iter(v1))[1] == torch.tensor(y[0])
+    ds = DatasetFromArray(X, y)
+    dl, *_ = BuildDataLoaders((ds,)).build_dataloaders(batch_size = 1)
+    item = next(iter(dl))
+    assert torch.norm(item[0] - torch.tensor(X[0])) < 1e-6
+    assert item[1] == torch.tensor(y[0])
+    assert len(dl.dataset) == 10
 
 def test_array_tensor():
-    """test class DataLoaderFromArray"""
+    """test class DatasetFromArray"""
     X = torch.rand(10,4)
     y = torch.randint(3, size=(10,))
-    X1 = torch.rand(8, 5)
-    y1 = torch.randint(3, size=(8,))
-    dl = DataLoaderFromArray(X, y)
-    dl2 = DataLoaderFromArray(X, y, X1, y1)
-    dl.build_dataloaders()
-    v1, v2, v3 = dl2.build_dataloaders()
-    assert torch.norm(next(iter(v1))[0] - torch.tensor(X[0])) < 1e-6
-    assert next(iter(v1))[1] == torch.tensor(y[0])
+    ds = DatasetFromArray(X, y)
+    dl, *_ = BuildDataLoaders((ds,)).build_dataloaders(batch_size = 1)
+    item = next(iter(dl))
+    assert torch.norm(item[0] - X[0]) < 1e-6
+    assert item[1] == y[0]
 
-def test_torchdataloader():
-    dl = TorchDataLoader(name="DoubleTori")
-    # train_indices = list(range(160))
-    dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
-        
-        
+
+def test_images_from_file():
+    """test DatasetImageClassificationFromFiles"""
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    ds = DatasetImageClassificationFromFiles(
+        os.path.join(file_path,"img_data"),
+        os.path.join(file_path,"img_data","labels.csv"),
+        PreprocessImageClassification((32,32)))
+    dl, *_ = BuildDataLoaders((ds,)).build_dataloaders(batch_size = 2)
+    assert len(next(iter(dl))[0].shape) == 4
+
+
 def test_dlbuilderfromdatacloud():
     dataset_name = "SmallDataset"
     download_directory = join("examples", "data", "DatasetCloud")

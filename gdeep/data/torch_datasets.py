@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional, Callable
 from sympy import false
 import shutil
 from .preprocessing_interface import AbstractPreprocessing
@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 
 from . import CreateToriDataset
 from .dataset_cloud import DatasetCloud
+from .preprocessing_interface import IdentityTransform
 
 Tensor = torch.Tensor
 
@@ -29,6 +30,45 @@ class AbstractDataLoader(ABC):
     @abstractmethod
     def build_dataloaders(self):
         pass
+
+
+class TransformableDataset(Dataset):
+    """This class is the interface for all
+    our dataset, as it forces the API and
+    thee transformations
+    """
+    transform: AbstractPreprocessing
+    target_transform: AbstractPreprocessing
+    def __init__(self,
+                 transform: Optional[AbstractPreprocessing] = None,
+                 target_transform: Optional[AbstractPreprocessing] = None,
+                 dataset:Optional[Dataset]=None) -> None:
+        if transform is None:
+            self.transform = IdentityTransform()
+        else:
+            self.transform = transform
+        if target_transform is None:
+            self.target_transform = IdentityTransform()
+        else:
+            self.target_transform = target_transform
+
+
+class BasicDataset(TransformableDataset):
+    """The most basic case of datasets, i.e. those
+    that have a Dataset source in which each item
+    is a tuple with ``(datum, label)``"""
+    def __init__(self, dataset: Dataset, transform=None, target_transform=None) -> None:
+        super().__init__(transform, target_transform)
+        self.dataset = dataset
+        # fit the preprocessing tools
+        self.transform.fit_to_data(self.dataset)
+        self.target_transform.fit_to_data(self.dataset)
+
+    def __getitem__(self, idx: int):
+        return self.transform(self.dataset[idx][0]), self.target_transform(self.dataset[idx][1])
+
+    def __len__(self) -> int:
+        return len(self.dataset)
 
 
 class DatasetNameError(Exception):
@@ -55,28 +95,29 @@ class MapDataset(Dataset):
         return len(self.data_list)
 
 
-class BuildDataloaders:
+class BuildDataLoaders:
     """This class builds, out of a tuple of datasets, the
     corresponding dataloaders.
 
     Args:
         tuple_of_datasets (tuple of Dataset):
-            the tuple eith the traiing, validation and test
+            the tuple eith the traing, validation and test
             datasets. Also one or two elemennts are acceptable:
             they will be considered as training first and
             validation afterwards.
     """
     def __init__(self, tuple_of_datasets: Tuple) -> None:
         self.tuple_of_datasets = tuple_of_datasets
+        assert len(tuple_of_datasets) <= 3, "Too many Dataset inserted"
 
     def build_dataloaders(self, *args, **kwargs) -> list:
         """This method accepts the arguments of the torch
         Dataloader and applies them when creating the
         tuple
         """
-        out = []
-        for dataset in self.tuple_of_datasets:
-            out.append(DataLoader(dataset, *args, **kwargs))
+        out = [None, None, None]
+        for i, dataset in enumerate(self.tuple_of_datasets):
+            out[i] = DataLoader(dataset, *args, **kwargs)
         return out
 
 
@@ -160,7 +201,7 @@ class TorchDataLoader(AbstractDataLoader):
         return train_dataloader, test_dataloader
 
 
-class DatasetImageClassificationFromFiles(Dataset):
+class DatasetImageClassificationFromFiles(TransformableDataset):
     """This class is useful to build a dataset
     directly from image files
     
@@ -183,34 +224,42 @@ class DatasetImageClassificationFromFiles(Dataset):
     """
     def __init__(self, img_folder: str=".",
                  labels_file:str="labels.csv",
-                 transform: Optional[AbstractPreprocessing]=None,  # Optional[...]
-                 target_transform: Optional[AbstractPreprocessing]=None) -> None:
+                 transform=None,
+                 target_transform=None,
+                 dataset=None  # only for pipeline compatibility
+                 ) -> None:
+
+        super().__init__(transform=transform,
+                         target_transform=target_transform)
         self.img_folder = img_folder
         self.img_labels = pd.read_csv(labels_file)
-        self.transform = transform
-        self.target_transform = target_transform
+        if dataset:
+            self.transform.fit_to_data(dataset)
+            self.target_transform.fit_to_data(dataset)
 
     def __len__(self):
         return len(self.img_labels)
 
     def __getitem__(self, idx):
+        image = self._get_image(idx)
+
+        label = self.img_labels.iloc[idx, 1]
+        imageT = self.transform(image)
+        label = self.target_transform(label)
+        image.close()
+        return imageT, label
+
+    def _get_image(self, idx:int):
         img_path = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])
         try:
             image = Image.open(img_path)
         except UnidentifiedImageError:
             warnings.warn(f"The image {img_path} canot be loaded. Skipping it.")
             return None, None
-
-        label = self.img_labels.iloc[idx, 1]
-        if self.transform:
-            imageT = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        image.close()
-        return imageT, label
+        return image
 
 
-class DatasetFromArray(Dataset):
+class DatasetFromArray(TransformableDataset):
     """This class is useful to build dataloaders
     from a array of X and y. Tensors are also supported.
 
@@ -224,16 +273,14 @@ class DatasetFromArray(Dataset):
     """
     def __init__(self, X: Union[Tensor, np.ndarray],
                  y: Union[Tensor, np.ndarray],
-                 transform=None, target_transform=None) -> None:
+                 transform=None, target_transform=None,
+                 dataset=None # for compatiblitiy reasons
+                 ) -> None:
+        super().__init__(transform=transform,
+                         target_transform=target_transform)
         self.X = self._from_numpy(X)
-        if len(y.shape) == 1:
-            y = self._from_numpy(y.reshape(-1, 1))
-        else:
-            y = self._from_numpy(y)
-
-        self.y = _long_or_float(y)
-        self.transform = transform
-        self.target_transform = target_transform
+        y = self._from_numpy(y)
+        self.y = self._long_or_float(y)
         self.transform.fit_to_data(X)
         self.target_transform.fit_to_data(y)
 
@@ -257,11 +304,8 @@ class DatasetFromArray(Dataset):
         return self.y.shape[0]
 
     def __getitem__(self, idx:int) -> Tuple[Tensor, Tensor]:
-        if self.target_transform:
-            y = self.target_transform(self.y[idx])
-        if self.transform:
-            X = self.transform(self.X[idx])
-
+        y = self.target_transform(self.y[idx])
+        X = self.transform(self.X[idx])
         return X, y
 
 
@@ -332,13 +376,13 @@ class DlBuilderFromDataCloud(AbstractDataLoader):
                 labels = torch.load(join(self.download_directory, 
                                          self.dataset_name, "labels.pt"))
 
-                self.dl_builder = DataLoaderFromArray(data, labels)
+                self.dl_builder = BuildDataLoaders((DatasetFromArray(data, labels),))
             elif self.dataset_metadata['data_format'] == 'numpy_array':
                 data = np.load(join(self.download_directory,
                                     self.dataset_name, "data.npy"))
                 labels = np.load(join(self.download_directory,
                                       self.dataset_name, "labels.npy"))
-                self.dl_builder = DataLoaderFromArray(data, labels)
+                self.dl_builder = BuildDataLoaders((DatasetFromArray(data, labels),))
             else:
                 raise ValueError("Data format {}"\
                     .format(self.dataset_metadata['data_format']) +
