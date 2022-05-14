@@ -25,7 +25,7 @@ def test_pipe_1():
     model = model1()
     # dataloaders
     X = np.array(np.random.rand(100, 3), dtype=np.float32)
-    y = np.array(np.random.randint(2, size=100*2).reshape(-1, 2), dtype=np.int_)
+    y = np.array(np.random.randint(2, size=100*2).reshape(-1, 2), dtype=np.int64)
     dl_tr, *_ = BuildDataLoaders((DatasetFromArray(X, y),)).build_dataloaders(batch_size=23)
 
     # loss function
