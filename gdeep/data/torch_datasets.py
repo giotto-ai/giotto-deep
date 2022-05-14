@@ -1,38 +1,37 @@
-from typing import Union, Tuple, Dict, Any, Optional, Callable
-from sympy import false
-import shutil
-from .preprocessing_interface import AbstractPreprocessing
-import torch
-from torch.utils.data import DataLoader, Dataset
-from torchvision import datasets
-from torchtext import datasets as textds
-from torchvision.transforms import ToTensor, Resize
-import warnings
-import pandas as pd
-import os
-from os.path import join
 import json
-from PIL import Image, UnidentifiedImageError
-from tqdm import tqdm
-import numpy as np
-
+import os
+import shutil
+import warnings
 from abc import ABC, abstractmethod
+from os.path import join
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+
+import numpy as np
+import pandas as pd
+import torch
+from PIL import Image, UnidentifiedImageError
+from sympy import false
+from torch.utils.data import DataLoader, Dataset
+from torchtext import datasets as textds
+from torchvision import datasets
+from torchvision.transforms import Resize, ToTensor
+from tqdm import tqdm
 
 from . import CreateToriDataset
 from .dataset_cloud import DatasetCloud
-from .preprocessing_interface import IdentityTransform
+from .preprocessing_interface import AbstractPreprocessing, IdentityTransform
 
 Tensor = torch.Tensor
 
-class AbstractDataLoader(ABC):
+class AbstractDataLoaderBuilder(ABC):
     """The abstractr class to interface the
     Giotto dataloaders"""
     @abstractmethod
     def build_dataloaders(self):
         pass
 
-
-class TransformableDataset(Dataset):
+T = TypeVar('T')
+class TransformableDataset(Dataset[T]):
     """This class is the interface for all
     our dataset, as it forces the API and
     thee transformations
@@ -121,7 +120,7 @@ class BuildDataLoaders:
         return out
 
 
-class TorchDataLoader(AbstractDataLoader):
+class TorchDataLoader(AbstractDataLoaderBuilder):
     """Class to obtain DataLoaders from the classical
     datasets available on pytorch.
 
@@ -309,7 +308,7 @@ class DatasetFromArray(TransformableDataset):
         return X, y
 
 
-class DlBuilderFromDataCloud(AbstractDataLoader):
+class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
     """Class that loads data from Google Cloud Storage
     
     This class is useful to build dataloaders from a dataset stored in

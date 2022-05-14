@@ -1,66 +1,92 @@
-import torch
-from typing import Union, Tuple, Generic, NewType
-from torch.utils.data import DataLoader, Dataset
-from abc import ABC, abstractmethod
-from torchtext.data.utils import get_tokenizer
-from torch.nn.functional import pad
-from collections import Counter
-from torchtext.vocab import Vocab
-import warnings
-import os
 import json
+import os
+import warnings
+from abc import ABC, abstractmethod
+from collections import Counter
+from typing import Callable, Generic, NewType, Tuple, Union
+
 import jsonpickle
-from .preprocessing_interface import AbstractPreprocessing
-from torchvision.transforms import ToTensor, Resize
+import torch
+from torch.nn.functional import pad
+from torch.utils.data import DataLoader, Dataset
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import Vocab
+from torchvision.transforms import Resize, ToTensor
+
+
+from .abstract_preprocessing import AbstractPreprocessing
+from .transforming_dataset import TransformingDataset
 
 # type definition
 Tensor = torch.Tensor
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class Normalisation(AbstractPreprocessing):
+class NormalizeMean(AbstractPreprocessing[Tensor, Tensor]):
     """This class runs the standard normalisation on all the dimensions of
-    the input tensor. For example, in case of images where each item is of
-    shape ``(BS, C, H, W)``, the average will and the standard deviations
+    the tensors of a dataloader. For example, in case of images where each item is of
+    shape ``(C, H, W)``, the average will and the standard deviations
     will be tensors of shape ``(C, H, W)``
     """
     is_fitted: bool
     mean: Tensor
-    stddev: Tensor
 
     def __init__(self):
         self.is_fitted = False
 
-    def fit_to_data(self, dataset: Union[Dataset, Tensor]) -> None:
-        self.mean = self._mean(dataset, 0, False)
-        self.stddev = self._stddev(dataset, 0, False)
+    def fit_to_dataset(self, dataset: Dataset[Tensor]) -> None:
+        self.mean = _compute_mean_of_dataset(dataset)
         self.is_fitted = True
-        self.save_pretrained(".")
 
-    def __call__(self, datum: Tensor) -> Tensor:
+    @torch.script.jit  # type: ignore
+    def __call__(self, item: Tensor) -> Tensor:
         if not self.is_fitted:
-            self.load_pretrained(".")
-        if not torch.all(self.stddev > 0):
-            warnings.warn("The standard deviation contains zeros! Adding 1e-7")
-            self.stddev = self.stddev + 1e-7
-        out = (datum - self.mean)/(self.stddev)
-        return out
+            raise RuntimeError("The normalisation is not fitted to any dataset."
+                               " Please call fit_to_dataset() first.")
+        return item - self.mean
 
-    def _mean(self, dataset: Union[Dataset, Tensor], dim:int, keep_dim:bool) -> Tensor:
-        """compute the mean of the whole dataset"""
-        if isinstance(dataset, Dataset):
-            dataset=next(iter(DataLoader(dataset, batch_size=len(dataset))))[0]
-        return torch.mean(dataset.float(), dim, keep_dim)
+class Normalize(AbstractPreprocessing[Tensor, Tensor]):
+    """This class runs the standard normalisation on all the dimensions of
+    the tensors of a dataloader. For example, in case of images where each item is of
+    shape ``(C, H, W)``, the average will and the standard deviations
+    will be tensors of shape ``(C, H, W)``
+    """
+    is_fitted: bool
+    std: Tensor
 
-    def _stddev(self, dataset: Union[Dataset, Tensor], dim:int, keep_dim:bool) -> Tensor:
-        """compute the stddev of the whole dataset"""
-        if isinstance(dataset, Dataset):
-            dataset=next(iter(DataLoader(dataset, batch_size=len(dataset))))[0]
-        return torch.std(dataset.float(), dim, keep_dim)
+    def __init__(self):
+        self.is_fitted = False
+
+    @torch.script.jit  # type: ignore
+    def fit_to_dataset(self, dataset: Dataset[Tensor]) -> None:
+        normalize_mean = NormalizeMean()
+        normalize_mean.fit_to_dataset(dataset)
+        mean_normalized_dataset: TransformingDataset =\
+            TransformingDataset(dataset, normalize_mean)
+        elementwise_square: Callable[[Tensor], Tensor] =\
+            lambda x: x ** 2
+        mean_normalized_dataset.append_transform(elementwise_square)
+        self.std = torch.sqrt(_compute_mean_of_dataset(mean_normalized_dataset))
+        self.is_fitted = True
+        
+    def __call__(self, x: Tensor) -> Tensor:
+        if not self.is_fitted:
+            raise RuntimeError("The normalisation is not fitted to any dataset."
+                               " Please call fit_to_dataset() first.")
+        return x / self.std
+
+@torch.script.jit  # type: ignore
+def _compute_mean_of_dataset(dataset: Dataset[Tensor]) -> Tensor:
+    """Compute the mean of the whole dataset"""
+    mean: Tensor = torch.zeros(dataset[0].shape, dtype=torch.float64, device=DEVICE)
+    for idx in range(len(dataset)):  # type: ignore
+        if idx == 0:
+            mean += dataset[idx]
+        else:
+            mean = (mean * idx + dataset[idx]) / (idx + 1)
+    return mean
+
 
 
 class PreprocessingPipeline(AbstractPreprocessing):

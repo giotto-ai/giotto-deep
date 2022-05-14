@@ -10,11 +10,11 @@ from .text_dataset import TextDataset, TextDatasetQA, \
     TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
-from .preprocessing_pipes import Normalisation, \
+from .preprocessing_pipes import Normalize, \
     PreprocessTextTranslation, PreprocessTextData, PreprocessingPipeline, \
     PreprocessTextQA, PreprocessTextLabel, PreprocessTextQATarget, \
     PreprocessImageClassification
-from .preprocessing_interface import AbstractPreprocessing, IdentityTransform
+from .preprocessing_interface import AbstractPreprocessing
 
 
 
@@ -46,5 +46,6 @@ __all__ = [
     'TextDatasetTranslation',
     'DatasetFromArray',
     'DatasetCloud',
-    'DlBuilderFromDataCloud'
+    'DlBuilderFromDataCloud',
+    'Normalize'
     ]

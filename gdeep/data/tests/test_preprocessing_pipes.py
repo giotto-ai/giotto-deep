@@ -1,28 +1,29 @@
-from gdeep.data import PreprocessingPipeline, Normalisation, \
+from sklearn import preprocessing
+from gdeep.data import Normalize, \
     PreprocessImageClassification, BasicDataset, \
-    DatasetImageClassificationFromFiles, IdentityTransform
-from torch.utils.data import Dataset
+    DatasetImageClassificationFromFiles
 import os
+from ..preprocessing_pipeline import PreprocessingPipeline
+from ..transforming_dataset import TransformingDataset
 
 
 def test_preeprocessing_pipeline():
     """test preprocessing pipeline"""
-    n = Normalisation()
-    id = IdentityTransform()
-    i = PreprocessImageClassification((32,32))
+    normalize = Normalize()
     file_path = os.path.dirname(os.path.realpath(__file__))
 
-    ds = DatasetImageClassificationFromFiles(
+    image_dataset = DatasetImageClassificationFromFiles(
         os.path.join(file_path, "img_data"),
         os.path.join(file_path, "img_data", "labels.csv"))
     # define preprocessing pipeline
-    p = PreprocessingPipeline(((i, id, DatasetImageClassificationFromFiles,
-                                os.path.join(file_path, "img_data"),
-                                os.path.join(file_path, "img_data", "labels.csv")),
-                               (Normalisation(), id, BasicDataset)))
+    preprocessing_pipeline = PreprocessingPipeline((normalize,))
 
-    ds2 = DatasetImageClassificationFromFiles(
-        os.path.join(file_path, "img_data"),
-        os.path.join(file_path, "img_data", "labels.csv"),
-        p, dataset=ds)
-    ds2[0]
+    # fit preprocessing pipeline to dataset
+    preprocessing_pipeline.fit_to_dataset(image_dataset)
+    
+    # apply preprocessing pipeline to dataset
+    preprocessed_dataset = TransformingDataset(image_dataset,
+                                                  preprocessing_pipeline.transform)
+    
+    # TODO: check if preprocessing pipeline is applied correctly
+    
