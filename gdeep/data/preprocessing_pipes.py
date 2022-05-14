@@ -53,7 +53,7 @@ class Normalisation(AbstractPreprocessing[Tensor, Tensor]):
 
 def _compute_mean_of_dataset(dataset: Dataset[Tuple[Tensor, Any]]) -> Tensor:
     """Compute the mean of the whole dataset"""
-    mean: Tensor = torch.zeros(dataset[0].shape, dtype=torch.float64, device=DEVICE)
+    mean: Tensor = torch.zeros(dataset[0][0].shape, dtype=torch.float64, device=DEVICE)
     for idx in range(len(dataset)):  # type: ignore
         if idx == 0:
             mean += dataset[idx][0]
@@ -61,7 +61,7 @@ def _compute_mean_of_dataset(dataset: Dataset[Tuple[Tensor, Any]]) -> Tensor:
             mean = (mean * idx + dataset[idx][0]) / (idx + 1)
     return mean
 
-def _compute_stddev_of_dataset(dataset: Tuple[Tensor, Any], mean: Tensor) -> Tensor:
+def _compute_stddev_of_dataset(dataset: Dataset[Tuple[Tensor, Any]], mean: Tensor) -> Tensor:
     """Compute the stddev of the whole dataset"""
     mean_normalized_dataset = TransformingDataset(dataset, lambda x: (x - mean)**2)
     stddev: Tensor = _compute_mean_of_dataset(mean_normalized_dataset)

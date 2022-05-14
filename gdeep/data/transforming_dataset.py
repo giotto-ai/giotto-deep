@@ -1,12 +1,13 @@
-from typing import Any, Callable, Tuple, Sized
+from typing import Any, Callable, Tuple
 
 from torch.utils.data import Dataset
 
-class TransformingDataset(Dataset[Any]):
-    dataset: Dataset[Any]
+
+class TransformingDataset(Dataset[Tuple[Any, Any]]):
+    dataset: Dataset[Tuple[Any, Any]]
     transform: Callable[[Any], Any]
     
-    def __init__(self, dataset: Dataset[Any], transform:Callable[[Any], Any]) -> None:
+    def __init__(self, dataset: Dataset[Tuple[Any, Any]], transform:Callable[[Any], Any]) -> None:
         self.dataset = dataset
         self.transform = transform
         
@@ -16,10 +17,11 @@ class TransformingDataset(Dataset[Any]):
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         return self.transform(self.dataset[idx][0]), self.dataset[idx][0]
     
-    def __len__(self) -> int:
-        if isinstance(self.dataset, Sized):
-            return len(self.dataset)
+    # forward all the methods of the TransformingDataset to the dataset
+    def __getattribute__(self, name: str) -> Any:
+        if name in ["__len__", "__getitem__", "append_transform"]:
+            return super().__getattribute__(name)
         else:
-            raise NotImplementedError("The dataset does not implement __len__")
+            return getattr(self.dataset, name)
     
 
