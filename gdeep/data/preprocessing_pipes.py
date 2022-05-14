@@ -63,8 +63,7 @@ def _compute_mean_of_dataset(dataset: Dataset[Tensor]) -> Tensor:
 
 def _compute_stddev_of_dataset(dataset: Dataset[Tensor], mean: Tensor) -> Tensor:
     """Compute the stddev of the whole dataset"""
-    mean_normalized_dataset: TransformingDataset = TransformingDataset(dataset,
-                                                                          lambda x: (x - mean)**2)
+    mean_normalized_dataset = TransformingDataset(dataset, lambda x: (x - mean)**2)
     stddev: Tensor = _compute_mean_of_dataset(mean_normalized_dataset)
     return stddev.sqrt()
 
