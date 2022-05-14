@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import json
 import os
-from typing import Generic, TypeVar
+from typing import Any, Generic, Tuple, TypeVar
 import warnings
 import jsonpickle
 
@@ -12,7 +12,7 @@ S = TypeVar('S')
 
 class AbstractPreprocessing(ABC, Generic[T, S]):
     @abstractmethod
-    def fit_to_dataset(self, dataset: Dataset[T]) -> None:
+    def fit_to_dataset(self, dataset: Dataset[Tuple[T, Any]]) -> None:
         pass
     
     @abstractmethod

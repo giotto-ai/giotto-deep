@@ -3,7 +3,7 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Generic, NewType, Tuple, Union
+from typing import Any, Generic, NewType, Tuple, Union
 
 import jsonpickle
 import torch
@@ -36,7 +36,7 @@ class Normalisation(AbstractPreprocessing[Tensor, Tensor]):
     def __init__(self):
         self.is_fitted = False
 
-    def fit_to_dataset(self, dataset: Dataset[Tensor]) -> None:
+    def fit_to_dataset(self, dataset: Dataset[Tuple[Tensor, Any]]) -> None:
         self.mean = _compute_mean_of_dataset(dataset)
         self.stddev = _compute_stddev_of_dataset(dataset, self.mean)
         self.is_fitted = True
@@ -51,7 +51,7 @@ class Normalisation(AbstractPreprocessing[Tensor, Tensor]):
         out = (item - self.mean)/ self.stddev
         return out
 
-def _compute_mean_of_dataset(dataset: Dataset[Tensor]) -> Tensor:
+def _compute_mean_of_dataset(dataset: Dataset[Tuple[Tensor, Any]]) -> Tensor:
     """Compute the mean of the whole dataset"""
     mean: Tensor = torch.zeros(dataset[0].shape, dtype=torch.float64, device=DEVICE)
     for idx in range(len(dataset)):  # type: ignore
@@ -61,7 +61,7 @@ def _compute_mean_of_dataset(dataset: Dataset[Tensor]) -> Tensor:
             mean = (mean * idx + dataset[idx][0]) / (idx + 1)
     return mean
 
-def _compute_stddev_of_dataset(dataset: Dataset[Tensor], mean: Tensor) -> Tensor:
+def _compute_stddev_of_dataset(dataset: Tuple[Tensor, Any], mean: Tensor) -> Tensor:
     """Compute the stddev of the whole dataset"""
     mean_normalized_dataset = TransformingDataset(dataset, lambda x: (x - mean)**2)
     stddev: Tensor = _compute_mean_of_dataset(mean_normalized_dataset)
