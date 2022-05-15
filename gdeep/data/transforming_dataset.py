@@ -1,27 +1,32 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Generic, TypeVar
 
 from torch.utils.data import Dataset
 
+R = TypeVar('R')
+S = TypeVar('S')
+T = TypeVar('T')
 
-class TransformingDataset(Dataset[Tuple[Any, Any]]):
-    dataset: Dataset[Tuple[Any, Any]]
-    transform: Callable[[Any], Any]
+class TransformingDataset(Dataset[S], Generic[R, S]):
+    dataset: Dataset[R]
+    transform: Callable[[R], S]
     
-    def __init__(self, dataset: Dataset[Tuple[Any, Any]], transform:Callable[[Any], Any]) -> None:
+    def __init__(self,
+                 dataset: Dataset[R],
+                 transform: Callable[[R], S]) -> None:
         self.dataset = dataset
         self.transform = transform
-        
-    def append_transform(self, transform: Callable[[Any], Any]) -> None:
-        self.transform = lambda x: transform(self.transform(x))
     
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
-        return self.transform(self.dataset[idx][0]), self.dataset[idx][0]
+    def __getitem__(self, idx: int) -> S:
+        return self.transform(self.dataset[idx])
     
-    # forward all the methods of the TransformingDataset to the dataset
+    # forward all other methods of the TransformingDataset to the dataset
     def __getattribute__(self, name: str) -> Any:
-        if name in ["__len__", "__getitem__", "append_transform"]:
-            return super().__getattribute__(name)
-        else:
-            return getattr(self.dataset, name)
-    
+        if name in ["__init__", "__getitem__"]:
+            return self.name
+        return getattr(self.dataset, name)
 
+def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S], T]) \
+    -> TransformingDataset[R, T]:
+    def new_transform(x: R) -> T:
+        return transform(dataset.transform(x))
+    return TransformingDataset(dataset.dataset, new_transform)

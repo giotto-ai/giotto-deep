@@ -1,21 +1,15 @@
-import json
-import os
 import warnings
-from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Any, Generic, NewType, Tuple, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
-import jsonpickle
 import torch
-from torch.nn.functional import pad
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import Vocab
 from torchvision.transforms import Resize, ToTensor
 
-from gdeep.data.transforming_dataset import TransformingDataset
-
 from .abstract_preprocessing import AbstractPreprocessing
+from .transforming_dataset import TransformingDataset
 
 # type definition
 Tensor = torch.Tensor
@@ -23,7 +17,8 @@ Tensor = torch.Tensor
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class Normalisation(AbstractPreprocessing[Tensor, Tensor]):
+T = TypeVar('T')
+class Normalisation(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
     """This class runs the standard normalisation on all the dimensions of
     the tensors of a dataloader. For example, in case of images where each item is of
     shape ``(C, H, W)``, the average will and the standard deviations
@@ -36,20 +31,20 @@ class Normalisation(AbstractPreprocessing[Tensor, Tensor]):
     def __init__(self):
         self.is_fitted = False
 
-    def fit_to_dataset(self, dataset: Dataset[Tuple[Tensor, Any]]) -> None:
+    def fit_to_dataset(self, dataset: Dataset[Tuple[Tensor, T]]) -> None:
         self.mean = _compute_mean_of_dataset(dataset)
         self.stddev = _compute_stddev_of_dataset(dataset, self.mean)
         self.is_fitted = True
 
-    def __call__(self, item: Tensor) -> Tensor:
+    def __call__(self, item: Tuple[Tensor, T]) -> Tuple[Tensor, T]:
         if not self.is_fitted:
             raise RuntimeError("The normalisation is not fitted to any dataset."
                                " Please call fit_to_dataset() first.")
         if not torch.all(self.stddev > 0):
             warnings.warn("The standard deviation contains zeros! Adding 1e-7")
             self.stddev = self.stddev + 1e-7
-        out = (item - self.mean)/ self.stddev
-        return out
+        out = (item[0] - self.mean)/ self.stddev
+        return (out, item[1])
 
 def _compute_mean_of_dataset(dataset: Dataset[Tuple[Tensor, Any]]) -> Tensor:
     """Compute the mean of the whole dataset"""
@@ -68,61 +63,7 @@ def _compute_stddev_of_dataset(dataset: Dataset[Tuple[Tensor, Any]], mean: Tenso
     return stddev.sqrt()
 
 
-class PreprocessingPipeline(AbstractPreprocessing):
-    """class to compose preprocessing classes. The
-    order is very important, and to make sure that the output of
-    one preprocessing is acceptable as input for the
-    following preprocessing
-
-    Args:
-        list_of_preproc_and_datatypes (list):
-            list of tuples in which the the first
-            element if the class instance of the
-            AbstractPreprocessing and the second element
-            is the Dataset class (not the instance!)
-
-    Examples::
-
-        from torch.utils.data import Dataset
-        from gdeep.data import PreprocessingPipeline, Normalisation
-        from gdeep.data import PreprocessTextData, TextDataset
-
-        PreprocessingPipeline(((PreprocessTextData(), None, TextDataset),
-                               (Normalisation(), None, BasicDataset)))
-
-    """
-    def __init__(self, list_of_transforms_and_datatypes:list):
-        self.list_of_cls = list_of_transforms_and_datatypes
-        
-    def fit_to_data(self, dataset):
-        for (transform, target_transform, data_type_class, *args) in self.list_of_cls:
-            dataset = data_type_class(*args, dataset=dataset,
-                                      transform=transform,
-                                      target_transform=target_transform)
-
-
-    def __call__(self, datum:Tensor) -> Tensor:
-        for (transform, _, _, *_) in self.list_of_cls:
-            datum = transform(datum)
-        return datum
-
-    def __len__(self) -> int:
-        return len(self.list_of_cls)
-
-    def __getitem__(self, index: int):
-        return self.list_of_cls[index]
-
-    def __iter__(self):
-        return iter(self.list_of_cls)
-
-    def __repr__(self) -> str:
-        return f'PreprocessingPipeline({self.list_of_cls})'
-
-    def __add__(self, other):
-        return PreprocessingPipeline(self.list_of_cls + other.list_of_cls)
-
-
-class PreprocessTextData(AbstractPreprocessing):
+class PreprocessTextData(AbstractPreprocessing[str, Tensor]):
     """Preprocessing class. This class is useful to convert the data format
     ``(label, text)`` into the proper tensor format ``( word_embedding, label)``
 
@@ -134,18 +75,22 @@ class PreprocessTextData(AbstractPreprocessing):
             given.
 
     """
-    def __init__(self, tokenizer=None,
-                 vocabulary=None):
+    tokenizer: Any
+    vocabulary: Optional[Vocab]
+    
+    def __init__(self, 
+                 tokenizer: Optional[Any] = None,
+                 vocabulary: Optional[Vocab] = None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
             self.tokenizer = tokenizer
 
         self.vocabulary = vocabulary
-        self.MAX_LENGTH = 0
+        self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_data(self, data):
+    def fit_to_dataset(self, dataset: Dataset[Tuple[str, Any]]) -> None:
         """Method to extract global data, like to length of
         the sentences to be able to pad.
 
@@ -154,19 +99,18 @@ class PreprocessTextData(AbstractPreprocessing):
                 the data in the format ``(label, text)``
         """
 
-        counter = Counter()  # for the text
-        for (label, text) in data:
+        counter: Counter[str] = Counter()  # for the text
+        for _, text in dataset:
             if isinstance(text, tuple) or isinstance(text, list):
                 text = text[0]
             counter.update(self.tokenizer(text))
-            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(text)))
-        # self.vocabulary = Vocab(counter, min_freq=1)
+            self.max_length = max(self.max_length, len(self.tokenizer(text)))
         if self.vocabulary is None:
             self.vocabulary = Vocab(counter)
         self.is_fitted = True
         self.save_pretrained(".")
 
-    def __call__(self, datum: tuple) -> Tensor:
+    def __call__(self, datum: str) -> Tensor:
         """This method is applied to each batch and
         transforms it following the rule below
 
@@ -189,7 +133,7 @@ class PreprocessTextData(AbstractPreprocessing):
                                       dtype=torch.int64).to(DEVICE)
         # convert to tensors (padded)
         out = torch.cat([processed_text,
-                   pad_item * torch.ones(self.MAX_LENGTH - processed_text.shape[0]
+                   pad_item * torch.ones(self.max_length - processed_text.shape[0]
                                               ).to(DEVICE)])
         return out
 
@@ -246,7 +190,8 @@ class PreprocessTextTranslation(AbstractPreprocessing):
 
         """
 
-    def __init__(self, vocabulary=None,
+    def __init__(self,
+                 vocabulary: Optional[Vocab]=None,
                  vocabulary_target=None,
                  tokenizer=None,
                  tokenizer_target=None):
@@ -313,7 +258,7 @@ class PreprocessTextTranslation(AbstractPreprocessing):
         return out, out_target
 
 
-class PreprocessTextQA(AbstractPreprocessing):
+class PreprocessTextQA(AbstractPreprocessing[Tuple[str, str, List[str], List[str]], Tuple[Tensor, Tensor]]):
     """Class to preprocess text dataloaders for Q&A
     tasks
 
@@ -337,57 +282,52 @@ class PreprocessTextQA(AbstractPreprocessing):
 
     """
 
-    def __init__(self, vocabulary=None,
+    def __init__(self, 
+                 vocabulary=None,
                  tokenizer=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
             self.tokenizer = tokenizer
         self.vocabulary = vocabulary
-        self.MAX_LENGTH = 0
+        self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_data(self, data):
+    def fit_to_dataset(self, dataset: Dataset[Tuple[str, str, List[str], List[str]]]):
 
         counter = Counter()  # for the text
-        for (context, question, answer, init_position) in data:
+        for (context, question, answer, init_position) in dataset:
             if isinstance(context, tuple) or isinstance(context, list):
                 context = context[0]
             counter.update(self.tokenizer(context))
-            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(context)))
+            self.max_length = max(self.max_length, len(self.tokenizer(context)))
             if isinstance(question, tuple) or isinstance(question, list):
                 question = question[0]
             counter.update(self.tokenizer(question))
-            self.MAX_LENGTH = max(self.MAX_LENGTH, len(self.tokenizer(question)))
-            #if isinstance(answer, tuple) or isinstance(answer, list):
-            #    answer = answer[0]
-            #    if isinstance(answer, tuple) or isinstance(answer, list):
-            #        answer = answer[0]
-            #counter.update(self.tokenizer(answer))
-            #self.MAX_LENGTH_ANSWER = max(self.MAX_LENGTH_ANSWER, len(self.tokenizer(answer)))
+            self.max_length = max(self.max_length, len(self.tokenizer(question)))
         if self.vocabulary is None:
             self.vocabulary = Vocab(counter)
         self.pad_item = self.vocabulary["."]
-        self.is_fitted = False
-        self.save_pretrained(".")
+        self.is_fitted = True
 
-    def __call__(self, datum:tuple) -> Tuple[Tensor, Tensor]:
+    def __call__(self, datum: Tuple[str, str, List[str], List[str]]) -> Tuple[Tensor, Tensor]:
         if not self.is_fitted:
-            self.load_pretrained(".")
+            raise ValueError("You need to fit the preprocessing first"
+                             " using the fit_to_dataset method")
         text_pipeline = lambda x: [self.vocabulary[token] for token in
                                    self.tokenizer(x)]
 
         processed_context = torch.tensor(text_pipeline(datum[0]),
                                       dtype=torch.int64).to(DEVICE)
         out_context = torch.cat([processed_context,
-                         self.pad_item * torch.ones(self.MAX_LENGTH - processed_context.shape[0]
-                                               ).to(DEVICE)])
+                         self.pad_item * torch.ones(self.max_length - processed_context.shape[0]
+                                               )]).to(DEVICE)
         processed_question = torch.tensor(text_pipeline(datum[1]),
                                          dtype=torch.int64).to(DEVICE)
 
         out_question = torch.cat([processed_question,
-                         self.pad_item * torch.ones(self.MAX_LENGTH - processed_question.shape[0]
-                                               ).to(DEVICE)])
+                         self.pad_item * torch.ones(self.max_length - processed_question.shape[0]
+                                               )]).to(DEVICE)
 
         return out_context, out_question
 
@@ -422,7 +362,7 @@ class PreprocessTextQATarget(AbstractPreprocessing):
         return torch.tensor(pos_init, dtype=torch.long), torch.tensor(pos_end, dtype=torch.long)
 
 
-class PreprocessImageClassification(AbstractPreprocessing):
+class PreprocessImageClassification(AbstractPreprocessing[Tensor, Any]):
     """Class to preprocess image files for classification
       tasks
 
@@ -435,11 +375,12 @@ class PreprocessImageClassification(AbstractPreprocessing):
                   ``(size * height / width, size)``.
 
       """
-    def __init__(self, size: Union[int, tuple]) -> None:
+    def __init__(self, size: Union[int, Tuple[int, ...]]) -> None:
         self.size = size
 
-    def fit_to_data(self, dataset:Dataset) -> None:
+    def fit_to_dataset(self, dataset:Dataset[Tuple[Tensor, int]]) -> None:
+        # This preprocessor does not need to be fit to the dataset
         pass
 
     def __call__(self, datum: Tensor) -> Tensor:
-        return ToTensor()(Resize(self.size)(datum))
+        return ToTensor()(Resize(self.size)(datum))  # type: ignore

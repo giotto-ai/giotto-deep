@@ -1,19 +1,15 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from typing import Tuple, Optional, Union
-from .preprocessing_interface import AbstractPreprocessing
-from .torch_datasets import TransformableDataset
+from typing import Any, Tuple, Optional, Union
+from .transforming_dataset import TransformingDataset
 
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 Tensor = torch.Tensor
 
 
-class TextDataset(TransformableDataset):
+class TextDataset(TransformingDataset):
     """This class is the base class for the text-datasets.
     The source dataset for this class are expected to be
     dataset of the form ``(label, string)``.
@@ -44,7 +40,8 @@ class TextDataset(TransformableDataset):
 
     """
 
-    def __init__(self, dataset: Dataset,
+    def __init__(self, 
+                 dataset: Dataset[Tuple[Any, Any]],
                  transform=None,
                  target_transform=None):
         super().__init__(transform=transform, target_transform=target_transform)
@@ -124,7 +121,7 @@ class TextDatasetQA(TextDataset):
     """This class is the class for the text datasets
     dealing with Q&A tasks. The source data is expected
     to be of the form ``(string, string, list[string], list[int])`` containing the
-    senteces ``(context, question, [answer(s)],
+    sentences ``(context, question, [answer(s)],
     [initial position (in characters) of the answer(s)]))``.
 
     Args:

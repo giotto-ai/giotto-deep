@@ -1,5 +1,5 @@
 from sklearn import preprocessing
-from gdeep.data import Normalize, \
+from gdeep.data import Normalisation, \
     PreprocessImageClassification, BasicDataset, \
     DatasetImageClassificationFromFiles
 import os
@@ -9,7 +9,7 @@ from ..transforming_dataset import TransformingDataset
 
 def test_preeprocessing_pipeline():
     """test preprocessing pipeline"""
-    normalize = Normalize()
+    normalize = Normalisation()
     file_path = os.path.dirname(os.path.realpath(__file__))
 
     image_dataset = DatasetImageClassificationFromFiles(

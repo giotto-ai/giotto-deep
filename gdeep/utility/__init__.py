@@ -1,6 +1,6 @@
 from .utils import _are_compatible, save_model_and_optimizer, \
     ensemble_wrapper, _inner_refactor_scalars, is_notebook, \
-    KnownWarningSilencer
+    KnownWarningSilencer, autoreload_if_notebook
 
 __all__ = [
     '_are_compatible',
@@ -10,5 +10,6 @@ __all__ = [
     'intersection_homology',
     '_inner_refactor_scalars',  # This should be here
     'is_notebook',
-    'KnownWarningSilencer'
+    'KnownWarningSilencer',
+    'autoreload_if_notebook',
     ]

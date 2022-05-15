@@ -3,19 +3,18 @@ from .tori import Rotation, \
     CreateToriDataset, GenericDataset
 from .dataset_cloud import DatasetCloud
 from ._data_cloud import _DataCloud
-from .torch_datasets import TorchDataLoader, BuildDataLoaders, \
-    DatasetImageClassificationFromFiles, DatasetFromArray, \
-    DlBuilderFromDataCloud, TransformableDataset, BasicDataset
+from .torch_datasets import TorchDataLoader#, BuildDataLoaders, \
+#     DatasetImageClassificationFromFiles, DatasetFromArray, \
+#     DlBuilderFromDataCloud, TransformableDataset, BasicDataset
 from .text_dataset import TextDataset, TextDatasetQA, \
     TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
-from .preprocessing_pipes import Normalize, \
-    PreprocessTextTranslation, PreprocessTextData, PreprocessingPipeline, \
+from .preprocessing_transforms import Normalisation, \
+    PreprocessTextTranslation, PreprocessTextData, \
     PreprocessTextQA, PreprocessTextLabel, PreprocessTextQATarget, \
     PreprocessImageClassification
-from .preprocessing_interface import AbstractPreprocessing
-
+from .abstract_preprocessing import AbstractPreprocessing
 
 
 __all__ = [
@@ -24,13 +23,12 @@ __all__ = [
     'PreprocessImageClassification',
     'CreateToriDataset',
     'GenericDataset',
-    'BasicDataset',
-    'TransformableDataset',
+    #'BasicDataset',
+    #'TransformableDataset',
     'PreprocessTextQATarget',
     'TextDataset',
-    'BuildDataLoaders',
+    #'BuildDataLoaders',
     'AbstractPreprocessing',
-    'PreprocessingPipeline',
     'PreprocessTextQA',
     'TextDatasetTranslation',
     'PreprocessTextLabel',
@@ -41,11 +39,11 @@ __all__ = [
     'create_pd_orbits',
     'OrbitsGenerator',
     'DataLoaderKwargs',
-    'DatasetImageClassificationFromFiles',
+    #'DatasetImageClassificationFromFiles',
     'PreprocessTextTranslation',
     'TextDatasetTranslation',
-    'DatasetFromArray',
+    #'DatasetFromArray',
     'DatasetCloud',
-    'DlBuilderFromDataCloud',
-    'Normalize'
+    #'DlBuilderFromDataCloud',
+    'Normalisation'
     ]

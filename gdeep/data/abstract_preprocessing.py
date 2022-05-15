@@ -1,23 +1,26 @@
 from abc import ABC, abstractmethod
 import json
 import os
-from typing import Any, Generic, Tuple, TypeVar
+from typing import Generic, TypeVar
 import warnings
 import jsonpickle
 
 from torch.utils.data import Dataset
 
-T = TypeVar('T')
+R = TypeVar('R')
 S = TypeVar('S')
 
-class AbstractPreprocessing(ABC, Generic[T, S]):
+class AbstractPreprocessing(ABC, Generic[R, S]):
     @abstractmethod
-    def fit_to_dataset(self, dataset: Dataset[Tuple[T, Any]]) -> None:
+    def fit_to_dataset(self, dataset: Dataset[R]) -> None:
         pass
     
     @abstractmethod
-    def __call__(self, x: T) -> S:
+    def __call__(self, x: R) -> S:
         pass
+    
+    def transform(self, x: R) -> S:
+        return self(x)
     
     def save_pretrained(self, path:str) -> None:
         with open(os.path.join(path, self.__class__.__name__ + ".json"), "w") as outfile:
