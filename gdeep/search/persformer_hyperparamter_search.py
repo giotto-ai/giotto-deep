@@ -12,7 +12,7 @@ from optuna.pruners import NopPruner
 
 from gdeep.topology_layers import Persformer
 from gdeep.search import GiottoSummaryWriter, Gridsearch
-from gdeep.data import DlBuilderFromDataCloud
+from gdeep.data.datasets import DlBuilderFromDataCloud
 from gdeep.pipeline import Pipeline
 
 class PersformerHyperparameterSearch:

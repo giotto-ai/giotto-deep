@@ -15,11 +15,7 @@ from ..utility.optimisation import MissingClosureError
 import optuna
 from datetime import datetime
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-    print("Using GPU!")
-else:
-    DEVICE = torch.device("cpu")
+from gdeep.utility import DEVICE
 
 try:
     import torch_xla

@@ -5,7 +5,7 @@ from os import remove, listdir
 from os.path import join
 from shutil import rmtree
 
-from gdeep.utility.constants import ROOT_DIR
+from gdeep.utility import ROOT_DIR
 
 from gdeep.search import clean_up_files
 

@@ -12,7 +12,8 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 Tensor = torch.Tensor
 
 T = TypeVar('T')
-class Normalisation(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
+
+class Normalization(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
     """This class runs the standard normalisation on all the dimensions of
     the tensors of a dataloader. For example, in case of images where each item is of
     shape ``(C, H, W)``, the average will and the standard deviations
@@ -53,7 +54,7 @@ def _compute_mean_of_dataset(dataset: Dataset[Tuple[Tensor, Any]]) -> Tensor:
 def _compute_stddev_of_dataset(dataset: Dataset[Tuple[Tensor, Any]], mean: Tensor) -> Tensor:
     """Compute the stddev of the whole dataset"""
     def square_diff_from_mean(x: Tuple[Tensor, Any]) -> Tuple[Tensor, Any]:
-        return (x - mean) ** 2, x[1]
+        return (x[0] - mean) ** 2, x[1]
     mean_normalized_dataset = TransformingDataset[Tuple[Tensor, Any], Tuple[Tensor, Any]] \
         (dataset, square_diff_from_mean)
     stddev: Tensor = _compute_mean_of_dataset(mean_normalized_dataset)

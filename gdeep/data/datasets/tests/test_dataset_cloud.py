@@ -1,4 +1,4 @@
-from gdeep.data import DatasetCloud, dataset_cloud
+from gdeep.data.datasets import DatasetCloud, dataset_cloud
 
 import hashlib
 import logging

@@ -1,19 +1,14 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 from typing import Tuple, Optional, Union
-from .preprocessing_interface import AbstractPreprocessing
-from .torch_datasets import TransformableDataset
+from ..transforming_dataset import TransformingDataset
 
-
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+from gdeep.utility import DEVICE
 
 Tensor = torch.Tensor
 
 
-class TextDataset(TransformableDataset):
+class TextDataset(TransformingDataset):
     """This class is the base class for the text-datasets.
     The source dataset for this class are expected to be
     dataset of the form ``(label, string)``.
@@ -26,51 +21,22 @@ class TextDataset(TransformableDataset):
         transform (AbstractPreprocessing):
             the instance of the class of preprocessing.
             It inherits from ``AbstractPreprocessing``
-        target_transform (AbstractPreprocessing):
-            the instance of the class of preprocessing.
-            It inherits from ``AbstractPreprocessing``
+
 
     Examples::
 
         from gdeep.data import TorchDataLoader
-        from gdeep.data import TextDataset, PreprocessTextData, PreprocessTextLabel
+        from gdeep.data import TextDataset, TokenizerTextClassification
 
         dl = TorchDataLoader(name="AG_NEWS", convert_to_map_dataset=True)
         dl_tr, dl_ts = dl.build_dataloaders()
 
         textds = TextDataset(dl_tr.dataset,
-                             PreprocessTextData(),
-                             PreprocessTextLabel())
+                             TokenizerTextClassification())
 
     """
+    pass
 
-    def __init__(self, dataset: Dataset,
-                 transform=None,
-                 target_transform=None):
-        super().__init__(transform=transform, target_transform=target_transform)
-        self.dataset = dataset
-        # initialise the preprocessing
-        self.transform.fit_to_data(self.dataset)
-        self.target_transform.fit_to_data(self.dataset)
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx : int) -> Tuple[Tensor, Tensor]:
-        """The output of this method is a tuple of
-        Two tensors. The first one is the tensor
-        of tokenised words (i.e. a tensor of type ``torch.long``
-        that contains the indices of the tokens within
-        the vocabulary)"""
-        text = self.dataset[idx][1]
-        label = self.dataset[idx][0]
-        text = self.transform(text)
-        label = self.target_transform(label)
-        if isinstance(label, Tensor) and isinstance(text, Tensor):
-            sample = (text.to(torch.long), label.to(torch.long))
-        else:
-            sample = (text, torch.tensor(label, dtype=torch.long))
-        return sample
 
 class TextDatasetTranslation(TextDataset):
     """This class is the class for the text datasets
@@ -108,16 +74,7 @@ class TextDatasetTranslation(TextDataset):
             PreprocessTextTranslation(), None)
 
     """
-
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
-        text = self.dataset[idx]
-        if self.transform:
-            text = self.transform(text)
-        # unique tensor containing both tensors of the target and source
-        sample = torch.stack([text[0].to(torch.long), text[1].to(torch.long)])
-        y = text[1].to(torch.long).clone().detach()
-
-        return (sample, y)
+    pass
 
 
 class TextDatasetQA(TextDataset):
@@ -160,13 +117,5 @@ class TextDatasetQA(TextDataset):
                                PreprocessTextQATarget())
 
     """
-
-    def __getitem__(self, idx:int) -> Tuple[Tensor, Tensor]:
-
-        context, question = self.transform(self.dataset[idx])
-        pos_init, pos_end = self.target_transform(self.dataset[idx])
-        #sample = [(context.to(torch.long), question.to(torch.long)), (pos, answer.to(torch.long))]
-        sample = [torch.stack((context, question)).to(torch.long),
-                  torch.stack((pos_init, pos_end)).to(torch.long)]
-        return sample
+    pass
 

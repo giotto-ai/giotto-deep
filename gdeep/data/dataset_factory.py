@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 
-from gdeep.data import CreateToriDataset
+from .datasets.tori import CreateToriDataset
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 
 # Define the dataset factory class for the tori dataset and torchvision datasets
@@ -11,7 +11,7 @@ from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 
 
 class DatasetFactory(object):
-    """ DataLoader factory class for the tori dataset and torchvision datasets
+    """ Dataset factory class for the tori dataset and torchvision datasets
     using the factory design pattern
     
     Example::
@@ -52,8 +52,7 @@ class ToriDatasetBuilder(object):
         return CreateToriDataset(name=self.name, **kwargs)
         
         
-        
-def get_dataset(key, **kwargs):
+def get_dataset(key:str, **kwargs):
     """ Get a dataset from the factory
      
     Args:

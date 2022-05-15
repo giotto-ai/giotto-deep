@@ -3,10 +3,10 @@ from torch.optim import SGD
 from sklearn.model_selection import StratifiedKFold
 from gdeep.pipeline import Pipeline
 from gdeep.models import FFNet
-from gdeep.data import TorchDataLoader
+from gdeep.data.datasets import TorchDataLoader
 from gdeep.search import GiottoSummaryWriter
 import numpy as np
-from gdeep.data import DatasetFromArray, TorchDataLoader, BuildDataLoaders
+from gdeep.data.datasets import FromArray, TorchDataLoader, BuildDataLoaders
 from gdeep.search import clean_up_files
 
 
@@ -26,7 +26,7 @@ def test_pipe_1():
     # dataloaders
     X = np.array(np.random.rand(100, 3), dtype=np.float32)
     y = np.array(np.random.randint(2, size=100*2).reshape(-1, 2), dtype=np.int64)
-    dl_tr, *_ = BuildDataLoaders((DatasetFromArray(X, y),)).build_dataloaders(batch_size=23)
+    dl_tr, *_ = BuildDataLoaders((FromArray(X, y),)).build_dataloaders(batch_size=23)
 
     # loss function
     loss_fn = nn.CrossEntropyLoss()
