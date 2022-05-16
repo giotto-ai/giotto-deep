@@ -18,9 +18,6 @@ from torchvision.transforms import Resize, ToTensor
 from tqdm import tqdm
 
 
-from ..transforming_dataset import TransformingDataset, \
-    IdentityTransformingDataset
-
 Tensor = torch.Tensor
 T = TypeVar('T')
 

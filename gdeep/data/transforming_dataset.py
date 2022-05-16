@@ -53,15 +53,6 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
             return getattr(self.dataset, name)
 
 
-class IdentityTransformingDataset(TransformingDataset[R, R], Generic[R]):
-    """This calss is the same as TransformingDataset except
-    that it does not require to specify
-    any transformation
-    """
-    def __init__(self, dataset: Dataset[R]) -> None:
-        super().__init__(dataset, lambda x: x)
-
-
 def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S], T]) \
     -> TransformingDataset[R, T]:
     """This function allows to concatenate different preprocessors
