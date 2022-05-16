@@ -43,8 +43,8 @@ class PreprocessingPipeline(AbstractPreprocessing):
         return TransformingDataset(dataset, self.transform)
 
     def fit_to_dataset(self, dataset: Dataset[Any]) -> None:
-
-        transformed_dataset = TransformingDataset(dataset)
+        self.transform = lambda x: x
+        transformed_dataset = TransformingDataset(dataset, self.transform)
         for preprocessor in self.preprocessors:
             preprocessor.fit_to_dataset(transformed_dataset)
             transformed_dataset = append_transform(transformed_dataset,

@@ -6,6 +6,7 @@ R = TypeVar('R')
 S = TypeVar('S')
 T = TypeVar('T')
 
+
 class TransformingDataset(Dataset[S], Generic[R, S]):
     """This class is the base class for the all
     Datasets that need to be transformed via preprocessors.
@@ -21,17 +22,14 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
     """
 
     dataset: Dataset[R]
-    transform: Optional[Callable[[R], S]]
+    transform: Callable[[R], S]
     
     def __init__(self,
-                 dataset: Dataset[R]=None,
-                 transform: Optional[Callable[[R], S]]=None) -> None:
+                 dataset: Dataset[R],
+                 transform: Callable[[R], S]) -> None:
         self.dataset = dataset
+        self.transform = transform
 
-        if transform:
-            self.transform = transform
-        else:
-            self.transform = lambda x: x
     
     def __getitem__(self, idx: int) -> S:
         """The output of this method is one element
@@ -53,6 +51,15 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
     def __getattr__(self, name: str) -> Any:
         if self.dataset:
             return getattr(self.dataset, name)
+
+
+class IdentityTransformingDataset(TransformingDataset[R, R], Generic[R]):
+    """This calss is the same as TransformingDataset except
+    that it does not require to specify
+    any transformation
+    """
+    def __init__(self, dataset: Dataset[R]) -> None:
+        super().__init__(dataset, lambda x: x)
 
 
 def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S], T]) \

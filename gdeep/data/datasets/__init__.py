@@ -8,13 +8,8 @@ from .base_dataloaders import TorchDataLoader, BuildDataLoaders, \
 from .dataset_for_image import ImageClassificationFromFiles
 from .dataset_form_array import FromArray
 from .dataloader_cloud import DlBuilderFromDataCloud
-from .text_dataset import TextDataset, TextDatasetQA, \
-    TextDatasetTranslation
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
-
-
-
 
 
 __all__ = [
@@ -23,10 +18,7 @@ __all__ = [
     'AbstractDataLoaderBuilder',
     'CreateToriDataset',
     'GenericDataset',
-    'TextDataset',
     'BuildDataLoaders',
-    'TextDatasetTranslation',
-    'TextDatasetQA',
     'TorchDataLoader',
     'generate_orbit_parallel',
     'create_pd_orbits',
