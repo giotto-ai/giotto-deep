@@ -2,9 +2,10 @@ import json
 import os
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Sequence
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, Union, List, Optional
+from typing import Callable, Generic, NewType, Tuple, \
+    Union, List, Optional, Any
 
 import jsonpickle
 import torch
@@ -22,7 +23,7 @@ Tensor = torch.Tensor
 
 
 
-class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[str]],
+class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
                                         Tuple[Tensor, Tensor]]):
     """Class to preprocess text dataloaders for Q&A
     tasks. The type of dataset is assumed to be of the
@@ -48,10 +49,11 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[str]],
     """
     is_fitted: bool
     max_length: int
-    vocabulary: Optional[Iterable]
+    vocabulary: Optional[Sequence]
     tokenizer: Optional[Callable[[str], List[str]]]
-    
-    def __init__(self, vocabulary:Optional[Iterable]=None,
+    counter: Counter
+
+    def __init__(self, vocabulary:Optional[Sequence]=None,
                  tokenizer:Optional[Callable[[str], List[str]]]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
@@ -61,8 +63,8 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[str]],
         self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[str]]]) -> None:
-
+    def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[int]]]) -> None:
+        """Method to fit the vocabulary to the input text"""
         counter = Counter()  # for the text
         for (context, question, answer, init_position) in dataset:
             #if isinstance(context, tuple) or isinstance(context, list):
@@ -81,6 +83,7 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[str]],
         # self.save_pretrained(".")
 
     def __call__(self, datum: Tuple[str, str, List[str], List[int]]) -> Tuple[Tensor, Tensor]:
+        """This method implement the transformation once fitted."""
         if not self.is_fitted:
             self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in # type: ignore

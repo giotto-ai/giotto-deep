@@ -2,9 +2,10 @@ import json
 import os
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Sequence
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, Union, Optional, List, Iterable
+from typing import Callable, Generic, NewType, Tuple, \
+    Union, Optional, List, Any
 
 import jsonpickle
 import torch
@@ -55,13 +56,14 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
 
         """
     if_fitted: bool
-    vocabulary: Optional[Iterable]
-    vocabulary_target: Optional[Iterable]
+    vocabulary: Optional[Sequence[Any]]
+    vocabulary_target: Optional[Sequence[Any]]
     tokenizer: Optional[Callable[[str], List[str]]]
     tokenizer_target: Optional[Callable[[str], List[str]]]
+    counter: Counter
 
-    def __init__(self, vocabulary:Optional[Iterable]=None,
-                 vocabulary_target:Optional[Iterable]=None,
+    def __init__(self, vocabulary:Optional[Sequence[Any]]=None,
+                 vocabulary_target:Optional[Sequence[Any]]=None,
                  tokenizer:Optional[Callable[[str],List[str]]]=None,
                  tokenizer_target:Optional[Callable[[str],List[str]]]=None):
 
