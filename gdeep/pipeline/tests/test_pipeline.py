@@ -1,12 +1,13 @@
 from torch import nn
 from torch.optim import SGD
 from sklearn.model_selection import StratifiedKFold
+import numpy as np
+
 from gdeep.pipeline import Pipeline
 from gdeep.models import FFNet
-from gdeep.data.datasets import TorchDataLoader
 from gdeep.search import GiottoSummaryWriter
-import numpy as np
-from gdeep.data.datasets import FromArray, TorchDataLoader, BuildDataLoaders
+from gdeep.data.datasets import FromArray, BuildDataLoaders, \
+    get_dataset
 from gdeep.search import clean_up_files
 
 

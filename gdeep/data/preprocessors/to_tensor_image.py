@@ -9,7 +9,8 @@ from ..abstract_preprocessing import AbstractPreprocessing
 # type definition
 Tensor = torch.Tensor
 
-class ToTensorImage(AbstractPreprocessing[Any, Tuple[Tensor, Tensor]]):
+class ToTensorImage(AbstractPreprocessing[Tuple[Any, Any],
+                                          Tuple[Tensor, Tensor]]):
     """Class to preprocess image files for classification
       tasks
 
@@ -21,7 +22,10 @@ class ToTensorImage(AbstractPreprocessing[Any, Tuple[Tensor, Tensor]]):
                   I.e, if height > width, then image will be rescaled to
                   ``(size * height / width, size)``.
 
-      """
+    """
+
+    is_fitted: bool
+    size: Union[int, List[int]]
     def __init__(self, size: Union[int, List[int]]) -> None:
         self.size = size
         self.is_fitted = True
@@ -30,5 +34,5 @@ class ToTensorImage(AbstractPreprocessing[Any, Tuple[Tensor, Tensor]]):
         # nothing to do
         pass
 
-    def __call__(self, datum: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def __call__(self, datum: Tuple[Any, Any]) -> Tuple[Tensor, Tensor]:
         return ToTensor()(Resize(self.size)(datum[0])), torch.tensor(datum[1],dtype=torch.long)  # type: ignore

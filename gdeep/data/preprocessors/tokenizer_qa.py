@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Callable, Tuple, List, Optional, Sequence
+from typing import Callable, Tuple, List, Optional, Dict
 
 import torch
 from torch.utils.data import Dataset
@@ -40,11 +40,11 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     """
     is_fitted: bool
     max_length: int
-    vocabulary: Optional[Sequence[str]]
+    vocabulary: Optional[Dict[str, int]]
     tokenizer: Optional[Callable[[str], List[str]]]
-    counter: "Counter[List[str]]"
+    counter: Dict[str, int]
 
-    def __init__(self, vocabulary:Optional[Sequence[str]]=None,
+    def __init__(self, vocabulary:Optional[Dict[str, int]]=None,
                  tokenizer:Optional[Callable[[str], List[str]]]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
@@ -56,22 +56,22 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
 
     def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[int]]]) -> None:
         """Method to fit the vocabulary to the input text"""
-        counter = Counter()  # for the text
+        self.counter = Counter()  # for the text
         for (context, question, answer, init_position) in dataset:  # type: ignore
-            counter.update(self.tokenizer(context))
-            self.max_length = max(self.max_length, len(self.tokenizer(context)))
-            counter.update(self.tokenizer(question))
-            self.max_length = max(self.max_length, len(self.tokenizer(question)))
+            self.counter.update(self.tokenizer(context))  # type: ignore
+            self.max_length = max(self.max_length, len(self.tokenizer(context)))  # type: ignore
+            self.counter.update(self.tokenizer(question))  # type: ignore
+            self.max_length = max(self.max_length, len(self.tokenizer(question)))  # type: ignore
 
         if self.vocabulary is None:
-            self.vocabulary = Vocab(counter)
+            self.vocabulary = Vocab(self.counter)
         self.pad_item = self.vocabulary["."]
         self.is_fitted = True
 
     def __call__(self, datum: Tuple[str, str, List[str], List[int]]) -> Tuple[Tensor, Tensor]:
         """This method implement the transformation once fitted."""
-        if not self.is_fitted:
-            self.load_pretrained(".")
+        #if not self.is_fitted:
+        #    self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in # type: ignore
                                    self.tokenizer(x)]  # type: ignore
 
@@ -88,8 +88,8 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
                                                ).to(DEVICE)])
 
         pos_init_char = datum[3][0]
-        pos_init = len(self.tokenizer(datum[0][:pos_init_char]))
-        pos_end = pos_init + len(self.tokenizer(datum[2][0]))
+        pos_init = len(self.tokenizer(datum[0][:pos_init_char]))  # type: ignore
+        pos_end = pos_init + len(self.tokenizer(datum[2][0]))  # type: ignore
 
         return (torch.stack((out_context, out_question)).to(torch.long),
          torch.stack((torch.tensor(pos_init), torch.tensor(pos_end))).to(torch.long))

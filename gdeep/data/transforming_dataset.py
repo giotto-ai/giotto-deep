@@ -30,6 +30,8 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
         self.dataset = dataset
         self.transform = transform
 
+    def __len__(self) -> int:
+        return len(self.dataset)
     
     def __getitem__(self, idx: int) -> S:
         """The output of this method is one element

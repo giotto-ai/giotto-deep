@@ -1,25 +1,27 @@
 import math
 import numpy as np
 import torch
+from typing import Tuple
 from torch.utils.data import Dataset
 from sklearn.datasets import make_blobs
 
+Tensor = torch.Tensor
 
 class Rotation():
     """Class for rotations
     """
-    def __init__(self, axis_0, axis_1, angle):
+    def __init__(self, axis_0:int, axis_1:int, angle:float) -> None:
         self._axis_0 = axis_0
         self._axis_1 = axis_1
         self._angle = angle
 
-    def return_axis(self, idx):
+    def return_axis(self, idx:int):
         return eval('self._axis_'+str(idx))
 
-    def return_angle(self):
+    def return_angle(self) -> float:
         return self._angle
 
-    def rotation_matrix(self):
+    def rotation_matrix(self) -> np.ndarray:
         rotation_matrix = np.identity(3)
         rotation_matrix[self._axis_0, self._axis_0]\
             = math.cos(self._angle)
@@ -32,73 +34,40 @@ class Rotation():
         return rotation_matrix
 
 
-class GenericDataset(Dataset):
-    """This class is the base class for the tori-datasets
-
-    Args:
-        data (Tensor):
-            tensor with first dimension
-            the number of samples
-        taregts (list):
-            list of labels
-        transform (Callable):
-            act on the single images
-        target_transform (Callable):
-            act on the single label
-    """
-
-    def __init__(self, data, targets,
-                 transform=None, target_transform=None):
-        self.targets = targets
-        self.data = data
-        self.transform = transform
-        self.target_transform = target_transform
-
-    def __len__(self):
-        return len(self.targets)
-
-    def __getitem__(self, idx):
-        image = self.data[idx]
-        label = self.targets[idx]
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        sample = [image.to(torch.float), label.to(torch.long)]
-        return sample
-
-
-class CreateToriDataset:
+class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
     """This class is used to generate data loaders for the
     family of tori-datasets
 
     Args:
-        name (string):
+        name:
             name of the torus dataset to generate
     """
-    def __init__(self, name):
+    def __init__(self, name:str, **kwargs) -> None:
         self.name = name
-
-    def generate_dataset(self, **kwargs):
-        """This method is the maion method of the class.
-        It generates the ToriDatasset class depending on
-        the self.name"""
         if self.name == "DoubleTori":
-            tup = self._make_two_tori_dataset(**kwargs)
-            return GenericDataset(*tup, target_transform=torch.tensor)
+            self.out_tuple = self._make_two_tori_dataset(**kwargs)
         elif self.name == "Blobs":
-            tup = self._make_blobs(**kwargs)
-            return GenericDataset(*tup, target_transform=torch.tensor)
+            self.out_tuple = self._make_blobs(**kwargs)
         else:
-            tup = self._make_entangled_tori_dataset(**self.kwargs)
-            return GenericDataset(*tup, target_transform=torch.tensor)
+            self.out_tuple = self._make_entangled_tori_dataset(**kwargs)
+
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
+        """This method is the main method of the class.
+        It extracts the i-the element
+        """
+
+        return self.out_tuple[0][idx], torch.tensor(self.out_tuple[1][idx]).to(torch.long)
+
+    def __len__(self) -> int:
+        return len(self.out_tuple[0])
 
     @staticmethod
-    def _make_torus_point_cloud(label: int, n_points: int,
+    def _make_torus_point_cloud(label: int, 
+                                n_points: int,
                                 noise: float,
                                 rotation: Rotation,
-                                base_point: np.array,
-                                radius: float = 1.):
+                                base_point: np.ndarray,
+                                radius: float = 1.) -> Tuple[np.ndarray, np.ndarray]:
         """Generate point cloud of a single torus
 
         Args:
@@ -144,29 +113,29 @@ class CreateToriDataset:
 
     @staticmethod
     def _make_torus_point_cloud2(label: int, n_points: int, noise: float,
-                                rotation: Rotation, base_point: np.array,
-                                radius1: float = 1., radius2: float = 1.):
+                                rotation: Rotation, base_point: np.ndarray,
+                                radius1: float = 1., radius2: float = 1.) -> Tuple[np.ndarray, np.ndarray]:
         """Generate point cloud of a single torus using
         2 radii for its definition
 
         Args:
-            label (int):
+            label :
                 label of the data points
-            n_points (int):
+            n_points :
                 number of sample points for each direction
-            noise (float):
+            noise :
                 noise
             rotation:
                 Rotation
-            base_point (np.array):
+            base_point :
                 center of the torus
-            radius1 (float):
+            radius1 :
                 radius of torus 1
-            radius2 (float):
+            radius2 :
                 radius of torus 2
 
         Returns:
-            (np.array, np.array):
+            (np.ndarray, np.ndarray):
                 data_points, labels
         """
         torus_point_clouds = np.asarray(
@@ -194,12 +163,12 @@ class CreateToriDataset:
         return torus_point_clouds, torus_labels
 
     def _make_two_tori_dataset(self, entangled: bool = True,
-                               n_pts: int = 10) -> tuple:
+                               n_pts: int = 10) -> Tuple[Tensor, np.ndarray]:
         """Generates pandas Dataframe of two tori in 3D. The labels correspond to
         the different Tori.
 
         Args:
-            entangled (bool, optional):
+            entangled :
                 Either entangled or unentangled tori. Defaults to True.
 
         Returns:
@@ -242,14 +211,14 @@ class CreateToriDataset:
         return torch.from_numpy(tori_point_cloud), tori_labels
 
     def _make_entangled_tori_dataset(self, m: int = 2,
-                                     n_pts: int = 10) -> tuple:
+                                     n_pts: int = 10) -> Tuple[Tensor, np.ndarray]:
         """Generates pandas Dataframe of m x m x m tori in 3D.
         The labels correspond to the different Tori.
 
         Args:
-            m (int, defalut=2):
+            m :
                 Number of entangled tori per axis
-            n_pts (int):
+            n_pts :
                 Number of points per torus
 
         Returns:
@@ -278,7 +247,7 @@ class CreateToriDataset:
         return torch.from_numpy(data), lab
 
     @staticmethod
-    def _make_blobs(m: int = 3, n_pts: int = 200) -> tuple:
+    def _make_blobs(m: int = 3, n_pts: int = 200) -> Tuple[Tensor, np.ndarray]:
         """Generates blobs in 3D.
         The labels correspond to the different blob.
 

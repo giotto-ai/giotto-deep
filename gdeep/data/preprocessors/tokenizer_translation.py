@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from collections import Counter
 from typing import Callable, Tuple, \
-    Optional, List
+    Optional, List, Dict
 
 import torch
 from torchtext.data.utils import get_tokenizer    # type: ignore
@@ -49,14 +49,15 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
 
         """
     if_fitted: bool
-    vocabulary: Optional[Sequence[str]]
-    vocabulary_target: Optional[Sequence[str]]
+    vocabulary: Optional[Dict[str, int]]
+    vocabulary_target: Optional[Dict[str, int]]
     tokenizer: Optional[Callable[[str], List[str]]]
     tokenizer_target: Optional[Callable[[str], List[str]]]
-    counter: Counter[List[str]]
+    counter: Dict[str, int]
+    counter_target: Dict[str, int]
 
-    def __init__(self, vocabulary:Optional[Sequence[str]]=None,
-                 vocabulary_target:Optional[Sequence[str]]=None,
+    def __init__(self, vocabulary:Optional[Dict[str, int]]=None,
+                 vocabulary_target:Optional[Dict[str, int]]=None,
                  tokenizer:Optional[Callable[[str],List[str]]]=None,
                  tokenizer_target:Optional[Callable[[str],List[str]]]=None):
 
@@ -74,18 +75,18 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
         self.is_fitted = False
 
     def fit_to_dataset(self, data):
-        counter = Counter()
-        counter_target = Counter()
+        self.counter = Counter()
+        self.counter_target = Counter()
         for text in data:
-            counter.update(self.tokenizer(text[0]))
-            counter_target.update(self.tokenizer_target(text[1]))
+            self.counter.update(self.tokenizer(text[0]))
+            self.counter_target.update(self.tokenizer_target(text[1]))
             self.max_length = max(self.max_length, len(self.tokenizer(text[0])))
             self.max_length = max(self.max_length, len(self.tokenizer_target(text[1])))
         # self.vocabulary = Vocab(counter, min_freq=1)
         if self.vocabulary is None:
-            self.vocabulary = Vocab(counter)
+            self.vocabulary = Vocab(self.counter)
         if self.vocabulary_target is None:
-            self.vocabulary_target = Vocab(counter_target)
+            self.vocabulary_target = Vocab(self.counter_target)
         self.is_fitted = True
         #self.save_pretrained(".")
 
@@ -100,15 +101,15 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
                 a single datum
         """
 
-        if not self.is_fitted:
-            self.load_pretrained(".")
+        #if not self.is_fitted:
+        #    self.load_pretrained(".")
         text_pipeline = lambda x: [self.vocabulary[token] for token in  # type: ignore
                                    self.tokenizer(x)]  # type: ignore
         text_pipeline_target = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
                                    self.tokenizer_target(x)]   # type: ignore
 
-        pad_item = self.vocabulary["."]
-        pad_item_target = self.vocabulary_target["."]
+        pad_item = self.vocabulary["."]  # type: ignore
+        pad_item_target = self.vocabulary_target["."]  # type: ignore
 
         processed_text = torch.tensor(text_pipeline(datum[0]),
                                       dtype=torch.long).to(DEVICE)

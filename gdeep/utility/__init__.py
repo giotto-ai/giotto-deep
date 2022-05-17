@@ -5,6 +5,9 @@ from .constants import ROOT_DIR, DEFAULT_DATA_DIR, DATASET_BUCKET_NAME, \
     DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME, DEFAULT_GRAPH_DIR, \
     DEVICE
 
+from ._typing_utils import torch_transform, get_parameter_types, \
+    get_return_type
+
 __all__ = [
     '_are_compatible',
     'save_model_and_optimizer',
@@ -21,5 +24,8 @@ __all__ = [
     'DEFAULT_DOWNLOAD_DIR',
     'DATASET_BUCKET_NAME',
     'DEFAULT_GRAPH_DIR',
+    'get_return_type',
+    'torch_transform',
+    'get_parameter_types',
     'KnownWarningSilencer'
     ]

@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from collections.abc import Sequence
 from typing import Callable, Generic, NewType, Tuple, \
-    Union, Any, Optional, List
+    Union, Any, Optional, List, Dict
 
 import jsonpickle
 import torch
@@ -40,12 +40,12 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
 
     max_length:int
     is_fitted:bool
-    vocabulary: Optional[Sequence[str]]
+    vocabulary: Optional[Dict[str, int]]
     tokenizer: Optional[Callable[[str], List[str]]]
-    counter: Counter[List[str]]
+    counter: Dict[str, int]
 
     def __init__(self, tokenizer: Optional[Callable[[str], List[str]]]=None,
-                 vocabulary: Optional[Sequence[str]]=None):
+                 vocabulary: Optional[Dict[str, int]]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
@@ -64,20 +64,20 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
                 the data in the format ``(label, text)``
         """
 
-        counter = Counter()  # for the text
-        for (label, text) in dataset:
-            if isinstance(text, tuple) or isinstance(text, list):
-                text = text[0]
-            counter.update(self.tokenizer(text))
-            self.max_length = max(self.max_length, len(self.tokenizer(text)))
+        self.counter = Counter()  # for the text
+        for (label, text) in dataset:  # type: ignore
+            #if isinstance(text, tuple) or isinstance(text, list):
+            #    text = text[0]
+            self.counter.update(self.tokenizer(text))  # type: ignore
+            self.max_length = max(self.max_length, len(self.tokenizer(text)))  # type: ignore
         # self.vocabulary = Vocab(counter, min_freq=1)
         if not self.vocabulary:
-            self.vocabulary = Vocab(counter)
+            self.vocabulary = Vocab(self.counter)
         self.is_fitted = True
         #self.save_pretrained(".")
 
     def __call__(self, datum: Tuple[Any, str]) -> Tuple[Tensor, Tensor]:
-        """This method is applied to each batch and
+        """This method is applied to each datum and
         transforms it following the rule below
 
         Args:
@@ -85,16 +85,16 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
                 a single datum, being it a tuple
                 with ``(label, text)``
         """
-        if not self.is_fitted:
-            self.load_pretrained(".")
-        text_pipeline = lambda x: [self.vocabulary[token] for token in
-                                   self.tokenizer(x)]
+        #if not self.is_fitted:
+        #    self.load_pretrained(".")
+        text_pipeline = lambda x: [self.vocabulary[token] for token in  # type: ignore
+                                   self.tokenizer(x)]  # type: ignore
 
-        pad_item = self.vocabulary["."]
+        pad_item = self.vocabulary["."]  # type: ignore
 
-        _text = datum
-        if isinstance(_text, tuple) or isinstance(_text, list):
-            _text = _text[1]
+        _text = datum[1]
+        #if isinstance(_text, tuple) or isinstance(_text, list):
+        #    _text = _text[1]
         processed_text = torch.tensor(text_pipeline(_text),
                                       dtype=torch.long).to(DEVICE)
         # convert to tensors (padded)
