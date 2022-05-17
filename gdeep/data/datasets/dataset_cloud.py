@@ -4,7 +4,7 @@ import json
 import os
 from os import remove
 from os.path import join, exists
-from typing import List, Literal, Tuple, Union
+from typing import List, Literal, Tuple, Union, Set
 
 import wget  # type: ignore
 
