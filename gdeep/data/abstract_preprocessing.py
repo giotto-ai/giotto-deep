@@ -5,6 +5,8 @@ from typing import Generic, TypeVar
 import warnings
 import jsonpickle
 
+from .transforming_dataset import TransformingDataset
+
 from torch.utils.data import Dataset
 
 from gdeep.data.transforming_dataset import TransformingDataset
@@ -23,6 +25,9 @@ class AbstractPreprocessing(ABC, Generic[R, S]):
     
     def transform(self, x: R) -> S:
         return self(x)
+
+    def attach_transform_to_dataset(self, dataset: Dataset[R]) -> Dataset[S]:
+        return TransformingDataset(dataset, self.transform)
     
     def attach_transform_to_dataset(self, dataset: Dataset[R]) -> Dataset[S]:
         return TransformingDataset(dataset, self.transform)

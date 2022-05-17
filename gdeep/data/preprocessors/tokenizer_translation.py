@@ -2,8 +2,9 @@ import json
 import os
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, Union
+from typing import Callable, Generic, NewType, Tuple, Union, Optional, List, Iterable
 
 import jsonpickle
 import torch
@@ -22,22 +23,23 @@ Tensor = torch.Tensor
 
 
 
-class TokenizerTranslation(AbstractPreprocessing):
+class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str], 
+                                                 Tuple[Tensor, Tensor]]):
     """Class to preprocess text dataloaders for translation
     tasks. The Dataset type is supposed to be ``(string, string)``
 
         Args:
-            vocabulary (torch Vocabulary):
+            vocabulary :
                 the vocubulary of the source text;
                 it can be built automatically or it can be
                 given.
-            vocabulary_target (torch Vocabulary):
+            vocabulary_target :
                 the vocubulary of the target text;
                 it can be built automatically or it can be
                 given.
-            tokenizer (torch Tokenizer):
+            tokenizer:
                 the tokenizer of the source text
-            tokenizer_target (torch Tokenizer):
+            tokenizer_target:
                 the tokenizer of the target text
 
     Examples::
@@ -52,11 +54,16 @@ class TokenizerTranslation(AbstractPreprocessing):
             TokenizerTranslation())
 
         """
+    if_fitted: bool
+    vocabulary: Optional[Iterable]
+    vocabulary_target: Optional[Iterable]
+    tokenizer: Optional[Callable[[str], List[str]]]
+    tokenizer_target: Optional[Callable[[str], List[str]]]
 
-    def __init__(self, vocabulary=None,
-                 vocabulary_target=None,
-                 tokenizer=None,
-                 tokenizer_target=None):
+    def __init__(self, vocabulary:Optional[Iterable]=None,
+                 vocabulary_target:Optional[Iterable]=None,
+                 tokenizer:Optional[Callable[[str],List[str]]]=None,
+                 tokenizer_target:Optional[Callable[[str],List[str]]]=None):
 
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
@@ -72,8 +79,8 @@ class TokenizerTranslation(AbstractPreprocessing):
         self.is_fitted = False
 
     def fit_to_dataset(self, data):
-        counter = Counter()  # for the text
-        counter_target = Counter()  # for the text
+        counter = Counter()
+        counter_target = Counter()
         for text in data:
             counter.update(self.tokenizer(text[0]))
             counter_target.update(self.tokenizer_target(text[1]))
@@ -87,9 +94,11 @@ class TokenizerTranslation(AbstractPreprocessing):
         self.is_fitted = True
         #self.save_pretrained(".")
 
-    def __call__(self, datum):
-        """This method is applied to each batch and
-        transforms it following the rule below
+    def __call__(self, datum: Tuple[str, str]) -> Tuple[Tensor, Tensor]:
+        """This method is applied to each item of
+        the dataset and
+        transforms it following the rule described
+        in this method
 
         Args:
             datum (torch.tensor):
@@ -98,10 +107,10 @@ class TokenizerTranslation(AbstractPreprocessing):
 
         if not self.is_fitted:
             self.load_pretrained(".")
-        text_pipeline = lambda x: [self.vocabulary[token] for token in
-                                   self.tokenizer(x)]
-        text_pipeline_target = lambda x: [self.vocabulary_target[token] for token in
-                                   self.tokenizer_target(x)]
+        text_pipeline = lambda x: [self.vocabulary[token] for token in  # type: ignore
+                                   self.tokenizer(x)]  # type: ignore
+        text_pipeline_target = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
+                                   self.tokenizer_target(x)]   # type: ignore
 
         pad_item = self.vocabulary["."]
         pad_item_target = self.vocabulary_target["."]

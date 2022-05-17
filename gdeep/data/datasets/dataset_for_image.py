@@ -24,7 +24,7 @@ Tensor = torch.Tensor
 T = TypeVar('T')
 
 
-class ImageClassificationFromFiles(Dataset):
+class ImageClassificationFromFiles(Dataset[Any]):
     """This class is useful to build a dataset
     directly from image files
     
@@ -45,6 +45,9 @@ class ImageClassificationFromFiles(Dataset):
             the instance of the class of preprocessing.
             It inherits from ``AbstractPreprocessing``
     """
+
+    img_folder: str
+    labels_file: str
     def __init__(self, img_folder: str=".",
                  labels_file:str="labels.csv",
                  ) -> None:
@@ -53,17 +56,20 @@ class ImageClassificationFromFiles(Dataset):
         self.img_labels = pd.read_csv(labels_file)
 
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.img_labels)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx:int) -> Tuple[Any, Union[str, int]]:
         image = self._get_image(idx)
         image_out = deepcopy(image)
         label = self.img_labels.iloc[idx, 1]
         image.close()
         return image_out, label
 
-    def _get_image(self, idx:int):
+    def _get_image(self, idx: int) -> Any:
+        """this method gets the i-th image in the labels.csv
+        file.
+        """
         img_path = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])
         try:
             image = Image.open(img_path)

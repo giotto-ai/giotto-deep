@@ -1,34 +1,27 @@
-import json
+
 import os
 import shutil
-import warnings
-from abc import ABC, abstractmethod
-from os.path import join
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, \
+    Optional, Tuple, TypeVar, Union
 
 import numpy as np
-import pandas as pd
 import torch
-from PIL import Image, UnidentifiedImageError
+
 from sympy import false
 from torch.utils.data import DataLoader, Dataset
-from torchtext import datasets as textds
-from torchvision import datasets
-from torchvision.transforms import Resize, ToTensor
-from tqdm import tqdm
 
 
 Tensor = torch.Tensor
-T = TypeVar('T')
 
-class FromArray(Dataset):
+
+class FromArray(Dataset[Union[Tensor, np.ndarray]]):
     """This class is useful to build dataloaders
     from a array of X and y. Tensors are also supported.
 
     Args:
-        X (np.array or torch.Tensor):
+        X :
             The data. The first dimension is the datum index
-        y (np.array or torch.Tensor):
+        y :
             The labels, need to match the first dimension
             with the data
 
@@ -41,15 +34,17 @@ class FromArray(Dataset):
         self.y = self._long_or_float(y)
 
     @staticmethod
-    def _from_numpy(X):
-        """this is torch.from_numpy() that also allows
-        for tensors"""
+    def _from_numpy(X: Union[Tensor, np.ndarray]) -> Tensor:
+        """this is an upgrade of ``torch.from_numpy()``
+        that also allows tensor input"""
         if isinstance(X, torch.Tensor):
             return X
         return torch.from_numpy(X)
 
     @staticmethod
-    def _long_or_float(y):
+    def _long_or_float(y: Union[Tensor, np.ndarray]) -> Tensor:
+        """This private method converts the labels to either
+        a long tensor of a float tensor"""
         if isinstance(y, torch.Tensor):
             return y
         if isinstance(y, np.float16) or isinstance(y, np.float32) or isinstance(y, np.float64):
