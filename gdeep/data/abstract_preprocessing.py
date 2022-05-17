@@ -29,9 +29,6 @@ class AbstractPreprocessing(ABC, Generic[R, S]):
     def attach_transform_to_dataset(self, dataset: Dataset[R]) -> Dataset[S]:
         return TransformingDataset(dataset, self.transform)
     
-    def attach_transform_to_dataset(self, dataset: Dataset[R]) -> Dataset[S]:
-        return TransformingDataset(dataset, self.transform)
-    
     def save_pretrained(self, path:str) -> None:
         with open(os.path.join(path, self.__class__.__name__ + ".json"), "w") as outfile:
             whole_class = jsonpickle.encode(self)  # type: ignore
@@ -45,3 +42,4 @@ class AbstractPreprocessing(ABC, Generic[R, S]):
         except FileNotFoundError:
             warnings.warn("The transformation file does not exist; attempting to run"
                           " the transformation anyway...")
+            
