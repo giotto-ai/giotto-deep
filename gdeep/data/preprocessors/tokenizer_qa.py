@@ -42,7 +42,7 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     max_length: int
     vocabulary: Optional[Sequence[str]]
     tokenizer: Optional[Callable[[str], List[str]]]
-    counter: Counter[List[str]]
+    counter: "Counter[List[str]]"
 
     def __init__(self, vocabulary:Optional[Sequence[str]]=None,
                  tokenizer:Optional[Callable[[str], List[str]]]=None):

@@ -1,23 +1,14 @@
-import json
-import os
-import warnings
-from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, \
-    Union, Optional, List, Any
+from typing import Callable, Tuple, \
+    Optional, List
 
-import jsonpickle
 import torch
-from torch.nn.functional import pad
-from torch.utils.data import DataLoader, Dataset
-from torchtext.data.utils import get_tokenizer
+from torchtext.data.utils import get_tokenizer    # type: ignore
 from torchtext.vocab import Vocab
-from torchvision.transforms import Resize, ToTensor
 from gdeep.utility import DEVICE
 
 from ..abstract_preprocessing import AbstractPreprocessing
-from ..transforming_dataset import TransformingDataset
 
 # type definition
 Tensor = torch.Tensor
