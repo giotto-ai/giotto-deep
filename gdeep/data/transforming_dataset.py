@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generic, TypeVar, Optional
+from typing import Any, Callable, Generic, TypeVar
 
 from torch.utils.data import Dataset
 
@@ -41,16 +41,9 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
         """
         return self.transform(self.dataset[idx])
 
-    def __len__(self) -> int:
-        """This method returs the length
-        of the dataset"""
-        if self.dataset:
-            return len(self.dataset)
-    
     # forward all other methods of the TransformingDataset to the Dataset
     def __getattr__(self, name: str) -> Any:
-        if self.dataset:
-            return getattr(self.dataset, name)
+        return getattr(self.dataset, name)
 
 
 def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S], T]) \

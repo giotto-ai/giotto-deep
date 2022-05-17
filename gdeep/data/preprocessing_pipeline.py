@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Any, Callable, Generic, Iterable, TypeVar
 
 from torch.utils.data import Dataset
 
@@ -8,7 +8,7 @@ from .transforming_dataset import TransformingDataset, append_transform
 T = TypeVar('T')
 
 
-class PreprocessingPipeline(AbstractPreprocessing):
+class PreprocessingPipeline(AbstractPreprocessing[T, Any], Generic[T]):
     """ Pipeline to fit non-fitted preprocessors to a dataset in a sequential manner.
     The fitted preprocessing transform can be attached to a dataset using
     the ´attach_transform_to_dataset´ method.
@@ -34,22 +34,22 @@ class PreprocessingPipeline(AbstractPreprocessing):
 
     """
 
-    transform = Callable[[T], Any]
+    transform_composition: Callable[[T], Any]
 
     def __init__(self, preprocessors: Iterable[AbstractPreprocessing[Any, Any]]) -> None:
         self.preprocessors = preprocessors
 
     def attach_transform_to_dataset(self, dataset: Dataset[T]) -> TransformingDataset[T, Any]:
-        return TransformingDataset(dataset, self.transform)
+        return TransformingDataset(dataset, self.transform_composition)
 
     def fit_to_dataset(self, dataset: Dataset[Any]) -> None:
-        self.transform = lambda x: x
-        transformed_dataset = TransformingDataset(dataset, self.transform)
+        self.transform_composition = lambda x: x
+        transformed_dataset = TransformingDataset(dataset, self.transform_composition)
         for preprocessor in self.preprocessors:
             preprocessor.fit_to_dataset(transformed_dataset)
             transformed_dataset = append_transform(transformed_dataset,
                                                    preprocessor)
-        self.transform = transformed_dataset.transform
+        self.transform_composition = transformed_dataset.transform
 
-    def __call__(self, x):
+    def __call__(self, x: T) -> Any:
         pass

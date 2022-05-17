@@ -7,6 +7,8 @@ import jsonpickle
 
 from torch.utils.data import Dataset
 
+from gdeep.data.transforming_dataset import TransformingDataset
+
 R = TypeVar('R')
 S = TypeVar('S')
 
@@ -21,6 +23,9 @@ class AbstractPreprocessing(ABC, Generic[R, S]):
     
     def transform(self, x: R) -> S:
         return self(x)
+    
+    def attach_transform_to_dataset(self, dataset: Dataset[R]) -> Dataset[S]:
+        return TransformingDataset(dataset, self.transform)
     
     def save_pretrained(self, path:str) -> None:
         with open(os.path.join(path, self.__class__.__name__ + ".json"), "w") as outfile:
