@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
+from typing import Dict, Any
 
 from .datasets.tori import CreateToriDataset
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR
@@ -14,17 +15,21 @@ class DatasetFactory(object):
     """ Dataset factory class for the tori dataset and torchvision datasets
     using the factory design pattern
     
-    Example::
+    Examples::
+
         # Create a dataset for the tori dataset
         dataset = get_dataset("Tori", name="DoubleTori", n_points=100)
         
         # Create the MNIST dataset
         dataset = get_dataset("Torchvision", name="MNIST")
+
     """
+
+    _builders: Dict
     def __init__(self):
         self._builders = {}
         
-    def register_builder(self, key, builder):
+    def register_builder(self, key: Any, builder:Any):
         self._builders[key] = builder
         
     def build(self, key, **kwargs):
@@ -35,7 +40,7 @@ class DatasetFactory(object):
 
 
 class TorchvisionDatasetBuilder(object):
-    def __init__(self, dataset_name):
+    def __init__(self, dataset_name:str ):
         self.dataset_name = dataset_name
         
     def __call__(self, **kwargs):
@@ -45,7 +50,7 @@ class TorchvisionDatasetBuilder(object):
 
         
 class ToriDatasetBuilder(object):
-    def __init__(self, name):
+    def __init__(self, name:str ) -> None:
         self.name = name
         
     def __call__(self, **kwargs):
@@ -63,6 +68,6 @@ def get_dataset(key:str, **kwargs):
         torch.utils.data.Dataset: The dataset
     """
     factory = DatasetFactory()
-    factory.register_builder("Torchvision", TorchvisionDatasetBuilder())
-    factory.register_builder("Tori", TorchvisionDatasetBuilder())
+    factory.register_builder("Torchvision", TorchvisionDatasetBuilder("MNIST"))
+    factory.register_builder("Tori", ToriDatasetBuilder("doubleTori"))
     return factory.build(key, **kwargs)

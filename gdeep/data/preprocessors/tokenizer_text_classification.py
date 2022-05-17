@@ -3,7 +3,7 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Sequence
 from typing import Callable, Generic, NewType, Tuple, \
     Union, Any, Optional, List
 
@@ -29,9 +29,9 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
     ``(label, text)`` into the proper tensor format ``( word_embedding, label)``
 
     Args:
-        tokenizer (torch Tokenizer):
+        tokenizer :
             the tokenizer of the source text
-        vocabulary (torch Vocabulary):
+        vocabulary :
             the vocubulary; it can be built of it can be
             given.
 
@@ -40,12 +40,12 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
 
     max_length:int
     is_fitted:bool
-    vocabulary: Optional[Iterable]
+    vocabulary: Optional[Sequence]
     tokenizer: Optional[Callable[[str], List[str]]]
     counter: Counter
 
     def __init__(self, tokenizer: Optional[Callable[[str], List[str]]]=None,
-                 vocabulary: Optional[Iterable]=None):
+                 vocabulary: Optional[Sequence]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:

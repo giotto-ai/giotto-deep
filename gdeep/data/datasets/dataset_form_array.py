@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader, Dataset
 Tensor = torch.Tensor
 
 
-class FromArray(Dataset[Union[Tensor, np.ndarray]]):
+class FromArray(Dataset[Tuple[Tensor, Tensor]]):
     """This class is useful to build dataloaders
     from a array of X and y. Tensors are also supported.
 
