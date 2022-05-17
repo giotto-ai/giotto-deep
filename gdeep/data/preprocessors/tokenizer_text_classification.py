@@ -40,12 +40,12 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
 
     max_length:int
     is_fitted:bool
-    vocabulary: Optional[Sequence]
+    vocabulary: Optional[Sequence[str]]
     tokenizer: Optional[Callable[[str], List[str]]]
-    counter: Counter
+    counter: Counter[List[str]]
 
     def __init__(self, tokenizer: Optional[Callable[[str], List[str]]]=None,
-                 vocabulary: Optional[Sequence]=None):
+                 vocabulary: Optional[Sequence[str]]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:

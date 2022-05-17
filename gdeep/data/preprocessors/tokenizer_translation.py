@@ -25,7 +25,8 @@ Tensor = torch.Tensor
 
 
 class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str], 
-                                                 Tuple[Tensor, Tensor]]):
+                                                 Tuple[Tensor, Tensor]
+                           ]):
     """Class to preprocess text dataloaders for translation
     tasks. The Dataset type is supposed to be ``(string, string)``
 
@@ -46,24 +47,25 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
     Examples::
 
         from gdeep.data import TorchDataLoader
-        from gdeep.data import TokenizerTranslation, TextDatasetTranslation
+        from gdeep.data import TransformingDataset
+        from gdeep.data.preprocessors import TokenizerTranslation
 
         dl = TorchDataLoader(name="Multi30k", convert_to_map_dataset=True)
         dl_tr, dl_ts = dl.build_dataloaders()
 
-        textds = TextDatasetTranslation(dl_tr.dataset,
+        textds = TransformingDataset(dl_tr.dataset,
             TokenizerTranslation())
 
         """
     if_fitted: bool
-    vocabulary: Optional[Sequence[Any]]
-    vocabulary_target: Optional[Sequence[Any]]
+    vocabulary: Optional[Sequence[str]]
+    vocabulary_target: Optional[Sequence[str]]
     tokenizer: Optional[Callable[[str], List[str]]]
     tokenizer_target: Optional[Callable[[str], List[str]]]
-    counter: Counter
+    counter: Counter[List[str]]
 
-    def __init__(self, vocabulary:Optional[Sequence[Any]]=None,
-                 vocabulary_target:Optional[Sequence[Any]]=None,
+    def __init__(self, vocabulary:Optional[Sequence[str]]=None,
+                 vocabulary_target:Optional[Sequence[str]]=None,
                  tokenizer:Optional[Callable[[str],List[str]]]=None,
                  tokenizer_target:Optional[Callable[[str],List[str]]]=None):
 

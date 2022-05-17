@@ -28,22 +28,23 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     Examples::
 
         from gdeep.data import TorchDataLoader
-        from gdeep.data import  TextDatasetQA, TokenizerQA
+        from gdeep.data import TransformingDataset
+        from gdeep.data.preprocessors import TokenizerQA
 
         dl = TorchDataLoader(name="SQuAD2", convert_to_map_dataset=True)
         dl_tr, dl_ts = dl.build_dataloaders()
 
-        textds = TextDatasetQA(dl_tr_str.dataset,
+        textds = TransformingDataset(dl_tr_str.dataset,
                                TokenizerQA())
 
     """
     is_fitted: bool
     max_length: int
-    vocabulary: Optional[Sequence]
+    vocabulary: Optional[Sequence[str]]
     tokenizer: Optional[Callable[[str], List[str]]]
-    counter: Counter
+    counter: Counter[List[str]]
 
-    def __init__(self, vocabulary:Optional[Sequence]=None,
+    def __init__(self, vocabulary:Optional[Sequence[str]]=None,
                  tokenizer:Optional[Callable[[str], List[str]]]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
