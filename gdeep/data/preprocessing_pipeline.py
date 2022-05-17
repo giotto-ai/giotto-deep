@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Any, Callable, Iterable, TypeVar, Generic
 
 from torch.utils.data import Dataset
 
@@ -6,9 +6,10 @@ from .abstract_preprocessing import AbstractPreprocessing
 from .transforming_dataset import TransformingDataset, append_transform
 
 T = TypeVar('T')
+R = TypeVar('R')
+S = TypeVar('S')
 
-
-class PreprocessingPipeline(AbstractPreprocessing):
+class PreprocessingPipeline(AbstractPreprocessing[S, Any]):
     """ Pipeline to fit non-fitted preprocessors to a dataset in a sequential manner.
     The fitted preprocessing transform can be attached to a dataset using
     the ´attach_transform_to_dataset´ method.
@@ -34,22 +35,27 @@ class PreprocessingPipeline(AbstractPreprocessing):
 
     """
 
-    transform = Callable[[T], Any]
+    transform: Callable[[S], Any]
+    preprocessors: Iterable[AbstractPreprocessing[S, Any]]
 
-    def __init__(self, preprocessors: Iterable[AbstractPreprocessing[Any, Any]]) -> None:
+    def __init__(self, preprocessors: Iterable[AbstractPreprocessing[S, Any]]) -> None:
         self.preprocessors = preprocessors
+        self.is_fitted = False
 
-    def attach_transform_to_dataset(self, dataset: Dataset[T]) -> TransformingDataset[T, Any]:
+    def attach_transform_to_dataset(self, dataset: Dataset[Any]) -> TransformingDataset[Any, Any]:
         return TransformingDataset(dataset, self.transform)
 
     def fit_to_dataset(self, dataset: Dataset[Any]) -> None:
-        self.transform = lambda x: x
+        self.transform: Callable[[Any], Any] = lambda x: x  # type: ignore
         transformed_dataset = TransformingDataset(dataset, self.transform)
         for preprocessor in self.preprocessors:
             preprocessor.fit_to_dataset(transformed_dataset)
             transformed_dataset = append_transform(transformed_dataset,
                                                    preprocessor)
-        self.transform = transformed_dataset.transform
+        self.transform = transformed_dataset.transform 
+        self.is_fitted = True
 
-    def __call__(self, x):
-        pass
+    def __call__(self, x:S) -> Any:
+        if not self.is_fitted:
+            self.load_pretrained(".")
+        return self.transform(x)

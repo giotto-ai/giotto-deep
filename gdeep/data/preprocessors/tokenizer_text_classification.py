@@ -3,7 +3,9 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, Union
+from collections.abc import Iterable
+from typing import Callable, Generic, NewType, Tuple, \
+    Union, Any, Optional, List
 
 import jsonpickle
 import torch
@@ -21,7 +23,8 @@ from ..abstract_preprocessing import AbstractPreprocessing
 Tensor = torch.Tensor
 
 
-class TokenizerTextClassification(AbstractPreprocessing):
+class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
+                                                 Tuple[Tensor, Tensor]]):
     """Preprocessing class. This class is useful to convert the data format
     ``(label, text)`` into the proper tensor format ``( word_embedding, label)``
 
@@ -33,8 +36,16 @@ class TokenizerTextClassification(AbstractPreprocessing):
             given.
 
     """
-    def __init__(self, tokenizer=None,
-                 vocabulary=None):
+
+
+    max_length:int
+    is_fitted:bool
+    vocabulary: Optional[Iterable]
+    tokenizer: Optional[Callable[[str], List[str]]]
+    counter: Counter
+
+    def __init__(self, tokenizer: Optional[Callable[[str], List[str]]]=None,
+                 vocabulary: Optional[Iterable]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
@@ -44,7 +55,7 @@ class TokenizerTextClassification(AbstractPreprocessing):
         self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_dataset(self, dataset:Dataset) -> None:
+    def fit_to_dataset(self, dataset:Dataset[Tuple[Any, str]]) -> None:
         """Method to extract global data, like to length of
         the sentences to be able to pad.
 
@@ -65,7 +76,7 @@ class TokenizerTextClassification(AbstractPreprocessing):
         self.is_fitted = True
         #self.save_pretrained(".")
 
-    def __call__(self, datum: tuple) -> Tensor:
+    def __call__(self, datum: Tuple[Any, str]) -> Tuple[Tensor, Tensor]:
         """This method is applied to each batch and
         transforms it following the rule below
 

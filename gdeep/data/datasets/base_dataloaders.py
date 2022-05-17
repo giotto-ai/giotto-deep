@@ -4,7 +4,8 @@ import shutil
 import warnings
 from abc import ABC, abstractmethod
 from os.path import join
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+from collections.abc import Iterable
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union, List
 
 import numpy as np
 import pandas as pd
@@ -39,7 +40,7 @@ class DatasetNameError(Exception):
     pass
 
 
-class MapDataset(Dataset):
+class MapDataset(Dataset[Any]):
     """Class to get a MapDataset from
     an iterable one.
 
@@ -47,10 +48,10 @@ class MapDataset(Dataset):
         data_list (list):
             the list(IterableDataset)
     """
-    def __init__(self, data_list):
+    def __init__(self, data_list:Iterable) -> None:
         self.data_list = data_list
 
-    def __getitem__(self, index):
+    def __getitem__(self, index:int ) -> Any:
         return self.data_list[index]
 
     def __len__(self):

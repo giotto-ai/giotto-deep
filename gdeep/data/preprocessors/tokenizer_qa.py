@@ -2,8 +2,9 @@ import json
 import os
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, Union
+from typing import Callable, Generic, NewType, Tuple, Union, List, Optional
 
 import jsonpickle
 import torch
@@ -21,15 +22,16 @@ Tensor = torch.Tensor
 
 
 
-class TokenizerQA(AbstractPreprocessing):
+class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[str]],
+                                        Tuple[Tensor, Tensor]]):
     """Class to preprocess text dataloaders for Q&A
     tasks. The type of dataset is assumed to be of the
     form ``(string,string,list[string], list[string])``.
 
     Args:
-        vocabulary (torch Vocab):
+        vocabulary:
             the torch vocabulary
-        tokenizer (torch Tokenizer):
+        tokenizer :
             the tokenizer of the source text
 
     Examples::
@@ -44,9 +46,13 @@ class TokenizerQA(AbstractPreprocessing):
                                TokenizerQA())
 
     """
-
-    def __init__(self, vocabulary=None,
-                 tokenizer=None):
+    is_fitted: bool
+    max_length: int
+    vocabulary: Optional[Iterable]
+    tokenizer: Optional[Callable[[str], List[str]]]
+    
+    def __init__(self, vocabulary:Optional[Iterable]=None,
+                 tokenizer:Optional[Callable[[str], List[str]]]=None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
@@ -55,16 +61,16 @@ class TokenizerQA(AbstractPreprocessing):
         self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_dataset(self, data):
+    def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[str]]]) -> None:
 
         counter = Counter()  # for the text
-        for (context, question, answer, init_position) in data:
-            if isinstance(context, tuple) or isinstance(context, list):
-                context = context[0]
+        for (context, question, answer, init_position) in dataset:
+            #if isinstance(context, tuple) or isinstance(context, list):
+            #    context = context[0]
             counter.update(self.tokenizer(context))
             self.max_length = max(self.max_length, len(self.tokenizer(context)))
-            if isinstance(question, tuple) or isinstance(question, list):
-                question = question[0]
+            #if isinstance(question, tuple) or isinstance(question, list):
+            #    question = question[0]
             counter.update(self.tokenizer(question))
             self.max_length = max(self.max_length, len(self.tokenizer(question)))
 
@@ -74,11 +80,11 @@ class TokenizerQA(AbstractPreprocessing):
         self.is_fitted = True
         # self.save_pretrained(".")
 
-    def __call__(self, datum:tuple) -> Tuple[Tensor, Tensor]:
+    def __call__(self, datum: Tuple[str, str, List[str], List[int]]) -> Tuple[Tensor, Tensor]:
         if not self.is_fitted:
             self.load_pretrained(".")
-        text_pipeline = lambda x: [self.vocabulary[token] for token in
-                                   self.tokenizer(x)]
+        text_pipeline = lambda x: [self.vocabulary[token] for token in # type: ignore
+                                   self.tokenizer(x)]  # type: ignore
 
         processed_context = torch.tensor(text_pipeline(datum[0]),
                                       dtype=torch.int64).to(DEVICE)
@@ -96,8 +102,8 @@ class TokenizerQA(AbstractPreprocessing):
         pos_init = len(self.tokenizer(datum[0][:pos_init_char]))
         pos_end = pos_init + len(self.tokenizer(datum[2][0]))
 
-        return [torch.stack((out_context, out_question)).to(torch.long),
-         torch.stack((torch.tensor(pos_init), torch.tensor(pos_end))).to(torch.long)]
+        return (torch.stack((out_context, out_question)).to(torch.long),
+         torch.stack((torch.tensor(pos_init), torch.tensor(pos_end))).to(torch.long))
 
 
 

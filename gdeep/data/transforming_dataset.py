@@ -13,9 +13,9 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
     This base class expects to get data from Dataset.
 
     Args:
-        dataset (torch.utils.data.Dataset):
+        dataset :
             The source dataset for this class.
-        transform (Callable):
+        transform :
             This is either a function defined by the
             users or a fitted preprocessor. The
             preprocessors inherits from ``AbstractPreprocessing``
@@ -23,7 +23,7 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
 
     dataset: Dataset[R]
     transform: Callable[[R], S]
-    
+
     def __init__(self,
                  dataset: Dataset[R],
                  transform: Callable[[R], S]) -> None:
@@ -44,8 +44,7 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
     def __len__(self) -> int:
         """This method returs the length
         of the dataset"""
-        if self.dataset:
-            return len(self.dataset)
+        return len(self.dataset)
     
     # forward all other methods of the TransformingDataset to the Dataset
     def __getattr__(self, name: str) -> Any:
@@ -59,9 +58,9 @@ def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S]
     that the usr may want to stack.
 
     Args:
-        dataset (TransformingDataset):
+        dataset :
             A dataset on which it is possible to apply transforms
-        transform (Callable):
+        transform :
             A callable that can be applied to each item in the
             ``dataset``
 
