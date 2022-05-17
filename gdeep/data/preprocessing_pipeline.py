@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, TypeVar, Generic
+from typing import Any, Callable, Generic, Iterable, TypeVar
 
 from torch.utils.data import Dataset
 
@@ -6,10 +6,9 @@ from .abstract_preprocessing import AbstractPreprocessing
 from .transforming_dataset import TransformingDataset, append_transform
 
 T = TypeVar('T')
-R = TypeVar('R')
-S = TypeVar('S')
 
-class PreprocessingPipeline(AbstractPreprocessing[S, Any]):
+
+class PreprocessingPipeline(AbstractPreprocessing[T, Any], Generic[T]):
     """ Pipeline to fit non-fitted preprocessors to a dataset in a sequential manner.
     The fitted preprocessing transform can be attached to a dataset using
     the ´attach_transform_to_dataset´ method.
@@ -35,27 +34,26 @@ class PreprocessingPipeline(AbstractPreprocessing[S, Any]):
 
     """
 
-    transform: Callable[[S], Any]
-    preprocessors: Iterable[AbstractPreprocessing[S, Any]]
+    transform_composition: Callable[[T], Any]
 
-    def __init__(self, preprocessors: Iterable[AbstractPreprocessing[S, Any]]) -> None:
+    def __init__(self, preprocessors: Iterable[AbstractPreprocessing[Any, Any]]) -> None:
         self.preprocessors = preprocessors
         self.is_fitted = False
 
-    def attach_transform_to_dataset(self, dataset: Dataset[Any]) -> TransformingDataset[Any, Any]:
-        return TransformingDataset(dataset, self.transform)
+    def attach_transform_to_dataset(self, dataset: Dataset[T]) -> TransformingDataset[T, Any]:
+        return TransformingDataset(dataset, self.transform_composition)
 
     def fit_to_dataset(self, dataset: Dataset[Any]) -> None:
-        self.transform: Callable[[Any], Any] = lambda x: x  # type: ignore
-        transformed_dataset = TransformingDataset(dataset, self.transform)
+        self.transform_composition = lambda x: x
+        transformed_dataset = TransformingDataset(dataset, self.transform_composition)
         for preprocessor in self.preprocessors:
             preprocessor.fit_to_dataset(transformed_dataset)
             transformed_dataset = append_transform(transformed_dataset,
                                                    preprocessor)
-        self.transform = transformed_dataset.transform 
-        self.is_fitted = True
+        self.transform_composition = transformed_dataset.transform
 
-    def __call__(self, x:S) -> Any:
+    def __call__(self, x: T) -> Any:
         if not self.is_fitted:
-            self.load_pretrained(".")
-        return self.transform(x)
+            raise ValueError("The preprocessing pipeline has not been fitted to a dataset."
+                             " Please call the ´fit_to_dataset´ method first.")
+        return self.transform_composition(x)

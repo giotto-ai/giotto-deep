@@ -9,6 +9,8 @@ from .transforming_dataset import TransformingDataset
 
 from torch.utils.data import Dataset
 
+from gdeep.data.transforming_dataset import TransformingDataset
+
 R = TypeVar('R')
 S = TypeVar('S')
 
@@ -40,3 +42,4 @@ class AbstractPreprocessing(ABC, Generic[R, S]):
         except FileNotFoundError:
             warnings.warn("The transformation file does not exist; attempting to run"
                           " the transformation anyway...")
+            

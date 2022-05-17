@@ -1,23 +1,13 @@
-import json
-import os
-import warnings
-from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, \
-    Union, List, Optional, Any
+from typing import Callable, Tuple, List, Optional, Sequence
 
-import jsonpickle
 import torch
-from torch.nn.functional import pad
-from torch.utils.data import DataLoader, Dataset
-from torchtext.data.utils import get_tokenizer
+from torch.utils.data import Dataset
 from torchtext.vocab import Vocab
-from torchvision.transforms import Resize, ToTensor
+from torchtext.data.utils import get_tokenizer  # type: ignore
 from gdeep.utility import DEVICE
 
 from ..abstract_preprocessing import AbstractPreprocessing
-from ..transforming_dataset import TransformingDataset
 # type definition
 Tensor = torch.Tensor
 
@@ -52,7 +42,7 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     max_length: int
     vocabulary: Optional[Sequence[str]]
     tokenizer: Optional[Callable[[str], List[str]]]
-    counter: Counter[List[str]]
+    counter: "Counter[List[str]]"
 
     def __init__(self, vocabulary:Optional[Sequence[str]]=None,
                  tokenizer:Optional[Callable[[str], List[str]]]=None):
@@ -67,13 +57,9 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[int]]]) -> None:
         """Method to fit the vocabulary to the input text"""
         counter = Counter()  # for the text
-        for (context, question, answer, init_position) in dataset:
-            #if isinstance(context, tuple) or isinstance(context, list):
-            #    context = context[0]
+        for (context, question, answer, init_position) in dataset:  # type: ignore
             counter.update(self.tokenizer(context))
             self.max_length = max(self.max_length, len(self.tokenizer(context)))
-            #if isinstance(question, tuple) or isinstance(question, list):
-            #    question = question[0]
             counter.update(self.tokenizer(question))
             self.max_length = max(self.max_length, len(self.tokenizer(question)))
 
@@ -81,7 +67,6 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
             self.vocabulary = Vocab(counter)
         self.pad_item = self.vocabulary["."]
         self.is_fitted = True
-        # self.save_pretrained(".")
 
     def __call__(self, datum: Tuple[str, str, List[str], List[int]]) -> Tuple[Tensor, Tensor]:
         """This method implement the transformation once fitted."""

@@ -1,16 +1,15 @@
-from ._data_cloud import _DataCloud
+from ._data_cloud import _DataCloud  # type: ignore
 
 import json
 import os
 from os import remove
 from os.path import join, exists
-from typing import List, Tuple, Union
+from typing import List, Literal, Tuple, Union
 
 import wget  # type: ignore
 
 
 from gdeep.utility.constants import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
-from gdeep.utility.utils import get_checksum
 
 class DatasetCloud():
     """DatasetCloud class to handle the download and upload
@@ -122,15 +121,14 @@ class DatasetCloud():
         """
         self._check_public_access()
         # List of existing datasets in the cloud.
-        existing_datasets = set([blob.name.split('/')[0]
-                                 for blob in
-                                 self._data_cloud.bucket.list_blobs()\
-            if blob.name != "giotto-deep-big.png"])
+        existing_datasets: Set[str] = set([blob.name.split('/')[0]  # type: ignore
+                                 for blob in  # type: ignore
+                                 self._data_cloud.bucket.list_blobs()  # type: ignore
+            if blob.name != "giotto-deep-big.png"])  # type: ignore
         if self.name not in existing_datasets:
             raise ValueError("Dataset {} does not exist in the cloud."\
                 .format(self.name) +
-                             "Available datasets are: {}."\
-                                 .format(existing_datasets))
+                             "Available datasets are: {existing_datasets}.")
         if not self._does_dataset_exist_locally():
             self._create_dataset_folder()
         self._data_cloud.download_folder(self.name + '/')
@@ -184,10 +182,13 @@ class DatasetCloud():
         with open(join(self.download_directory,  # type: ignore
                        self.name, 'metadata.json')) as f:
             metadata = json.load(f)
+        filetype: Literal['pt', 'npy']
         if metadata['data_format'] == "pytorch_tensor":
             filetype = "pt"
         elif metadata['data_format'] == "numpy_array":
             filetype = "npy"
+        else:
+            raise ValueError(f"Unknown data format: {metadata['data_format']}")
         self._data_cloud.download_file(self.name + "/data." + filetype)
         self._data_cloud.download_file(self.name + "/labels." + filetype)
         
@@ -201,7 +202,7 @@ class DatasetCloud():
         if self.use_public_access:
             datasets_local = "tmp_datasets.json"
             # Download the dataset list json file using the public URL.
-            wget.download(self.public_url + 'datasets.json', datasets_local)
+            wget.download(self.public_url + 'datasets.json', datasets_local)  # type: ignore
             datasets = json.load(open(datasets_local))
             
             # Remove duplicates. This has to be fixed in the future.
@@ -356,9 +357,6 @@ class DatasetCloud():
             None
         """
         self._check_public_access()
-        if self.metadata == None:
-            raise Exception("No metadata to upload. " #NOSONAR
-                            + "Please create metadata using create_metadata.")
         self._data_cloud.upload_file(
             path, str(self.metadata['name']) + '/'  # type: ignore
             + 'metadata.json',

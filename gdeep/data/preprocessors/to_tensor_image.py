@@ -1,21 +1,11 @@
-import json
-import os
-import warnings
-from abc import ABC, abstractmethod
-from collections import Counter
-from typing import Callable, Generic, NewType, Tuple, Union, Any, List
+from typing import Any, List, Tuple, Union
 
-import jsonpickle
 import torch
-from torch.nn.functional import pad
-from torch.utils.data import DataLoader, Dataset
-from torchtext.data.utils import get_tokenizer
-from torchtext.vocab import Vocab
+from torch.utils.data import Dataset
 from torchvision.transforms import Resize, ToTensor
 
 from ..abstract_preprocessing import AbstractPreprocessing
 
-from gdeep.utility import DEVICE
 # type definition
 Tensor = torch.Tensor
 
@@ -36,8 +26,9 @@ class ToTensorImage(AbstractPreprocessing[Any, Tuple[Tensor, Tensor]]):
         self.size = size
         self.is_fitted = True
 
-    def fit_to_dataset(self, dataset:Dataset[Any]) -> None:
+    def fit_to_dataset(self, dataset: Dataset[Any]) -> None:
+        # nothing to do
         pass
 
     def __call__(self, datum: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
-        return ToTensor()(Resize(self.size)(datum[0])), torch.tensor(datum[1],dtype=torch.long)
+        return ToTensor()(Resize(self.size)(datum[0])), torch.tensor(datum[1],dtype=torch.long)  # type: ignore
