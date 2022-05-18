@@ -4,7 +4,7 @@ import json
 import os
 from os import remove
 from os.path import join, exists
-from typing import List, Literal, Tuple, Union, Set
+from typing import List, Tuple, Union, Set
 
 import wget  # type: ignore
 
@@ -182,7 +182,7 @@ class DatasetCloud():
         with open(join(self.download_directory,  # type: ignore
                        self.name, 'metadata.json')) as f:
             metadata = json.load(f)
-        filetype: Literal['pt', 'npy']
+        # filetype: Literal['pt', 'npy']
         if metadata['data_format'] == "pytorch_tensor":
             filetype = "pt"
         elif metadata['data_format'] == "numpy_array":
