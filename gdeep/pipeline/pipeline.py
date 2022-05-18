@@ -17,6 +17,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 import optuna
 from datetime import datetime
+from torch.utils.tensorboard import SummaryWriter
 
 from ..utility.optimisation import MissingClosureError
 from gdeep.models import ModelExtractor
@@ -118,7 +119,7 @@ class Pipeline:
     def __init__(self, model: torch.nn.Module,
                  dataloaders: Tuple[DataLoader[Tuple[Tensor, Tensor]],...],
                  loss_fn: Callable[[Tuple[Tensor,Tensor]],Tensor],
-                 writer: torch.utils.tensorboard.writer.SummaryWriter,
+                 writer: SummaryWriter,
                  KFold_class:Optional[BaseCrossValidator]=None) -> None:
         self.model = model
         self.initial_model = copy.deepcopy(self.model)
@@ -401,7 +402,7 @@ class Pipeline:
                     class_label:List[Tensor],
                     loss:Tensor,
                     correct:Tensor,
-                    writer:torch.utils.tensorboard.SummaryWriter,
+                    writer:SummaryWriter,
                     writer_tag:str):
         """private function used inside the test
         and validation loops"""
@@ -1058,7 +1059,7 @@ class Pipeline:
     def register_pipe_hook(self,
                            callable:Callable[[Optimizer, int,
                                               ModelExtractor,
-                                              torch.utils.tensorboard.SummaryWriter],
+                                              SummaryWriter],
                                              Any]) -> None:
         """This method registers a function that
         will be called after each trainign step.
@@ -1079,7 +1080,7 @@ class Pipeline:
                        epoch:int,
                        optim:Optimizer,
                        me:ModelExtractor,
-                       writer: torch.utils.tensorboard.SummaryWriter) -> None:
+                       writer: SummaryWriter) -> None:
         """private method that runs the hooked
         function at every epoch, after the single training loop"""
         if self.registered_hook is not None:
