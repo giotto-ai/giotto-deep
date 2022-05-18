@@ -1,21 +1,29 @@
-import torch.nn.functional as F
-import torch
-import numpy as np
 import os
 import copy
 import time
 from functools import wraps
-from tqdm import tqdm
 import warnings
+from typing import Tuple, Union, Optional, Callable, \
+    Any, Dict, List
+
+import torch.nn.functional as F
+from torch.optim import Optimizer
+import torch
+import numpy as np
+from tqdm import tqdm
+from sklearn.model_selection._split import BaseCrossValidator
 from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data.sampler import SubsetRandomSampler
-from gdeep.models import ModelExtractor
-from gdeep.utility import _inner_refactor_scalars
-from ..utility.optimisation import MissingClosureError
+from torch.utils.data import DataLoader
 import optuna
 from datetime import datetime
 
+from ..utility.optimisation import MissingClosureError
+from gdeep.models import ModelExtractor
+from gdeep.utility import _inner_refactor_scalars
 from gdeep.utility import DEVICE
+
+Tensor = torch.Tensor
 
 try:
     import torch_xla
@@ -27,7 +35,7 @@ except:
     print("No TPUs...")
 
 
-def _add_data_to_tb(func):
+def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any],Any]:
     """decorator to store data to tensorboard"""
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -54,14 +62,14 @@ class Pipeline:
     of code.
 
     Args:
-        model (nn.Module):
+        model :
             standard torch model
         dataloaders (list of utils.DataLoader):
             list of standard torch DataLoaders, e.g.
             `[dl_tr, dl_val, dl_ts]`
-        loss_fn (Callables):
+        loss_fn :
             loss function to average over batches
-        writer (tensorboard SummaryWriter):
+        writer :
             tensorboard writer
         KFold_class (sklearn.model_selection, default ``KFold(5, shuffle=True)``):
             the class instance to implement the KFold, can be
@@ -75,7 +83,7 @@ class Pipeline:
         from sklearn.model_selection import StratifiedKFold
         from gdeep.models import FFNet
         from gdeep.pipeline import Pipeline
-        from gdeep.data import TorchDataLoader
+        from gdeep.data import BuildDatasets, BuildDataLoaders
         from gdeep.search import GiottoSummaryWriter
         # model
         class model1(nn.Module):
@@ -87,9 +95,11 @@ class Pipeline:
 
         model = model1()
         # dataloaders
-        dl = TorchDataLoader(name="DoubleTori")
-        dl_tr, dl_val = dl.build_dataloaders(batch_size=23)
-        dl_ts = None
+        bd = BuildDatasets(name="DoubleTori")
+        ds_tr, ds_val, _ = bd.build_datasets()
+        dl = BuildDataLoaders((ds_tr, ds_val))
+        dl_tr, dl_val, dl_ts = dl.build_dataloaders(batch_size=23)
+
         # loss function
         loss_fn = nn.CrossEntropyLoss()
         # tb writer
@@ -105,7 +115,11 @@ class Pipeline:
 
     # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
-    def __init__(self, model, dataloaders, loss_fn, writer, KFold_class=None):
+    def __init__(self, model: torch.nn.Module,
+                 dataloaders: Tuple[DataLoader[Tuple[Tensor, Tensor]],...],
+                 loss_fn: Callable[[Tuple[Tensor,Tensor]],Tensor],
+                 writer: torch.utils.tensorboard.writer.SummaryWriter,
+                 KFold_class:Optional[BaseCrossValidator]=None) -> None:
         self.model = model
         self.initial_model = copy.deepcopy(self.model)
         assert len(dataloaders) > 0 and len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
@@ -150,8 +164,13 @@ class Pipeline:
         """
         self.model = copy.deepcopy(self.initial_model)
 
-    def _optimisation_step(self, dl_tr, steps, loss, 
-                           t_loss, correct, batch, closure):
+    def _optimisation_step(self, dl_tr:DataLoader[Tuple[Tensor, Tensor]],
+                           steps,
+                           loss:Tensor,
+                           t_loss:Tensor,
+                           correct:Tensor,
+                           batch: int,
+                           closure:Callable[[],Tensor]):
         """Backpropagation"""
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
@@ -185,12 +204,13 @@ class Pipeline:
         return t_loss
         
     def _inner_train_loop(self, 
-                            dl_tr, 
-                            writer_tag, 
-                            size, steps,
-                            loss,
-                            t_loss,
-                            correct):
+                          dl_tr: DataLoader[Tuple[Tensor, Tensor]],
+                          writer_tag: str,
+                          size,
+                          steps,
+                          loss:Tensor,
+                          t_loss:Tensor,
+                          correct:Tensor):
         """Private method to run the loop
         over the batches for the optimisation"""
 
@@ -245,7 +265,9 @@ class Pipeline:
         return correct, t_loss
 
 
-    def _train_loop(self, dl_tr, writer_tag=""):
+    def _train_loop(self,
+                    dl_tr: DataLoader[Tuple[Tensor, Tensor]],
+                    writer_tag:str=""):
         """private method to run a single training
         loop
         """
@@ -284,7 +306,9 @@ class Pipeline:
             pass
         return t_loss, correct*100
     
-    def _val_loop(self, dl_val, writer_tag=""):
+    def _val_loop(self,
+                  dl_val: DataLoader[Tuple[Tensor, Tensor]],
+                  writer_tag:str=""):
         """private method to run a single validation
         loop
         """
@@ -345,7 +369,11 @@ class Pipeline:
         return val_loss, 100*correct
 
     @staticmethod
-    def _add_pr_curve_tb(pred, class_label, class_probs, writer, writer_tag=""):
+    def _add_pr_curve_tb(pred,
+                         class_label,
+                         class_probs,
+                         writer,
+                         writer_tag:str=""):
         """private function to add the PR curve
         to tensorboard"""
         probs = torch.cat([torch.stack(batch) for batch in
@@ -367,8 +395,14 @@ class Pipeline:
                 warnings.warn("Cannot store data in the PR curve")
 
     @_add_data_to_tb
-    def _inner_loop(self, dl, class_probs, class_label,
-                    loss, correct, writer, writer_tag):
+    def _inner_loop(self,
+                    dl: DataLoader[Tuple[Tensor, Tensor]],
+                    class_probs:List[List[Tensor]],
+                    class_label:List[Tensor],
+                    loss:Tensor,
+                    correct:Tensor,
+                    writer:torch.utils.tensorboard.SummaryWriter,
+                    writer_tag:str):
         """private function used inside the test
         and validation loops"""
         pred_list = []
@@ -390,7 +424,11 @@ class Pipeline:
 
         return pred_list, loss, correct
 
-    def _init_profiler(self, profiling, cross_validation, n_epochs, k_folds):
+    def _init_profiler(self,
+                       profiling:bool,
+                       cross_validation:bool,
+                       n_epochs:int,
+                       k_folds:int) -> None:
         """initialise the profler for profiling"""
         # profiling
         if not cross_validation:
@@ -417,9 +455,13 @@ class Pipeline:
             except AssertionError:
                 pass
     
-    def _init_optimizer_and_scheduler(self, keep_training, cross_validation,
-                                      optimizer, optimizers_param,
-                                      lr_scheduler, scheduler_params):
+    def _init_optimizer_and_scheduler(self,
+                                      keep_training:bool,
+                                      cross_validation:bool,
+                                      optimizer:Optimizer,
+                                      optimizers_param:Dict[str, Any],
+                                      lr_scheduler,
+                                      scheduler_params:Dict[str, Any]):
         """Reset or maintain the LR scheduler and the 
         optimizer depending on the training"""
         if not (self.check_has_trained and keep_training):
@@ -439,18 +481,21 @@ class Pipeline:
             if lr_scheduler is not None:  # reset scheduler
                 self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
     
-    def train(self, optimizer, n_epochs=10, cross_validation=False,
-              optimizers_param=None,
-              dataloaders_param=None,
+    def train(self,
+              optimizer:Optimizer,
+              n_epochs:int=10,
+              cross_validation:bool=False,
+              optimizers_param:Dict[str, Any]=None,
+              dataloaders_param:Dict[str, Any]=None,
               lr_scheduler=None,
-              scheduler_params=None,
-              optuna_params=None,
-              profiling=False,
-              parallel_tpu=False,
-              keep_training=False,
-              store_grad_layer_hist=False,
+              scheduler_params:Optional[Dict[str, Any]]=None,
+              optuna_params: Optional[Tuple[Any, Any]]=None,
+              profiling:bool=False,
+              parallel_tpu:bool=False,
+              keep_training:bool=False,
+              store_grad_layer_hist:bool=False,
               n_accumulated_grads:int=0,
-              writer_tag=""):
+              writer_tag:str=""):
         """Function to run all the training cycles.
 
         Args:
@@ -689,10 +734,17 @@ class Pipeline:
         # put the mean of the cross_val
         return valloss, valacc
         
-    def _training_loops(self, n_epochs, dl_tr,
-                        dl_val, lr_scheduler, scheduler,
-                        check_optuna, search_metric,
-                        trial, cross_validation=False, writer_tag=""):
+    def _training_loops(self,
+                        n_epochs:int,
+                        dl_tr:DataLoader[Tuple[Tensor, Tensor]],
+                        dl_val:DataLoader[Tuple[Tensor, Tensor]],
+                        lr_scheduler,
+                        scheduler,
+                        check_optuna:bool,
+                        search_metric:str,
+                        trial,
+                        cross_validation:bool=False,
+                        writer_tag:str=""):
         """private method to run the trainign loops
         
         Args:
@@ -1003,7 +1055,11 @@ class Pipeline:
         return 100*correct, loss, confusion_matrix
 
 
-    def register_pipe_hook(self, callable):
+    def register_pipe_hook(self,
+                           callable:Callable[[Optimizer, int,
+                                              ModelExtractor,
+                                              torch.utils.tensorboard.SummaryWriter],
+                                             Any]) -> None:
         """This method registers a function that
         will be called after each trainign step.
 
@@ -1019,14 +1075,18 @@ class Pipeline:
         self.registered_hook = callable
 
 
-    def _run_pipe_hook(self, epoch, optim, me, writer):
+    def _run_pipe_hook(self,
+                       epoch:int,
+                       optim:Optimizer,
+                       me:ModelExtractor,
+                       writer: torch.utils.tensorboard.SummaryWriter) -> None:
         """private method that runs the hooked
         function at every epoch, after the single training loop"""
         if self.registered_hook is not None:
             self.registered_hook(epoch, optim, me, writer)
             
     @staticmethod
-    def copy_dataloader_params(original_dataloader):
+    def copy_dataloader_params(original_dataloader: DataLoader[Tuple[Tensor, Tensor]]) -> Dict[str, Any]:
         """returns the dict of init parameters"""
         return {"batch_size": original_dataloader.batch_size,
                 #"batch_sampler": original_dataloader.batch_sampler, 
