@@ -151,11 +151,11 @@ class BuildDatasets:
             train_ds = dataset_tuple[0]
             valid_ds = None
             test_ds = None
-        if len(dataset_tuple) == 2:
+        elif len(dataset_tuple) == 2:
             train_ds = dataset_tuple[0]
             valid_ds = dataset_tuple[1]
             test_ds = None
-        if len(dataset_tuple) == 3:
+        elif len(dataset_tuple) == 3:
             train_ds = dataset_tuple[0]
             valid_ds = dataset_tuple[1]
             test_ds = dataset_tuple[2]
