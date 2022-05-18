@@ -208,7 +208,7 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
         tori_labels = np.concatenate((torus_labels[0],
                                       torus_labels[1]),
                                      axis=0)
-        return torch.from_numpy(tori_point_cloud), tori_labels
+        return torch.from_numpy(tori_point_cloud).to(torch.float32), tori_labels
 
     def _make_entangled_tori_dataset(self, m: int = 2,
                                      n_pts: int = 10) -> Tuple[Tensor, np.ndarray]:
@@ -244,7 +244,7 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
             if t != [0, 0, 0]:
                 data = np.append(data, np.add(tori_entangled, t), axis=0)
                 lab = np.append(lab, labels)
-        return torch.from_numpy(data), lab
+        return torch.from_numpy(data).to(torch.float32), lab
 
     @staticmethod
     def _make_blobs(m: int = 3, n_pts: int = 200) -> Tuple[Tensor, np.ndarray]:
@@ -263,4 +263,4 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
         """
         data, lab = make_blobs(n_samples=n_pts, centers=m,
                                n_features=3, random_state=42)
-        return torch.from_numpy(data), lab
+        return torch.from_numpy(data).to(torch.float32), lab

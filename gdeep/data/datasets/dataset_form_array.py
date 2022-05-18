@@ -36,10 +36,11 @@ class FromArray(Dataset[Tuple[Tensor, Tensor]]):
     @staticmethod
     def _from_numpy(X: Union[Tensor, np.ndarray]) -> Tensor:
         """this is an upgrade of ``torch.from_numpy()``
-        that also allows tensor input"""
+        that also allows tensor input. The output is a
+        Tensor of type ``torch.float32``"""
         if isinstance(X, torch.Tensor):
-            return X
-        return torch.from_numpy(X)
+            return X.to(torch.float32)
+        return torch.from_numpy(X).to(torch.float32)
 
     @staticmethod
     def _long_or_float(y: Union[Tensor, np.ndarray]) -> Tensor:
