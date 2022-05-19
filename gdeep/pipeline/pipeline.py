@@ -4,11 +4,12 @@ import time
 from functools import wraps
 import warnings
 from typing import Tuple, Union, Optional, Callable, \
-    Any, Dict, List
+    Any, Dict, List, Type
 
 import torch.nn.functional as F
 from torch.optim import Optimizer
 import torch
+from optuna.trial._base import BaseTrial
 import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection._split import BaseCrossValidator
@@ -18,6 +19,7 @@ from torch.utils.data import DataLoader
 import optuna
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
+from torch.optim.lr_scheduler import _LRScheduler
 
 from ..utility.optimisation import MissingClosureError
 from gdeep.models import ModelExtractor
@@ -36,8 +38,8 @@ except:
     print("No TPUs...")
 
 
-def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any],Any]:
-    """decorator to store data to tensorboard"""
+def _add_data_to_tb(func: Callable[[Any,...], Any]) -> Callable[[Any,...],Any]:
+    """decorator to store PR data to tensorboard"""
     @wraps(func)
     def wrapper(*args, **kwargs):
         pred, val_loss, correct = func(*args, **kwargs)
@@ -117,8 +119,8 @@ class Pipeline:
     # def __init__(self, model, dataloaders, loss_fn, writer,
     # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model: torch.nn.Module,
-                 dataloaders: Tuple[DataLoader[Tuple[Tensor, Tensor]],...],
-                 loss_fn: Callable[[Tuple[Tensor,Tensor]],Tensor],
+                 dataloaders: List[DataLoader[Tuple[Tensor, Tensor]]],
+                 loss_fn: Callable[[Tensor,Tensor],Tensor],
                  writer: SummaryWriter,
                  KFold_class:Optional[BaseCrossValidator]=None) -> None:
         self.model = model
@@ -135,17 +137,17 @@ class Pipeline:
         if self.writer is None:
             warnings.warn("No writer detected")
         self.DEVICE = DEVICE
-        self.check_has_trained = False
+        self.check_has_trained:bool = False
         self.registered_hook = None
         # used in gradient clipping
-        self.clip = 5
+        self.clip:int = 5
         # used by gridsearch:
-        self.run_name = None
-        self.val_loss_list_hparam = []
-        self.val_acc_list_hparam = []
-        self.best_not_last = False
+        self.run_name:Optional[str] = None
+        self.val_loss_list_hparam:List[float] = []
+        self.val_acc_list_hparam:List[float] = []
+        self.best_not_last:bool = False
         # profiler
-        self.prof = None
+        self.prof:Any = None
 
         if not KFold_class:
             self.KFold_class = KFold(5, shuffle=True)
@@ -153,25 +155,26 @@ class Pipeline:
             self.KFold_class = KFold_class
 
         
-    def _set_initial_model(self):
+    def _set_initial_model(self) -> None:
         """This private method is used to set
         the initial_model"""
         self.initial_model = copy.deepcopy(self.model)
 
-    def _reset_model(self):
+    def _reset_model(self) -> None:
         """Private method to reset the initial model weights.
         This function is essential for the cross-validation
         procedure.
         """
         self.model = copy.deepcopy(self.initial_model)
 
-    def _optimisation_step(self, dl_tr:DataLoader[Tuple[Tensor, Tensor]],
-                           steps,
-                           loss:Tensor,
-                           t_loss:Tensor,
-                           correct:Tensor,
+    def _optimisation_step(self,
+                           dl_tr:DataLoader[Tuple[Tensor, Tensor]],
+                           steps: int,
+                           loss: Tensor,
+                           t_loss: float,
+                           correct: float,
                            batch: int,
-                           closure:Callable[[],Tensor]):
+                           closure: Callable[[], Tensor]) -> float:
         """Backpropagation"""
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
@@ -207,11 +210,11 @@ class Pipeline:
     def _inner_train_loop(self, 
                           dl_tr: DataLoader[Tuple[Tensor, Tensor]],
                           writer_tag: str,
-                          size,
-                          steps,
-                          loss:Tensor,
-                          t_loss:Tensor,
-                          correct:Tensor):
+                          size: int,
+                          steps: int,
+                          loss: Tensor,
+                          t_loss: float,
+                          correct: float) -> Tuple[float, float]:
         """Private method to run the loop
         over the batches for the optimisation"""
 
@@ -228,9 +231,9 @@ class Pipeline:
             # Compute prediction and loss
             pred = self.model(X)
             try:
-                correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                correct += (pred.argmax(1) == y).to(torch.float).sum().item()
             except RuntimeError:
-                correct += (pred.argmax(2) == y).type(torch.float).sum().item()
+                correct += (pred.argmax(2) == y).to(torch.float).sum().item()
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
@@ -268,7 +271,7 @@ class Pipeline:
 
     def _train_loop(self,
                     dl_tr: DataLoader[Tuple[Tensor, Tensor]],
-                    writer_tag:str=""):
+                    writer_tag:str="") -> Tuple[float, float]:
         """private method to run a single training
         loop
         """
@@ -283,7 +286,7 @@ class Pipeline:
         except AttributeError:
             size = len(dl_tr.dataset)
         steps = len(dl_tr)
-        loss = 0
+        loss = torch.tensor(0)
         correct = 0
         t_loss = 0
         tik = time.time()
@@ -291,7 +294,8 @@ class Pipeline:
                                                   " accumulated gradients shall be diminished!"
         correct, t_loss = self._inner_train_loop(dl_tr, 
                                                  writer_tag,
-                                                 size, steps,
+                                                 size,
+                                                 steps,
                                                  loss,
                                                  t_loss,
                                                  correct)
@@ -309,7 +313,7 @@ class Pipeline:
     
     def _val_loop(self,
                   dl_val: DataLoader[Tuple[Tensor, Tensor]],
-                  writer_tag:str=""):
+                  writer_tag:str="") -> Tuple[float, float]:
         """private method to run a single validation
         loop
         """
@@ -322,14 +326,14 @@ class Pipeline:
             size = len(dl_val.sampler.indices)
         except AttributeError:
             size = len(dl_val.dataset)
-        val_loss, correct = 0, 0
-        class_label = []
-        class_probs = []
+        val_loss, correct = 0., 0.
+        class_label:List[Tensor] = []
+        class_probs:List[List[Tensor]] = []
         self.model.eval()
 
         pred, val_loss, correct = self._inner_loop(dl=dl_val,
                                                    class_probs=class_probs,
-                                                   class_label= class_label,
+                                                   class_label=class_label,
                                                    loss=val_loss,
                                                    correct=correct,
                                                    writer=self.writer,
@@ -370,11 +374,11 @@ class Pipeline:
         return val_loss, 100*correct
 
     @staticmethod
-    def _add_pr_curve_tb(pred,
-                         class_label,
-                         class_probs,
-                         writer,
-                         writer_tag:str=""):
+    def _add_pr_curve_tb(pred: Tensor,
+                         class_label: List[Tensor],
+                         class_probs: List[List[Tensor]],
+                         writer: SummaryWriter,
+                         writer_tag: str="") -> None:
         """private function to add the PR curve
         to tensorboard"""
         probs = torch.cat([torch.stack(batch) for batch in
@@ -396,14 +400,14 @@ class Pipeline:
                 warnings.warn("Cannot store data in the PR curve")
 
     @_add_data_to_tb
-    def _inner_loop(self,
+    def _inner_loop(self,*,
                     dl: DataLoader[Tuple[Tensor, Tensor]],
-                    class_probs:List[List[Tensor]],
-                    class_label:List[Tensor],
-                    loss:Tensor,
-                    correct:Tensor,
-                    writer:SummaryWriter,
-                    writer_tag:str):
+                    class_probs: List[List[Tensor]],
+                    class_label: List[Tensor],
+                    loss: float,
+                    correct: float,
+                    writer: SummaryWriter,
+                    writer_tag: str) -> Tuple[List[Tensor], float, float]:
         """private function used inside the test
         and validation loops"""
         pred_list = []
@@ -418,9 +422,9 @@ class Pipeline:
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
                 try:
-                    correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                    correct += (pred.argmax(1) == y).to(torch.float).sum().item()
                 except RuntimeError:
-                    correct += (pred.argmax(2) == y).type(torch.float).sum().item()
+                    correct += (pred.argmax(2) == y).to(torch.float).sum().item()
                 class_label.append(y)
 
         return pred_list, loss, correct
@@ -437,7 +441,7 @@ class Pipeline:
         else:
             active = k_folds*(n_epochs-2)
 
-        active = 10
+        active:int = 10
         if profiling:
             try:
                 self.prof = torch.profiler.profile(
@@ -459,10 +463,10 @@ class Pipeline:
     def _init_optimizer_and_scheduler(self,
                                       keep_training:bool,
                                       cross_validation:bool,
-                                      optimizer:Optimizer,
+                                      optimizer:Type[Optimizer],
                                       optimizers_param:Dict[str, Any],
-                                      lr_scheduler,
-                                      scheduler_params:Dict[str, Any]):
+                                      lr_scheduler:Optional[Type[_LRScheduler]]=None,
+                                      scheduler_params:Optional[Dict[str, Any]]=None) -> None:
         """Reset or maintain the LR scheduler and the 
         optimizer depending on the training"""
         if not (self.check_has_trained and keep_training):
@@ -483,20 +487,20 @@ class Pipeline:
                 self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
     
     def train(self,
-              optimizer:Optimizer,
-              n_epochs:int=10,
-              cross_validation:bool=False,
-              optimizers_param:Dict[str, Any]=None,
-              dataloaders_param:Dict[str, Any]=None,
-              lr_scheduler=None,
-              scheduler_params:Optional[Dict[str, Any]]=None,
-              optuna_params: Optional[Tuple[Any, Any]]=None,
-              profiling:bool=False,
-              parallel_tpu:bool=False,
-              keep_training:bool=False,
-              store_grad_layer_hist:bool=False,
-              n_accumulated_grads:int=0,
-              writer_tag:str=""):
+              optimizer: Type[Optimizer],
+              n_epochs: int=10,
+              cross_validation: bool=False,
+              optimizers_param: Optional[Dict[str, Any]]=None,
+              dataloaders_param: Optional[Dict[str, Any]]=None,
+              lr_scheduler: Optional[Type[_LRScheduler]]=None,
+              scheduler_params: Optional[Dict[str, Any]]=None,
+              optuna_params: Optional[Tuple[BaseTrial, str]]=None,
+              profiling: bool=False,
+              parallel_tpu: bool=False,
+              keep_training: bool=False,
+              store_grad_layer_hist: bool=False,
+              n_accumulated_grads: int=0,
+              writer_tag: str="") -> Tuple[float, float]:
         """Function to run all the training cycles.
 
         Args:
@@ -612,7 +616,7 @@ class Pipeline:
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:
             try:
-                val_idx = self.dataloaders[1].sampler.indices
+                val_idx = self.dataloaders[1].sampler.indices  # type: ignore
             except AttributeError:
                 val_idx = list(range(len(self.dataloaders[1].dataset)))
             #print(val_idx)
@@ -621,7 +625,7 @@ class Pipeline:
                                                  **dataloaders_param_val,
                                                  sampler=SubsetRandomSampler(val_idx))
             try:
-                tr_idx = self.dataloaders[0].sampler.indices
+                tr_idx = self.dataloaders[0].sampler.indices  # type: ignore
             except AttributeError:
                 tr_idx = list(range(len(self.dataloaders[0].dataset)))
             #print(tr_idx)
@@ -631,7 +635,7 @@ class Pipeline:
                                                 sampler=SubsetRandomSampler(tr_idx))
         else:
             try:
-                data_idx = self.dataloaders[0].sampler.indices
+                data_idx = self.dataloaders[0].sampler.indices  # type: ignore
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
             #print(data_idx)
@@ -648,7 +652,7 @@ class Pipeline:
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
-            valloss, valacc = 0, 0
+            valloss, valacc = 0., 0.
             try:
                 data_idx = self.dataloaders[0].sampler.indices
                 labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
@@ -717,13 +721,13 @@ class Pipeline:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                    dl_val, lr_scheduler, self.scheduler,
                                                    check_optuna, search_metric,
-                                                   trial, 0, writer_tag)
+                                                   trial, False, writer_tag)
             else:
                 valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
                                                    dl_val, optimizers_param, lr_scheduler,
                                                    self.scheduler,
                                                    check_optuna, search_metric,
-                                                   trial, 0)
+                                                   trial, False)
 
         try:
             self.writer.flush()
@@ -739,13 +743,13 @@ class Pipeline:
                         n_epochs:int,
                         dl_tr:DataLoader[Tuple[Tensor, Tensor]],
                         dl_val:DataLoader[Tuple[Tensor, Tensor]],
-                        lr_scheduler,
-                        scheduler,
-                        check_optuna:bool,
-                        search_metric:str,
-                        trial,
+                        lr_scheduler: Optional[Type[_LRScheduler]]=None,
+                        scheduler: Optional[_LRScheduler]=None,
+                        check_optuna:bool=False,
+                        search_metric:Optional[str]=None,
+                        trial:Optional[BaseTrial]=None,
                         cross_validation:bool=False,
-                        writer_tag:str=""):
+                        writer_tag:str="") -> Tuple[float, float]:
         """private method to run the trainign loops
         
         Args:
@@ -784,7 +788,7 @@ class Pipeline:
                 the validation loss and validation accuracy
         """
 
-        min_valloss, max_valacc = np.inf, 0
+        min_valloss, max_valacc = np.inf, 0.
         for t in range(n_epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.val_epoch = t
@@ -822,24 +826,30 @@ class Pipeline:
             self.best_val_loss = min(self.best_val_loss, valloss)
             #print(self.optimizer.param_groups[0]["lr"])
             if not lr_scheduler is None:
-                scheduler.step()
+                scheduler.step()  # type: ignore
             # pruning trials
             if check_optuna and not cross_validation:
                 if search_metric == "loss":
-                    trial.report(valloss, t) # + fold*n_epochs)
+                    trial.report(valloss, t)  # type: ignore
                 else:
-                    trial.report(valacc, t) # + fold*n_epochs)
+                    trial.report(valacc, t)  # type: ignore
                 # Handle pruning based on the intermediate value.
-                if trial.should_prune():
+                if trial.should_prune():  # type: ignore
                     raise optuna.exceptions.TrialPruned()
         return valloss, valacc
 
 
-    def parallel_tpu_training_loops(self, n_epochs, dl_tr_old,
-                                    dl_val_old, optimizers_param,
-                                    lr_scheduler, scheduler,
-                                    check_optuna, search_metric,
-                                    trial, cross_validation=False):
+    def parallel_tpu_training_loops(self,
+                                    n_epochs:int,
+                                    dl_tr_old:DataLoader[Tuple[Tensor, Tensor]],
+                                    dl_val_old:DataLoader[Tuple[Tensor, Tensor]],
+                                    optimizers_param: Dict[str, Any],
+                                    lr_scheduler: Optional[Type[_LRScheduler]]=None,
+                                    scheduler: Optional[_LRScheduler]=None,
+                                    check_optuna: bool=False,
+                                    search_metric: Optional[str]=None,
+                                    trial:Optional[BaseTrial]=None,
+                                    cross_validation: bool=False) -> Tuple[float, float]:
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
         Note: ``cross_validation`` parameter as well as
@@ -854,9 +864,9 @@ class Pipeline:
                 validation dataloader
                 parameters, e.g. `{'batch_size': 32}`
             lr_scheduler (torch.optim):
-                a learning rate scheduler
+                a learning rate scheduler class
             scheduler (torch.optim):
-                the actual scheduler
+                the actual scheduler instance
             check_optuna (bool):
                 boolean to store the optuna results of
                 the trial
@@ -932,17 +942,17 @@ class Pipeline:
                 # train batch loop
                 size = len(dl_tr.dataset)
                 steps = len(dl_tr)
-                loss = 0    # arbitrary starting value to avoid nan loss
-                correct = 0
+                loss = 0.    # arbitrary starting value to avoid nan loss
+                correct = 0.
                 tik = time.time()
                 # for batch, (X, y) in enumerate(self.dataloaders[0]):
                 for batch, (X, y) in enumerate(para_train_loader):
                     # Compute prediction and loss
                     pred = model2(X)
                     try:
-                        correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                        correct += (pred.argmax(1) == y).to(torch.float).sum().item()
                     except RuntimeError:
-                        correct += (pred.argmax(2) == y).type(torch.float).sum().item()
+                        correct += (pred.argmax(2) == y).to(torch.float).sum().item()
                     loss = self.loss_fn(pred, y)
                     # Save to tensorboard
                     #self.writer.add_scalar("Parallel" + "/Loss/train",
@@ -964,11 +974,11 @@ class Pipeline:
                 model2.eval()
                 
                 size = len(dl_val.dataset)
-                loss, correct = 0, 0
-                class_label = []
-                class_probs = []
+                loss, correct = 0., 0.
+                class_label:List[Tensor] = []
+                class_probs:List[List[Tensor]] = []
 
-                pred = 0
+                pred = 0.
                 para_valid_loader = pl.ParallelLoader(dl_val,
                                                       [device]).per_device_loader(device)
                 with torch.no_grad():
@@ -980,9 +990,9 @@ class Pipeline:
                         class_probs.append(class_probs_batch)
                         loss += self.loss_fn(pred, y).item()
                         try:
-                            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+                            correct += (pred.argmax(1) == y).to(torch.float).sum().item()
                         except RuntimeError:
-                            correct += (pred.argmax(2) == y).type(torch.float).sum().item()
+                            correct += (pred.argmax(2) == y).to(torch.float).sum().item()
                         class_label.append(y)
                     # add data to tensorboard
                     #self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
@@ -1009,13 +1019,16 @@ class Pipeline:
             self.val_loss += loss
             self.val_acc += correct*100
 
-        flags = {}
+        flags:Dict[Any, Any] = {}
         self.val_acc /= len(dl_val_old)*dl_val_old.batch_size
         self.val_loss /= len(dl_val_old)
         xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
         return self.val_loss, self.val_acc
 
-    def evaluate_classification(self, num_class=None, dl=None):
+    def evaluate_classification(self,
+                                num_class:int=None,
+                                dl:DataLoader[Tuple[Tensor, Tensor]]=None
+                                ) -> Tuple[float, float, np.ndarray]:
         """Method to evaluate the performance of the model.
         
         Args:
@@ -1031,10 +1044,10 @@ class Pipeline:
         """
         if dl is None:
             dl = self.dataloaders[0]
-        class_probs = []
-        class_label = []
-        loss = 0
-        correct = 0
+        class_probs:List[List[Tensor]] = []
+        class_label:List[Tensor] = []
+        loss = 0.
+        correct = 0.
         confusion_matrix = np.zeros((num_class, num_class))
         self.model.eval()
         with torch.no_grad():
@@ -1047,7 +1060,7 @@ class Pipeline:
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
                 correct += (pred.argmax(1) ==
-                            y).type(torch.float).sum().item()
+                            y).to(torch.float).sum().item()
                 class_label.append(y)
                 for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
@@ -1065,7 +1078,7 @@ class Pipeline:
         will be called after each trainign step.
 
         The arguments of the callable function are, in this order:
-         - current optimizer (torch.optim)
+         - current optimizer instance (torch.optim)
          - current epoch number (int)
          - the ModelExtractor instance at that epoch (ModelExtractor)
          - the tensorboard writer (writer)
