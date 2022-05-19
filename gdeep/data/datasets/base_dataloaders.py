@@ -5,7 +5,8 @@ import warnings
 from abc import ABC, abstractmethod
 from os.path import join
 from collections.abc import Iterable
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union, List
+from typing import Any, Callable, Dict, Optional, Tuple, \
+    TypeVar, Union, List
 
 import numpy as np
 import pandas as pd
@@ -28,13 +29,14 @@ class AbstractDataLoaderBuilder(ABC):
     """The abstractr class to interface the
     Giotto dataloaders"""
     @abstractmethod
-    def build_dataloaders(self):
+    def build(self):
         pass
 
 
-class BuildDataLoaders(AbstractDataLoaderBuilder):
+class DataLoaderBuilder(AbstractDataLoaderBuilder):
     """This class builds, out of a tuple of datasets, the
-    corresponding dataloaders.
+    corresponding dataloaders. Note that this class would
+    use the same parameters for all the datasets
 
     Args:
         tuple_of_datasets :
@@ -43,17 +45,34 @@ class BuildDataLoaders(AbstractDataLoaderBuilder):
             they will be considered as training first and
             validation afterwards.
     """
-    def __init__(self, tuple_of_datasets: Tuple[Dataset[Any], ...]) -> None:
+    def __init__(self, tuple_of_datasets: List[Dataset[Any]]) -> None:
         self.tuple_of_datasets = tuple_of_datasets
         assert len(tuple_of_datasets) <= 3, "Too many Dataset inserted: maximum 3."
 
-    def build_dataloaders(self, *args, **kwargs) -> list:
+    def build(self,
+              tuple_of_kwargs:Optional[List[Dict[str, Any]]]=None
+              ) -> List[DataLoader]:
         """This method accepts the arguments of the torch
         Dataloader and applies them when creating the
         tuple
+
+        Args:
+            tuple_of_kwargs:
+                List of dictionaries, each one being the
+                kwargs for the corresponding DataLoader
         """
-        out = [None, None, None]
-        for i, dataset in enumerate(self.tuple_of_datasets):
-            out[i] = DataLoader(dataset, *args, **kwargs)
-        return out
+        if tuple_of_kwargs:
+            assert len(tuple_of_kwargs) == len(self.tuple_of_datasets), \
+                "Cannot match the dataloaders and the parameters. "
+            out: List = [None, None, None]
+            i: int=0
+            for dataset, kwargs in zip(self.tuple_of_datasets, tuple_of_kwargs):
+                out[i] = DataLoader(dataset, **kwargs)
+                i += 1
+            return out
+        else:
+            out: List = [None, None, None]
+            for i, dataset in enumerate(self.tuple_of_datasets):
+                out[i] = DataLoader(dataset)
+            return out
 

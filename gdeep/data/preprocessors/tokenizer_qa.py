@@ -43,6 +43,7 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     vocabulary: Optional[Dict[str, int]]
     tokenizer: Optional[Callable[[str], List[str]]]
     counter: Dict[str, int]
+    pad_item: int
 
     def __init__(self, vocabulary:Optional[Dict[str, int]]=None,
                  tokenizer:Optional[Callable[[str], List[str]]]=None):

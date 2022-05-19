@@ -2,8 +2,8 @@ from .categorical_data import CategoricalDataCloud
 from .tori import Rotation, ToriDataset
 from .dataset_cloud import DatasetCloud
 from ._data_cloud import _DataCloud
-from .build_datasets import BuildDatasets, get_dataset
-from .base_dataloaders import BuildDataLoaders, \
+from .build_datasets import DatasetBuilder, get_dataset
+from .base_dataloaders import DataLoaderBuilder, \
     AbstractDataLoaderBuilder
 from .dataset_for_image import ImageClassificationFromFiles
 from .dataset_form_array import FromArray
@@ -17,8 +17,8 @@ __all__ = [
     'CategoricalDataCloud',
     'AbstractDataLoaderBuilder',
     'ToriDataset',
-    'BuildDataLoaders',
-    'BuildDatasets',
+    'DataLoaderBuilder',
+    'DatasetBuilder',
     'generate_orbit_parallel',
     'create_pd_orbits',
     'OrbitsGenerator',

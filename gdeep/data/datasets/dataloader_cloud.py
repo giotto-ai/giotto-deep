@@ -4,7 +4,8 @@ import shutil
 import warnings
 from abc import ABC, abstractmethod
 from os.path import join
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Tuple, \
+    TypeVar, Union, List
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ from .dataset_form_array import FromArray
 from tqdm import tqdm
 
 from .dataset_cloud import DatasetCloud
-from .base_dataloaders import BuildDataLoaders
+from .base_dataloaders import DataLoaderBuilder
 
 from .base_dataloaders import AbstractDataLoaderBuilder
 
@@ -66,7 +67,7 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
                  dataset_name: str,
                  download_directory: str,
                  use_public_access: bool=True,
-                 path_to_credentials: Union[None, str] = None,
+                 path_to_credentials: Union[None, str]=None,
                  ):
         self.dataset_name = dataset_name
         self.download_directory = download_directory
@@ -75,7 +76,7 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
         self.download_directory
         
         self._download_dataset(use_public_access=use_public_access, 
-                               path_to_credentials = path_to_credentials)
+                               path_to_credentials=path_to_credentials)
 
         self.dl_builder = None
         
@@ -92,13 +93,13 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
                 labels = torch.load(join(self.download_directory, 
                                          self.dataset_name, "labels.pt"))
 
-                self.dl_builder = BuildDataLoaders((FromArray(data, labels),))
+                self.dl_builder = DataLoaderBuilder((FromArray(data, labels),))
             elif self.dataset_metadata['data_format'] == 'numpy_array':
                 data = np.load(join(self.download_directory,
                                     self.dataset_name, "data.npy"))
                 labels = np.load(join(self.download_directory,
                                       self.dataset_name, "labels.npy"))
-                self.dl_builder = BuildDataLoaders((FromArray(data, labels),))
+                self.dl_builder = DataLoaderBuilder((FromArray(data, labels),))
             else:
                 raise ValueError("Data format {}"\
                     .format(self.dataset_metadata['data_format']) +
@@ -158,7 +159,7 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
         """
         return self.dataset_metadata
     
-    def build_dataloaders(self, **kwargs)\
+    def build(self, tuple_of_kwargs: List[Dict[str, Any]])\
         -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Builds the dataloaders for the dataset.
         
@@ -169,4 +170,4 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
             Tuple[DataLoader, DataLoader, DataLoader]:
                 The dataloaders for the dataset (train, validation, test).
         """
-        return self.dl_builder.build_dataloaders(**kwargs) # type: ignore
+        return self.dl_builder.build(tuple_of_kwargs) # type: ignore

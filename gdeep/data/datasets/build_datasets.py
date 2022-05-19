@@ -7,6 +7,7 @@ from os.path import join
 from collections.abc import Iterable
 from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union, List
 
+from torchtext.data import to_map_style_dataset
 import numpy as np
 import pandas as pd
 import torch
@@ -96,26 +97,7 @@ def get_dataset(key: str, **kwargs) -> Dataset[Any]:  # type: ignore
     return factory.build(key, **kwargs)  # type: ignore
 
 
-
-class MapDataset(Dataset[Any]):
-    """Class to get a MapDataset from
-    an iterable one.
-
-    Args:
-        data_list (list):
-            the list(IterableDataset)
-    """
-    def __init__(self, iterable_ds: torch.utils.data.IterableDataset[Any]) -> None:
-        self.iterable_ds = iterable_ds
-
-    def __getitem__(self, idx:int ) -> Any:
-        return self.iterable_ds[idx]
-
-    def __len__(self):
-        return len(self.iterable_ds)
-
-
-class BuildDatasets:
+class DatasetBuilder:
     """Class to obtain Datasets from the classical
     datasets available on pytorch. Also the torus dataset
     and all its variations can be found here
@@ -134,7 +116,7 @@ class BuildDatasets:
         self.convert_to_map_dataset = convert_to_map_dataset
         self.name = name
 
-    def build_datasets(self, **kwargs) -> Tuple[Dataset[Any],
+    def build(self, **kwargs) -> Tuple[Dataset[Any],
                                                 Optional[Dataset[Any]],
                                                 Optional[Dataset[Any]]]:
         """Method that returns the dataset.
@@ -176,11 +158,11 @@ class BuildDatasets:
         """This private method converts and IterableDataset
         to a MapDataset"""
         if isinstance(training_data, torch.utils.data.IterableDataset):
-            training_data = MapDataset(list(training_data))
+            training_data = to_map_style_dataset(training_data)
         if validation_data is not None:
             if isinstance(validation_data, torch.utils.data.IterableDataset):
-                validation_data = MapDataset(list(validation_data))
+                validation_data = to_map_style_dataset(validation_data)
         if test_data is not None:
             if isinstance(test_data, torch.utils.data.IterableDataset):
-                test_data = MapDataset(list(test_data))
+                test_data = to_map_style_dataset(test_data)
         return training_data, validation_data, test_data

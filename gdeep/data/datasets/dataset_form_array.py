@@ -10,7 +10,7 @@ import torch
 from sympy import false
 from torch.utils.data import DataLoader, Dataset
 
-
+Array = np.ndarray
 Tensor = torch.Tensor
 
 
@@ -26,15 +26,15 @@ class FromArray(Dataset[Tuple[Tensor, Tensor]]):
             with the data
 
     """
-    def __init__(self, X: Union[Tensor, np.ndarray],
-                 y: Union[Tensor, np.ndarray]
+    def __init__(self, X: Union[Tensor, Array],
+                 y: Union[Tensor, Array]
                  ) -> None:
         self.X = self._from_numpy(X)
         y = self._from_numpy(y)
         self.y = self._long_or_float(y)
 
     @staticmethod
-    def _from_numpy(X: Union[Tensor, np.ndarray]) -> Tensor:
+    def _from_numpy(X: Union[Tensor, Array]) -> Tensor:
         """this is an upgrade of ``torch.from_numpy()``
         that also allows tensor input.
         """
@@ -43,7 +43,7 @@ class FromArray(Dataset[Tuple[Tensor, Tensor]]):
         return torch.from_numpy(X)
 
     @staticmethod
-    def _long_or_float(y: Union[Tensor, np.ndarray]) -> Tensor:
+    def _long_or_float(y: Union[Tensor, Array]) -> Tensor:
         """This private method converts the labels to either
         a long tensor of a float tensor"""
         if isinstance(y, torch.Tensor):

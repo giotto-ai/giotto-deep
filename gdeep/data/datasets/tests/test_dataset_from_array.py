@@ -1,5 +1,5 @@
 from gdeep.data.datasets import ImageClassificationFromFiles, \
-    BuildDataLoaders, FromArray, DlBuilderFromDataCloud
+    DataLoaderBuilder, FromArray, DlBuilderFromDataCloud
 
 from gdeep.data.preprocessors import ToTensorImage
 import os
@@ -18,7 +18,7 @@ def test_array():
     X = np.random.rand(10,4)
     y = np.random.randint(3, size=10)
     ds = FromArray(X, y)
-    dl, *_ = BuildDataLoaders((ds,)).build_dataloaders(batch_size = 1)
+    dl, *_ = DataLoaderBuilder((ds,)).build(({"batch_size" : 1},))
     item = next(iter(dl))
     assert torch.norm(item[0] - torch.tensor(X[0])) < 1e-6
     assert item[1] == torch.tensor(y[0])
@@ -29,7 +29,7 @@ def test_array_tensor():
     X = torch.rand(10,4)
     y = torch.randint(3, size=(10,))
     ds = FromArray(X, y)
-    dl, *_ = BuildDataLoaders((ds,)).build_dataloaders(batch_size = 1)
+    dl, *_ = DataLoaderBuilder((ds,)).build()
     item = next(iter(dl))
     assert torch.norm(item[0] - X[0]) < 1e-6
     assert item[1] == y[0]

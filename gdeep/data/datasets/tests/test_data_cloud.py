@@ -1,18 +1,18 @@
 # %%
-from gdeep.data.datasets import _DataCloud
+from os import remove, makedirs, environ
+from os.path import join, exists
+import logging
 
 import google  # type: ignore
 from google.cloud import storage  # type: ignore
 from google.cloud.storage import Bucket  # type: ignore
 from google.auth.exceptions import DefaultCredentialsError  # type: ignore
 import hashlib
-import logging
-from os import remove, makedirs, environ
-from os.path import join, exists
 import pytest
 import random
 from shutil import rmtree
 
+from gdeep.data.datasets import _DataCloud
 from gdeep.utility.utils import get_checksum
 from gdeep.utility import DATASET_BUCKET_NAME
 

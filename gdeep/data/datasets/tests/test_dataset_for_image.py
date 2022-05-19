@@ -1,5 +1,5 @@
 from gdeep.data.datasets import ImageClassificationFromFiles, \
-    BuildDataLoaders, DlBuilderFromDataCloud
+    DataLoaderBuilder, DlBuilderFromDataCloud
 
 from gdeep.data import TransformingDataset
 from gdeep.data.preprocessors import ToTensorImage
@@ -23,7 +23,7 @@ def test_images_from_file():
         os.path.join(file_path,"img_data","labels.csv"))
 
     tds = TransformingDataset(ds, transform)
-    dl, *_ = BuildDataLoaders((tds,)).build_dataloaders(batch_size = 2)
+    dl, *_ = DataLoaderBuilder((tds,)).build(({"batch_size" : 2},))
     assert len(next(iter(dl))[0].shape) == 4
 
 
@@ -35,7 +35,7 @@ def test_dlbuilderfromdatacloud():
                                     download_directory)
 
     train_dataloader, val_dataloader, test_dataloader = \
-        dl_cloud_builder.build_dataloaders(batch_size=10)
+        dl_cloud_builder.build(({"batch_size" : 10},))
     x, y = next(iter(train_dataloader))
     assert x.shape == torch.Size([10, 5])
     assert y.shape == torch.Size([10])

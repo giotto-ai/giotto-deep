@@ -64,7 +64,7 @@ class PersformerHyperparameterSearch:
 
         # create the dataset from the downloaded dataset
         train_dataloader, _, _ = dl_cloud_builder\
-            .build_dataloaders(batch_size=10)
+            .build(({"batch_size" : 10},))
         return train_dataloader
     
     

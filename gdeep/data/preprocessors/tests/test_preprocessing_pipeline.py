@@ -10,7 +10,7 @@ from ...transforming_dataset import TransformingDataset
 def test_preeprocessing_pipeline():
     """test preprocessing pipeline"""
     normalize = Normalization()
-    to_tensor = ToTensorImage((32,32))
+    to_tensor = ToTensorImage([32,32])
     file_path = os.path.dirname(os.path.realpath(__file__))
 
     image_dataset = ImageClassificationFromFiles(

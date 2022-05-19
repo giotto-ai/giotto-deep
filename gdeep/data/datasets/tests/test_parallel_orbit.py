@@ -1,5 +1,8 @@
-from ..parallel_orbit import OrbitsGenerator
+
 import numpy as np
+
+from ..parallel_orbit import OrbitsGenerator
+
 
 parameters = (1.0, 2.0, 3.0)
 num_orbits_per_class = 10
