@@ -1,33 +1,34 @@
-import torch
-import optuna
 import os
-import pandas as pd
-import numpy as np
 import time
-from gdeep.utility import _are_compatible, _inner_refactor_scalars, KnownWarningSilencer
-from optuna.trial import TrialState
-from gdeep.pipeline import Pipeline
-from gdeep.search import Benchmark, _benchmarking_param
-from sklearn.model_selection import KFold
-from torch.utils.data.sampler import SubsetRandomSampler
-from gdeep.visualisation import plotly2tensor
-from torch.optim import *
-import plotly.express as px
-from functools import partial
 import warnings
 from itertools import chain, combinations
-from optuna.pruners import MedianPruner
-from ..utility import save_model_and_optimizer
+from functools import partial
+from typing import Tuple, Any, Dict, Callable, \
+    Type, Optional, List
+
+import torch
+import optuna
+from optuna.trial import TrialState
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import KFold
+from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
 import random
 import string
+from torch.optim import *
+import plotly.express as px
+from optuna.pruners import MedianPruner
+from torch.optim import Optimizer
+from torch.optim.lr_scheduler import _LRScheduler
 
-
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+from gdeep.utility import _are_compatible, _inner_refactor_scalars, KnownWarningSilencer
+from gdeep.trainer import Trainer
+from gdeep.search import Benchmark, _benchmarking_param
+from gdeep.visualisation import plotly2tensor
+from ..utility import save_model_and_optimizer
+from gdeep.utility import DEVICE
 
 
 class GiottoSummaryWriter(SummaryWriter):
@@ -94,18 +95,19 @@ class GiottoSummaryWriter(SummaryWriter):
                     w_hp.add_scalar("accuracy", v, t)
 
 
-class Gridsearch(Pipeline):
+class HyperParameterOptimization(Trainer):
     """This is the generic class that allows
     the user to perform gridsearch over several
     parameters such as learning rate, optimizer.
 
     Args:
-        obj (either Pipeline or Benchmark object):
-            either a pipeline of a bechmark class
+        obj (either Trainer or Benchmark object):
+            either a Trainer or a Bechmark class
+            instance
         search_metric (string):
             either ``'loss'`` or ``'accuracy'``
         n_trials (int):
-            number of total gridsearch trials
+            number of total search trials
         best_not_last (bool, default False):
             boolean flag that is ``True`` would use
             the best metric over epochs averaged over the folds in CV
@@ -124,10 +126,14 @@ class Gridsearch(Pipeline):
 
     """
 
-    def __init__(self, obj, search_metric="loss", n_trials=10,
-                 best_not_last=False,
-                 pruner=None, sampler=None,
-                 db_url=None, study_name=None):
+    def __init__(self, obj: Trainer,
+                 search_metric:str="loss",
+                 n_trials:int=10,
+                 best_not_last:bool=False,
+                 pruner=None,
+                 sampler=None,
+                 db_url:str=None,
+                 study_name:str=None):
         self.best_not_last_gs = best_not_last
         self.is_pipe = None
         self.study = None
@@ -137,7 +143,7 @@ class Gridsearch(Pipeline):
         self.df_res = None
         self.db_url = db_url
         self.study_name = study_name
-        if (isinstance(obj, Pipeline)):
+        if (isinstance(obj, Trainer)):
             self.pipe = obj
             super().__init__(self.pipe.model,
                              self.pipe.dataloaders,
@@ -183,7 +189,7 @@ class Gridsearch(Pipeline):
                 torch nn.Module
         """
         
-        list_of_params_keys = Gridsearch._powerset(list(models_hyperparam.keys()))
+        list_of_params_keys = HyperParameterOptimization._powerset(list(models_hyperparam.keys()))
         list_of_params_keys.reverse()
         for params_keys in list_of_params_keys:
             sub_models_hyperparam = {k:models_hyperparam[k] for k in models_hyperparam.keys() if k in params_keys}
@@ -271,17 +277,17 @@ class Gridsearch(Pipeline):
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
 
         # generate all the hyperparameters
-        self.optimizers_param = Gridsearch._suggest_params(trial, optimizers_params)
-        self.dataloaders_param = Gridsearch._suggest_params(trial, dataloaders_params)
-        self.models_hyperparam = Gridsearch._suggest_params(trial, models_hyperparams)
-        self.schedulers_param = Gridsearch._suggest_params(trial, schedulers_params)
+        self.optimizers_param = HyperParameterOptimization._suggest_params(trial, optimizers_params)
+        self.dataloaders_param = HyperParameterOptimization._suggest_params(trial, dataloaders_params)
+        self.models_hyperparam = HyperParameterOptimization._suggest_params(trial, models_hyperparams)
+        self.schedulers_param = HyperParameterOptimization._suggest_params(trial, schedulers_params)
         # tag for storing the results
         writer_tag += "/" + str(trial.datetime_start) # str(self.optimizers_param) + \
             #str(self.dataloaders_param) + str(self.models_hyperparam) + \
             #str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        self.pipe = Pipeline(self.model, self.dataloaders, self.loss_fn,
+        self.pipe = Trainer(self.model, self.dataloaders, self.loss_fn,
                              self.writer, self.KFold_class)
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
@@ -360,18 +366,18 @@ class Gridsearch(Pipeline):
         return model_name, dataset_name
 
     def start(self,
-              optimizers,
-              n_epochs=1,
-              cross_validation=False,
-              optimizers_params=None,
-              dataloaders_params=None,
-              models_hyperparams=None,
-              lr_scheduler=None,
-              schedulers_params=None,
-              profiling=False,
-              parallel_tpu=False,
-              keep_training=False,
-              store_grad_layer_hist=False,
+              optimizers: List[Optimizer],
+              n_epochs:int=1,
+              cross_validation:bool=False,
+              optimizers_params: Optional[Dict[str, Any]]=None,
+              dataloaders_params: Optional[Dict[str, Any]]=None,
+              models_hyperparams: Optional[Dict[str, Any]]=None,
+              lr_scheduler: Type[_LRScheduler]=None,
+              schedulers_params:Optional[Dict[str, Any]]=None,
+              profiling:bool=False,
+              parallel_tpu:bool=False,
+              keep_training:bool=False,
+              store_grad_layer_hist:bool=False,
               n_accumulated_grads:int=0,
               writer_tag=""):
         """method to be called when starting the gridsearch
@@ -637,7 +643,8 @@ class Gridsearch(Pipeline):
 
     def _results(self, model_name="model", dataset_name="dataset"):
         """This method returns the dataframe with all the results of
-        the gridsearch. It also saves the figures in the writer.
+        the hyperparameters optimisaton.
+        It also saves the figures in the writer.
 
         Args:
             run_name (str):
@@ -691,7 +698,7 @@ class Gridsearch(Pipeline):
                 fig2.show()
                 img2 = plotly2tensor(fig2)
 
-                self.writer.add_images("Gridsearch correlation: " +
+                self.writer.add_images("HPO correlation: " +
                                        model_name + " " + dataset_name,
                                        img2, dataformats="HWC")
                 self.writer.flush()
@@ -788,7 +795,7 @@ class Gridsearch(Pipeline):
             if (isinstance(v, list) or isinstance(v, tuple)) and len(v)==1:
                 params[k] = 2*v
         param_temp = {}
-        param_temp = {k:Gridsearch._new_suggest_float(trial, k,*v) for k,v in
+        param_temp = {k:HyperParameterOptimization._new_suggest_float(trial, k,*v) for k,v in
                       params.items() if (isinstance(v, list) or isinstance(v, tuple))
                       and (isinstance(v[0], float) or isinstance(v[1], float))}
         param_temp2 = {k:trial.suggest_int(k,*v) for k,v in

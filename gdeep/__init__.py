@@ -5,7 +5,7 @@ __all__ = [
     'analysis',
     'data',
     'models',
-    'pipeline',
+    'trainer',
     'search',
     'topology_layers',
     'utility',

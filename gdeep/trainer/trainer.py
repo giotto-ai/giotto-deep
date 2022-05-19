@@ -45,7 +45,7 @@ def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any],Any]:
         pred, val_loss, correct = func(*args, **kwargs)
         try:
             # add data to tensorboard
-            Pipeline._add_pr_curve_tb(torch.vstack(pred), kwargs["class_label"], 
+            Trainer._add_pr_curve_tb(torch.vstack(pred), kwargs["class_label"],
                                       kwargs["class_probs"], kwargs["writer"],
                                       kwargs["writer_tag"] + "/validation")
             try:
@@ -58,7 +58,7 @@ def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any],Any]:
     return wrapper
     
     
-class Pipeline:
+class Trainer:
     """This is the generic class that allows
     the user to benchhmark models over architectures
     datasets, regularisations, metrics... in one line
@@ -85,7 +85,7 @@ class Pipeline:
         from torch.optim import SGD
         from sklearn.model_selection import StratifiedKFold
         from gdeep.models import FFNet
-        from gdeep.pipeline import Pipeline
+        from gdeep.trainer import Trainer
         from gdeep.data import BuildDatasets, BuildDataLoaders
         from gdeep.search import GiottoSummaryWriter
         # model
@@ -108,7 +108,7 @@ class Pipeline:
         # tb writer
         writer = GiottoSummaryWriter()
         # pipeline
-        pipe = Pipeline(model, [dl_tr, dl_val, dl_ts],
+        pipe = Trainer(model, [dl_tr, dl_val, dl_ts],
                         loss_fn, writer,
                         StratifiedKFold(5, shuffle=True))
         # then one needs to train the model using the pipeline!
@@ -570,10 +570,10 @@ class Pipeline:
         # dataloaders_param initialisation
         if dataloaders_param is None:
             if self.dataloaders[1] is not None:
-                dataloaders_param_val = Pipeline.copy_dataloader_params(self.dataloaders[1])
+                dataloaders_param_val = Trainer.copy_dataloader_params(self.dataloaders[1])
             else:
-                dataloaders_param_val = Pipeline.copy_dataloader_params(dl_tr)
-            dataloaders_param_tr = Pipeline.copy_dataloader_params(dl_tr)
+                dataloaders_param_val = Trainer.copy_dataloader_params(dl_tr)
+            dataloaders_param_tr = Trainer.copy_dataloader_params(dl_tr)
         else:
             dataloaders_param_val = dataloaders_param.copy()
             dataloaders_param_tr = dataloaders_param.copy()

@@ -3,7 +3,7 @@ from torch.optim import SGD
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
 
-from gdeep.pipeline import Pipeline
+from gdeep.trainer import Trainer
 from gdeep.models import FFNet
 from gdeep.search import GiottoSummaryWriter
 from gdeep.data.datasets import FromArray, BuildDataLoaders, \
@@ -34,7 +34,7 @@ def test_pipe_1():
     # tb writer
     writer = GiottoSummaryWriter()
     # pipeline
-    pipe = Pipeline(model, [dl_tr, None],
+    pipe = Trainer(model, [dl_tr, None],
                     loss_fn, writer)#,StratifiedKFold(5, shuffle=True))
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)

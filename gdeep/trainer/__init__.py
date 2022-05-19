@@ -1,8 +1,8 @@
 
-from .pipeline import Pipeline
+from .trainer import Trainer
 # from .gridsearch import GridSearch
 
 
 __all__ = [
-    'Pipeline'
+    'Trainer'
     ]

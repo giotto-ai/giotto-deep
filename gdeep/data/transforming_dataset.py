@@ -31,7 +31,10 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
         self.transform = transform
 
     def __len__(self) -> int:
-        return len(self.dataset)
+        if hasattr(self.dataset, '__len__'):
+            return len(self.dataset)  #type: ignore
+        else:
+            raise NotImplementedError("The dataset does not implement the __len__ method.")
     
     def __getitem__(self, idx: int) -> S:
         """The output of this method is one element
