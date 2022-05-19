@@ -38,7 +38,7 @@ except:
     print("No TPUs...")
 
 
-def _add_data_to_tb(func: Callable[[Any,...], Any]) -> Callable[[Any,...],Any]:
+def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any],Any]:
     """decorator to store PR data to tensorboard"""
     @wraps(func)
     def wrapper(*args, **kwargs):
