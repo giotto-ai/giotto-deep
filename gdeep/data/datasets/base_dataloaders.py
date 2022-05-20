@@ -51,7 +51,7 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
 
     def build(self,
               tuple_of_kwargs:Optional[List[Dict[str, Any]]]=None
-              ) -> List[DataLoader]:
+              ) -> List[DataLoader[Any]]:
         """This method accepts the arguments of the torch
         Dataloader and applies them when creating the
         tuple
@@ -64,15 +64,15 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
         if tuple_of_kwargs:
             assert len(tuple_of_kwargs) == len(self.tuple_of_datasets), \
                 "Cannot match the dataloaders and the parameters. "
-            out: List = [None, None, None]
-            i: int=0
+            out: List = []
             for dataset, kwargs in zip(self.tuple_of_datasets, tuple_of_kwargs):
-                out[i] = DataLoader(dataset, **kwargs)
-                i += 1
+                out.append(DataLoader(dataset, **kwargs))
+            out += [None] * (3 - len(out))
             return out
         else:
-            out: List = [None, None, None]
+            out: List = []
             for i, dataset in enumerate(self.tuple_of_datasets):
-                out[i] = DataLoader(dataset)
+                out.append(DataLoader(dataset))
+            out += [None] * (3 - len(out))
             return out
 

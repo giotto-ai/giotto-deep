@@ -111,6 +111,10 @@ class DatasetBuilder:
             IterableDataset
 
     """
+    train_ds: Dataset[Any]
+    valid_ds: Optional[Dataset[Any]]
+    test_ds: Optional[Dataset[Any]]
+
     def __init__(self, name: str="MNIST", convert_to_map_dataset:bool=False) -> None:
         self.convert_to_map_dataset = convert_to_map_dataset
         self.name = name
@@ -129,25 +133,27 @@ class DatasetBuilder:
         dataset_tuple: Tuple[Dataset[Any]] = get_dataset(self.name, **kwargs)  # type: ignore
     
         if len(dataset_tuple) == 1:
-            train_ds = dataset_tuple[0]
-            valid_ds = None
-            test_ds = None
+            self.train_ds = dataset_tuple[0]
+            self.valid_ds = None
+            self.test_ds = None
         elif len(dataset_tuple) == 2:
-            train_ds = dataset_tuple[0]
-            valid_ds = dataset_tuple[1]
-            test_ds = None
+            self.train_ds = dataset_tuple[0]
+            self.valid_ds = dataset_tuple[1]
+            self.test_ds = None
         elif len(dataset_tuple) == 3:
-            train_ds = dataset_tuple[0]
-            valid_ds = dataset_tuple[1]
-            test_ds = dataset_tuple[2]
+            self.train_ds = dataset_tuple[0]
+            self.valid_ds = dataset_tuple[1]
+            self.test_ds = dataset_tuple[2]
         else:
-            train_ds = dataset_tuple
-            valid_ds = None
-            test_ds = None
+            self.train_ds = dataset_tuple
+            self.valid_ds = None
+            self.test_ds = None
 
         if self.convert_to_map_dataset:
-            train_ds, valid_ds, test_ds = self._convert(train_ds, valid_ds, test_ds)
-        return train_ds, valid_ds, test_ds
+            self.train_ds, self.valid_ds, self.test_ds = self._convert(self.train_ds,
+                                                                       self.valid_ds,
+                                                                       self.test_ds)
+        return self.train_ds, self.valid_ds, self.test_ds
 
     def _convert(self, training_data: Dataset[Any],
                  validation_data: Optional[Dataset[Any]]=None,
