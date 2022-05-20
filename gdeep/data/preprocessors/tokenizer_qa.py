@@ -1,9 +1,9 @@
-from collections import Counter
+from collections import Counter, OrderedDict
 from typing import Callable, Tuple, List, Optional, Dict
 
 import torch
 from torch.utils.data import Dataset
-from torchtext.vocab import Vocab
+from torchtext.vocab import vocab
 from torchtext.data.utils import get_tokenizer  # type: ignore
 from gdeep.utility import DEVICE
 
@@ -57,7 +57,8 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
 
     def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[int]]]) -> None:
         """Method to fit the vocabulary to the input text"""
-        self.counter = Counter()  # for the text
+        self.counter = Counter() 
+        self.ordered_dict = OrderedDict()
         for (context, question, answer, init_position) in dataset:  # type: ignore
             self.counter.update(self.tokenizer(context))  # type: ignore
             self.max_length = max(self.max_length, len(self.tokenizer(context)))  # type: ignore
@@ -65,8 +66,14 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
             self.max_length = max(self.max_length, len(self.tokenizer(question)))  # type: ignore
 
         if self.vocabulary is None:
-            self.vocabulary = Vocab(self.counter)
-        self.pad_item = self.vocabulary["."]
+            self.ordered_dict = OrderedDict(sorted(self.counter.items(),
+                                                   key=lambda x: x[1],
+                                                   reverse=True))
+            self.vocabulary = vocab(self.ordered_dict)
+            unk_token = '<unk>'  # type: ignore
+            if unk_token not in self.vocabulary: self.vocabulary.insert_token(unk_token, 0)
+            self.vocabulary.set_default_index(self.vocabulary[unk_token])
+        self.pad_item = 0
         self.is_fitted = True
 
     def __call__(self, datum: Tuple[str, str, List[str], List[int]]) -> Tuple[Tensor, Tensor]:

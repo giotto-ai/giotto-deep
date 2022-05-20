@@ -2,7 +2,7 @@ import json
 import os
 import warnings
 from abc import ABC, abstractmethod
-from collections import Counter
+from collections import Counter, OrderedDict
 from collections.abc import Sequence
 from typing import Callable, Generic, NewType, Tuple, \
     Union, Any, Optional, List, Dict
@@ -12,7 +12,7 @@ import torch
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader, Dataset
 from torchtext.data.utils import get_tokenizer
-from torchtext.vocab import Vocab
+from torchtext.vocab import vocab
 from torchvision.transforms import Resize, ToTensor
 
 from gdeep.utility import DEVICE
@@ -65,6 +65,7 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         """
 
         self.counter = Counter()  # for the text
+        self.ordered_dict = OrderedDict()
         for (label, text) in dataset:  # type: ignore
             #if isinstance(text, tuple) or isinstance(text, list):
             #    text = text[0]
@@ -72,7 +73,13 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
             self.max_length = max(self.max_length, len(self.tokenizer(text)))  # type: ignore
         # self.vocabulary = Vocab(counter, min_freq=1)
         if not self.vocabulary:
-            self.vocabulary = Vocab(self.counter)
+            self.ordered_dict = OrderedDict(sorted(self.counter.items(),
+                                                   key=lambda x: x[1],
+                                                   reverse=True))
+            self.vocabulary = vocab(self.ordered_dict)
+            unk_token = '<unk>'  # type: ignore
+            if unk_token not in self.vocabulary: self.vocabulary.insert_token(unk_token, 0)
+            self.vocabulary.set_default_index(self.vocabulary[unk_token])
         self.is_fitted = True
         #self.save_pretrained(".")
 
@@ -90,7 +97,7 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         text_pipeline = lambda x: [self.vocabulary[token] for token in  # type: ignore
                                    self.tokenizer(x)]  # type: ignore
 
-        pad_item = self.vocabulary["."]  # type: ignore
+        pad_item = 0
 
         _text = datum[1]
         #if isinstance(_text, tuple) or isinstance(_text, list):
