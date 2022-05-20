@@ -1,14 +1,13 @@
-from ._data_cloud import _DataCloud  # type: ignore
 
-import json
 import os
 from os import remove
 from os.path import join, exists
 from typing import List, Tuple, Union, Set
 
+import json
 import wget  # type: ignore
 
-
+from ._data_cloud import _DataCloud  # type: ignore
 from gdeep.utility.constants import DEFAULT_DOWNLOAD_DIR, DATASET_BUCKET_NAME
 
 class DatasetCloud():

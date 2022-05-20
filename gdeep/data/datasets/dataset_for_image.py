@@ -48,6 +48,8 @@ class ImageClassificationFromFiles(Dataset[Any]):
 
     img_folder: str
     labels_file: str
+    img_labels: pd.DataFrame
+    
     def __init__(self, img_folder: str=".",
                  labels_file:str="labels.csv",
                  ) -> None:
@@ -70,7 +72,7 @@ class ImageClassificationFromFiles(Dataset[Any]):
         """this method gets the i-th image in the labels.csv
         file.
         """
-        img_path = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])
+        img_path: str = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])
         try:
             image = Image.open(img_path)
         except UnidentifiedImageError:
