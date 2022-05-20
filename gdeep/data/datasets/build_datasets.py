@@ -24,7 +24,6 @@ from .tori import ToriDataset
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 from .dataset_cloud import DatasetCloud
 from ..dataset_factory import DatasetFactory
-
 from ..transforming_dataset import TransformingDataset
 
 Tensor = torch.Tensor
@@ -68,7 +67,7 @@ class ToriDatasetBuilder(object):
         return ToriDataset(name=self.name, **kwargs)
 
 
-def get_dataset(key: str, **kwargs) -> Dataset[Any]:  # type: ignore
+def get_dataset(key: str, **kwargs) -> Tuple[Dataset[Any]]:
     """ Get a dataset from the factory
 
     Args:
@@ -127,7 +126,7 @@ class DatasetBuilder:
                 For example, you may want to use the options
                 ``split=("train","dev")`` or ``split=("train","test")``
         """
-        dataset_tuple = get_dataset(self.name, **kwargs)  # type: ignore
+        dataset_tuple: Tuple[Dataset[Any]] = get_dataset(self.name, **kwargs)  # type: ignore
     
         if len(dataset_tuple) == 1:
             train_ds = dataset_tuple[0]

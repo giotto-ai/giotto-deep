@@ -80,7 +80,7 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
         """This method implement the transformation once fitted."""
         #if not self.is_fitted:
         #    self.load_pretrained(".")
-        text_pipeline = lambda x: [self.vocabulary[token] for token in # type: ignore
+        text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in # type: ignore
                                    self.tokenizer(x)]  # type: ignore
 
         processed_context = torch.tensor(text_pipeline(datum[0]),

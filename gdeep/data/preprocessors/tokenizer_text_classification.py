@@ -94,7 +94,7 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         """
         #if not self.is_fitted:
         #    self.load_pretrained(".")
-        text_pipeline = lambda x: [self.vocabulary[token] for token in  # type: ignore
+        text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
                                    self.tokenizer(x)]  # type: ignore
 
         pad_item = 0

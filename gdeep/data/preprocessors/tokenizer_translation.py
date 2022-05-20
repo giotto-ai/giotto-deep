@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+
 from collections import Counter, OrderedDict
 from typing import Callable, Tuple, \
     Optional, List, Dict
@@ -119,9 +119,9 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
 
         #if not self.is_fitted:
         #    self.load_pretrained(".")
-        text_pipeline = lambda x: [self.vocabulary[token] for token in  # type: ignore
+        text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
                                    self.tokenizer(x)]  # type: ignore
-        text_pipeline_target = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
+        text_pipeline_target: Callable[[str], List[int]] = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
                                    self.tokenizer_target(x)]   # type: ignore
 
         pad_item = 0
