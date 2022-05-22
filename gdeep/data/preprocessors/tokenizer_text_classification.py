@@ -17,7 +17,7 @@ from torchvision.transforms import Resize, ToTensor
 
 from gdeep.utility import DEVICE
 from ..abstract_preprocessing import AbstractPreprocessing
-
+from .._utils import MissingVocabularyError
 
 # type definition
 Tensor = torch.Tensor
@@ -26,7 +26,8 @@ Tensor = torch.Tensor
 class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
                                                  Tuple[Tensor, Tensor]]):
     """Preprocessing class. This class is useful to convert the data format
-    ``(label, text)`` into the proper tensor format ``( word_embedding, label)``
+    ``(label, text)`` into the proper tensor format ``( word_embedding, label)``.
+    The labels shouzld be interagers; f they ar string, they will be converted.
 
     Args:
         tokenizer :
@@ -65,17 +66,21 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         """
 
         self.counter = Counter()  # for the text
+        self.counter_label = Counter()  # for the text
         self.ordered_dict = OrderedDict()
+        self.list_of_possible_labels: List[Any] = []
         for (label, text) in dataset:  # type: ignore
             #if isinstance(text, tuple) or isinstance(text, list):
             #    text = text[0]
             self.counter.update(self.tokenizer(text))  # type: ignore
+            self.counter_label.update([label])
             self.max_length = max(self.max_length, len(self.tokenizer(text)))  # type: ignore
-        # self.vocabulary = Vocab(counter, min_freq=1)
+        # build the vocabulary
         if not self.vocabulary:
             self.ordered_dict = OrderedDict(sorted(self.counter.items(),
                                                    key=lambda x: x[1],
                                                    reverse=True))
+            self.list_of_possible_labels = list(self.counter_label.keys())
             self.vocabulary = vocab(self.ordered_dict)
             unk_token = '<unk>'  # type: ignore
             if unk_token not in self.vocabulary: self.vocabulary.insert_token(unk_token, 0)
@@ -94,10 +99,12 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         """
         #if not self.is_fitted:
         #    self.load_pretrained(".")
-        text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
-                                   self.tokenizer(x)]  # type: ignore
-
-        pad_item = 0
+        if self.vocabulary:
+            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] 
+                                                                   for token in self.tokenizer(x)]  # type: ignore
+        else:
+            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
+        pad_item: int = 0
 
         _text = datum[1]
         #if isinstance(_text, tuple) or isinstance(_text, list):
@@ -109,14 +116,9 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
                    pad_item * torch.ones(self.max_length - processed_text.shape[0]
                                               ).to(DEVICE)]).to(torch.long)
         # preprocess labels
-        label_pipeline = lambda x: torch.tensor(x, dtype=torch.long) - 1
+        label_pipeline = lambda x: torch.tensor(x, dtype=torch.long)
 
         _label = datum[0]
-        try:
-            out_label = label_pipeline(_label).to(DEVICE)
-        except TypeError:
-            if isinstance(_label, tuple) or isinstance(_label, list):
-                _label = _label[0]
-                out_label = label_pipeline(_label).to(DEVICE)
+        out_label = label_pipeline(self.list_of_possible_labels.index(_label)).to(DEVICE)
         return out_text, out_label
 

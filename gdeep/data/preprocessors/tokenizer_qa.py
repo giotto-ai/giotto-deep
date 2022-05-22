@@ -8,6 +8,7 @@ from torchtext.data.utils import get_tokenizer  # type: ignore
 from gdeep.utility import DEVICE
 
 from ..abstract_preprocessing import AbstractPreprocessing
+from .._utils import MissingVocabularyError
 # type definition
 Tensor = torch.Tensor
 
@@ -80,27 +81,30 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
         """This method implement the transformation once fitted."""
         #if not self.is_fitted:
         #    self.load_pretrained(".")
-        text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in # type: ignore
-                                   self.tokenizer(x)]  # type: ignore
+        if self.vocabulary:
+            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in # type: ignore
+                                       self.tokenizer(x)]  # type: ignore
+        else:
+            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
 
         processed_context = torch.tensor(text_pipeline(datum[0]),
-                                      dtype=torch.int64).to(DEVICE)
+                                         dtype=torch.int64).to(DEVICE)
         out_context = torch.cat([processed_context,
-                         self.pad_item * torch.ones(self.max_length - processed_context.shape[0]
-                                               ).to(DEVICE)])
+                                 self.pad_item * torch.ones(self.max_length -
+                                                            processed_context.shape[0]).to(DEVICE)])
         processed_question = torch.tensor(text_pipeline(datum[1]),
                                          dtype=torch.int64).to(DEVICE)
 
         out_question = torch.cat([processed_question,
-                         self.pad_item * torch.ones(self.max_length - processed_question.shape[0]
-                                               ).to(DEVICE)])
+                         self.pad_item * torch.ones(self.max_length -
+                                                    processed_question.shape[0]).to(DEVICE)])
 
         pos_init_char = datum[3][0]
         pos_init = len(self.tokenizer(datum[0][:pos_init_char]))  # type: ignore
         pos_end = pos_init + len(self.tokenizer(datum[2][0]))  # type: ignore
 
         return (torch.stack((out_context, out_question)).to(torch.long),
-         torch.stack((torch.tensor(pos_init), torch.tensor(pos_end))).to(torch.long))
+                torch.stack((torch.tensor(pos_init), torch.tensor(pos_end))).to(torch.long))
 
 
 

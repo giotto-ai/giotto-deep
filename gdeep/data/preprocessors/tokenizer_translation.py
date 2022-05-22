@@ -9,6 +9,7 @@ from torchtext.vocab import vocab
 from gdeep.utility import DEVICE
 
 from ..abstract_preprocessing import AbstractPreprocessing
+from .._utils import MissingVocabularyError
 
 # type definition
 Tensor = torch.Tensor
@@ -119,13 +120,20 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
 
         #if not self.is_fitted:
         #    self.load_pretrained(".")
-        text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
-                                   self.tokenizer(x)]  # type: ignore
-        text_pipeline_target: Callable[[str], List[int]] = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
-                                   self.tokenizer_target(x)]   # type: ignore
+        if self.vocabulary:
+            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
+                                       self.tokenizer(x)]  # type: ignore
+        else:
+            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
 
-        pad_item = 0
-        pad_item_target = 0
+        if self.vocabulary_target:
+            text_pipeline_target: Callable[[str], List[int]] = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
+                                       self.tokenizer_target(x)]   # type: ignore
+        else:
+            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
+
+        pad_item: int = 0
+        pad_item_target: int = 0
 
         processed_text = torch.tensor(text_pipeline(datum[0]),
                                       dtype=torch.long).to(DEVICE)
