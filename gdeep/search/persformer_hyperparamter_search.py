@@ -11,9 +11,9 @@ from json import load
 from optuna.pruners import NopPruner
 
 from gdeep.topology_layers import Persformer
-from gdeep.search import GiottoSummaryWriter, Gridsearch
-from gdeep.data import DlBuilderFromDataCloud
-from gdeep.pipeline import Pipeline
+from gdeep.search import GiottoSummaryWriter, HyperParameterOptimization
+from gdeep.data.datasets import DlBuilderFromDataCloud
+from gdeep.trainer import Trainer
 
 class PersformerHyperparameterSearch:
     """This class is used to perform hyperparameter search for Persfomer using 
@@ -64,7 +64,7 @@ class PersformerHyperparameterSearch:
 
         # create the dataset from the downloaded dataset
         train_dataloader, _, _ = dl_cloud_builder\
-            .build_dataloaders(batch_size=10)
+            .build(({"batch_size" : 10},))
         return train_dataloader
     
     
@@ -100,7 +100,7 @@ class PersformerHyperparameterSearch:
             schedulers_params = hyperparameters_dicts.schedulers_params
 
         # Initialize pipeline        
-        pipe = Pipeline(model, [train_dataloader, None], loss_fn, writer,
+        pipe = Trainer(model, [train_dataloader, None], loss_fn, writer,
                             eval(
                                 hyperparameters_dicts.fold_mode + "(" +
                                 str(hyperparameters_dicts.n_splits) + ", "+
@@ -111,11 +111,11 @@ class PersformerHyperparameterSearch:
 
 
         pruner = NopPruner()
-        search = Gridsearch(pipe,
-                            search_metric=hyperparameters_dicts.search_metric,
-                            n_trials=hyperparameters_dicts.n_trials,
-                            best_not_last=True,
-                            pruner=pruner)
+        search = HyperParameterOptimization(pipe,
+                                            search_metric=hyperparameters_dicts.search_metric,
+                                            n_trials=hyperparameters_dicts.n_trials,
+                                            best_not_last=True,
+                                            pruner=pruner)
 
         # starting the hyperparameter search
         search.start([eval(opt) for opt in hyperparameters_dicts.optimizer],

@@ -5,6 +5,7 @@ plotly
 matplotlib
 matplotlib_venn
 scikit-learn
+spacy
 scipy
 networkx
 torch==1.10.0

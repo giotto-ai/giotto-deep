@@ -3,10 +3,9 @@ from ._version import __version__
 
 __all__ = [
     'analysis',
-    'bert',
     'data',
     'models',
-    'pipeline',
+    'trainer',
     'search',
     'topology_layers',
     'utility',
