@@ -42,7 +42,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Data</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.preprocessors">Preprocessors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.datasets">Datasets</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="trainer.html">Trainer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
@@ -173,6 +177,615 @@ preprocessors inherits from <code class="docutils literal notranslate"><span cla
 </dl>
 </dd></dl>
 
+<section id="module-gdeep.data.preprocessors">
+<span id="preprocessors"></span><h2>Preprocessors<a class="headerlink" href="#module-gdeep.data.preprocessors" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.Normalization">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">Normalization</span></span><a class="headerlink" href="#gdeep.data.preprocessors.Normalization" title="Permalink to this definition"></a></dt>
+<dd><p>This class runs the standard normalisation on all the dimensions of
+the tensors of a dataloader. For example, in case of images where each item is of
+shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>, the average will and the standard deviations
+will be tensors of shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.ToTensorImage">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">ToTensorImage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.ToTensorImage" title="Permalink to this definition"></a></dt>
+<dd><p>Class to preprocess image files for classification
+tasks</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>size :</dt><dd><p>Desired output size. If size is a sequence like (h, w),
+output size will be matched to this. If size is an int,
+smaller edge of the image will be matched to this number.
+I.e, if height &gt; width, then image will be rescaled to
+<code class="docutils literal notranslate"><span class="pre">(size</span> <span class="pre">*</span> <span class="pre">height</span> <span class="pre">/</span> <span class="pre">width,</span> <span class="pre">size)</span></code>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.TokenizerQA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">TokenizerQA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vocabulary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.TokenizerQA" title="Permalink to this definition"></a></dt>
+<dd><p>Class to preprocess text dataloaders for Q&amp;A
+tasks. The type of dataset is assumed to be of the
+form <code class="docutils literal notranslate"><span class="pre">(string,string,list[string],</span> <span class="pre">list[string])</span></code>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>vocabulary:</dt><dd><p>the torch vocabulary</p>
+</dd>
+<dt>tokenizer :</dt><dd><p>the tokenizer of the source text</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">TorchDataLoader</span>
+<span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">TransformingDataset</span>
+<span class="kn">from</span> <span class="nn">gdeep.data.preprocessors</span> <span class="kn">import</span> <span class="n">TokenizerQA</span>
+
+<span class="n">dl</span> <span class="o">=</span> <span class="n">TorchDataLoader</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;SQuAD2&quot;</span><span class="p">,</span> <span class="n">convert_to_map_dataset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">dl_tr</span><span class="p">,</span> <span class="n">dl_ts</span> <span class="o">=</span> <span class="n">dl</span><span class="o">.</span><span class="n">build_dataloaders</span><span class="p">()</span>
+
+<span class="n">textds</span> <span class="o">=</span> <span class="n">TransformingDataset</span><span class="p">(</span><span class="n">dl_tr_str</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                       <span class="n">TokenizerQA</span><span class="p">())</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.TokenizerQA.fit_to_dataset">
+<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.TokenizerQA.fit_to_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Method to fit the vocabulary to the input text</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.TokenizerTextClassification">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">TokenizerTextClassification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocabulary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.TokenizerTextClassification" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocessing class. This class is useful to convert the data format
+<code class="docutils literal notranslate"><span class="pre">(label,</span> <span class="pre">text)</span></code> into the proper tensor format <code class="docutils literal notranslate"><span class="pre">(</span> <span class="pre">word_embedding,</span> <span class="pre">label)</span></code>.
+The labels shouzld be interagers; f they ar string, they will be converted.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>tokenizer :</dt><dd><p>the tokenizer of the source text</p>
+</dd>
+<dt>vocabulary :</dt><dd><p>the vocubulary; it can be built of it can be
+given.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.TokenizerTextClassification.fit_to_dataset">
+<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.TokenizerTextClassification.fit_to_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Method to extract global data, like to length of
+the sentences to be able to pad.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>data (iterable):</dt><dd><p>the data in the format <code class="docutils literal notranslate"><span class="pre">(label,</span> <span class="pre">text)</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.TokenizerTranslation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">TokenizerTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vocabulary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocabulary_target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer_target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.TokenizerTranslation" title="Permalink to this definition"></a></dt>
+<dd><p>Class to preprocess text dataloaders for translation
+tasks. The Dataset type is supposed to be <code class="docutils literal notranslate"><span class="pre">(string,</span> <span class="pre">string)</span></code>.
+The padding item is supposed to be of index 0.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>vocabulary :</dt><dd><p>the vocubulary of the source text;
+it can be built automatically or it can be
+given.</p>
+</dd>
+<dt>vocabulary_target :</dt><dd><p>the vocubulary of the target text;
+it can be built automatically or it can be
+given.</p>
+</dd>
+<dt>tokenizer:</dt><dd><p>the tokenizer of the source text</p>
+</dd>
+<dt>tokenizer_target:</dt><dd><p>the tokenizer of the target text</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">DatasetBuilder</span>
+<span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">TransformingDataset</span>
+<span class="kn">from</span> <span class="nn">gdeep.data.preprocessors</span> <span class="kn">import</span> <span class="n">TokenizerTranslation</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">DatasetBuilder</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Multi30k&quot;</span><span class="p">,</span> <span class="n">convert_to_map_dataset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ds_tr</span><span class="p">,</span> <span class="n">ds_val</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+
+<span class="n">textds</span> <span class="o">=</span> <span class="n">TransformingDataset</span><span class="p">(</span><span class="n">ds_tr</span><span class="p">,</span>
+    <span class="n">TokenizerTranslation</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-gdeep.data.datasets">
+<span id="datasets"></span><h2>Datasets<a class="headerlink" href="#module-gdeep.data.datasets" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.AbstractDataLoaderBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">AbstractDataLoaderBuilder</span></span><a class="headerlink" href="#gdeep.data.datasets.AbstractDataLoaderBuilder" title="Permalink to this definition"></a></dt>
+<dd><p>The abstractr class to interface the
+Giotto dataloaders</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DataLoaderBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">DataLoaderBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuple_of_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.DataLoaderBuilder" title="Permalink to this definition"></a></dt>
+<dd><p>This class builds, out of a tuple of datasets, the
+corresponding dataloaders. Note that this class would
+use the same parameters for all the datasets</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>tuple_of_datasets :</dt><dd><p>the tuple eith the traing, validation and test
+datasets. Also one or two elemennts are acceptable:
+they will be considered as training first and
+validation afterwards.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DataLoaderBuilder.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuple_of_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DataLoaderBuilder.build" title="Permalink to this definition"></a></dt>
+<dd><p>This method accepts the arguments of the torch
+Dataloader and applies them when creating the
+tuple</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>tuple_of_kwargs:</dt><dd><p>List of dictionaries, each one being the
+kwargs for the corresponding DataLoader</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DataLoaderKwargs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">DataLoaderKwargs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.DataLoaderKwargs" title="Permalink to this definition"></a></dt>
+<dd><p>Object to store keyword arguments for train, val, and test dataloaders</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DatasetBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">DatasetBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MNIST'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convert_to_map_dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.DatasetBuilder" title="Permalink to this definition"></a></dt>
+<dd><p>Class to obtain Datasets from the classical
+datasets available on pytorch. Also the torus dataset
+and all its variations can be found here</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>name:</dt><dd><p>check the available datasets at
+<a class="reference external" href="https://pytorch.org/vision/stable/datasets.html">https://pytorch.org/vision/stable/datasets.html</a>
+and <a class="reference external" href="https://pytorch.org/text/stable/datasets.html">https://pytorch.org/text/stable/datasets.html</a></p>
+</dd>
+<dt>convert_to_map_dataset:</dt><dd><p>whether to conver to the MapDataset or to keep
+IterableDataset</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DatasetBuilder.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DatasetBuilder.build" title="Permalink to this definition"></a></dt>
+<dd><p>Method that returns the dataset.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>kwargs:</dt><dd><p>the arguments to pass to the dataset builder.
+For example, you may want to use the options
+<code class="docutils literal notranslate"><span class="pre">split=(&quot;train&quot;,&quot;dev&quot;)</span></code> or <code class="docutils literal notranslate"><span class="pre">split=(&quot;train&quot;,&quot;test&quot;)</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DatasetCloud">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">DatasetCloud</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'adversarial_attack'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_public_access</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_to_credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_public</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.DatasetCloud" title="Permalink to this definition"></a></dt>
+<dd><p>DatasetCloud class to handle the download and upload
+of datasets to the DataCloud.
+If the download_directory does not exist, it will be created and
+if a folder with the same name as the dataset exists in the
+download directory, it will not be downloaded again.
+If a folder with the same name as the dataset does not exists
+locally, it will be created when downloading the dataset.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_name (str):</dt><dd><p>Name of the dataset to be downloaded or uploaded.</p>
+</dd>
+<dt>bucket_name (str, optional):</dt><dd><p>Name of the bucket in the DataCloud.
+Defaults to DATASET_BUCKET_NAME.</p>
+</dd>
+<dt>download_directory (Union[None, str], optional):</dt><dd><p>Directory where the
+dataset will be downloaded to. Defaults to DEFAULT_DOWNLOAD_DIR.</p>
+</dd>
+<dt>use_public_access (bool, optional):</dt><dd><p>If True, the dataset will
+downloaded via public url. Defaults to False.</p>
+</dd>
+<dt>path_credentials (Union[None, str], optional):</dt><dd><p>Path to the credentials file.
+Only used if public_access is False and credentials are not
+provided. Defaults to None.</p>
+</dd>
+<dt>make_public (bool, optional):</dt><dd><p>If True, the dataset will be made public</p>
+</dd>
+<dt>Raises:</dt><dd><dl class="simple">
+<dt>ValueError:</dt><dd><p>Dataset does not exits in cloud.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DatasetCloud.download">
+<span class="sig-name descname"><span class="pre">download</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.datasets.DatasetCloud.download" title="Permalink to this definition"></a></dt>
+<dd><p>Download a dataset from the DataCloud. If the dataset does not
+exist in the cloud, an exception will be raised. If the dataset
+exists locally in the download directory, the dataset will not be
+downloaded again.</p>
+<dl class="simple">
+<dt>Raises:</dt><dd><dl class="simple">
+<dt>ValueError:</dt><dd><p>Dataset does not exits in cloud.</p>
+</dd>
+<dt>ValueError:</dt><dd><p>Dataset exists locally but checksums do not match.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DatasetCloud.get_existing_datasets">
+<span class="sig-name descname"><span class="pre">get_existing_datasets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DatasetCloud.get_existing_datasets" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of datasets in the cloud.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>List[str]:</dt><dd><p>List of datasets in the cloud.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DlBuilderFromDataCloud">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">DlBuilderFromDataCloud</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_public_access</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_to_credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.DlBuilderFromDataCloud" title="Permalink to this definition"></a></dt>
+<dd><p>Class that loads data from Google Cloud Storage</p>
+<p>This class is useful to build dataloaders from a dataset stored in
+the GDeep Dataset Cloud on Google Cloud Storage.</p>
+<p>The constructor takes the name of a dataset as a string, and a string
+for the download directory. The constructor will download the dataset
+to the download directory. The dataset is downloaded in the version
+used by Datasets Cloud, which may be different from the version
+used by the dataset’s original developers.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_name (str):</dt><dd><p>The name of the dataset.</p>
+</dd>
+<dt>download_dir (str):</dt><dd><p>The directory where the dataset will be downloaded.</p>
+</dd>
+<dt>use_public_access (bool):</dt><dd><p>Whether to use public access. If you want
+to use the Google Cloud Storage API, you must set this to True.
+Please make sure you have the appropriate credentials.</p>
+</dd>
+<dt>path_to_credentials (str):</dt><dd><p>Path to the credentials file.
+Only used if public_access is False and credentials are not
+provided. Defaults to None.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>torch.utils.data.DataLoader: The dataloader for the dataset.</p>
+</dd>
+<dt>Raises:</dt><dd><dl class="simple">
+<dt>ValueError:</dt><dd><p>If the dataset_name is not a valid dataset that exists
+in Datasets Cloud.</p>
+</dd>
+<dt>ValueError:</dt><dd><p>If the download_directory is not a valid directory.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DlBuilderFromDataCloud.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuple_of_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DlBuilderFromDataCloud.build" title="Permalink to this definition"></a></dt>
+<dd><p>Builds the dataloaders for the dataset.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs: Arguments for the dataloader builder.</p>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Tuple[DataLoader, DataLoader, DataLoader]:</dt><dd><p>The dataloaders for the dataset (train, validation, test).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.DlBuilderFromDataCloud.get_metadata">
+<span class="sig-name descname"><span class="pre">get_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DlBuilderFromDataCloud.get_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the metadata of the dataset.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Dict[str, Any]:</dt><dd><p>The metadata of the dataset.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.FromArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">FromArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.FromArray" title="Permalink to this definition"></a></dt>
+<dd><p>This class is useful to build dataloaders
+from a array of X and y. Tensors are also supported.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X :</dt><dd><p>The data. The first dimension is the datum index</p>
+</dd>
+<dt>y :</dt><dd><p>The labels, need to match the first dimension
+with the data</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.ImageClassificationFromFiles">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">ImageClassificationFromFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'labels.csv'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.ImageClassificationFromFiles" title="Permalink to this definition"></a></dt>
+<dd><p>This class is useful to build a dataset
+directly from image files</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>img_folder (string):</dt><dd><p>The path to the folder where the training
+images are located</p>
+</dd>
+<dt>labels_file (string):</dt><dd><p>The path and file name of the labels.
+It shall be a <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file with two columns.
+The first columns contains the name of the
+image and the second one contains the
+label value</p>
+</dd>
+<dt>transform (AbstractPreprocessing):</dt><dd><p>the instance of the class of preprocessing.
+It inherits from <code class="docutils literal notranslate"><span class="pre">AbstractPreprocessing</span></code></p>
+</dd>
+<dt>target_transform (AbstractPreprocessing):</dt><dd><p>the instance of the class of preprocessing.
+It inherits from <code class="docutils literal notranslate"><span class="pre">AbstractPreprocessing</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">OrbitsGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(2.5,</span> <span class="pre">3.5,</span> <span class="pre">4.0,</span> <span class="pre">4.1,</span> <span class="pre">4.3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_orbits_per_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pts_per_orbit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_percentage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamical_system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classical_convention'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'float32'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arbitrary_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator" title="Permalink to this definition"></a></dt>
+<dd><p>Generate Orbit dataset consistent of orbits defined by the dynamical system
+x[n+1] = x[n] + r * y[n] * (1  - y[n]) % 1
+y[n+1] = y[n] + r * x[n+1] * (1 - x[n+1]) % 1
+Note that there is an x[n+1] value in the second dimension.
+The parameter r is an hyperparameter and the classification task is to predict
+it given the orbit.
+By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).
+Args:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>parameters (Tuple[float]): </dt><dd><p>Hyperparameter of the dynamical systems.</p>
+</dd>
+<dt>num_orbits_per_class (int): </dt><dd><p>number of orbits per class.</p>
+</dd>
+<dt>num_pts_per_orbit (int): </dt><dd><p>number of points per orbit.</p>
+</dd>
+<dt>homology_dimensions (Sequence[int]): </dt><dd><p>homology dimension of the persistence
+diagrams.</p>
+</dd>
+<dt>validation_percentage (float, optional): </dt><dd><p>Percentage of the validation dataset.
+Defaults to 0.0.</p>
+</dd>
+<dt>test_percentage (float, optional): </dt><dd><p>Percentage of the test dataset. Defaults to 0.0.</p>
+</dd>
+<dt>dynamical_system (str, optional): </dt><dd><p>either use persistence paths
+convention ´pp_convention´ or the classical convention
+´classical_convention´. Defaults to ‘´classical_convention´’.</p>
+</dd>
+<dt>n_jobs (int, optional): </dt><dd><p>number of cpus to run the computation on. Defaults to 1.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_dataloader_combined">
+<span class="sig-name descname"><span class="pre">get_dataloader_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderKwargs" title="gdeep.data.datasets.parallel_orbit.DataLoaderKwargs"><span class="pre">gdeep.data.datasets.parallel_orbit.DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_dataloader_combined" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a Dataloader from the orbits dataset and the persistence diagrams
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>DataLoader: </dt><dd><p>Dataloader of orbits and persistence diagrams</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_dataloader_orbits">
+<span class="sig-name descname"><span class="pre">get_dataloader_orbits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderKwargs" title="gdeep.data.datasets.parallel_orbit.DataLoaderKwargs"><span class="pre">gdeep.data.datasets.parallel_orbit.DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_dataloader_orbits" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a Dataloader from the orbits dataset 
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>DataLoader: </dt><dd><p>Dataloader of orbits</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_dataloader_persistence_diagrams">
+<span class="sig-name descname"><span class="pre">get_dataloader_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderKwargs" title="gdeep.data.datasets.parallel_orbit.DataLoaderKwargs"><span class="pre">gdeep.data.datasets.parallel_orbit.DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_dataloader_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a Dataloader from the persistence diagrams dataset 
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Tuple[DataLoader, DataLoader, DataLoader]:</dt><dd><p>Dataloaders of persistence diagrams</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_orbits">
+<span class="sig-name descname"><span class="pre">get_orbits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_orbits" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the orbits as an ndarrays of shape
+(num_classes * num_orbits_per_class, num_pts_per_orbit, 2)
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>np.ndarray: </dt><dd><p>Orbits</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_persistence_diagrams">
+<span class="sig-name descname"><span class="pre">get_persistence_diagrams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the orbits as an ndarrays of shape
+(num_classes * num_orbits_per_class, num_topological_features, 3)
+Returns:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>np.ndarray: </dt><dd><p>Persistence diagrams</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.Rotation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">Rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.Rotation" title="Permalink to this definition"></a></dt>
+<dd><p>Class for rotations</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.ToriDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">ToriDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.ToriDataset" title="Permalink to this definition"></a></dt>
+<dd><p>This class is used to generate data loaders for the
+family of tori-datasets</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>name:</dt><dd><p>name of the torus dataset to generate</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.datasets.create_pd_orbits">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">create_pd_orbits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orbits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.data.datasets.create_pd_orbits" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the weak alpha persistence of the orbit data clouds.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>orbits (np.array): </dt><dd><p>Orbits of shape [n_points, 2]</p>
+</dd>
+<dt>homology_dimensions (tuple, optional): </dt><dd><p>Dimensions to compute the
+persistence diagrams.
+Defaults to (0, 1).</p>
+</dd>
+<dt>n_jobs (int, optional): </dt><dd><p>Number of cpus to use for parallel computation.
+Defaults to multiprocessing.cpu_count().</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>np.array: </dt><dd><p>Array of persistence diagrams of shape
+[num_classes, num_orbits, num_persistence_points, 3].
+In the last dimension the first two values are the coordinates of
+the points in the persistence diagrams and the third is the
+homology dimension.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.datasets.generate_orbit_parallel">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">generate_orbit_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_orbits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pts_per_orbit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[1.0]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#gdeep.data.datasets.generate_orbit_parallel" title="Permalink to this definition"></a></dt>
+<dd><p>Generate sequence of points of a dynamical system
+in a parallel manner.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>num_classes (int): </dt><dd><p>number of classes of dynamical systems.</p>
+</dd>
+<dt>num_orbits (int): </dt><dd><p>number of orbits of dynamical system per class.</p>
+</dd>
+<dt>num_pts_per_orbit (int, optional): </dt><dd><p>Number of points to generate.
+Defaults to 100.</p>
+</dd>
+<dt>parameter (List[float], optional): </dt><dd><p>List of parameters of the dynamical
+system.
+Defaults to [1.0].</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>np.ndarray: </dt><dd><p>Array of sampled points of the dynamical system.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.datasets.get_dataset">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">get_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataset.Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.get_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Get a dataset from the factory</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>key :</dt><dd><p>The name of the dataset, correspondiong
+to the key in the list of builders</p>
+</dd>
+<dt><a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs:</dt><dd><p>The keyword arguments to pass to the dataset builder</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>torch.utils.data.Dataset:</dt><dd><p>The dataset</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 </section>
 
 
