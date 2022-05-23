@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Any
 
-
 import torch
 from torch import nn
 
@@ -10,6 +9,7 @@ class SaveOutput(ABC):
     """ General class for saving outputs.
     Outputs will be stored in a list 'outputs'
     """
+    outputs: List[Any]
 
     @abstractmethod
     def __call__(self, module, module_in, module_out):
@@ -26,7 +26,6 @@ class SaveNodeOutput(SaveOutput):
     """ Class for saving activations of a node in
     a neural network.
     """
-    outputs: List[Any]
 
     def __init__(self, entry:int=0):
         self.outputs = []
@@ -37,7 +36,7 @@ class SaveNodeOutput(SaveOutput):
 
 
 class SaveLayerOutput(SaveOutput):
-    def __init__(self, entry:int=0):
+    def __init__(self):
         self.outputs = []
 
     def __call__(self, module: nn.Module, module_in, module_out):

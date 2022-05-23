@@ -221,7 +221,7 @@ class Trainer:
         if not self.prof is None:
             self.prof.start()
         for batch, (X, y) in enumerate(dl_tr):
-            def closure():
+            def closure() -> Tensor:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
                 return loss2

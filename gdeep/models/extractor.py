@@ -1,13 +1,13 @@
+from typing import List, Any, Dict, Callable, Tuple
+
 import torch
 
 from ..analysis.decision_boundary import GradientFlowDecisionBoundaryCalculator
 from ..analysis.decision_boundary import UniformlySampledPoint
 from . import SaveLayerOutput
+from gdeep.utility import DEVICE
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+Tensor = torch.Tensor
 
 class ModelExtractor:
     """This class wraps nn.Modules to extract
@@ -20,13 +20,15 @@ class ModelExtractor:
             loss function
     """
 
-    def __init__(self, model, loss_fn):
+    def __init__(self, model: torch.nn.Module,
+                 loss_fn: Callable[[Tensor, Tensor], Tensor]) -> None:
         # self.model = model
         self.model = model.to(DEVICE)
         self.loss_fn = loss_fn
 
-    def get_decision_boundary(self, input_example, n_epochs=100,
-                              precision=0.1):
+    def get_decision_boundary(self, input_example: Tensor,
+                              n_epochs: int=100,
+                              precision: float=0.1) -> Tensor:
         """Compute the decision boundary for self.model
         with self.loss_fn
         
@@ -66,7 +68,7 @@ class ModelExtractor:
                                                 precision).detach()
         return res
 
-    def get_activations(self, X):
+    def get_activations(self, x: Tensor) -> List[Tensor]:
         """Compute the activations of self.model with input
         `X`
 
@@ -89,7 +91,7 @@ class ModelExtractor:
             hook_handles.append(handle)
 
         self.model.eval()
-        self.model(X.to(DEVICE))
+        self.model(x.to(DEVICE))
 
 
         for handle in hook_handles:
@@ -98,7 +100,7 @@ class ModelExtractor:
         self.model.train()
         return saved_output_layers.get_outputs()
 
-    def get_layers_param(self) -> dict:
+    def get_layers_param(self) -> Dict[str, Tensor]:
         """Returns parameters of layers
 
         Returns:
@@ -113,7 +115,7 @@ class ModelExtractor:
         #    layer_data[name]=layer_param.data
         return self.model.state_dict()
         
-    def get_layers_grads(self) -> dict:
+    def get_layers_grads(self) -> List[Tensor]:
         """Returns the gradients of each layer
 
         Returns:
@@ -131,20 +133,19 @@ class ModelExtractor:
             output.append(v.grad)
         return output
 
-    def get_gradients(self, x, **kwargs) -> tuple:
+    def get_gradients(self, x: Tensor, **kwargs) \
+            -> Tuple[Tensor, List[Tensor]]:
         """Returns the **averaged gradient** of the self.loss_fn.
         To specify the target variable (e.g. the true class),
         use the keywords argument `target=`
 
         Args:
-            x (Tensor):
+            x :
                 point at which to compute grad
 
         Returns:
-            tensor:
-                the gradients
-            list:
-                list of tensors, corresponding
+            tensor,  list:
+                the gradients; the list of tensors, corresponding
                 to the gradient of the weights.
         """
         

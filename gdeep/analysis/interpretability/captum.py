@@ -1,14 +1,12 @@
-from captum.attr import * # TokenReferenceBase, \
-    # visualization, FeatureAblation, \
-    # DeepLift, NoiseTunnel, IntegratedGradients, \
-    # LayerIntegratedGradients, Occlusion, \
-    # GuidedGradCam, Saliency, InputXGradient
-import torch
+from typing import Any
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+from captum.attr import *
+import torch
+from torch import nn
+
+from gdeep.utility import DEVICE
+
+Tensor = torch.Tensor
 
 class Interpreter:
     """Class to visualise the activation maps,
@@ -24,26 +22,26 @@ class Interpreter:
 
     """
 
-    def __init__(self, model,
-                 method="IntegratedGradients"):
+    def __init__(self, model:nn.Module,
+                 method:str="IntegratedGradients"):
         # self.model = model
         self.model = model.to(DEVICE)
         self.method = method
         self.stored_visualisations = []
         self.image = None
-        self.X = None
+        self.x = None
         self.sentence = None
         self.attrib = None
 
-    def interpret_image(self, X, y, layer = None, **kwargs):
+    def interpret_image(self, x:Tensor, y:Any, layer = None, **kwargs):
         """This method creates an image interpreter. This class
         is based on captum.
 
         Args:
-            X (tensor):
+            x:
                 the tensor corresponding to the input image.
                 It is expected to be of size ``(b, c, h, w)``
-            y (int or float or str)
+            y:
                 the label we want to check the interpretability
                 of.
             layer (nn.Module, optional):
@@ -55,7 +53,7 @@ class Interpreter:
                 the input image and the attribution
                 image respectively.
         """
-        self.X = X.to(DEVICE)
+        self.x = x.to(DEVICE)
         if self.method in ("GuidedGradCam",
                            "LayerConductance",
                            "LayerActivation",
@@ -69,17 +67,17 @@ class Interpreter:
         else:
             occlusion = eval(self.method+"(self.model)")
         self.model.eval()
-        att = occlusion.attribute(self.X, target=y, **kwargs)
-        self.image = self.X
+        att = occlusion.attribute(self.x, target=y, **kwargs)
+        self.image = self.x
         self.attrib = att
-        return self.X, att
+        return self.x, att
 
-    def interpret_tabular(self, X_test, y, **kwargs):
+    def interpret_tabular(self, x_test: Tensor, y: Any, **kwargs):
         """This method creates an image interpreter. This class
         is based on captum.
 
         Args:
-            X (tensor):
+            x :
                 the tensor corresponding to the input image.
                 It is expected to be of size ``(b, c, h, w)``
             y (int or float or str)
@@ -91,7 +89,7 @@ class Interpreter:
                 the input image and the attribution
                 image respectively.
         """
-        self.X = X_test.to(DEVICE)  # needed for plotting functions
+        self.x = x_test.to(DEVICE)  # needed for plotting functions
         y = y.to(DEVICE)
         self.model.eval()
         ig = IntegratedGradients(self.model)
@@ -99,23 +97,26 @@ class Interpreter:
         dl = DeepLift(self.model)
         # gs = GradientShap(self.model)
         fa = FeatureAblation(self.model)
-        self.ig_attr_test = ig.attribute(self.X,
+        self.ig_attr_test = ig.attribute(self.x,
                                          n_steps=50,
                                          target=y,
                                          **kwargs)
-        self.ig_nt_attr_test = ig_nt.attribute(self.X,
+        self.ig_nt_attr_test = ig_nt.attribute(self.x,
                                                target=y,
                                                **kwargs)
-        self.dl_attr_test = dl.attribute(self.X,
+        self.dl_attr_test = dl.attribute(self.x,
                                          target=y,
                                          **kwargs)
         # self.gs_attr_test = gs.attribute(X_test, X_train, **kwargs)
-        self.fa_attr_test = fa.attribute(self.X,
+        self.fa_attr_test = fa.attribute(self.x,
                                          **kwargs)
 
-    def interpret_text(self, sentence, label, vocab,
-                       tokenizer, layer,
-                       min_len=7):
+    def interpret_text(self, sentence,
+                       label,
+                       vocab,
+                       tokenizer,
+                       layer,
+                       min_len:int=7):
         """This method creates an image interpreter. This class
         is based on captum.
 
@@ -162,8 +163,8 @@ class Interpreter:
         pred = torch.max(pred_temp)
         pred_ind = torch.argmax(pred_temp).item()
         # generate reference indices for each sample
-        PAD_IND = vocab['.']
-        token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
+        pad_index = vocab['.']
+        token_reference = TokenReferenceBase(reference_token_idx=pad_index)
         reference_indices = \
             token_reference.generate_reference(seq_length,
                                                DEVICE).unsqueeze(0)

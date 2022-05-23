@@ -2,6 +2,7 @@ from ctypes import Union
 #import imp
 from IPython import get_ipython  # type: ignore
 import base64
+from typing import Dict, Tuple, Any, Optional, Type
 import os
 import time
 import hashlib
@@ -9,9 +10,12 @@ import warnings
 
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
+from torch.optim import Optimizer
 
 
-def _are_compatible(model_dict, dataloaders_dict):
+def _are_compatible(model_dict: Dict[str, nn.Module],
+                    dataloaders_dict: Dict[str, DataLoader]) -> bool:
     """utility function to check the compatibility of a model
     with a set of dataloaders `(dl_tr, dl_val, dl_ts)`
     """
@@ -25,11 +29,11 @@ def _are_compatible(model_dict, dataloaders_dict):
     else:
         return True
 
-def save_model_and_optimizer(model,
-                             model_name: str=None,
-                             trial_id: str=None,
-                             optimizer=None,
-                             store_pickle=False):
+def save_model_and_optimizer(model: nn.Module,
+                             model_name: Optional[str]=None,
+                             trial_id: Optional[str]=None,
+                             optimizer: Optional[Optimizer]=None,
+                             store_pickle: bool=False):
     """Save the model and the optimizer state_dict
 
     Args:
@@ -80,7 +84,7 @@ def save_model_and_optimizer(model,
                                 +"-"+trial_id+".pth"))
 
 
-def ensemble_wrapper(clss):
+def ensemble_wrapper(clss: Type):
     """function to wrap the ensemble estimators
     of the ``torchensable`` library.
 

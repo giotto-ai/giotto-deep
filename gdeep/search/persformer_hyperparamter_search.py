@@ -3,17 +3,15 @@ import torch
 from torch.optim import AdamW, Adam, SGD
 from transformers import get_cosine_with_hard_restarts_schedule_with_warmup # type: ignore
 from sklearn.model_selection import StratifiedKFold, KFold
-
 from dotmap import DotMap  # type:ignore
-
 from json import load
-
 from optuna.pruners import NopPruner
 
 from gdeep.topology_layers import Persformer
 from gdeep.search import GiottoSummaryWriter, HyperParameterOptimization
 from gdeep.data.datasets import DlBuilderFromDataCloud
 from gdeep.trainer import Trainer
+
 
 class PersformerHyperparameterSearch:
     """This class is used to perform hyperparameter search for Persfomer using 
@@ -24,18 +22,18 @@ class PersformerHyperparameterSearch:
     saved in the path provided in the constructor.
     
     Args:
-        dataset_name (str):
+        dataset_name :
             name of the dataset to be used for the 
             hyperparameter search. The dataset must be present in the
             DatasetCloud.
-        download_directory (str):
+        download_directory :
             directory where the dataset is
             either downloaded or already present
-        path_hpo_metadata (str):
+        path_hpo_metadata :
             path to the metadata file containing the
             hyperparameter dictionaries specifying the search space and the
             search metric
-        path_writer (str):
+        path_writer :
             path to the Tensorflow writer directory where the
             Tensorflow summaries are saved during the search process.
             
@@ -43,10 +41,10 @@ class PersformerHyperparameterSearch:
         None
     """ 
     def __init__(self,
-                dataset_name,
-                download_directory,
-                path_hpo_metadata,
-                path_writer) -> None:
+                dataset_name:str,
+                download_directory:str,
+                path_hpo_metadata:str,
+                path_writer:str) -> None:
         self.dataset_name = dataset_name
         self.download_directory = download_directory
         self.path_hpo_metadata = path_hpo_metadata
