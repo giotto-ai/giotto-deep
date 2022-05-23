@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 
 from torch.utils.data import DataLoader, Subset
 
+from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
 
 # Parameters
@@ -13,8 +14,10 @@ num_homology_types: int = 4
 
 
 # Create the persistence diagram dataset
-pd_creator = PersistenceDiagramFromGraphDataset(name_graph_dataset, 10.1)
+pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, 10.1)
 pd_creator.create()
+
+# %%
 
 pd_mutag_ds: Dataset[Tuple[OneHotEncodedPersistenceDiagram, int]] = \
     PersistenceDiagramFromFiles(name_graph_dataset, 10.1)

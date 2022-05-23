@@ -201,3 +201,14 @@ class KnownWarningSilencer:
 
     def __exit__(self, type, value, traceback):
         warnings.filterwarnings("default")
+        
+def flatten_list_of_lists(list_: list) -> list:
+    """Flatten a list of lists
+    Args:
+        list_ (list):
+            the list to flatten
+    Returns:
+        list:
+            the flattened list
+    """
+    return [item for sublist in list_ for item in sublist]
