@@ -42,10 +42,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bert.html">BERT</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trainer.html">Trainer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Utility</a></li>
@@ -90,6 +89,16 @@ statement with this class</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.autoreload_if_notebook">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">autoreload_if_notebook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.utility.autoreload_if_notebook" title="Permalink to this definition"></a></dt>
+<dd><p>Autoreload the modules if the environment is a notebook</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="gdeep.utility.ensemble_wrapper">
 <span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">ensemble_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clss</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.utility.ensemble_wrapper" title="Permalink to this definition"></a></dt>
 <dd><p>function to wrap the ensemble estimators
@@ -104,6 +113,30 @@ as you would normally do for the original
 <code class="docutils literal notranslate"><span class="pre">VotingClassifier</span></code> for example</p>
 </dd>
 </dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.get_parameter_types">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">get_parameter_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.utility.get_parameter_types" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of the types of the parameters of a function.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>func: The function to get the types of the parameters of.</p>
+</dd>
+<dt>Returns:</dt><dd><p>A list of the types of the parameters of the function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.get_return_type">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">get_return_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#gdeep.utility.get_return_type" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the type of the return value of a function.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>func: The function to get the type of the return value of.</p>
+</dd>
+<dt>Returns:</dt><dd><p>The type of the return value of the function.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -144,6 +177,21 @@ is for state_dicts</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.torch_transform">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.</span></span><span class="sig-name descname"><span class="pre">torch_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.utility.torch_transform" title="Permalink to this definition"></a></dt>
+<dd><p>Transforms a numpy array transform to a torch transform.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>transform: Either a callable that takes a numpy array and returns a</dt><dd><p>numpy array or a callable that takes a tensor and returns a tensor.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>The torch transform.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -157,7 +205,7 @@ is for state_dicts</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, L2F SA.</p>
+    <p>&#169; Copyright 2022, L2F SA.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

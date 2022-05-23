@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.join('..','..')))
 # -- Project information -----------------------------------------------------
 
 project = 'giotto-deep'
-copyright = '2021, L2F SA'
+copyright = '2022, L2F SA'
 author = 'Matteo Caorsi'
 
 # The full version, including alpha/beta/rc tags

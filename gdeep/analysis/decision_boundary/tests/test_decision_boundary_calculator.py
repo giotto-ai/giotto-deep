@@ -1,16 +1,16 @@
 """Testing for decision_boundary_calculator."""
 # License: GNU AGPLv3
 from .. import GradientFlowDecisionBoundaryCalculator
-from ....data import *
+from gdeep.data import *
 from ....models import FFNet
 import torch
 
+from gdeep.utility import DEVICE
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def test_gfdbc_2_dim():
 
-    circle_detect_nn = FFNet([2, 2]).to(device)
+    circle_detect_nn = FFNet([2, 2]).to(DEVICE)
 
     g = GradientFlowDecisionBoundaryCalculator(
             model=circle_detect_nn,
@@ -24,7 +24,7 @@ def test_gfdbc_2_dim():
 
 def test_gfdbc_multiclass():
 
-    circle_nn_3d = FFNet([3, 3]).to(device)
+    circle_nn_3d = FFNet([3, 3]).to(DEVICE)
 
     g = GradientFlowDecisionBoundaryCalculator(model=
                                                circle_nn_3d,

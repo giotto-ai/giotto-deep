@@ -74,11 +74,11 @@
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#K"><strong>K</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
- | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -97,6 +97,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/search.html#gdeep.search.GiottoSummaryWriter.add_hparams">add_hparams() (gdeep.search.GiottoSummaryWriter method)</a>
 </li>
+      <li><a href="modules/utility.html#gdeep.utility.autoreload_if_notebook">autoreload_if_notebook() (in module gdeep.utility)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -105,18 +107,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/search.html#gdeep.search.Benchmark">Benchmark (class in gdeep.search)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.betti_plot_layers">betti_plot_layers() (gdeep.visualisation.Visualiser method)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.DataLoaderFromArray.build_dataloaders">build_dataloaders() (gdeep.data.DataLoaderFromArray method)</a>
-
-      <ul>
-        <li><a href="modules/data.html#gdeep.data.DataLoaderFromImages.build_dataloaders">(gdeep.data.DataLoaderFromImages method)</a>
+      <li><a href="modules/data.html#gdeep.data.DatasetFactory.build">build() (gdeep.data.DatasetFactory method)</a>
 </li>
-        <li><a href="modules/data.html#gdeep.data.DlBuilderFromDataCloud.build_dataloaders">(gdeep.data.DlBuilderFromDataCloud method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.TorchDataLoader.build_dataloaders">(gdeep.data.TorchDataLoader method)</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -127,15 +123,11 @@
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification">Compactification (class in gdeep.visualisation)</a>
 </li>
-      <li><a href="modules/pipeline.html#gdeep.pipeline.Pipeline.copy_dataloader_params">copy_dataloader_params() (gdeep.pipeline.Pipeline static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/trainer.html#gdeep.trainer.Trainer.copy_dataloader_params">copy_dataloader_params() (gdeep.trainer.Trainer static method)</a>
+</li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification.create_final_distance_matrix">create_final_distance_matrix() (gdeep.visualisation.Compactification method)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.create_pd_orbits">create_pd_orbits() (in module gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.CreateToriDataset">CreateToriDataset (class in gdeep.data)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -143,21 +135,11 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/data.html#gdeep.data.DataLoaderFromArray">DataLoaderFromArray (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.DataLoaderFromImages">DataLoaderFromImages (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.DataLoaderKwargs">DataLoaderKwargs (class in gdeep.data)</a>
+      <li><a href="modules/data.html#gdeep.data.DatasetFactory">DatasetFactory (class in gdeep.data)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/data.html#gdeep.data.DatasetCloud">DatasetCloud (class in gdeep.data)</a>
-</li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator">DecisionBoundaryCalculator (class in gdeep.analysis.decision_boundary)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.DlBuilderFromDataCloud">DlBuilderFromDataCloud (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.DatasetCloud.download">download() (gdeep.data.DatasetCloud method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -169,7 +151,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/pipeline.html#gdeep.pipeline.Pipeline.evaluate_classification">evaluate_classification() (gdeep.pipeline.Pipeline method)</a>
+      <li><a href="modules/trainer.html#gdeep.trainer.Trainer.evaluate_classification">evaluate_classification() (gdeep.trainer.Trainer method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -179,37 +161,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/models.html#gdeep.models.FFNet">FFNet (class in gdeep.models)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.AbstractPreprocessing.fit_to_data">fit_to_data() (gdeep.data.AbstractPreprocessing method)</a>
+      <li><a href="modules/models.html#gdeep.models.FFNet.forward">forward() (gdeep.models.FFNet method)</a>
 
       <ul>
-        <li><a href="modules/data.html#gdeep.data.PreprocessingPipeline.fit_to_data">(gdeep.data.PreprocessingPipeline method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextData.fit_to_data">(gdeep.data.PreprocessTextData method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextLabel.fit_to_data">(gdeep.data.PreprocessTextLabel method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextQA.fit_to_data">(gdeep.data.PreprocessTextQA method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextQATarget.fit_to_data">(gdeep.data.PreprocessTextQATarget method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextTranslation.fit_to_data">(gdeep.data.PreprocessTextTranslation method)</a>
-</li>
-      </ul></li>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertBlock.forward">forward() (gdeep.bert.SimplifiedBertBlock method)</a>
-
-      <ul>
-        <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertClassifier.forward">(gdeep.bert.SimplifiedBertClassifier method)</a>
-</li>
-        <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertEmbeddings.forward">(gdeep.bert.SimplifiedBertEmbeddings method)</a>
-</li>
-        <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertEncoder.forward">(gdeep.bert.SimplifiedBertEncoder method)</a>
-</li>
-        <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertPooler.forward">(gdeep.bert.SimplifiedBertPooler method)</a>
-</li>
-        <li><a href="modules/bert.html#gdeep.bert.SimplifiedMultiHeadSelfAttention.forward">(gdeep.bert.SimplifiedMultiHeadSelfAttention method)</a>
-</li>
-        <li><a href="modules/models.html#gdeep.models.FFNet.forward">(gdeep.models.FFNet method)</a>
-</li>
         <li><a href="modules/models.html#gdeep.models.PeriodicNeuralNetwork.forward">(gdeep.models.PeriodicNeuralNetwork method)</a>
 </li>
         <li><a href="modules/topology_layers.html#gdeep.topology_layers.GraphClassifier.forward">(gdeep.topology_layers.GraphClassifier method)</a>
@@ -238,13 +192,6 @@
 </li>
       </ul></li>
       <li>
-    gdeep.bert
-
-      <ul>
-        <li><a href="modules/bert.html#module-gdeep.bert">module</a>
-</li>
-      </ul></li>
-      <li>
     gdeep.data
 
       <ul>
@@ -256,13 +203,6 @@
 
       <ul>
         <li><a href="modules/models.html#module-gdeep.models">module</a>
-</li>
-      </ul></li>
-      <li>
-    gdeep.pipeline
-
-      <ul>
-        <li><a href="modules/pipeline.html#module-gdeep.pipeline">module</a>
 </li>
       </ul></li>
       <li>
@@ -280,12 +220,21 @@
 </li>
       </ul></li>
       <li>
+    gdeep.trainer
+
+      <ul>
+        <li><a href="modules/trainer.html#module-gdeep.trainer">module</a>
+</li>
+      </ul></li>
+      <li>
     gdeep.utility
 
       <ul>
         <li><a href="modules/utility.html#module-gdeep.utility">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     gdeep.visualisation
 
@@ -293,21 +242,7 @@
         <li><a href="modules/visualisation.html#module-gdeep.visualisation">module</a>
 </li>
       </ul></li>
-      <li><a href="modules/data.html#gdeep.data.CreateToriDataset.generate_dataset">generate_dataset() (gdeep.data.CreateToriDataset method)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/data.html#gdeep.data.generate_orbit_parallel">generate_orbit_parallel() (in module gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.GenericDataset">GenericDataset (class in gdeep.data)</a>
-</li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_activations">get_activations() (gdeep.models.ModelExtractor method)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_dataloader_combined">get_dataloader_combined() (gdeep.data.OrbitsGenerator method)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_dataloader_orbits">get_dataloader_orbits() (gdeep.data.OrbitsGenerator method)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_dataloader_persistence_diagrams">get_dataloader_persistence_diagrams() (gdeep.data.OrbitsGenerator method)</a>
 </li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.get_decision_boundary">get_decision_boundary() (gdeep.analysis.decision_boundary.DecisionBoundaryCalculator method)</a>
 
@@ -321,19 +256,15 @@
       </ul></li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.UniformlySampledPoint.get_dim">get_dim() (gdeep.analysis.decision_boundary.UniformlySampledPoint method)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.DatasetCloud.get_existing_datasets">get_existing_datasets() (gdeep.data.DatasetCloud method)</a>
-</li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_gradients">get_gradients() (gdeep.models.ModelExtractor method)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_layers_grads">get_layers_grads() (gdeep.models.ModelExtractor method)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_layers_param">get_layers_param() (gdeep.models.ModelExtractor method)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.DlBuilderFromDataCloud.get_metadata">get_metadata() (gdeep.data.DlBuilderFromDataCloud method)</a>
+      <li><a href="modules/utility.html#gdeep.utility.get_parameter_types">get_parameter_types() (in module gdeep.utility)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_orbits">get_orbits() (gdeep.data.OrbitsGenerator method)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator.get_persistence_diagrams">get_persistence_diagrams() (gdeep.data.OrbitsGenerator method)</a>
+      <li><a href="modules/utility.html#gdeep.utility.get_return_type">get_return_type() (in module gdeep.utility)</a>
 </li>
       <li><a href="modules/search.html#gdeep.search.GiottoSummaryWriter">GiottoSummaryWriter (class in gdeep.search)</a>
 </li>
@@ -341,7 +272,13 @@
 </li>
       <li><a href="modules/topology_layers.html#gdeep.topology_layers.GraphClassifier">GraphClassifier (class in gdeep.topology_layers)</a>
 </li>
-      <li><a href="modules/search.html#gdeep.search.Gridsearch">Gridsearch (class in gdeep.search)</a>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/search.html#gdeep.search.HyperParameterOptimization">HyperParameterOptimization (class in gdeep.search)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -375,6 +312,8 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.MissingVocabularyError">MissingVocabularyError</a>
+</li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor">ModelExtractor (class in gdeep.models)</a>
 </li>
       <li>
@@ -385,17 +324,15 @@
 </li>
         <li><a href="modules/analysis.html#module-gdeep.analysis.interpretability">gdeep.analysis.interpretability</a>
 </li>
-        <li><a href="modules/bert.html#module-gdeep.bert">gdeep.bert</a>
-</li>
         <li><a href="modules/data.html#module-gdeep.data">gdeep.data</a>
 </li>
         <li><a href="modules/models.html#module-gdeep.models">gdeep.models</a>
 </li>
-        <li><a href="modules/pipeline.html#module-gdeep.pipeline">gdeep.pipeline</a>
-</li>
         <li><a href="modules/search.html#module-gdeep.search">gdeep.search</a>
 </li>
         <li><a href="modules/topology_layers.html#module-gdeep.topology_layers">gdeep.topology_layers</a>
+</li>
+        <li><a href="modules/trainer.html#module-gdeep.trainer">gdeep.trainer</a>
 </li>
         <li><a href="modules/utility.html#module-gdeep.utility">gdeep.utility</a>
 </li>
@@ -413,18 +350,10 @@
   </ul></td>
 </tr></table>
 
-<h2 id="O">O</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/data.html#gdeep.data.OrbitsGenerator">OrbitsGenerator (class in gdeep.data)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/pipeline.html#gdeep.pipeline.Pipeline.parallel_tpu_training_loops">parallel_tpu_training_loops() (gdeep.pipeline.Pipeline method)</a>
+      <li><a href="modules/trainer.html#gdeep.trainer.Trainer.parallel_tpu_training_loops">parallel_tpu_training_loops() (gdeep.trainer.Trainer method)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.PeriodicNeuralNetwork">PeriodicNeuralNetwork (class in gdeep.models)</a>
 </li>
@@ -434,18 +363,16 @@
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.persistence_diagrams_of_activations">persistence_diagrams_of_activations() (in module gdeep.visualisation)</a>
 </li>
-      <li><a href="modules/pipeline.html#gdeep.pipeline.Pipeline">Pipeline (class in gdeep.pipeline)</a>
-</li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_activations">plot_activations() (gdeep.visualisation.Visualiser method)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification.plot_chart">plot_chart() (gdeep.visualisation.Compactification method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_data_model">plot_data_model() (gdeep.visualisation.Visualiser method)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_decision_boundary">plot_decision_boundary() (gdeep.visualisation.Visualiser method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_interpreter_image">plot_interpreter_image() (gdeep.visualisation.Visualiser method)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_interpreter_tabular">plot_interpreter_tabular() (gdeep.visualisation.Visualiser method)</a>
@@ -457,16 +384,6 @@
       <li><a href="modules/visualisation.html#gdeep.visualisation.plotly2tensor">plotly2tensor() (in module gdeep.visualisation)</a>
 </li>
       <li><a href="modules/data.html#gdeep.data.PreprocessingPipeline">PreprocessingPipeline (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.PreprocessTextData">PreprocessTextData (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.PreprocessTextLabel">PreprocessTextLabel (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.PreprocessTextQA">PreprocessTextQA (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.PreprocessTextQATarget">PreprocessTextQATarget (class in gdeep.data)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.PreprocessTextTranslation">PreprocessTextTranslation (class in gdeep.data)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -482,11 +399,11 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/pipeline.html#gdeep.pipeline.Pipeline.register_pipe_hook">register_pipe_hook() (gdeep.pipeline.Pipeline method)</a>
+      <li><a href="modules/data.html#gdeep.data.DatasetFactory.register_builder">register_builder() (gdeep.data.DatasetFactory method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/data.html#gdeep.data.Rotation">Rotation (class in gdeep.data)</a>
+      <li><a href="modules/trainer.html#gdeep.trainer.Trainer.register_pipe_hook">register_pipe_hook() (gdeep.trainer.Trainer method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -504,24 +421,12 @@
 </li>
       <li><a href="modules/search.html#gdeep.search.PersformerHyperparameterSearch.search">search() (gdeep.search.PersformerHyperparameterSearch method)</a>
 </li>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertBlock">SimplifiedBertBlock (class in gdeep.bert)</a>
-</li>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertClassifier">SimplifiedBertClassifier (class in gdeep.bert)</a>
-</li>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertEmbeddings">SimplifiedBertEmbeddings (class in gdeep.bert)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertEncoder">SimplifiedBertEncoder (class in gdeep.bert)</a>
-</li>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedBertPooler">SimplifiedBertPooler (class in gdeep.bert)</a>
-</li>
-      <li><a href="modules/bert.html#gdeep.bert.SimplifiedMultiHeadSelfAttention">SimplifiedMultiHeadSelfAttention (class in gdeep.bert)</a>
-</li>
       <li><a href="modules/search.html#gdeep.search.Benchmark.start">start() (gdeep.search.Benchmark method)</a>
 
       <ul>
-        <li><a href="modules/search.html#gdeep.search.Gridsearch.start">(gdeep.search.Gridsearch method)</a>
+        <li><a href="modules/search.html#gdeep.search.HyperParameterOptimization.start">(gdeep.search.HyperParameterOptimization method)</a>
 </li>
       </ul></li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.step">step() (gdeep.analysis.decision_boundary.DecisionBoundaryCalculator method)</a>
@@ -538,32 +443,16 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="modules/data.html#gdeep.data.TextDataset">TextDataset (class in gdeep.data)</a>
+      <li><a href="modules/utility.html#gdeep.utility.torch_transform">torch_transform() (in module gdeep.utility)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.TextDatasetQA">TextDatasetQA (class in gdeep.data)</a>
+      <li><a href="modules/trainer.html#gdeep.trainer.Trainer.train">train() (gdeep.trainer.Trainer method)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.TextDatasetTranslation">TextDatasetTranslation (class in gdeep.data)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/trainer.html#gdeep.trainer.Trainer">Trainer (class in gdeep.trainer)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.TorchDataLoader">TorchDataLoader (class in gdeep.data)</a>
+      <li><a href="modules/data.html#gdeep.data.TransformingDataset">TransformingDataset (class in gdeep.data)</a>
 </li>
-      <li><a href="modules/pipeline.html#gdeep.pipeline.Pipeline.train">train() (gdeep.pipeline.Pipeline method)</a>
-</li>
-      <li><a href="modules/data.html#gdeep.data.AbstractPreprocessing.transform">transform() (gdeep.data.AbstractPreprocessing method)</a>
-
-      <ul>
-        <li><a href="modules/data.html#gdeep.data.PreprocessingPipeline.transform">(gdeep.data.PreprocessingPipeline method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextData.transform">(gdeep.data.PreprocessTextData method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextLabel.transform">(gdeep.data.PreprocessTextLabel method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextQA.transform">(gdeep.data.PreprocessTextQA method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextQATarget.transform">(gdeep.data.PreprocessTextQATarget method)</a>
-</li>
-        <li><a href="modules/data.html#gdeep.data.PreprocessTextTranslation.transform">(gdeep.data.PreprocessTextTranslation method)</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -592,7 +481,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, L2F SA.</p>
+    <p>&#169; Copyright 2022, L2F SA.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

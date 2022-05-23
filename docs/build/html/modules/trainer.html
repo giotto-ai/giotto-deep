@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trainer &mdash; giotto-deep 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Search" href="search.html" />
+    <link rel="prev" title="Models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> giotto-deep
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Trainer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html">Utility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">giotto-deep</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">API reference</a> &raquo;</li>
+      <li>Trainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/trainer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-gdeep.trainer">
+<span id="trainer"></span><h1>Trainer<a class="headerlink" href="#module-gdeep.trainer" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.trainer.Trainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.trainer.</span></span><span class="sig-name descname"><span class="pre">Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.tensorboard.writer.SummaryWriter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KFold_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">sklearn.model_selection._split.BaseCrossValidator</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.trainer.Trainer" title="Permalink to this definition"></a></dt>
+<dd><p>This is the generic class that allows
+the user to benchhmark models over architectures
+datasets, regularisations, metrics… in one line
+of code.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>model :</dt><dd><p>standard torch model</p>
+</dd>
+<dt>dataloaders (list of utils.DataLoader):</dt><dd><p>list of standard torch DataLoaders, e.g.
+<cite>[dl_tr, dl_val, dl_ts]</cite></p>
+</dd>
+<dt>loss_fn :</dt><dd><p>loss function to average over batches</p>
+</dd>
+<dt>writer :</dt><dd><p>tensorboard writer</p>
+</dd>
+<dt>KFold_class (sklearn.model_selection, default <code class="docutils literal notranslate"><span class="pre">KFold(5,</span> <span class="pre">shuffle=True)</span></code>):</dt><dd><p>the class instance to implement the KFold, can be
+any of the Splitter classes of sklearn. More
+info at <a class="reference external" href="https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection">https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection</a></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">SGD</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">StratifiedKFold</span>
+<span class="kn">from</span> <span class="nn">gdeep.models</span> <span class="kn">import</span> <span class="n">FFNet</span>
+<span class="kn">from</span> <span class="nn">gdeep.trainer</span> <span class="kn">import</span> <span class="n">Trainer</span>
+<span class="kn">from</span> <span class="nn">gdeep.data</span> <span class="kn">import</span> <span class="n">BuildDatasets</span><span class="p">,</span> <span class="n">BuildDataLoaders</span>
+<span class="kn">from</span> <span class="nn">gdeep.search</span> <span class="kn">import</span> <span class="n">GiottoSummaryWriter</span>
+<span class="c1"># model</span>
+<span class="k">class</span> <span class="nc">model1</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">model1</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seqmodel</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span> <span class="n">FFNet</span><span class="p">(</span><span class="n">arch</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqmodel</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">model1</span><span class="p">()</span>
+<span class="c1"># dataloaders</span>
+<span class="n">bd</span> <span class="o">=</span> <span class="n">BuildDatasets</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;DoubleTori&quot;</span><span class="p">)</span>
+<span class="n">ds_tr</span><span class="p">,</span> <span class="n">ds_val</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">build_datasets</span><span class="p">()</span>
+<span class="n">dl</span> <span class="o">=</span> <span class="n">BuildDataLoaders</span><span class="p">((</span><span class="n">ds_tr</span><span class="p">,</span> <span class="n">ds_val</span><span class="p">))</span>
+<span class="n">dl_tr</span><span class="p">,</span> <span class="n">dl_val</span><span class="p">,</span> <span class="n">dl_ts</span> <span class="o">=</span> <span class="n">dl</span><span class="o">.</span><span class="n">build_dataloaders</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">23</span><span class="p">)</span>
+
+<span class="c1"># loss function</span>
+<span class="n">loss_fn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+<span class="c1"># tb writer</span>
+<span class="n">writer</span> <span class="o">=</span> <span class="n">GiottoSummaryWriter</span><span class="p">()</span>
+<span class="c1"># pipeline</span>
+<span class="n">pipe</span> <span class="o">=</span> <span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">[</span><span class="n">dl_tr</span><span class="p">,</span> <span class="n">dl_val</span><span class="p">,</span> <span class="n">dl_ts</span><span class="p">],</span>
+                <span class="n">loss_fn</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span>
+                <span class="n">StratifiedKFold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1"># then one needs to train the model using the pipeline!</span>
+<span class="n">pipe</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">SGD</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span> <span class="n">n_accumulated_grads</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.trainer.Trainer.copy_dataloader_params">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copy_dataloader_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_dataloader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.copy_dataloader_params" title="Permalink to this definition"></a></dt>
+<dd><p>returns the dict of init parameters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.trainer.Trainer.evaluate_classification">
+<span class="sig-name descname"><span class="pre">evaluate_classification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.evaluate_classification" title="Permalink to this definition"></a></dt>
+<dd><p>Method to evaluate the performance of the model.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>num_class (int):</dt><dd><p>number of classes</p>
+</dd>
+<dt>dl (torch.DataLoader, default None):</dt><dd><p>the Dataloader to evaluate. If <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+we use the training dataloader in <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(float, float, 2darray):</dt><dd><p>the accuracy, loss and confusion matrix.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.trainer.Trainer.parallel_tpu_training_loops">
+<span class="sig-name descname"><span class="pre">parallel_tpu_training_loops</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl_tr_old</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dl_val_old</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.dataloader.DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.optim.lr_scheduler._LRScheduler</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.optim.lr_scheduler._LRScheduler</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_optuna</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trial</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">optuna.trial._base.BaseTrial</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.parallel_tpu_training_loops" title="Permalink to this definition"></a></dt>
+<dd><p>Experimental function to run all the training cycles
+on colab TPUs in parallel.
+Note: <code class="docutils literal notranslate"><span class="pre">cross_validation</span></code> parameter as well as
+<code class="docutils literal notranslate"><span class="pre">profiling</span></code> are ignored.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>n_epochs (int):</dt><dd><p>number of training epochs</p>
+</dd>
+<dt>dl_tr (torch.DataLoader):</dt><dd><p>training dataloader</p>
+</dd>
+<dt>dl_val (torch.DataLoader):</dt><dd><p>validation dataloader
+parameters, e.g. <cite>{‘batch_size’: 32}</cite></p>
+</dd>
+<dt>lr_scheduler (torch.optim):</dt><dd><p>a learning rate scheduler class</p>
+</dd>
+<dt>scheduler (torch.optim):</dt><dd><p>the actual scheduler instance</p>
+</dd>
+<dt>check_optuna (bool):</dt><dd><p>boolean to store the optuna results of
+the trial</p>
+</dd>
+<dt>search_metric (string):</dt><dd><p>either <code class="docutils literal notranslate"><span class="pre">'loss'</span></code> or <code class="docutils literal notranslate"><span class="pre">'accuracy'</span></code>, this
+corresponds to the gridsearch criterion</p>
+</dd>
+<dt>trial (optuna.trial):</dt><dd><p>the optuna trial</p>
+</dd>
+<dt>cross_validation (bool, default False)</dt><dd><p>the boolean flag for cross validation</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(float, float):</dt><dd><p>the validation loss and validation accuracy</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.trainer.Trainer.register_pipe_hook">
+<span class="sig-name descname"><span class="pre">register_pipe_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.optim.optimizer.Optimizer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="models.html#gdeep.models.ModelExtractor" title="gdeep.models.extractor.ModelExtractor"><span class="pre">gdeep.models.extractor.ModelExtractor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.utils.tensorboard.writer.SummaryWriter</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.register_pipe_hook" title="Permalink to this definition"></a></dt>
+<dd><p>This method registers a function that
+will be called after each trainign step.</p>
+<dl class="simple">
+<dt>The arguments of the callable function are, in this order:</dt><dd><ul class="simple">
+<li><p>current optimizer instance (torch.optim)</p></li>
+<li><p>current epoch number (int)</p></li>
+<li><p>the ModelExtractor instance at that epoch (ModelExtractor)</p></li>
+<li><p>the tensorboard writer (writer)</p></li>
+</ul>
+</dd>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>callable (Callable):</dt><dd><p>the function to register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.trainer.Trainer.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.optim.optimizer.Optimizer</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_validation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizers_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloaders_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.optim.lr_scheduler._LRScheduler</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optuna_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">optuna.trial._base.BaseTrial</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel_tpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_grad_layer_hist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_accumulated_grads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">writer_tag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.train" title="Permalink to this definition"></a></dt>
+<dd><p>Function to run all the training cycles.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>optimizer (torch.optim):</dt><dd><p>the torch optimiser class, like <cite>SGD</cite></p>
+</dd>
+<dt>n_epochs (int):</dt><dd><p>number of training epochs</p>
+</dd>
+<dt>cross_validation (bool):</dt><dd><p>whether or not to perform five-fold cross-validation</p>
+</dd>
+<dt>dataloaders_param (dict):</dt><dd><p>dictionary of the dataloaders
+parameters, e.g. <cite>{‘batch_size’: 32}</cite>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, then
+the parameters of the training and validation
+dataloaders will be used.</p>
+</dd>
+<dt>optimizers_param (dict):</dt><dd><p>dictionary of the optimizers
+parameters, e.g. <cite>{“lr”: 0.001}</cite></p>
+</dd>
+<dt>models_param (dict):</dt><dd><p>dictionary of the model
+parameters</p>
+</dd>
+<dt>lr_scheduler (torch.optim):</dt><dd><p>a learning rate scheduler class</p>
+</dd>
+<dt>scheduler_params (dict):</dt><dd><p>learning rate scheduler parameters</p>
+</dd>
+<dt>optuna_params (tuple, default=None):</dt><dd><p>the parameters <cite>(trial, search_metric)</cite>
+used in the gridsearch. Saefly ignore for
+standard trainings</p>
+</dd>
+<dt>profiling (bool, default=False):</dt><dd><p>whether or not you want to activate the
+profiler</p>
+</dd>
+<dt>parallel_tpu (bool):</dt><dd><p>Use or not parallel TPU cores.
+Still experimental!</p>
+</dd>
+<dt>keep_training (bool):</dt><dd><p>This flag allows to restart a training from
+the existing optimizer as well as the
+existing model</p>
+</dd>
+<dt>store_grad_layer_hist (bool):</dt><dd><p>This flag allows to store the gradients
+and the layer values in tensorboard for
+each epoch</p>
+</dd>
+<dt>n_accumulated_grads (int, default 0):</dt><dd><p>this is the number of accumulated gradients.
+Only a positive number will be taken into account</p>
+</dd>
+<dt>writer_tag (str):</dt><dd><p>the tensorboard writer tag</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(float, float):</dt><dd><p>the validation loss and accuracy
+if there is cross validation, the validation data loader
+is ignored. On the other hand, if there <cite>cross_validation = False</cite>
+then the test loss and accuracy is returned.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.html" class="btn btn-neutral float-left" title="Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="search.html" class="btn btn-neutral float-right" title="Search" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, L2F SA.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
