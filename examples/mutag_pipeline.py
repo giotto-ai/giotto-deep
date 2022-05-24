@@ -24,8 +24,6 @@ pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, 10.1)
 pd_creator.create()
 
 # %%
-pd = OneHotEncodedPersistenceDiagram.from_numpy(np.array([1.0, 1.0, 1.0, 1.0]))
-# %%
 # recursively delete folder 'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence'
 rmtree(b'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence')
 # %%
