@@ -11,7 +11,7 @@ from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
     get_one_hot_encoded_persistence_diagram_from_gudhi_extended,
 )
 
-Array = np.ndarray[Any, Any]
+Array = np.ndarray
 
 # Compute the heat kernel signature of a graph.
 def _heat_kernel_signature(adj_mat: Array,

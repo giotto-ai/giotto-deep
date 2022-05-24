@@ -11,7 +11,7 @@ from torch_geometric.utils import to_dense_adj  # type: ignore
 from tqdm import tqdm
 from torch.utils.data import Dataset
 
-from gdeep.extended_persistence.heat_kernel_signature import \
+from gdeep.extended_persistence.utils import \
     graph_extended_persistence_hks
 from gdeep.utility.constants import DEFAULT_GRAPH_DIR
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import \
@@ -114,16 +114,12 @@ class PersistenceDiagramFromGraphBuilder:
                                                self.diffusion_parameter)
             # Sort the diagram by the persistence lifetime, i.e. the second
             # column minus the first column
-            sorted_diagram = _sort_diagram_by_lifetime(
-                persistence_diagram_one_hot
-                )
             
             # Save the persistence diagram in a file
-            np.save(
-                (os.path.join(self.output_dir, "diagrams",
-                              f"graph_{graph_idx}_persistence_diagram.npy")),
-                sorted_diagram
-                )
+            persistence_diagram_one_hot.save(
+                os.path.join(self.output_dir, "diagrams",
+                              f"graph_{graph_idx}_persistence_diagram.npy")
+            )
             
             # Save the label
             labels.append((graph_idx, graph.y))
@@ -133,11 +129,3 @@ class PersistenceDiagramFromGraphBuilder:
             os.path.join(self.output_dir, "labels.csv"),
             index=False
             )
-
-def _sort_diagram_by_lifetime(diagram: np.ndarray) -> np.ndarray:
-    filtered_diagram: np.ndarray = \
-        diagram[
-                (diagram[:, 1] -
-                    diagram[:, 0]).argsort()
-            ]
-    return filtered_diagram

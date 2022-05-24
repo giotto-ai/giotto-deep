@@ -7,7 +7,7 @@ from gdeep.utility.utils import flatten_list_of_lists
 
 T = TypeVar("T")
 Tensor = torch.Tensor
-Array = np.ndarray[Any, Any]
+Array = np.ndarray
 
 class OneHotEncodedPersistenceDiagram(Tensor):
     """This class represents a single one-hot encoded persistence diagram.
@@ -15,6 +15,15 @@ class OneHotEncodedPersistenceDiagram(Tensor):
     def __init__(self, *args, **kwargs):  # type: ignore
         super().__init__(*args, **kwargs)
         self._check_if_valid()
+        self._sort_by_lifetime()
+    
+    def _sort_by_lifetime(self) -> None:
+        """This method sorts the points by their lifetime.
+        """
+        self[
+                (self[:, 1] -
+                    self[:, 0]).argsort()
+            ]
     
     def get_num_homology_dimensions(self) -> int:
         """This method returns the number of homology dimensions.
@@ -41,6 +50,17 @@ class OneHotEncodedPersistenceDiagram(Tensor):
         assert torch.all(self[:, 2:] >= 0) and \
             torch.all(self[:, 2:].sum(dim=1) == 1.0), \
                 "The homology dimension should be one-hot encoded."
+
+    def save(self, path: str) -> None:
+        """This method saves the persistence diagram to a file.
+        """
+        torch.save(self, path)
+        
+    @staticmethod
+    def from_numpy(data: Array) -> 'OneHotEncodedPersistenceDiagram':
+        """This method creates a persistence diagram from a numpy array.
+        """
+        return OneHotEncodedPersistenceDiagram(torch.from_numpy(data))
                 
 
 def get_one_hot_encoded_persistence_diagram_from_gtda(persistence_diagram: Array) \
@@ -114,4 +134,5 @@ def get_one_hot_encoded_persistence_diagram_from_gudhi_extended(
                                      axis=0)
     diagram_one_hot = np.concatenate([diagram_one_hot, homology_type_one_hot],
                                      axis=1)
-    return OneHotEncodedPersistenceDiagram(torch.tensor(diagram_one_hot))
+
+    return OneHotEncodedPersistenceDiagram(diagram_one_hot)

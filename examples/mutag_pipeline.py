@@ -1,11 +1,17 @@
 # %%
+import os
+from shutil import rmtree
 from typing import List
 from sklearn.model_selection import train_test_split
 
+import numpy as np
 from torch.utils.data import DataLoader, Subset
 
 from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
+from gdeep.utility.utils import autoreload_if_notebook
+
+autoreload_if_notebook()
 
 # Parameters
 name_graph_dataset: str = 'MUTAG'
@@ -17,6 +23,11 @@ num_homology_types: int = 4
 pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, 10.1)
 pd_creator.create()
 
+# %%
+pd = OneHotEncodedPersistenceDiagram.from_numpy(np.array([1.0, 1.0, 1.0, 1.0]))
+# %%
+# recursively delete folder 'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence'
+rmtree(b'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence')
 # %%
 
 pd_mutag_ds: Dataset[Tuple[OneHotEncodedPersistenceDiagram, int]] = \
