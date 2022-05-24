@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, Subset
 from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
 from gdeep.utility.utils import autoreload_if_notebook
+from gdeep.utility import DEFAULT_GRAPH_DIR
 
 autoreload_if_notebook()
 
@@ -26,6 +27,9 @@ pd_creator.create()
 # %%
 # recursively delete folder 'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence'
 rmtree(b'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence')
+# %%
+# load persistence diagram from DEFINE_GRAPH_DIR/MUTAG_10.1_extended_persistence/diagrams/graph_0_persistence_diagram.npy
+diagram = OneHotEncodedPersistenceDiagram.load(os.path.join(DEFAULT_GRAPH_DIR, name_graph_dataset + "_" + str(diffusion_parameter) + "_extended_persistence", "diagrams", "graph_0_persistence_diagram.npy"))
 # %%
 
 pd_mutag_ds: Dataset[Tuple[OneHotEncodedPersistenceDiagram, int]] = \

@@ -101,7 +101,7 @@ class PersistenceDiagramFromGraphBuilder:
         labels: List[Tuple[int, int]] = []
         
         print("Computing the persistence diagrams...")
-        for graph_idx, graph in tqdm(enumerate(self.graph_dataset),
+        for graph_idx, graph in tqdm(enumerate(self.graph_dataset),  # type: ignore
                                      total=num_graphs):
             
             # Get the adjacency matrix
@@ -122,7 +122,7 @@ class PersistenceDiagramFromGraphBuilder:
             )
             
             # Save the label
-            labels.append((graph_idx, graph.y))
+            labels.append((graph_idx, graph.y.item()))
 
         # Save the labels in a csv file
         pd.DataFrame(labels, columns=["graph_idx", "label"]).to_csv(
