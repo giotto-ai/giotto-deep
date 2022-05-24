@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, Tuple, Dict, Callable, List, Optional
 
 from captum.attr import *
 import torch
 from torch import nn
+from .attr_factory import get_attr
 
 from gdeep.utility import DEVICE
 
@@ -14,9 +15,9 @@ class Interpreter:
     different techniques.
 
     Args:
-        model (nn.Module):
+        model:
             the standard pytorch model
-        method (string):
+        method:
             the interpretability method. Find
             more info at https://captum.ai/tutorials/
 
@@ -33,7 +34,11 @@ class Interpreter:
         self.sentence = None
         self.attrib = None
 
-    def interpret_image(self, x:Tensor, y:Any, layer = None, **kwargs):
+    def interpret_image(self,
+                        x:Tensor,
+                        y:Any,
+                        layer: Optional[torch.nn.Module] = None,
+                        **kwargs: Any) -> Tuple[Tensor, Tensor]:
         """This method creates an image interpreter. This class
         is based on captum.
 
@@ -49,31 +54,32 @@ class Interpreter:
                 of self.model
 
         Returns
-            (torch.Tensor, torch.Tensor):
+            torch.Tensor, torch.Tensor:
                 the input image and the attribution
                 image respectively.
         """
         self.x = x.to(DEVICE)
-        if self.method in ("GuidedGradCam",
-                           "LayerConductance",
-                           "LayerActivation",
-                           "LayerGradCam",
-                           "LayerDeepLift",
-                           "LayerFeatureAblation",
-                           "LayerIntegratedGradients",
-                           "LayerGradientShap",
-                           "LayerDeepLiftShap"):
-            occlusion = eval(self.method+"(self.model, layer)")
-        else:
-            occlusion = eval(self.method+"(self.model)")
+        #if self.method in ("GuidedGradCam",
+        #                   "LayerConductance",
+        #                   "LayerActivation",
+        #                   "LayerGradCam",
+        #                   "LayerDeepLift",
+        #                   "LayerFeatureAblation",
+        #                   "LayerIntegratedGradients",
+        #                   "LayerGradientShap",
+        #                   "LayerDeepLiftShap"):
+        #    occlusion = eval(self.method+"(self.model, layer)")
+        #else:
+        #    occlusion = eval(self.method+"(self.model)")
+        occlusion = get_attr(self.method, self.model, layer)
         self.model.eval()
         att = occlusion.attribute(self.x, target=y, **kwargs)
         self.image = self.x
         self.attrib = att
         return self.x, att
 
-    def interpret_tabular(self, x_test: Tensor, y: Any, **kwargs):
-        """This method creates an image interpreter. This class
+    def interpret_tabular(self, x_test: Tensor, y: Any, **kwargs: Any) -> None:
+        """This method creates a tabular interpreter. This class
         is based on captum.
 
         Args:
@@ -84,10 +90,6 @@ class Interpreter:
                 the label we want to check the interpretability
                 of.
 
-        Returns
-            (torch.Tensor, torch.Tensor):
-                the input image and the attribution
-                image respectively.
         """
         self.x = x_test.to(DEVICE)  # needed for plotting functions
         y = y.to(DEVICE)
@@ -111,40 +113,37 @@ class Interpreter:
         self.fa_attr_test = fa.attribute(self.x,
                                          **kwargs)
 
-    def interpret_text(self, sentence,
-                       label,
-                       vocab,
-                       tokenizer,
-                       layer,
-                       min_len:int=7):
+    def interpret_text(self, sentence: str,
+                       label: Any,
+                       vocab: Dict[str, int],
+                       tokenizer: Callable[[str], List[str]],
+                       layer: torch.nn.Module,
+                       min_len: int = 7) -> None:
         """This method creates an image interpreter. This class
         is based on captum.
 
         Args:
-            sentence (string):
+            sentence :
                 the input sentence
-            label (int or float or str)
+            label:
                 the label we want to check the interpretability
                 of.
-            vocab (vocabulary):
-                a ``gdeep.data.PreprocessText`` vocabulary. Can
-                be extracted via the ``vocabulary``attribute.
-            tokenizer (tokenizer):
-                a ``gdeep.data.PreprocessText`` tokenizer. Can
-                be extracted via the ``tokenizer``attribute.
-            layer (nn.Module):
+            vocab :
+                a ``gdeep.data.preprocessors`` vocabulary. Can
+                be extracted via the ``vocabulary`` attribute.
+            tokenizer :
+                a ``gdeep.data.preprocessors`` tokenizer. Can
+                be extracted via the ``tokenizer`` attribute.
+            layer :
                 torch module correspondign to the layer belonging to
                 ``self.model``.
 
-        Returns
-            (torch.Tensor, torch.Tensor):
-                the input image and the attribution
-                image respectively.
         """
         self.model.eval()
         self.sentence = sentence
-        lig = eval(self.method+"(" + ",".join(("self.model", #"self.model." +
-                   "layer")) + ")")
+        lig = get_attr(self.method, self.model, layer)
+        #lig = eval(self.method+"(" + ",".join(("self.model", #"self.model." +
+        #           "layer")) + ")")
         text = tokenizer(sentence)
         if len(text) < min_len:
             text += ['.'] * (min_len - len(text))
@@ -163,7 +162,7 @@ class Interpreter:
         pred = torch.max(pred_temp)
         pred_ind = torch.argmax(pred_temp).item()
         # generate reference indices for each sample
-        pad_index = vocab['.']
+        pad_index = 0
         token_reference = TokenReferenceBase(reference_token_idx=pad_index)
         reference_indices = \
             token_reference.generate_reference(seq_length,
@@ -185,9 +184,14 @@ class Interpreter:
                                             vocab)
 
     @staticmethod
-    def add_attributions_to_visualizer(attributions, text, pred, pred_ind,
-                                       label, delta, vis_data_records,
-                                       vocab):
+    def add_attributions_to_visualizer(attributions,
+                                       text: str,
+                                       pred: Tensor,
+                                       pred_ind: Tensor,
+                                       label: Any,
+                                       delta: Any,
+                                       vis_data_records : List,
+                                       vocab: Dict[str, int]) -> None:
         attributions = attributions.sum(dim=2).squeeze(0)
         attributions = attributions / torch.norm(attributions)
         attributions = attributions.cpu().detach().numpy()

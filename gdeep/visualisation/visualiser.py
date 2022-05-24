@@ -1,5 +1,6 @@
 import torch
 from ..models import ModelExtractor
+from gdeep.analysis.interpretability import Interpreter
 from torchvision.utils import make_grid
 from gtda.plotting import plot_diagram, plot_betti_surfaces
 from . import persistence_diagrams_of_activations, \
@@ -132,8 +133,8 @@ class Visualiser:
         list_of_dgms = []
         for i, persistence_diagram in enumerate(self.persistence_diagrams):
             plot_persistence_diagram = plot_diagram(persistence_diagram)
-            imgT = plotly2tensor(plot_persistence_diagram)
-            list_of_dgms.append(imgT)
+            img_t = plotly2tensor(plot_persistence_diagram)
+            list_of_dgms.append(img_t)
         features = torch.stack(list_of_dgms)
         # grid = make_grid(features)
         self.pipe.writer.add_images("persistence_diagrams_of_activations",
@@ -151,14 +152,14 @@ class Visualiser:
         """
 
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
-        X = next(iter(self.pipe.dataloaders[0]))[0][0]
+        x = next(iter(self.pipe.dataloaders[0]))[0][0]
 
         if compact:
             # initlaisation of the compactification
             cc = Compactification(precision=0.1,
                                   n_samples=500,
                                   epsilon=0.051,
-                                  n_features=X.shape[0],
+                                  n_features=x.shape[0],
                                   n_epochs=100,
                                   neural_net=self.pipe.model)
 
@@ -172,7 +173,7 @@ class Visualiser:
             self.pipe.writer.flush()
             return db, d_final, label_final
         else:
-            db = me.get_decision_boundary(X)
+            db = me.get_decision_boundary(x)
             self.pipe.writer.add_embedding(db,
                                            tag="decision_boundary",
                                            global_step=0)
@@ -189,7 +190,7 @@ class Visualiser:
         Returns:
            (None):
                 a tuple of figures representing the Betti surfaces
-                of the data accross layers of the NN, with one figure
+                of the data across layers of the NN, with one figure
                 per dimension in homology_dimensions. Otherwise, a single
                 figure representing the Betti curve of the single sample
                 present.
@@ -212,12 +213,12 @@ class Visualiser:
         for i in range(len(plots)):
             plots[i].show()
 
-    def plot_interpreter_text(self, interpreter):
+    def plot_interpreter_text(self, interpreter: Interpreter):
         """This method allows to plot the results of an
         Interpreter for text data.
 
         Args:
-            interpreter (Interpreter):
+            interpreter :
                 this is a ``gdeep.analysis.interpretability``
                 initilised ``Interpreter`` class
                 
@@ -238,7 +239,7 @@ class Visualiser:
                                    dataformats="HWC")
         return fig
 
-    def plot_interpreter_image(self, interpreter):
+    def plot_interpreter_image(self, interpreter: Interpreter):
         """This method allows to plot the results of an
         Interpreter for image data.
 
@@ -276,7 +277,7 @@ class Visualiser:
                                     fig)
         return fig
 
-    def plot_interpreter_tabular(self, interpreter):
+    def plot_interpreter_tabular(self, interpreter: Interpreter):
         """This method allows to plot the results of an
         Interpreter for tabular data.
 
@@ -289,7 +290,7 @@ class Visualiser:
             matplotlib.figure
         """
         # prepare attributions for visualization
-        X_test = interpreter.X
+        X_test = interpreter.x
         x_axis_data = np.arange(X_test.shape[1])
         x_axis_data_labels = list(map(lambda idx: idx,
                                       x_axis_data))

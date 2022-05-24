@@ -5,8 +5,6 @@ from typing import Iterator, Any, Callable, Tuple, List
 
 import torch
 from torch import optim
-#from gtda.homology import VietorisRipsPersistence as vrp
-#from gtda.homology import FlagserPersistence as flp
 from gph.python import ripser_parallel
 from gtda.homology import FlagserPersistence as flp
 import plotly.figure_factory as ff
@@ -20,45 +18,50 @@ from gdeep.utility import DEVICE
 
 Tensor = torch.Tensor
 Array = np.ndarray
+
 class PersistenceGradient():
     """This class computes the gradient of the persistence
     diagram with respect to a point cloud. The algorithms has
     first been developed in https://arxiv.org/abs/2010.08356 .
 
-    Discalimer: this algorithm works well for generic point clouds.
+    Disclaimer: this algorithm works well for generic point clouds.
     In case your point cloud has many simplices with same
     filtration values, the matching of the points to the persistent
     features may fail to disambiguate.
 
     Args:
-        zeta (float):
+        zeta :
             the relative weight of the regularisation part
-            of the `persistence_function`
-        homology_dimensions (tuple):
+            of the ``persistence_function``
+        homology_dimensions :
             tuple of homology dimensions
-        collapse_edges (bool, default: False):
+        collapse_edges :
             whether to use Collapse or not. Not implemented yet.
-        max_edge_length (float or np.inf):
+        max_edge_length :
             the maximum edge length
             to be consider not infinity
-        approx_digits (int):
+        approx_digits :
             digits after which to trunc floats for
             list comparison
-        metric (string):
+        metric :
             either ``"euclidean"`` or ``"precomputed"``.
             The second one is in case of ``x`` being
             the pairwise-distance matrix or
-            the adjaceny matrix of a graph.
-        directed (bool):
+            the adjacency matrix of a graph.
+        directed :
             whether the input graph is a directed graph
             or not. Relevant only if ``metric = "precomputed"``
 
     """
 
-    def __init__(self, zeta: float = 0.5, homology_dimensions: tuple = (0, 1),
-                 collapse_edges: bool = False, max_edge_length: float = np.inf,
-                 approx_digits: int = 6, metric: str = "euclidean",
-                 directed: bool = False):
+    def __init__(self,
+                 zeta: float = 0.5,
+                 homology_dimensions: List[int] = (0, 1),
+                 collapse_edges: bool = False,
+                 max_edge_length: float = np.inf,
+                 approx_digits: int = 6,
+                 metric: str = "euclidean",
+                 directed: bool = False) -> None:
 
         self.collapse_edges = collapse_edges
         self.max_edge_length = max_edge_length
@@ -67,6 +70,7 @@ class PersistenceGradient():
         self.approx_digits = approx_digits
         self.zeta = zeta
         self.homology_dimensions = homology_dimensions
+        self.dist_mat: Optional[Array] = None
 
     @staticmethod
     def powerset(iterable: Iterator,
@@ -79,12 +83,12 @@ class PersistenceGradient():
 
     @staticmethod
     def _parallel_apply_along_axis(func1d: Callable,
-                                   axis:int,
-                                   arr:Array,
-                                   *args:Any,
-                                   **kwargs:Any) -> Array:
+                                   axis: int,
+                                   arr: Array,
+                                   *args: Any,
+                                   **kwargs: Any) -> Array:
         """
-        Like numpy.apply_along_axis(), but takes advantage of multiple
+        Like ``numpy.apply_along_axis()``, but takes advantage of multiple
         cores.
         """
         # Effective axis where apply_along_axis() will be applied by each
@@ -104,13 +108,14 @@ class PersistenceGradient():
         pool.join()
         return np.concatenate(individual_results)
 
-    def _simplicial_pairs_of_indices(self, x) -> Tensor:
+    def _simplicial_pairs_of_indices(self, x: Tensor) -> Tensor:
         """Private function to compute the pair of indices in X to
-        matching the simplices."""
+        matching the simplices.
+        """
         simplices = list(self.powerset(list(range(0, len(x))),
                          max(self.homology_dimensions) + 2))[1:]
         simplices_array = np.array(simplices, dtype=object).reshape(-1, 1)
-        comb_number = comb(max(self.homology_dimensions)+2, 2)
+        comb_number = comb(max(self.homology_dimensions) + 2, 2)
         # the current computation bottleneck
         if len(simplices_array) > 10000000:
             pairs_of_indices = self._parallel_apply_along_axis(
@@ -124,10 +129,11 @@ class PersistenceGradient():
         return torch.tensor(pairs_of_indices, dtype=torch.int64)
 
     def phi(self, x: Tensor) -> Tensor:
-        """This function is from $(R^d)^n$ to $R^{|K|}$,
+        """This function is from :math:`(R^d)^n` to :math:`R^{|K|}`,
         where K is the top simplicial complex of the VR filtration.
         It is defined as:
-        $\Phi_{\sigma}(X)=max_{i,j \in \sigma}||x_i-x_j||.$ """
+        :math:`\\Phi_{\\sigma}(X)=max_{i,j \\in \\sigma}||x_i-x_j||.`
+        """
 
         if self.metric == "precomputed":
             self.dist_mat = x
@@ -145,7 +151,7 @@ class PersistenceGradient():
                                                            0, ks),
                           1, js.reshape(-1, 1))).reshape(-1,
                                                          comb_number), 1)[0]
-        lista = torch.sort(lista)[0]  # not inplace
+        lista = torch.sort(lista)[0]
         return lista
 
     def _compute_pairs(self, x: Tensor) -> Tuple[Tensor, Tensor]:
@@ -159,7 +165,7 @@ class PersistenceGradient():
         Returns:
             Tensor, Tensor:
                 the first tensor is the tensor obtained from
-                the list of pairs (b,d); the second 1d tensor
+                the list of pairs ``(b,d)``; the second 1d tensor
                 contains the homology
                 group index"""
 
@@ -171,10 +177,10 @@ class PersistenceGradient():
         """This function computes the persistence permutation.
         This permutation permutes the filtration values and matches
         them as follows:
-        $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
-        \times \mathbb R^q, \Phi(X) \mapsto D = \cup_i^p
-        (\Phi_{\sigma_i1}(X) ,\Phi_{\sigma_i2}(X) )
-        \times \cup_j^q (\Phi_{\sigma_j}(X),+\infty).$
+        :math:`Pers:Filt_K \\subset \\mathbb R^{|K|} \\to (\\mathbb R^2)^p
+        \\times \\mathbb R^q, \\Phi(X) \\mapsto D = \\cup_i^p
+        (\\Phi_{\\sigma_i1}(X) ,\\Phi_{\\sigma_i2}(X) )
+        \\times \\cup_j^q (\\Phi_{\\sigma_j}(X),+\\infty).`
 
         Args:
             x:
@@ -182,11 +188,11 @@ class PersistenceGradient():
 
         Returns:
             persistence_pairs :
-                this is an array of pairs (i,j). `i`
-                and `j` are the indices in the list `phi` associated to a
-                positive-negative pair. When `j` is equal to `-1`, it means
+                this is an array of pairs (i,j). ``i``
+                and ``j`` are the indices in the list ``phi`` associated to a
+                positive-negative pair. When ``j`` is equal to ``-1``, it means
                 that the match was not found and the feature
-                is infinitely persistent. When `(i,j)=(-1,-1)`, simply
+                is infinitely persistent. When ``(i,j)=(-1,-1)``, simply
                 discard the pair
             phi :
                 this is the 1d tensor of all filtration values
@@ -222,20 +228,20 @@ class PersistenceGradient():
     def _computing_persistence_with_gph(self, xx: Tensor) -> List:
         """This method accepts the pointcloud and returns the
         persistence diagram in the following form
-        $Pers:Filt_K \subset \mathbb R^{|K|} \to (\mathbb R^2)^p
-        \times \mathbb R^q, \Phi(X) \mapsto D = \cup_i^p
-        (\Phi_{\sigma_i1}(X) ,\Phi_{\sigma_i2}(X) )
-        \times \cup_j^q (\Phi_{\sigma_j}(X),+\infty).$
-        The persstence diagram ca be readily used for 
+        :math:`Pers:Filt_K \\subset \\mathbb R^{|K|} \\to (\\mathbb R^2)^p
+        \\times \\mathbb R^q, \\Phi(X) \\mapsto D = \\cup_i^p
+        (\\Phi_{\\sigma_i1}(X) ,\\Phi_{\\sigma_i2}(X) )
+        \\times \\cup_j^q (\\Phi_{\\sigma_j}(X),+\\infty).`
+        The persistence diagram can be readily used for
         gradient descent.
 
         Args:
             xx:
-                point cloud
+                point cloud with ``shape = (n_points, n_features)``
 
         Returns:
             list of shape (n, 3):
-                Persistence pairs (correspondig to the
+                Persistence pairs (corresponding to the
                 first 2 dimensions) where the last dimension 
                 contains the homology dimension
         """
@@ -262,12 +268,12 @@ class PersistenceGradient():
         
 
     def persistence_function(self, xx: Tensor) -> Tensor:
-        '''This is the Loss functon to optimise.
-        $L=-\sum_i^p |\epsilon_{i2}-\epsilon_{i1}|+
-        \lambda \sum_{x in X} ||x||_2^2$
+        """This is the Loss function to optimise.
+        :math:`L=-\\sum_i^p |\\epsilon_{i2}-\\epsilon_{i1}|+
+        \\lambda \\sum_{x in X} ||x||_2^2`
         It is composed of a regularisation term and a
         function on the filtration values that is (p,q)-permutation
-        invariant.'''
+        invariant."""
         out = 0
         # this is much slower
         if self.directed and self.metric == "precomputed":
@@ -282,24 +288,25 @@ class PersistenceGradient():
         reg = (xx**2).sum()  # regularisation term
         return -out + self.zeta*reg  # maximise persistence
 
-    def sgd(self, xx: Tensor, lr: float = 0.01, n_epochs: int = 5)\
-            -> Tuple[Figure, Figure, List[float]]:
+    def sgd(self, xx: Tensor,
+            lr: float = 0.01,
+            n_epochs: int = 5) -> Tuple[Figure, Figure, List[float]]:
         """This function is the core function of this class and uses the
         SGD method to move points around in order to optimise
-        `persistence_function`
+        ``persistence_function``
 
         Args:
             xx:
                 2d tensor representing the point cloud,
                 the first dimension is ``n_points`` while the second
                 ``n_features``
-            lr :
+            lr:
                 learning rate for the SGD
             n_epochs:
                 the number of gradient iterations
 
         Returns:
-           fig, fig3d, loss_val :
+           fig, fig3d, loss_val:
                respectively the plotly ``quiver_plot``, plotly ``cone_plot``
                ad the list of loss function values over the epochs"""
 
@@ -350,9 +357,8 @@ class PersistenceGradient():
             anchor="tip"))
         return fig, fig3d, loss_val
 
-
 # this function is outside the main class to use multiprocessing
-def unpacking_apply_along_axis(tupl: tuple) -> Array:
+def unpacking_apply_along_axis(tupl: List[Any]) -> Array:
     """
     Like numpy.apply_along_axis(), but with arguments in a tuple
     instead.
@@ -366,20 +372,22 @@ def unpacking_apply_along_axis(tupl: tuple) -> Array:
     return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
 
 
-# this function is outside the main class to use multiprocessing
-def _combinations_with_single(tupl, max_length):
+def _combinations_with_single(tupl, max_length:int) -> Array:
     """Private function to compute combinations also for singletons
     with repetition. The un-intuitive shape of the output is
     becaue of the padding and vectorized operation happening
     in the next steps.
 
     Args:
-        tupl (list): this is a list with only one element and such
+        tupl :
+            this is a list with only one element and such
             element is a tuple
-        max_length (int): this is the paddding length.
+        max_length :
+            this is the paddding length.
 
     Returns:
-        padded list -- with (0,0) -- of all the combinations of indices
+        ndarray :
+            padded list -- with (0,0) -- of all the combinations of indices
             within a given simplex."""
     tupl = tupl[0]  # the slice dimension will always contain 1 element
     if len(tupl) == 1:
@@ -392,7 +400,7 @@ def _combinations_with_single(tupl, max_length):
 
 
 def comb(nnn: int, kkk: int) -> int:
-    """this function computes n!/(k!*(n-k)!) efficiently"""
+    """this function computes :math:`\\frac{n!}{(k!*(n-k)!)}` efficiently"""
     kkk = min(kkk, nnn-kkk)
     numer = reduce(op.mul, range(nnn, nnn-kkk, -1), 1)
     denom = reduce(op.mul, range(1, kkk+1), 1)
