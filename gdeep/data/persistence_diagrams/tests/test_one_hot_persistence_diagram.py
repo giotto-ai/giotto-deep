@@ -1,6 +1,6 @@
 import torch
 
-from gdeep.data.persistence_diagrams import (
+from .. import (
     OneHotEncodedPersistenceDiagram,
 )
 
