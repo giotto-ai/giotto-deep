@@ -39,7 +39,7 @@ class OneHotEncodedPersistenceDiagram(Tensor):
     def __repr__(self):
         return (f"OneHotEncodedPersistenceDiagram({self.shape})\n"
                 f"{self.get_num_homology_dimensions()} homology dimensions\n"
-                f"{self.shape[0]} number of points\ndata:\n {super().__repr__()}")
+                f"{self.shape[0]} points\ndata:\n {super().__repr__()}")
 
     def save(self, path: str) -> None:
         """This method saves the persistence diagram to a file.
@@ -86,7 +86,9 @@ class OneHotEncodedPersistenceDiagram(Tensor):
     def from_numpy(data: Array) -> 'OneHotEncodedPersistenceDiagram':
         """This method creates a persistence diagram from a numpy array.
         """
-        return OneHotEncodedPersistenceDiagram(torch.from_numpy(data))
+        # assert data.dtype == np.float32, "The data must be of type np.float32. Otherwise,"\
+        #     " the data will not be correctly converted."
+        return OneHotEncodedPersistenceDiagram(torch.from_numpy(data.astype(np.float32)))
     
 
 def _check_if_valid(data) -> None:
@@ -95,8 +97,8 @@ def _check_if_valid(data) -> None:
                             f"The input has {data.ndimension()} dimensions.")
     assert data.shape[-1] > 2, \
         "The input should have at least one homology dimensions."
-    assert torch.all(data[:, 2:] >= 0) and \
-        torch.all(data[:, 2:].sum(dim=1) == 1.0), \
+    assert torch.all(data[:, 2:] >= -1e-5) and \
+        torch.allclose(data[:, 2:].sum(dim=1), torch.tensor(1.0)), \
             "The homology dimension should be one-hot encoded."
 
 def _sort_by_lifetime(data: Tensor) -> Tensor:
