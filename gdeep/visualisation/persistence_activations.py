@@ -5,7 +5,7 @@ from gtda.graphs import KNeighborsGraph, \
     GraphGeodesicDistance
 
 
-def knn_distance_matrix(X, k=3):
+def knn_distance_matrix(X, k: int=3):
 
     """Returns list of distance matrices according
     to the k-NN graph distance of the datasets X
