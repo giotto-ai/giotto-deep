@@ -20,26 +20,24 @@ class model2(nn.Module):
     def forward(self, x):
         return self.md(x)
 
+writer = GiottoSummaryWriter()
 
+# download MNIST
+bd = DatasetBuilder(name="CIFAR10")
+ds_tr, _, _ = bd.build(download=True)
 
-def test_hpo():
-    writer = GiottoSummaryWriter()
+# Preprocessing
+transformation = ToTensorImage((32, 32))
+transformation.fit_to_dataset(ds_tr)  # this is useless for this transformation
 
-    # download MNIST
-    bd = DatasetBuilder(name="CIFAR10")
-    ds_tr, _, _ = bd.build(download=True)
+transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
 
-    # Preprocessing
-    transformation = ToTensorImage((32, 32))
-    transformation.fit_to_dataset(ds_tr)  # this is useless for this transformation
+# use only 320 images from cifar10
+train_indices = list(range(32 * 7))
+dl_tr, *_ = DataLoaderBuilder((transformed_ds_tr,)).build(
+    ({"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},))
 
-    transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
-
-    # use only 320 images from cifar10
-    train_indices = list(range(32 * 10))
-    dl_tr, *_ = DataLoaderBuilder((transformed_ds_tr,)).build(
-        ({"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},))
-
+def test_hpo1():
     # define the model
     model = model2()
 
@@ -62,3 +60,75 @@ def test_hpo():
 
     # starting the gridsearch
     search.start((SGD, Adam), 3, False, optimizers_params, dataloaders_params, models_hyperparams, n_accumulated_grads=2)
+
+
+def test_hpo2():
+    # define the model
+    model = model2()
+
+    # initialise loss
+    loss_fn = nn.CrossEntropyLoss()
+
+    # initialise pipeline class
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+
+    # initialise gridsearch
+    search = HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
+
+    # if you want to store pickle files of the models instead of the state_dicts
+    search.store_pickle = True
+
+    # dictionaries of hyperparameters
+    optimizers_params = {"lr": [0.001, 0.01]}
+    dataloaders_params = {"batch_size": [32, 64, 16]}
+    models_hyperparams = {"n_nodes": ["200"]}
+
+    # starting the gridsearch
+    search.start((SGD, Adam), 2, False, optimizers_params, dataloaders_params, models_hyperparams, n_accumulated_grads=2)
+
+
+def test_hpo2():
+    # define the model
+    model = model2()
+
+    # initialise loss
+    loss_fn = nn.CrossEntropyLoss()
+
+    # initialise pipeline class
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+
+    # initialise gridsearch
+    search = HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
+
+    # dictionaries of hyperparameters
+    optimizers_params = {"lr": [0.001, 0.01]}
+    dataloaders_params = {"batch_size": [32, 64, 16]}
+    models_hyperparams = {"n_nodes": ["200"]}
+
+    # starting the gridsearch
+    search.start((SGD, Adam), 2, False, optimizers_params, dataloaders_params, models_hyperparams)
+
+
+def test_hpo3():
+    # define the model
+    model = model2()
+
+    # initialise loss
+    loss_fn = nn.CrossEntropyLoss()
+
+    # initialise pipeline class
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+
+    # initialise gridsearch
+    search = HyperParameterOptimization(pipe, "loss", 2)
+
+    # if you want to store pickle files of the models instead of the state_dicts
+    search.store_pickle = True
+
+    # dictionaries of hyperparameters
+    optimizers_params = {"lr": [0.001, 0.01]}
+    dataloaders_params = {"batch_size": [32, 64]}
+    models_hyperparams = {"n_nodes": ["200", "256"]}
+
+    # starting the gridsearch
+    search.start((SGD, ), 1, False, optimizers_params, dataloaders_params, models_hyperparams)
