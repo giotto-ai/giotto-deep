@@ -1,7 +1,7 @@
 from functools import reduce
 from itertools import chain, combinations
 import multiprocessing
-from typing import Iterator, Any, Callable, Tuple, List
+from typing import Iterator, Any, Callable, Tuple, List, Optional
 
 import torch
 from torch import optim
