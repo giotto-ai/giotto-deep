@@ -32,7 +32,7 @@ transformation.fit_to_dataset(ds_tr)  # this is useless for this transformation
 
 transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
 
-# use only 320 images from cifar10
+# use only 32*7 images from CIFAR10
 train_indices = list(range(32 * 7))
 dl_tr, *_ = DataLoaderBuilder((transformed_ds_tr,)).build(
     ({"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},))

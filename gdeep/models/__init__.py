@@ -1,6 +1,6 @@
 
 from .simple_nn import FFNet
-from .utility import SaveOutput, SaveNodeOutput, \
+from .utils import SaveOutput, SaveNodeOutput, \
     SaveLayerOutput
 from .periodic_nn import PeriodicNeuralNetwork
 from .extractor import ModelExtractor
