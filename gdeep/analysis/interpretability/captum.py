@@ -32,7 +32,6 @@ class Interpreter:
         self.image = None
         self.x = None
         self.sentence = None
-        self.attrib = None
 
     def interpret_image(self,
                         x:Tensor,
@@ -71,14 +70,13 @@ class Interpreter:
         #    occlusion = eval(self.method+"(self.model, layer)")
         #else:
         #    occlusion = eval(self.method+"(self.model)")
-        occlusion = get_attr(self.method, self.model, layer)
+        attr_class = get_attr(self.method, self.model, layer)
         self.model.eval()
-        att = occlusion.attribute(self.x, target=y, **kwargs)
+        self.attribution = attr_class.attribute(self.x, target=y, **kwargs)
         self.image = self.x
-        self.attrib = att
-        return self.x, att
+        return self.x, self.attribution
 
-    def interpret_tabular(self, x_test: Tensor, y: Any, **kwargs: Any) -> None:
+    def interpret_tabular(self, x: Tensor, **kwargs: Any) -> None:
         """This method creates a tabular interpreter. This class
         is based on captum.
 
@@ -91,27 +89,21 @@ class Interpreter:
                 of.
 
         """
-        self.x = x_test.to(DEVICE)  # needed for plotting functions
-        y = y.to(DEVICE)
+        self.x = x.to(DEVICE)  # needed for plotting functions
+        #y = y.to(DEVICE)
         self.model.eval()
-        ig = IntegratedGradients(self.model)
-        ig_nt = NoiseTunnel(ig)
-        dl = DeepLift(self.model)
+        attr_class = get_attr(self.method, self.model)
+        self.attribution = attr_class.attribute(self.x,
+                                                **kwargs)
+        #ig = IntegratedGradients(self.model)
+        #ig_nt = NoiseTunnel(ig)
+        #dl = DeepLift(self.model)
         # gs = GradientShap(self.model)
-        fa = FeatureAblation(self.model)
-        self.ig_attr_test = ig.attribute(self.x,
-                                         n_steps=50,
-                                         target=y,
-                                         **kwargs)
-        self.ig_nt_attr_test = ig_nt.attribute(self.x,
-                                               target=y,
-                                               **kwargs)
-        self.dl_attr_test = dl.attribute(self.x,
-                                         target=y,
-                                         **kwargs)
-        # self.gs_attr_test = gs.attribute(X_test, X_train, **kwargs)
-        self.fa_attr_test = fa.attribute(self.x,
-                                         **kwargs)
+        #fa = FeatureAblation(self.model)
+        #self.ig_attr_test = ig.attribute(self.x,
+        #                                 n_steps=50,
+        #                                 target=y,
+        #                                 **kwargs)
 
     def interpret_text(self, sentence: str,
                        label: Any,
@@ -141,7 +133,7 @@ class Interpreter:
         """
         self.model.eval()
         self.sentence = sentence
-        lig = get_attr(self.method, self.model, layer)
+        attr_class = get_attr(self.method, self.model, layer)
         #lig = eval(self.method+"(" + ",".join(("self.model", #"self.model." +
         #           "layer")) + ")")
         text = tokenizer(sentence)
@@ -169,16 +161,16 @@ class Interpreter:
                                                DEVICE).unsqueeze(0)
         # compute attributions and approximation
         # delta using layer integrated gradients
-        attributions_ig, delta = lig.attribute(input_indices,
-                                               reference_indices,
-                                               target=label,
-                                               n_steps=500,
-                                               return_convergence_delta=True)
+        self.attribution, delta = attr_class.attribute(input_indices,
+                                                       reference_indices,
+                                                       target=label,
+                                                       n_steps=500,
+                                                       return_convergence_delta=True)
 
         print('pred: ', pred_ind, '(', '%.2f' % pred, ')',
               ', delta: ', abs(delta.item()))
 
-        self.add_attributions_to_visualizer(attributions_ig, text, pred,
+        self.add_attributions_to_visualizer(self.attribution, text, pred,
                                             pred_ind, label, delta.item(),
                                             self.stored_visualisations,
                                             vocab)

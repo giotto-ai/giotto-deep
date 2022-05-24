@@ -1,10 +1,5 @@
 import torch
-from ..models import ModelExtractor
-from gdeep.analysis.interpretability import Interpreter
 from torchvision.utils import make_grid
-from gtda.plotting import plot_diagram, plot_betti_surfaces
-from . import persistence_diagrams_of_activations, \
-    plotly2tensor, Compactification, png2tensor
 from sklearn.manifold import MDS
 from gtda.diagrams import BettiCurve
 from html2image import Html2Image
@@ -13,12 +8,15 @@ from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import matplotlib.pyplot as plt
 from captum.attr import LayerAttribution
+from gtda.plotting import plot_diagram, plot_betti_surfaces
+from . import persistence_diagrams_of_activations, \
+    plotly2tensor, Compactification, png2tensor
 
-if torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+from gdeep.analysis.interpretability import Interpreter
+from gdeep.utility import DEVICE
+from ..models import ModelExtractor
 
+FONT_SIZE = 16
 
 class Visualiser:
     """This class is the bridge to send to the tensorboard
@@ -257,13 +255,13 @@ class Visualiser:
                                                           (1, '#000000')],
                                                          N=256)
         try:
-            attrib = np.transpose(interpreter.attrib.squeeze().detach().cpu().numpy(),
+            attrib = np.transpose(interpreter.attribution.squeeze().detach().cpu().numpy(),
                                   (1, 2, 0))
         except ValueError:
-            attrib = np.transpose(LayerAttribution.interpolate(interpreter.attrib.detach().cpu(),
+            attrib = np.transpose(LayerAttribution.interpolate(interpreter.attribution.detach().cpu(),
                                                                tuple(interpreter.image.squeeze().detach().cpu().shape[-2:])).squeeze(0),
                                   (1, 2, 0))
-            attrib = torch.stack((attrib, attrib, attrib),axis=2).squeeze(-1).detach().cpu().numpy()
+            attrib = torch.stack((attrib, attrib, attrib), axis=2).squeeze(-1).detach().cpu().numpy()
         img = np.transpose(interpreter.image.squeeze().detach().cpu().numpy(),
                            (1, 2, 0))
 
@@ -294,29 +292,21 @@ class Visualiser:
         x_axis_data = np.arange(X_test.shape[1])
         x_axis_data_labels = list(map(lambda idx: idx,
                                       x_axis_data))
+        attribution_sum = interpreter.attribution.detach().cpu().numpy().sum(0)
+        attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
+        #ig_attr_test_sum = interpreter.ig_attr_test.detach().cpu().numpy().sum(0)
+        #ig_attr_test_norm_sum = ig_attr_test_sum / \
+        #    np.linalg.norm(ig_attr_test_sum, ord=1)
 
-        ig_attr_test_sum = interpreter.ig_attr_test.detach().cpu().numpy().sum(0)
-        ig_attr_test_norm_sum = ig_attr_test_sum / \
-            np.linalg.norm(ig_attr_test_sum, ord=1)
-
-        ig_nt_attr_test_sum = \
-            interpreter.ig_nt_attr_test.detach().cpu().numpy().sum(0)
-        ig_nt_attr_test_norm_sum = ig_nt_attr_test_sum / \
-            np.linalg.norm(ig_nt_attr_test_sum, ord=1)
-
-        dl_attr_test_sum = \
-            interpreter.dl_attr_test.detach().cpu().numpy().sum(0)
-        dl_attr_test_norm_sum = dl_attr_test_sum / \
-            np.linalg.norm(dl_attr_test_sum, ord=1)
 
         # gs_attr_test_sum = \
         #     interpreter.gs_attr_test.detach().cpu().numpy().sum(0)
         # gs_attr_test_norm_sum = gs_attr_test_sum / \
         #     np.linalg.norm(gs_attr_test_sum, ord=1)
 
-        fa_attr_test_sum = interpreter.fa_attr_test.detach().cpu().numpy().sum(0)
-        fa_attr_test_norm_sum = fa_attr_test_sum / \
-            np.linalg.norm(fa_attr_test_sum, ord=1)
+        #fa_attr_test_sum = interpreter.fa_attr_test.detach().cpu().numpy().sum(0)
+        #fa_attr_test_norm_sum = fa_attr_test_sum / \
+        #    np.linalg.norm(fa_attr_test_sum, ord=1)
 
         # lin_weight = model.lin1.weight[0].detach().numpy()
         # y_axis_lin_weight = lin_weight / np.linalg.norm(lin_weight, ord=1)
@@ -332,22 +322,22 @@ class Visualiser:
             'multiple algorithms and learned weights')
         ax.set_ylabel('Attributions')
 
-        FONT_SIZE = 16
+
         plt.rc('font', size=FONT_SIZE)  # fontsize of the text sizes
         plt.rc('axes', titlesize=FONT_SIZE)  # fontsize of the axes title
         plt.rc('axes', labelsize=FONT_SIZE)  # fontsize of the x and y labels
         plt.rc('legend', fontsize=FONT_SIZE - 4)  # fontsize of the legend
 
-        ax.bar(x_axis_data, ig_attr_test_norm_sum, width, align='center',
+        ax.bar(x_axis_data, attribution_norm_sum, width, align='center',
                alpha=0.8, color='#eb5e7c')
-        ax.bar(x_axis_data + width, ig_nt_attr_test_norm_sum, width,
-               align='center', alpha=0.7, color='#A90000')
-        ax.bar(x_axis_data + 2 * width, dl_attr_test_norm_sum, width,
-               align='center', alpha=0.6, color='#34b8e0')
+        #ax.bar(x_axis_data + width, ig_nt_attr_test_norm_sum, width,
+        #       align='center', alpha=0.7, color='#A90000')
+        #ax.bar(x_axis_data + 2 * width, dl_attr_test_norm_sum, width,
+        #       align='center', alpha=0.6, color='#34b8e0')
         # ax.bar(x_axis_data + 3 * width, gs_attr_test_norm_sum,
         # width, align='center',  alpha=0.8, color='#4260f5')
-        ax.bar(x_axis_data + 4 * width, fa_attr_test_norm_sum, width,
-               align='center', alpha=1.0, color='#49ba81')
+        #ax.bar(x_axis_data + 4 * width, fa_attr_test_norm_sum, width,
+        #       align='center', alpha=1.0, color='#49ba81')
         # ax.bar(x_axis_data + 5 * width, y_axis_lin_weight, width,
         # align='center', alpha=1.0, color='grey')
         ax.autoscale_view()

@@ -1,25 +1,19 @@
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch import nn
 import torch
+import torch.nn as nn
+from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.tensorboard import SummaryWriter
 
-from gdeep.data.datasets import DatasetBuilder
-from gdeep.analysis.interpretability import Interpreter
 from gdeep.visualisation import Visualiser
 from gdeep.data import PreprocessingPipeline
 from gdeep.data import TransformingDataset
-from gdeep.data.preprocessors import Normalization, TokenizerTextClassification
-from gdeep.data.datasets import DataLoaderBuilder
+from gdeep.data.preprocessors import TokenizerTextClassification
+from gdeep.data.datasets import DataLoaderBuilder, DatasetBuilder
 from gdeep.trainer import Trainer
-from torch.utils.tensorboard import SummaryWriter
 
-
-writer = SummaryWriter()
-
-# many time we get an IterableDataset which is good for memory consumption, but cannot be sampled!
-# we can load the whole dataset in memory and sample it
-bd = DatasetBuilder(name="AG_NEWS",
-                    convert_to_map_dataset=True)
+bd = DatasetBuilder(name="AG_NEWS", convert_to_map_dataset=True)
 ds_tr_str, ds_val_str, ds_ts_str = bd.build()
+
+
 ptd = TokenizerTextClassification()
 
 ptd.fit_to_dataset(ds_tr_str)
@@ -36,6 +30,7 @@ dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds,
                                                                   {"batch_size":16,
                                                                    "sampler":SubsetRandomSampler(test_indices)}
                                                                  ))
+writer = SummaryWriter()
 
 class TextClassificationModel(nn.Module):
 
@@ -56,21 +51,17 @@ class TextClassificationModel(nn.Module):
         mean = torch.mean(embedded,dim=1)
         return self.fc(mean)
 
-vocab_size = len(ptd.vocabulary)
-emsize = 64
-# print(vocab_size, emsize)
-model = TextClassificationModel(vocab_size, emsize, 4)
-loss_fn = nn.CrossEntropyLoss()
-pipe = Trainer(model, (dl_tr2, dl_ts2), loss_fn, writer)
+def test_visualiser():
+    vocab_size = len(ptd.vocabulary)
+    emsize = 64
+    loss_fn = nn.CrossEntropyLoss()
+    model = TextClassificationModel(vocab_size, emsize, 4)
+    pipe = Trainer(model, (dl_tr2, dl_ts2), loss_fn, writer)
 
-def test_interpret_text() -> None:
     vs = Visualiser(pipe)
-    inter = Interpreter(pipe.model,
-                        method="LayerIntegratedGradients")
 
-    inter.interpret_text("I am writing about money and business", 0,
-                         ptd.vocabulary,
-                         ptd.tokenizer,
-                         layer=pipe.model.embedding)
-
-    vs.plot_interpreter_text(inter)
+    x, _ = next(iter(dl_tr2))
+    vs.plot_data_model()
+    vs.plot_activations(x)
+    vs.plot_persistence_diagrams(x)
+    vs.betti_plot_layers((0, 1), x)
