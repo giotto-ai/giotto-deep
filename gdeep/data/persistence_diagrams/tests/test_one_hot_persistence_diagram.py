@@ -20,9 +20,10 @@ def test_one_hot_encoded_persistence_diagram():
 
     pd_filtered = pd_one_hot.filter_by_lifetime(min_lifetime=0.3, max_lifetime=0.5)
 
-    assert torch.allclose(pd_filtered,
+    assert pd_filtered.all_close(OneHotEncodedPersistenceDiagram(
         torch.tensor([[0.5000, 0.9000, 0.0000, 1.0000],
             [0.4000, 0.8000, 1.0000, 0.0000]]))
+    )
 
 def test_from_numpy():
     x = np.array([
@@ -31,10 +32,10 @@ def test_from_numpy():
             [0.5, 0.9, 0.0, 1.0],
         ])
 
-    OneHotEncodedPersistenceDiagram.from_numpy(x)
+    x = OneHotEncodedPersistenceDiagram.from_numpy(x)
 
-    assert torch.allclose(OneHotEncodedPersistenceDiagram.from_numpy(x),
+    assert x.all_close(OneHotEncodedPersistenceDiagram(
                         torch.tensor([[0.3000, 0.5000, 1.0000, 0.0000],
                                         [0.5000, 0.9000, 0.0000, 1.0000],
                                         [0.4000, 0.8000, 1.0000, 0.0000]])
-    )
+    ))

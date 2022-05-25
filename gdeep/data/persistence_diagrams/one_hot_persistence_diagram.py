@@ -10,14 +10,15 @@ T = TypeVar("T")
 Tensor = torch.Tensor
 Array = np.ndarray
 
-class OneHotEncodedPersistenceDiagram(Tensor):
+class OneHotEncodedPersistenceDiagram():
     """This class represents a single one-hot encoded persistence diagram.
     """
-    raw_data: Tensor
+    _data: Tensor
+    
     def __init__(self, data: Tensor):  # type: ignore
         super().__init__()
         _check_if_valid(data)
-        self.data = _sort_by_lifetime(data)
+        self._data = _sort_by_lifetime(data)
     
     # def __add__(self, other: Any) -> Tensor:
     #     raise ValueError("The addition of persistence diagrams is not supported.")
@@ -31,17 +32,17 @@ class OneHotEncodedPersistenceDiagram(Tensor):
     def get_num_homology_dimensions(self) -> int:
         """This method returns the number of homology dimensions.
         """
-        return self.shape[-1] - 2
+        return self._data.shape[-1] - 2
     
     def get_num_points(self) -> int:
         """This method returns the number of points.
         """
-        return self.shape[0]
+        return self._data.shape[0]
     
     def __repr__(self):
-        return (f"OneHotEncodedPersistenceDiagram({self.shape})\n"
+        return (f"OneHotEncodedPersistenceDiagram({self._data.shape})\n"
                 f"{self.get_num_homology_dimensions()} homology dimensions\n"
-                f"{self.shape[0]} points\ndata:\n {super().__repr__()}")
+                f"{self._data.shape[0]} points\ndata:\n {super().__repr__()}")
 
     def save(self, path: str) -> None:
         """This method saves the persistence diagram to a file.
@@ -59,9 +60,9 @@ class OneHotEncodedPersistenceDiagram(Tensor):
         """
         assert homology_dimension < self.get_num_homology_dimensions(), \
         "The homology dimension must be smaller than the number of homology dimensions."
-        return self[
+        return self._data[
             torch.where(
-                self[:, 2 + homology_dimension] == 1.0
+                self._data[:, 2 + homology_dimension] == 1.0
             )
         ]
         
@@ -93,7 +94,7 @@ class OneHotEncodedPersistenceDiagram(Tensor):
             names = ["´H_" + str(i) for i in range(self.get_num_homology_dimensions())]
         assert len(names) == self.get_num_homology_dimensions(), \
         "The number of names must be equal to the number of homology dimensions."
-        pd = self.detach().numpy()
+        pd = self._data.detach().numpy()
 
         # convert one-hot encoding to categorical encoding
         pd_categorical = pd[:, 2:].argmax(axis=1)
@@ -104,7 +105,7 @@ class OneHotEncodedPersistenceDiagram(Tensor):
         return fig
     
     def all_close(self, other: 'OneHotEncodedPersistenceDiagram',
-                 atol: float) -> bool:
+                 atol: float=1e-7) -> bool:
         """This method checks if the persistence diagrams are close.
         """
         for i in range(self.get_num_homology_dimensions()):
@@ -117,18 +118,21 @@ class OneHotEncodedPersistenceDiagram(Tensor):
     def get_lifetimes(self) -> Tensor:
         """This method returns the lifetimes of the points.
         """
-        return torch.Tensor(self[:, 1]) - torch.Tensor(self[:, 0])
+        return self._data[:, 1] - self._data[:, 0]
     
+
     def filter_by_lifetime(self, min_lifetime: float, max_lifetime: float) -> \
         'OneHotEncodedPersistenceDiagram':
         """This method filters the persistence diagram by lifetime.
         """
         lifetime: Tensor = self.get_lifetimes()
-        return self[  # type: ignore
-            torch.where(
-                (lifetime >= min_lifetime) & (lifetime <= max_lifetime)
-            )
-        ]
+        return OneHotEncodedPersistenceDiagram(
+            self._data[  # type: ignore
+                torch.where(
+                    (lifetime >= min_lifetime) & (lifetime <= max_lifetime)
+                )
+            ]
+        )
         
     @staticmethod
     def from_numpy(data: Array) -> 'OneHotEncodedPersistenceDiagram':

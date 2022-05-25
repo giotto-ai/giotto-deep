@@ -56,5 +56,5 @@ class NormalizationPersistenceDiagram(AbstractPreprocessing[Tuple[PD, T], Tuple[
         if not torch.all(self.stddev > 0):
             warnings.warn("The standard deviation contains zeros! Adding 1e-7")
             self.stddev = self.stddev + 1e-7
-        out: PD = (item[0] - self.mean) / self.stddev  # type: ignore
+        out: PD = PD((item[0]._data - self.mean) / self.stddev)  # type: ignore
         return (out, item[1])
