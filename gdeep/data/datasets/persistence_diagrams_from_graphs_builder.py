@@ -106,6 +106,8 @@ class PersistenceDiagramFromGraphBuilder:
             
             # Get the adjacency matrix
             adj_mat: np.ndarray = to_dense_adj(graph.edge_index)[0].numpy()
+            if(graph_idx == 1):
+                print(adj_mat)
             
             # Compute the extended persistence
             persistence_diagram_one_hot = \

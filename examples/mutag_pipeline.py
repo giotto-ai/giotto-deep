@@ -16,24 +16,28 @@ autoreload_if_notebook()
 
 # Parameters
 name_graph_dataset: str = 'MUTAG'
-diffusion_parameter: float = 10.1
+diffusion_parameter: float = 0.1
 num_homology_types: int = 4
 
 
 # Create the persistence diagram dataset
-pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, 10.1)
+pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, diffusion_parameter)
 pd_creator.create()
 
 # %%
-# recursively delete folder 'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence'
-rmtree(b'C:\Users\Raphael\Documents\GitHub\giotto-deep-new\examples\data\GraphDatasets\MUTAG_10.1_extended_persistence')
-# %%
-# load persistence diagram from DEFINE_GRAPH_DIR/MUTAG_10.1_extended_persistence/diagrams/graph_0_persistence_diagram.npy
-diagram = OneHotEncodedPersistenceDiagram.load(os.path.join(DEFAULT_GRAPH_DIR, name_graph_dataset + "_" + str(diffusion_parameter) + "_extended_persistence", "diagrams", "graph_0_persistence_diagram.npy"))
+# Print sample extended persistence diagram
+file_path: str = os.path.join(DEFAULT_GRAPH_DIR,
+                              f"MUTAG_{diffusion_parameter}_extended_persistence", "diagrams")
+graph_idx = 4
+pd: OneHotEncodedPersistenceDiagram = \
+    OneHotEncodedPersistenceDiagram.load(os.path.join(file_path, 
+                                                      f"graph_{graph_idx}_persistence_diagram.npy"))
+names = ["Ord0", "Ext0", "Rel1", "Ext1"]
+pd.plot(names)
 # %%
 
 pd_mutag_ds: Dataset[Tuple[OneHotEncodedPersistenceDiagram, int]] = \
-    PersistenceDiagramFromFiles(name_graph_dataset, 10.1)
+    PersistenceDiagramFromFiles(name_graph_dataset, 0.1)
 
 pd: OneHotEncodedPersistenceDiagram = pd_mutag_ds[0][0]
 

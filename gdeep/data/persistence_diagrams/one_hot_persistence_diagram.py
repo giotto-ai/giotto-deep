@@ -1,4 +1,4 @@
-from typing import Any, Dict, Set, Tuple, TypeVar
+from typing import Any, Dict, List, Set, Tuple, TypeVar, Optional
 
 import numpy as np
 import plotly.graph_objs as gobj
@@ -64,15 +64,41 @@ class OneHotEncodedPersistenceDiagram(Tensor):
             )
         ]
         
-    def plot(self) -> None:
+    def plot(self, names: Optional[List[str]]=None) -> None:
         """This method plots the persistence diagram.
+        
+        Example:
+            >>> pd =  torch.tensor\
+                      ([[0.0928, 0.0995, 0.0000, 0.0000, 1.0000, 0.0000],
+                        [0.0916, 0.1025, 1.0000, 0.0000, 0.0000, 0.0000],
+                        [0.0978, 0.1147, 1.0000, 0.0000, 0.0000, 0.0000],
+                        [0.0978, 0.1147, 0.0000, 0.0000, 1.0000, 0.0000],
+                        [0.0916, 0.1162, 0.0000, 0.0000, 0.0000, 1.0000],
+                        [0.0740, 0.0995, 1.0000, 0.0000, 0.0000, 0.0000],
+                        [0.0728, 0.0995, 1.0000, 0.0000, 0.0000, 0.0000],
+                        [0.0740, 0.1162, 0.0000, 0.0000, 0.0000, 1.0000],
+                        [0.0728, 0.1162, 0.0000, 0.0000, 1.0000, 0.0000],
+                        [0.0719, 0.1343, 0.0000, 0.0000, 0.0000, 1.0000],
+                        [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
+                        [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
+                        [0.0719, 0.2194, 0.0000, 1.0000, 0.0000, 0.0000]])
+                    
+            >>> pd = OneHotEncodedPersistenceDiagram(pd)
+            >>> names = ["Ord0", "Ext0", "Rel1", "Ext1"]
+            >>> pd.plot(names)
+            
         """
+        if names is None:
+            names = ["´H_" + str(i) for i in range(self.get_num_homology_dimensions())]
+        assert len(names) == self.get_num_homology_dimensions(), \
+        "The number of names must be equal to the number of homology dimensions."
         pd = self.detach().numpy()
 
         # convert one-hot encoding to categorical encoding
         pd_categorical = pd[:, 2:].argmax(axis=1)
 
-        fig = _plot_diagram(np.concatenate([pd[:, :2], pd_categorical.reshape(-1, 1)], axis=1))
+        fig = _plot_diagram(np.concatenate([pd[:, :2], pd_categorical.reshape(-1, 1)], axis=1),
+                            names=names)
         
         return fig
         
@@ -195,7 +221,7 @@ def get_one_hot_encoded_persistence_diagram_from_gudhi_extended(
 
 
 
-def _plot_diagram(diagram, homology_dimensions=None, plotly_params=None):
+def _plot_diagram(diagram, names: List[str], homology_dimensions=None, plotly_params=None):
     """Plot a single persistence diagram.
     Parameters
     ----------
@@ -248,7 +274,7 @@ def _plot_diagram(diagram, homology_dimensions=None, plotly_params=None):
         ))
 
     for dim in homology_dimensions:
-        name = f"Type {int(dim)}" if dim != np.inf else "Any homology dimension"
+        name = names[int(dim)]
         subdiagram = diagram[diagram[:, 2] == dim]
         unique, inverse, counts = np.unique(
             subdiagram, axis=0, return_inverse=True, return_counts=True
