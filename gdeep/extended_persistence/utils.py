@@ -1,4 +1,4 @@
-from typing import Tuple, Any
+from typing import Tuple
 
 import gudhi as gd  # type: ignore
 import numpy as np

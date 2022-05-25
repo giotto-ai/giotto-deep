@@ -1,8 +1,11 @@
 import warnings
 from typing import TypeVar, Tuple, Any
+from matplotlib.pyplot import axis
 
 import torch
 from torch.utils.data import Dataset
+
+from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
 
 from ..abstract_preprocessing import AbstractPreprocessing
 from ..transforming_dataset import TransformingDataset
@@ -10,12 +13,13 @@ from ..transforming_dataset import TransformingDataset
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 Tensor = torch.Tensor
+PD = OneHotEncodedPersistenceDiagram
 
 T = TypeVar('T')
 
 class Normalization(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
     """This class runs the standard normalisation on all the dimensions of
-    the tensors of a dataloader. For example, in case of images where each item is of
+    the tensors of a dataset. For example, in case of images where each item is of
     shape ``(C, H, W)``, the average will and the standard deviations
     will be tensors of shape ``(C, H, W)``
     """

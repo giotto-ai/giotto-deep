@@ -13,19 +13,20 @@ Array = np.ndarray
 class OneHotEncodedPersistenceDiagram(Tensor):
     """This class represents a single one-hot encoded persistence diagram.
     """
+    raw_data: Tensor
     def __init__(self, data: Tensor):  # type: ignore
         super().__init__()
         _check_if_valid(data)
         self.data = _sort_by_lifetime(data)
     
-    def __add__(self, other: Any) -> Tensor:
-        raise ValueError("The addition of persistence diagrams is not supported.")
+    # def __add__(self, other: Any) -> Tensor:
+    #     raise ValueError("The addition of persistence diagrams is not supported.")
     
-    def __sub__(self, other: Any) -> Tensor:
-        raise ValueError("The subtraction of persistence diagrams is not supported.")
+    # def __sub__(self, other: Any) -> Tensor:
+    #     raise ValueError("The subtraction of persistence diagrams is not supported.")
     
-    def __div__(self, other: Any) -> Tensor:
-        return super().__div__(other)
+    # def __div__(self, other: Any) -> Tensor:
+    #     return super().__div__(other)
     
     def get_num_homology_dimensions(self) -> int:
         """This method returns the number of homology dimensions.
@@ -101,6 +102,17 @@ class OneHotEncodedPersistenceDiagram(Tensor):
                             names=names)
         
         return fig
+    
+    def all_close(self, other: 'OneHotEncodedPersistenceDiagram',
+                 atol: float) -> bool:
+        """This method checks if the persistence diagrams are close.
+        """
+        for i in range(self.get_num_homology_dimensions()):
+            if not torch.allclose(self.get_all_points_in_homology_dimension(i),
+                                    other.get_all_points_in_homology_dimension(i),
+                                    atol=atol):
+                return False
+        return True
         
     def get_lifetimes(self) -> Tensor:
         """This method returns the lifetimes of the points.
