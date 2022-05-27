@@ -107,10 +107,27 @@ _compute_mean_of_dataset(
             )
 # -> (1.0, 1.0, sth, sth)
 # %%
+kwargs_train = {
+    "batch_size": 32,
+    "shuffle": True,
+    "num_workers": 0,
+}
+
+kwargs_val = {
+    "batch_size": 32,
+    "shuffle": False,
+    "num_workers": 0,
+}
+
+kwargs_test = {
+    "batch_size": 32,
+    "shuffle": False,
+    "num_workers": 0,
+}
 
 # Build the data loaders
-dl_builder = DataLoaderBuilder(train_dataset, validation_dataset, test_dataset, collate_fn)
-dl_train ... = dl_builder.build
+dlb = DataLoaderBuilder((train_dataset, validation_dataset, test_dataset))  # a tuple of datasets
+dl_train, dl_val, dl_test = dlb.build((kwargs_train, kwargs_val, kwargs_test))  # a tuple of dictionaries
 
 # Define the model
 model_config = PersformerConfig(
