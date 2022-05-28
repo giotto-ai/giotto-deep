@@ -9,6 +9,7 @@ from gdeep.utility import DEVICE
 
 Tensor = torch.Tensor
 
+
 class Interpreter:
     """Class to visualise the activation maps,
     the attribution maps and salicy maps using
@@ -23,8 +24,8 @@ class Interpreter:
 
     """
 
-    def __init__(self, model:nn.Module,
-                 method:str="IntegratedGradients"):
+    def __init__(self, model: nn.Module,
+                 method: str = "IntegratedGradients"):
         # self.model = model
         self.model = model.to(DEVICE)
         self.method = method
@@ -32,10 +33,11 @@ class Interpreter:
         self.image = None
         self.x = None
         self.sentence = None
+        self.attribution = None
 
     def interpret_image(self,
-                        x:Tensor,
-                        y:Any,
+                        x: Tensor,
+                        y: Any,
                         layer: Optional[torch.nn.Module] = None,
                         **kwargs: Any) -> Tuple[Tensor, Tensor]:
         """This method creates an image interpreter. This class
@@ -58,18 +60,6 @@ class Interpreter:
                 image respectively.
         """
         self.x = x.to(DEVICE)
-        #if self.method in ("GuidedGradCam",
-        #                   "LayerConductance",
-        #                   "LayerActivation",
-        #                   "LayerGradCam",
-        #                   "LayerDeepLift",
-        #                   "LayerFeatureAblation",
-        #                   "LayerIntegratedGradients",
-        #                   "LayerGradientShap",
-        #                   "LayerDeepLiftShap"):
-        #    occlusion = eval(self.method+"(self.model, layer)")
-        #else:
-        #    occlusion = eval(self.method+"(self.model)")
         attr_class = get_attr(self.method, self.model, layer)
         self.model.eval()
         self.attribution = attr_class.attribute(self.x, target=y, **kwargs)
@@ -84,26 +74,22 @@ class Interpreter:
             x :
                 the tensor corresponding to the input image.
                 It is expected to be of size ``(b, c, h, w)``
-            y (int or float or str)
-                the label we want to check the interpretability
-                of.
 
         """
         self.x = x.to(DEVICE)  # needed for plotting functions
-        #y = y.to(DEVICE)
         self.model.eval()
         attr_class = get_attr(self.method, self.model)
         self.attribution = attr_class.attribute(self.x,
                                                 **kwargs)
-        #ig = IntegratedGradients(self.model)
-        #ig_nt = NoiseTunnel(ig)
-        #dl = DeepLift(self.model)
+        # ig = IntegratedGradients(self.model)
+        # ig_nt = NoiseTunnel(ig)
+        # dl = DeepLift(self.model)
         # gs = GradientShap(self.model)
-        #fa = FeatureAblation(self.model)
-        #self.ig_attr_test = ig.attribute(self.x,
-        #                                 n_steps=50,
-        #                                 target=y,
-        #                                 **kwargs)
+        # fa = FeatureAblation(self.model)
+        # self.ig_attr_test = ig.attribute(self.x,
+        #                                  n_steps=50,
+        #                                  target=y,
+        #                                  **kwargs)
 
     def interpret_text(self, sentence: str,
                        label: Any,
@@ -111,7 +97,7 @@ class Interpreter:
                        tokenizer: Callable[[str], List[str]],
                        layer: torch.nn.Module,
                        min_len: int = 7) -> None:
-        """This method creates an image interpreter. This class
+        """This method creates a text interpreter. This class
         is based on captum.
 
         Args:
@@ -129,16 +115,16 @@ class Interpreter:
             layer :
                 torch module correspondign to the layer belonging to
                 ``self.model``.
+            min_len:
+                minimum length of the text. Shorter texts are padded
 
         """
         self.model.eval()
         self.sentence = sentence
         attr_class = get_attr(self.method, self.model, layer)
-        #lig = eval(self.method+"(" + ",".join(("self.model", #"self.model." +
-        #           "layer")) + ")")
-        text = tokenizer(sentence)
+        text = " ".join(tokenizer(sentence))
         if len(text) < min_len:
-            text += ['.'] * (min_len - len(text))
+            text += ' ' * (min_len - len(text))
         indexed = [vocab[t] for t in text]
 
         self.model.zero_grad()
@@ -172,8 +158,7 @@ class Interpreter:
 
         self.add_attributions_to_visualizer(self.attribution, text, pred,
                                             pred_ind, label, delta.item(),
-                                            self.stored_visualisations,
-                                            vocab)
+                                            self.stored_visualisations)
 
     @staticmethod
     def add_attributions_to_visualizer(attributions,
@@ -182,8 +167,7 @@ class Interpreter:
                                        pred_ind: Tensor,
                                        label: Any,
                                        delta: Any,
-                                       vis_data_records : List,
-                                       vocab: Dict[str, int]) -> None:
+                                       vis_data_records: List) -> None:
         attributions = attributions.sum(dim=2).squeeze(0)
         attributions = attributions / torch.norm(attributions)
         attributions = attributions.cpu().detach().numpy()

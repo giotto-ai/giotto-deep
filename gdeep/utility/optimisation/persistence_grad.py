@@ -6,7 +6,7 @@ from typing import Iterator, Any, Callable, Tuple, List, Optional
 import torch
 from torch import optim
 from gph.python import ripser_parallel
-from gtda.homology import FlagserPersistence as flp
+from gtda.homology import FlagserPersistence as Flp
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
@@ -19,7 +19,8 @@ from gdeep.utility import DEVICE
 Tensor = torch.Tensor
 Array = np.ndarray
 
-class PersistenceGradient():
+
+class PersistenceGradient:
     """This class computes the gradient of the persistence
     diagram with respect to a point cloud. The algorithms has
     first been developed in https://arxiv.org/abs/2010.08356 .
@@ -154,7 +155,8 @@ class PersistenceGradient():
         lista = torch.sort(lista)[0]
         return lista
 
-    def _compute_pairs(self, x: Tensor) -> Tuple[Tensor, Tensor]:
+    @staticmethod
+    def _compute_pairs(x: Tensor) -> Tuple[Tensor, Tensor]:
         """Use giotto-tda to compute homology (b,d) pairs
 
         Args:
@@ -169,11 +171,11 @@ class PersistenceGradient():
                 contains the homology
                 group index"""
 
-        dgms = flp().fit_transform([x.detach().numpy()])
+        dgms = Flp().fit_transform([x.detach().numpy()])
         pairs = dgms[0]
         return pairs[:, :2], pairs[:, 2]
 
-    def _persistence(self, x: Array) -> Tuple[Array, Tensor, Tensor]:
+    def _persistence(self, x: Tensor) -> Tuple[Array, Tensor, Tensor]:
         """This function computes the persistence permutation.
         This permutation permutes the filtration values and matches
         them as follows:
@@ -202,10 +204,10 @@ class PersistenceGradient():
         """
         phi = self.phi(x)
         pairs, homology_dims = self._compute_pairs(x)
-        approx_pairs = list(np.around(pairs, self.approx_digits).flatten())
+        approx_pairs: List[float] = list(np.around(pairs, self.approx_digits).flatten())
         num_approx = 10**self.approx_digits
         inv_num_approx = 10**(-self.approx_digits)
-        phi_approx = torch.round(phi*num_approx)*inv_num_approx
+        phi_approx: Tensor = torch.round(phi*num_approx)*inv_num_approx
         # find the indices of phi_approx elements that are in approx_pairs
         indices_in_phi_of_pairs = []
         for i in approx_pairs:
@@ -216,8 +218,8 @@ class PersistenceGradient():
                                            dtype=np.int32)
         for i in indices_in_phi_of_pairs:
             try:
-                temp_index = approx_pairs.index(round(phi[i].item(),
-                                                self.approx_digits))
+                temp_index: int = approx_pairs.index(round(phi[i].item(),
+                                                     self.approx_digits))
                 approx_pairs[temp_index] = float('inf')
                 persistence_pairs_array[temp_index//2,
                                         temp_index % 2] = int(i)
@@ -255,7 +257,7 @@ class PersistenceGradient():
                                  return_generators=True)
         
         persistence_pairs = []
-        #print(output["gens"])
+
         for dim in self.homology_dimensions:
             if dim == 0:
                 persistence_pairs += [(0, torch.norm(xx[x[1]]-xx[x[2]]),
@@ -265,7 +267,6 @@ class PersistenceGradient():
                                       torch.norm(xx[x[3]]-xx[x[2]]),
                                       dim) for x in output["gens"][1][dim-1]]
         return persistence_pairs
-        
 
     def persistence_function(self, xx: Tensor) -> Tensor:
         """This is the Loss function to optimise.
@@ -314,7 +315,6 @@ class PersistenceGradient():
             xx = torch.tensor(xx)
         xx.to(DEVICE)
         xx.requires_grad = True
-        grads = torch.zeros_like(xx)
         x = np.array([])
         z = np.array([])
         y = np.array([])
@@ -357,6 +357,7 @@ class PersistenceGradient():
             anchor="tip"))
         return fig, fig3d, loss_val
 
+
 # this function is outside the main class to use multiprocessing
 def unpacking_apply_along_axis(tupl: List[Any]) -> Array:
     """
@@ -372,7 +373,7 @@ def unpacking_apply_along_axis(tupl: List[Any]) -> Array:
     return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
 
 
-def _combinations_with_single(tupl, max_length:int) -> Array:
+def _combinations_with_single(tupl, max_length: int) -> Array:
     """Private function to compute combinations also for singletons
     with repetition. The un-intuitive shape of the output is
     becaue of the padding and vectorized operation happening

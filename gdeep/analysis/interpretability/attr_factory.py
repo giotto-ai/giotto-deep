@@ -26,13 +26,13 @@ class AttrFactory(object):
     def __init__(self):
         self._builders = {}
         
-    def register_builder(self, key: str, builder:Any):
+    def register_builder(self, key: str, builder: Any):
         """this method adds to the internal builders dictionary
         new dataloader builders
         """
         self._builders[key] = builder    # type: ignore
         
-    def build(self, key:str, *args, **kwargs) -> Any:  # type: ignore
+    def build(self, key: str, *args, **kwargs) -> Any:  # type: ignore
         """This method returns the DataLoader builder
         corresponding to the input key.
 
@@ -77,6 +77,5 @@ def get_attr(key: str, *args, **kwargs) -> Any:  # type: ignore
 
     for attr_name in attr.__all__:
         factory.register_builder(attr_name, AttrBuilder(attr_name))
-
 
     return factory.build(key, *args, **kwargs)  # type: ignore

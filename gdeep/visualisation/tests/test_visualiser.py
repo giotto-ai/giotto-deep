@@ -4,8 +4,6 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 
 from gdeep.visualisation import Visualiser
-from gdeep.data import PreprocessingPipeline
-from gdeep.data import TransformingDataset
 from gdeep.data.preprocessors import TokenizerTextClassification
 from gdeep.data.datasets import DataLoaderBuilder, DatasetBuilder
 from gdeep.trainer import Trainer
@@ -24,13 +22,14 @@ transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)
 train_indices = list(range(64*10))
 test_indices = list(range(64*5))
 
-dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds,
-                                      transformed_textts)).build(({"batch_size":16,
-                                                                   "sampler":SubsetRandomSampler(train_indices)},
-                                                                  {"batch_size":16,
-                                                                   "sampler":SubsetRandomSampler(test_indices)}
-                                                                 ))
+dl_tr2, dl_ts2, _ = DataLoaderBuilder([transformed_textds,
+                                      transformed_textts]).build([{"batch_size": 16,
+                                                                   "sampler": SubsetRandomSampler(train_indices)},
+                                                                  {"batch_size": 16,
+                                                                   "sampler": SubsetRandomSampler(test_indices)}
+                                                                  ])
 writer = SummaryWriter()
+
 
 class TextClassificationModel(nn.Module):
 
@@ -48,15 +47,16 @@ class TextClassificationModel(nn.Module):
 
     def forward(self, text):
         embedded = self.embedding(text)
-        mean = torch.mean(embedded,dim=1)
+        mean = torch.mean(embedded, dim=1)
         return self.fc(mean)
+
 
 def test_visualiser():
     vocab_size = len(ptd.vocabulary)
     emsize = 64
     loss_fn = nn.CrossEntropyLoss()
     model = TextClassificationModel(vocab_size, emsize, 4)
-    pipe = Trainer(model, (dl_tr2, dl_ts2), loss_fn, writer)
+    pipe = Trainer(model, [dl_tr2, dl_ts2], loss_fn, writer)
 
     vs = Visualiser(pipe)
 
@@ -64,4 +64,4 @@ def test_visualiser():
     vs.plot_data_model()
     vs.plot_activations(x)
     vs.plot_persistence_diagrams(x)
-    vs.betti_plot_layers((0, 1), x)
+    vs.betti_plot_layers([0, 1], x)

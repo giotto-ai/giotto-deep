@@ -1,17 +1,20 @@
-import torch
+import numpy
 from gtda.homology import VietorisRipsPersistence, \
     WeakAlphaPersistence
 from gtda.graphs import KNeighborsGraph, \
     GraphGeodesicDistance
+from typing import List
+
+Array = numpy.ndarray
 
 
-def knn_distance_matrix(X, k: int=3):
+def knn_distance_matrix(x: List, k: int = 3):
 
     """Returns list of distance matrices according
     to the k-NN graph distance of the datasets X
 
     Args:
-        X (ndarray):
+        x:
             the point cloud
         k (int):
             the numbers of neighbors for the k-NN graph
@@ -19,7 +22,7 @@ def knn_distance_matrix(X, k: int=3):
     """
 
     kng = KNeighborsGraph(n_neighbors=k)
-    adj = kng.fit_transform(X)
+    adj = kng.fit_transform(x)
     return GraphGeodesicDistance(directed=False).fit_transform(adj)
 
 
@@ -54,11 +57,11 @@ def persistence_diagrams_of_activations(activations_list,
             of the different layers
     """
     for i, activ in enumerate(activations_list):
-        if len(activ.shape) > 2:  # in caso of non FF layers
+        if len(activ.shape) > 2:  # in case of non FF layers
             activations_list[i] = activ.view(activ.shape[0], -1)
 
     if k > 0 and mode == 'VR':
-        VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
+        vr = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
                                      metric='precomputed',
                                      reduced_homology=False,
                                      infinity_values=20,
@@ -67,11 +70,11 @@ def persistence_diagrams_of_activations(activations_list,
         # infinity_values set to avoid troubles with
         # multiple topological features living indefinitely
     elif k == -1 and mode == 'alpha':
-        VR = WeakAlphaPersistence(homology_dimensions=homology_dimensions,
+        vr = WeakAlphaPersistence(homology_dimensions=homology_dimensions,
                                   reduced_homology=False,
                                   max_edge_length=max_edge_length)
     else:
-        VR = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
+        vr = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
                                      reduced_homology=False,
                                      max_edge_length=max_edge_length,
                                      collapse_edges=True)
@@ -81,8 +84,8 @@ def persistence_diagrams_of_activations(activations_list,
             activations_list[i] = activ.cpu()
         dist_matrix = knn_distance_matrix(activations_list,
                                           k=k)
-        persistence_diagrams = VR.fit_transform(dist_matrix)
+        persistence_diagrams = vr.fit_transform(dist_matrix)
     else:
-        persistence_diagrams = VR.fit_transform(activations_list)
+        persistence_diagrams = vr.fit_transform(activations_list)
 
     return persistence_diagrams

@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 # deep learning
 import torch
 import numpy as np
@@ -18,7 +18,8 @@ from sklearn.metrics import pairwise_distances
 Tensor = torch.Tensor
 Array = np.ndarray
 
-class Compactification():
+
+class Compactification:
     """Class to compactify the feature space and get
     better topological insights.
 
@@ -58,7 +59,7 @@ class Compactification():
         else:
             self.neural_net = neural_net
         if boundary_tuple is None:
-            self.boundary_tuple = [(-1, 1) for ii in range(self.n_features)]
+            self.boundary_tuple = [(-1., 1.) for _ in range(self.n_features)]
         else:
             self.boundary_tuple = boundary_tuple
         self.precision = precision
@@ -70,8 +71,8 @@ class Compactification():
         self.label_final = None
         self.check_compute_charts = False
 
-    def _transition_to_patch(self,
-                            sample_points_tensor: Tensor, i: int) -> None:
+    @staticmethod
+    def _transition_to_patch(sample_points_tensor: Tensor, i: int) -> Union[Tensor, Array]:
         stacking_list = []
         if i == -1:
             points = sample_points_tensor
@@ -81,8 +82,8 @@ class Compactification():
                 if dim == i:
                     stacking_list.append(1/sample_points_tensor[:, dim])
                 else:
-                    stacking_list.append(sample_points_tensor[:, dim] / \
-                        sample_points_tensor[:, i])
+                    stacking_list.append(sample_points_tensor[:, dim] /
+                                         sample_points_tensor[:, i])
             if type(sample_points_tensor) == Tensor:
                 return torch.stack(stacking_list, dim=1)
             return np.stack(stacking_list, axis=1)
@@ -103,8 +104,7 @@ class Compactification():
 
             # Using new gradient flow implementation
             gf = GradientFlowDecisionBoundaryCalculator(model=self.neural_net,
-                                                        initial_points=
-                                                        sample_points_tensor,
+                                                        initial_points=sample_points_tensor,
                                                         optimizer=lambda params:
                                                         torch.optim.Adam(params))
             gf.step(number_of_steps=self.n_epochs)
@@ -126,7 +126,7 @@ class Compactification():
                 if j == i:
                     list_of_pts_per_patch.append(pts)
                 else:
-                    list_of_pts_per_patch.append(self._transition_to_patch(\
+                    list_of_pts_per_patch.append(self._transition_to_patch(
                         self._transition_to_patch(pts, j-1), i-1))
             self.list_of_pts_in_patches.append(np.concatenate(list_of_pts_per_patch))
 
@@ -148,8 +148,7 @@ class Compactification():
             i :
                 the chart index, from ``-1`` to ``n_features``
         """
-        df_plot = pd.DataFrame(self.list_of_pts_in_patches[i], columns =
-                               ["x" + str(j) for j in
+        df_plot = pd.DataFrame(self.list_of_pts_in_patches[i], columns=["x" + str(j) for j in
                                range(self.list_of_pts_in_patches[i].shape[1])])
         df_plot["label"] = self.label_final
         if self.list_of_pts_in_patches[i].shape[1] == 2:
