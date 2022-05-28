@@ -260,16 +260,16 @@ class Visualiser:
         """
 
         try:
-            attrib = torch.permute(interpreter.attribution.squeeze().detach().cpu().numpy(),
-                                   (1, 2, 0))
+            attrib = torch.permute(interpreter.attribution.squeeze().detach(),
+                                   (1, 2, 0)).detach().cpu().numpy()
         except ValueError:
             attrib = torch.permute(LayerAttribution.interpolate(interpreter.attribution.detach().cpu(),
                                                                 tuple(interpreter.image.squeeze().
                                                                       detach().cpu().shape[-2:])).squeeze(0),
                                    (1, 2, 0))
             attrib = torch.stack([attrib, attrib, attrib], dim=2).squeeze(-1).detach().cpu().numpy()
-        img = np.transpose(interpreter.image.squeeze().detach().cpu().numpy(),
-                           (1, 2, 0))
+        img = torch.permute(interpreter.image.squeeze().detach(),
+                            (1, 2, 0)).detach().cpu().numpy()
 
         fig, _ = visualization.visualize_image_attr_multiple(
             attrib,

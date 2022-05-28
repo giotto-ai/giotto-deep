@@ -12,7 +12,7 @@ Tensor = torch.Tensor
 
 class Interpreter:
     """Class to visualise the activation maps,
-    the attribution maps and salicy maps using
+    the attribution maps and saliency maps using
     different techniques.
 
     Args:
@@ -113,7 +113,7 @@ class Interpreter:
                 a ``gdeep.data.preprocessors`` tokenizer. Can
                 be extracted via the ``tokenizer`` attribute.
             layer :
-                torch module correspondign to the layer belonging to
+                torch module corresponding to the layer belonging to
                 ``self.model``.
             min_len:
                 minimum length of the text. Shorter texts are padded
