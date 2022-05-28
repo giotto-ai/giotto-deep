@@ -122,9 +122,9 @@ class Interpreter:
         self.model.eval()
         self.sentence = sentence
         attr_class = get_attr(self.method, self.model, layer)
-        text = " ".join(tokenizer(sentence))
+        text = tokenizer(sentence)
         if len(text) < min_len:
-            text += ' ' * (min_len - len(text))
+            text += [' '] * (min_len - len(text))
         indexed = [vocab[t] for t in text]
 
         self.model.zero_grad()
@@ -162,7 +162,7 @@ class Interpreter:
 
     @staticmethod
     def add_attributions_to_visualizer(attributions,
-                                       text: str,
+                                       text: List[str],
                                        pred: Tensor,
                                        pred_ind: Tensor,
                                        label: Any,
