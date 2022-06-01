@@ -298,7 +298,7 @@ def _plot_diagram(diagram, names: List[str], homology_dimensions=None, plotly_pa
     min_val = np.min(np.where(neginfinite_mask, np.inf, diagram_no_dims))
     parameter_range = max_val - min_val
     extra_space_factor = 0.02
-    has_posinfinite_death = np.any(posinfinite_mask[:, 1])
+    has_posinfinite_death = np.any(posinfinite_mask[:, 1])  # type: ignore
     if has_posinfinite_death:
         posinfinity_val = max_val + 0.1 * parameter_range
         extra_space_factor += 0.1
@@ -332,7 +332,7 @@ def _plot_diagram(diagram, names: List[str], homology_dimensions=None, plotly_pa
             ]
         y = subdiagram[:, 1]
         if has_posinfinite_death:
-            y[np.isposinf(y)] = posinfinity_val
+            y[np.isposinf(y)] = posinfinity_val  # type: ignore
         fig.add_trace(gobj.Scatter(
             x=subdiagram[:, 0], y=y, mode="markers",
             hoverinfo="text", hovertext=hovertext, name=name
@@ -378,7 +378,7 @@ def _plot_diagram(diagram, names: List[str], homology_dimensions=None, plotly_pa
     if has_posinfinite_death:
         fig.add_trace(gobj.Scatter(
             x=[min_val_display, max_val_display],
-            y=[posinfinity_val, posinfinity_val],
+            y=[posinfinity_val, posinfinity_val],  # type: ignore
             mode="lines",
             line={"dash": "dash", "width": 0.5, "color": "black"},
             showlegend=True,

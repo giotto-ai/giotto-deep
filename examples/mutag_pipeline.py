@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Subset
+from torch.optim import Adam
 
 from gdeep.data.datasets import PersistenceDiagramFromFiles
 from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder
@@ -20,6 +21,7 @@ from gdeep.data.preprocessors import (
 )
 from gdeep.data.preprocessors.normalization import _compute_mean_of_dataset
 from gdeep.data.transforming_dataset import TransformingDataset
+from gdeep.topology_layers.persformer_config import PersformerConfig
 from gdeep.utility.utils import autoreload_if_notebook
 from gdeep.utility import DEFAULT_GRAPH_DIR
 
@@ -115,14 +117,14 @@ kwargs_test = {
 }
 
 # Build the data loaders
-dlb = DataLoaderBuilder((train_dataset, validation_dataset, test_dataset))  # a tuple of datasets
-dl_train, dl_val, dl_test = dlb.build((kwargs_train, kwargs_val, kwargs_test))  # a tuple of dictionaries
+dlb = DataLoaderBuilder((train_dataset, validation_dataset, test_dataset))  # type: ignore
+dl_train, dl_val, dl_test = dlb.build((kwargs_train, kwargs_val, kwargs_test))  # type: ignore
 
 # Define the model
 model_config = PersformerConfig(
     num_layers=6,
     num_heads=8,
-    input_size=2 + num_homology_types,
+    input_size= 2 + num_homology_types,
 )
 
 model = Persformer(model_config)
@@ -133,36 +135,4 @@ loss_function = lambda logits, target: nn.CrossEntropyLoss()(logits, target)
 
 trainer = Trainer(model, (train_dataset, validation_dataset, test_dataset), loss_function, writer)
 
-trainer.train(SGD, 3, False, {"lr":0.01}, {"batch_size":16})
-
-# %%
-import numpy as np
-
-# matrix of vectors of shape (num_vectors, dim_vector)
-x = np.random.rand(10, 2)
-
-# compute pairwise distances
-dists = np.linalg.norm(x[:, np.newaxis, :] - x[np.newaxis, :, :], axis=-1)
-
-
-# %%
-Tensor = torch.Tensor
-
-class A(Tensor):
-    pass        
-class B(Tensor):
-    pass
-x = torch.tensor([1.0, 2.0, 3.0])
-a = A(x)
-b = B(x)
-type(a + b)
-# %%
-file_path: str = os.path.join(DEFAULT_GRAPH_DIR,
-                            f"MUTAG_{diffusion_parameter}_extended_persistence", "diagrams")
-graph_idx = 1
-pd = OneHotEncodedPersistenceDiagram.load(os.path.join(file_path, 
-                                                    f"{graph_idx}.npy"))
-# %%
-path = os.path.join(file_path, f"{graph_idx}.npy")
-torch.load(path)
-# %%
+trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16})

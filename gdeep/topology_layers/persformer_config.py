@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Callable, Dict, Optional
 from transformers.configuration_utils import PretrainedConfig
@@ -7,6 +8,12 @@ from torch.nn import Module, MultiheadAttention, Linear, Sequential, LayerNorm, 
 
 # Type aliases
 Tensor = torch.Tensor
+
+class PoolerType(Enum):
+    ATTENTION = auto()
+    MAX = auto()
+    MEAN = auto()
+    SUM = auto()
 
 class LayerNormStyle(Enum):
     """
@@ -85,6 +92,7 @@ class PersformerConfig(PretrainedConfig):
     layer_norm_style: LayerNormStyle
     attention_type: AttentionType
     activation_fn: ActivationFunction
+    pooler_type: PoolerType
          
     
     def __init__(self,
@@ -102,7 +110,8 @@ class PersformerConfig(PretrainedConfig):
                  use_layer_norm: LayerNormStyle = \
                      LayerNormStyle.NO_LAYER_NORMALIZATION,
                  attention_type: AttentionType = \
-                     AttentionType.DOT_PRODUCT
+                     AttentionType.DOT_PRODUCT,
+                 pooler_type: PoolerType = PoolerType.ATTENTION,
                  **kwargs  # type: ignore
                  ):
         super().__init__(**kwargs)  # type: ignore
@@ -119,6 +128,7 @@ class PersformerConfig(PretrainedConfig):
         self.classifier_dropout_prob = classifier_dropout_prob
         self.layer_norm_style = use_layer_norm
         self.attention_type = attention_type
+        self.pooler_type = pooler_type
 
 class Persformer(Module):
     
@@ -139,6 +149,7 @@ class Persformer(Module):
         self.embedding_layer = self._get_embedding_layer()
         self.persformer_blocks = ModuleList([self._get_persformer_block() 
                                              for _ in range(self.config.num_attention_layers)])
+        self.pooling_layer = self._get_pooling_layer()
         self.classifier_layer = self._get_classifier_layer()
 
     def _get_embedding_layer(self) -> Module:
@@ -158,6 +169,8 @@ class Persformer(Module):
     def _get_persformer_block(self) -> Module:
         return PersformerBlock(self.config)
                                
+    def _get_pooling_layer(self) -> Module:
+        return get_pooling_layer(self.config)
                         
         
     def forward(self,  # type: ignore
@@ -181,9 +194,142 @@ class Persformer(Module):
         # Apply the attention layers
         for persformer_block in self.persformer_blocks:
             output = persformer_block(output, attention_mask)
+        ouput = self.pooling_layer(output)
         # Apply the classifier layer
         output = self.classifier_layer(output)
         return output
+    
+def get_pooling_layer(config: PersformerConfig) -> Module:
+    """
+    Get the pooling layer.
+    
+    Args:
+        config: The configuration of the model.
+        
+    Returns:
+        The pooling layer.
+    """
+    if(config.pooler_type == PoolerType.ATTENTION):
+        return AttentionPoolingLayer(config)
+    elif(config.pooler_type == PoolerType.MAX):
+        return MaxPoolingLayer(config)
+    elif(config.pooler_type == PoolerType.MEAN):
+        return MeanPoolingLayer(config)
+    elif(config.pooler_type == PoolerType.SUM):
+        return SumPoolingLayer(config)
+    else:
+        raise ValueError("Unknown pooling type.")
+
+class MaxPoolingLayer(Module):
+    
+    config: PersformerConfig
+    
+    def __init__(self, config: PersformerConfig):
+        super().__init__()
+        self.config = config
+        
+    def forward(self,
+                input_batch: Tensor
+                ) -> Tensor:
+        """
+        Forward pass of the model.
+        
+        Args:
+            input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+            
+        Returns:
+            The logits of the model. Of shape (batch_size, sequence_length, 1)
+        """
+        # Initialize the output tensor
+        output = input_batch
+        # Apply the max pooling layer
+        output = output.max(dim=-2)[0]
+        return output
+
+class MeanPoolingLayer(Module):
+        
+        config: PersformerConfig
+        
+        def __init__(self, config: PersformerConfig):
+            super().__init__()
+            self.config = config
+            
+        def forward(self,
+                    input_batch: Tensor
+                    ) -> Tensor:
+            """
+            Forward pass of the model.
+            
+            Args:
+                input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+                
+            Returns:
+                The pooled output. Of shape (batch_size, hidden_size)
+            """
+            # Initialize the output tensor
+            output = input_batch
+            # Apply the max pooling layer
+            output = output.mean(dim=-2)
+            return output
+        
+class SumPoolingLayer(Module):
+        
+        config: PersformerConfig
+        
+        def __init__(self, config: PersformerConfig):
+            super().__init__()
+            self.config = config
+            
+        def forward(self,
+                    input_batch: Tensor
+                    ) -> Tensor:
+            """
+            Forward pass of the model.
+            
+            Args:
+                input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+                
+            Returns:
+                The pooled output. Of shape (batch_size, hidden_size)
+            """
+            # Initialize the output tensor
+            output = input_batch
+            # Apply the max pooling layer
+            output = output.sum(dim=-2)
+            return output
+    
+class AttentionPoolingLayer(Module):
+    
+    config: PersformerConfig
+    
+    def __init__(self, config: PersformerConfig):
+        super().__init__()
+        self.config = config
+        self.queries = nn.parameter.Parameter(torch.Tensor(1, config.hidden_size),
+                                              requires_grad=True)
+        self.scaled_dot_product_attention = \
+            MultiheadAttention(embed_dim=config.hidden_size,
+                               num_heads=config.num_attention_heads,
+                               dropout=config.attention_probs_dropout_prob,
+                               batch_first=True)
+
+        
+    def forward(self,  # type: ignore
+                input_batch: Tensor
+                ) -> Tensor:
+        """
+        Forward pass of the model.
+        
+        Args:
+            input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+            
+        Returns:
+            The pooled output. Of shape (batch_size, hidden_size)
+        """
+        return self.scaled_dot_product_attention(self.queries, input_batch, input_batch,
+                                                mask=None,
+                                                dropout=None)
+
 
 class PersformerBlock(Module):
     """
@@ -336,11 +482,12 @@ def get_attention_layer(config: PersformerConfig) -> Module:
     return AttentionFactory().build(config)
 
 
-class AttentionBase(Module):
+class AttentionBase(Module, ABC):
     def __init__(self, config: PersformerConfig):
         super().__init__()
         self.config = config
-        
+    
+    @abstractmethod
     def forward(self,  # type: ignore
                 input: Tensor,
                 attention_mask: Optional[Tensor] = None
@@ -356,7 +503,7 @@ class AttentionFactory():
     def __init__(self):
             # Register the attention layers here:
             self.register_attention__builder(AttentionType.DOT_PRODUCT,
-                                             lambda config: DotProductAttention(config))
+                                             lambda config: ScaledDotProductAttention(config))
             self.register_attention__builder(AttentionType.INDUCED_ATTENTION,
                                                 lambda config: InducedAttention(config))
         
@@ -377,7 +524,7 @@ class AttentionFactory():
         
     
 
-class DotProductAttention(AttentionBase):
+class ScaledDotProductAttention(AttentionBase):
     """
     Dot product attention. See https://arxiv.org/abs/1706.03762.
     """
@@ -385,7 +532,7 @@ class DotProductAttention(AttentionBase):
                  config: PersformerConfig):
         super().__init__(config)
         
-        self.dot_product_attention = \
+        self.scaled_dot_product_attention = \
             MultiheadAttention(embed_dim=config.hidden_size,
                                num_heads=config.num_attention_heads,
                                dropout=config.attention_probs_dropout_prob,
@@ -400,7 +547,7 @@ class DotProductAttention(AttentionBase):
         """
         Forward pass.
         """
-        attention_output, _ = self.dot_product_attention(input, input, input, attention_mask)
+        attention_output, _ = self.scaled_dot_product_attention(input, input, input, attention_mask)
         return self.dropout(attention_output)
 
 class InducedAttention(AttentionBase):
