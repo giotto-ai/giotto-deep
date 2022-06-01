@@ -11,8 +11,6 @@ import optuna
 from optuna.trial import TrialState
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import KFold
-from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
 import random
@@ -36,6 +34,7 @@ from gdeep.utility import DEVICE
 
 Tensor = torch.Tensor
 Array = np.ndarray
+
 
 class GiottoSummaryWriter(SummaryWriter):
     def add_hparams(self, hparam_dict: Dict[str, Any],
@@ -136,13 +135,13 @@ class HyperParameterOptimization(Trainer):
     """
 
     def __init__(self, obj: Trainer,
-                 search_metric:str="loss",
-                 n_trials:int=10,
-                 best_not_last:bool=False,
-                 pruner:Optional[BasePruner]=None,
+                 search_metric: str = "loss",
+                 n_trials: int = 10,
+                 best_not_last: bool = False,
+                 pruner: Optional[BasePruner] = None,
                  sampler=None,
-                 db_url:str=None,
-                 study_name:str=None):
+                 db_url: str = None,
+                 study_name: str = None):
         self.best_not_last_gs = best_not_last
         self.is_pipe = None
         self.study: Optional[Study] = None
@@ -158,7 +157,8 @@ class HyperParameterOptimization(Trainer):
                              self.pipe.dataloaders,
                              self.pipe.loss_fn,
                              self.pipe.writer,
-                             self.pipe.KFold_class)
+                             self.pipe.training_metric,
+                             self.pipe.k_fold_class)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif (isinstance(obj, Benchmark)):
@@ -287,7 +287,7 @@ class HyperParameterOptimization(Trainer):
 
         # for proper storing of data
         self._cross_validation = cross_validation
-        self._k_folds = self.KFold_class.n_splits
+        self._k_folds = self.k_fold_class.n_splits
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, optimizers))
         optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
@@ -304,7 +304,7 @@ class HyperParameterOptimization(Trainer):
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
         self.pipe = Trainer(self.model, self.dataloaders, self.loss_fn,
-                             self.writer, self.KFold_class)
+                             self.writer, self.training_metric, self.k_fold_class)
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
@@ -516,7 +516,8 @@ class HyperParameterOptimization(Trainer):
                              dataloaders["dataloaders"],
                              self.bench.loss_fn,
                              self.bench.writer,
-                             self.bench.KFold_class)
+                             self.bench.training_metric,
+                             self.bench.k_fold_class)
         except TypeError:
             pass
 

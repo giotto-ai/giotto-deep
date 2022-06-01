@@ -98,7 +98,7 @@ class PersformerHyperparameterSearch:
             schedulers_params = hyperparameters_dicts.schedulers_params
 
         # Initialize pipeline        
-        pipe = Trainer(model, [train_dataloader, None], loss_fn, writer,
+        pipe = Trainer(model, [train_dataloader, None], loss_fn, writer, None,
                             eval(
                                 hyperparameters_dicts.fold_mode + "(" +
                                 str(hyperparameters_dicts.n_splits) + ", "+

@@ -24,6 +24,7 @@ html2image
 optuna
 sphinx_rtd_theme
 giotto-ph
+tqdm
 Pillow
 h5py
 dotmap

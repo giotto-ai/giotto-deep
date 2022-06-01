@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from gdeep.trainer import Trainer
 from gdeep.utility import _are_compatible
 from sklearn.model_selection import KFold
-from gdeep.utility import DEVICE
+from gdeep.trainer import accuracy
 
 Tensor = torch.Tensor
 
@@ -42,11 +42,12 @@ class Benchmark:
     """
 
     def __init__(self,
-                 models_dicts:Dict[str, torch.nn.Module],
-                 dataloaders_dicts:Dict[str, List[DataLoader[Tuple[Tensor, Tensor]]]],
+                 models_dicts: Dict[str, torch.nn.Module],
+                 dataloaders_dicts: Dict[str, List[DataLoader[Tuple[Tensor, Tensor]]]],
                  loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
                  writer: SummaryWriter,
-                 KFold_class:Optional[BaseCrossValidator]=None) -> None:
+                 training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
+                 k_fold_class:Optional[BaseCrossValidator]=None) -> None:
         self.models_dicts = models_dicts
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
@@ -54,11 +55,14 @@ class Benchmark:
         if not self.writer:
             warnings.warn("No writer detected")
         
-        if not KFold_class:
-            self.KFold_class = KFold(5, shuffle=True)
+        if not k_fold_class:
+            self.k_fold_class = KFold(5, shuffle=True)
         else:
-            self.KFold_class = KFold_class
-
+            self.k_fold_class = k_fold_class
+        if training_metric:
+            self.training_metric = training_metric
+        else:
+            self.training_metric = accuracy
         if not isinstance(self.models_dicts, list):
             raise TypeError("The provided models must be a Python list of dictionaries")
 
@@ -196,7 +200,8 @@ class Benchmark:
                 the tensorboard writer tag
         """
         pipe = Trainer(model["model"], dataloaders["dataloaders"],
-                        self.loss_fn, self.writer, self.KFold_class)
+                       self.loss_fn, self.writer, self.training_metric,
+                       self.k_fold_class)
         writer_tag += "Dataset:" + dataloaders["name"] +"|Model:" + model["name"]
         pipe.train(optimizer,
                    n_epochs,

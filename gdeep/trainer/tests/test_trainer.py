@@ -1,6 +1,5 @@
 from torch import nn
 from torch.optim import SGD
-from sklearn.model_selection import StratifiedKFold
 import numpy as np
 
 from gdeep.trainer import Trainer
@@ -35,6 +34,6 @@ def test_pipe_1():
     writer = GiottoSummaryWriter()
     # pipeline
     pipe = Trainer(model, [dl_tr, None],
-                    loss_fn, writer)#,StratifiedKFold(5, shuffle=True))
+                   loss_fn, writer)
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)

@@ -45,7 +45,8 @@ def test_hpo1():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer, StratifiedKFold(2, shuffle=True))
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer,
+                   k_fold_class=StratifiedKFold(2, shuffle=True))
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
@@ -87,7 +88,7 @@ def test_hpo2():
     search.start((SGD, Adam), 2, False, optimizers_params, dataloaders_params, models_hyperparams, n_accumulated_grads=2)
 
 
-def test_hpo2():
+def test_hpo3():
     # define the model
     model = model2()
 
@@ -109,7 +110,7 @@ def test_hpo2():
     search.start((SGD, Adam), 2, False, optimizers_params, dataloaders_params, models_hyperparams)
 
 
-def test_hpo3():
+def test_hpo4():
     # define the model
     model = model2()
 

@@ -1,19 +1,15 @@
 from torch import nn
 import torchvision.models as models
-from torch.optim import SGD, Adam
-from sklearn.model_selection import StratifiedKFold
+from torch.optim import SGD
 from torch.utils.data.sampler import SubsetRandomSampler
 
 from gdeep.models import FFNet
-from gdeep.trainer import Trainer
 from gdeep.data.datasets import DatasetBuilder, DataLoaderBuilder
 from gdeep.data.preprocessors import ToTensorImage
 from gdeep.search import HyperParameterOptimization, GiottoSummaryWriter, Benchmark
 
+
 # parametric model with string value
-
-
-
 class model2(nn.Module):
     def __init__(self, n_nodes="100"):
         super(model2, self).__init__()
