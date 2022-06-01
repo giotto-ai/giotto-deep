@@ -14,20 +14,25 @@ class OneHotEncodedPersistenceDiagram():
     """This class represents a single one-hot encoded persistence diagram.
     """
     _data: Tensor
+    _homology_dimension_names: List[str]
     
-    def __init__(self, data: Tensor):  # type: ignore
+    def __init__(self, data: Tensor, homology_dimension_names: Optional[List[str]]=None):  # type: ignore
         super().__init__()
         _check_if_valid(data)
-        self._data = _sort_by_lifetime(data)
+        self._data = data
+        if homology_dimension_names is not None:
+            self._homology_dimension_names = homology_dimension_names
+        else:
+            self._homology_dimension_names = ["H_" + str(i) for i in range(self.get_num_homology_dimensions())]
+        assert len(self._homology_dimension_names) == self.get_num_homology_dimensions(), \
+        "The number of names must be equal to the number of homology dimensions."
     
-    # def __add__(self, other: Any) -> Tensor:
-    #     raise ValueError("The addition of persistence diagrams is not supported.")
-    
-    # def __sub__(self, other: Any) -> Tensor:
-    #     raise ValueError("The subtraction of persistence diagrams is not supported.")
-    
-    # def __div__(self, other: Any) -> Tensor:
-    #     return super().__div__(other)
+    def set_homology_dimension_names(self, homology_dimension_names: List[str]) -> None:
+        """This method sets the homology dimension names.
+        """
+        assert len(homology_dimension_names) == self.get_num_homology_dimensions(), \
+        "The number of names must be equal to the number of homology dimensions."
+        self._homology_dimension_names = homology_dimension_names
     
     def get_num_homology_dimensions(self) -> int:
         """This method returns the number of homology dimensions.
@@ -42,31 +47,54 @@ class OneHotEncodedPersistenceDiagram():
     def __repr__(self):
         return (f"OneHotEncodedPersistenceDiagram({self._data.shape})\n"
                 f"{self.get_num_homology_dimensions()} homology dimensions\n"
-                f"{self._data.shape[0]} points\ndata:\n {super().__repr__()}")
+                f"{self._data.shape[0]} points\ndata:\n {self._data.__repr__()}")
 
     def save(self, path: str) -> None:
         """This method saves the persistence diagram to a file.
         """
-        torch.save(self, path)
+        torch.save(self._data, path)
+    
+    def get_points_in_homology_dimension(self, homology_dimension: int) -> \
+        'OneHotEncodedPersistenceDiagram':
+        """This method returns all points in a given homology dimension.
+        """
+        assert 0 <= homology_dimension < self.get_num_homology_dimensions(), \
+        "The homology dimension must be smaller than the number of homology dimensions."
+        return OneHotEncodedPersistenceDiagram(
+            self._data[
+                torch.where(
+                    self._data[:, 2 + homology_dimension] == 1.0
+                )
+            ]
+        )
+    
+    def get_raw_data(self) -> Tensor:
+        """This method returns the raw data of the persistence diagram.
+        This function should not be used to change the data.
+        """
+        return self._data
         
     @staticmethod
     def load(path: str) -> 'OneHotEncodedPersistenceDiagram':
         """This method loads a persistence diagram from a file.
         """
-        return torch.load(path)
+        return OneHotEncodedPersistenceDiagram(torch.load(path))
         
-    def get_all_points_in_homology_dimension(self, homology_dimension: int) -> Tensor:
+    def get_all_points_in_homology_dimension(self, homology_dimension: int) -> \
+        'OneHotEncodedPersistenceDiagram':
         """This method returns all points in a given homology dimension.
         """
         assert homology_dimension < self.get_num_homology_dimensions(), \
         "The homology dimension must be smaller than the number of homology dimensions."
-        return self._data[
-            torch.where(
-                self._data[:, 2 + homology_dimension] == 1.0
-            )
-        ]
+        return OneHotEncodedPersistenceDiagram(
+            self._data[
+                torch.where(
+                    self._data[:, 2 + homology_dimension] == 1.0
+                )
+            ]
+        )
         
-    def plot(self, names: Optional[List[str]]=None) -> None:
+    def plot(self, names: Optional[List[str]]=None) -> gobj.Figure:  # type: ignore
         """This method plots the persistence diagram.
         
         Example:
@@ -85,13 +113,12 @@ class OneHotEncodedPersistenceDiagram():
                         [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0719, 0.2194, 0.0000, 1.0000, 0.0000, 0.0000]])
                     
-            >>> pd = OneHotEncodedPersistenceDiagram(pd)
             >>> names = ["Ord0", "Ext0", "Rel1", "Ext1"]
-            >>> pd.plot(names)
+            >>> pd = OneHotEncodedPersistenceDiagram(pd, names)
+            >>> pd.plot()
             
         """
-        if names is None:
-            names = ["´H_" + str(i) for i in range(self.get_num_homology_dimensions())]
+        names = self._homology_dimension_names if names is None else names
         assert len(names) == self.get_num_homology_dimensions(), \
         "The number of names must be equal to the number of homology dimensions."
         pd = self._data.detach().numpy()
@@ -109,8 +136,8 @@ class OneHotEncodedPersistenceDiagram():
         """This method checks if the persistence diagrams are close.
         """
         for i in range(self.get_num_homology_dimensions()):
-            if not torch.allclose(self.get_all_points_in_homology_dimension(i),
-                                    other.get_all_points_in_homology_dimension(i),
+            if not torch.allclose(self.get_all_points_in_homology_dimension(i).get_raw_data(),
+                                    other.get_all_points_in_homology_dimension(i).get_raw_data(),
                                     atol=atol):
                 return False
         return True
@@ -153,12 +180,12 @@ def _check_if_valid(data) -> None:
         torch.allclose(data[:, 2:].sum(dim=1), torch.tensor(1.0)), \
             "The homology dimension should be one-hot encoded."
 
-def _sort_by_lifetime(data: Tensor) -> Tensor:
-    """This function sorts the points by their lifetime.
-    """
-    return data[(
-        data[:, 1] - data[:, 0]
-    ).argsort()]
+# def _sort_by_lifetime(data: Tensor) -> Tensor:
+#     """This function sorts the points by their lifetime.
+#     """
+#     return data[(
+#         data[:, 1] - data[:, 0]
+#     ).argsort()]
 
 def get_one_hot_encoded_persistence_diagram_from_gtda(persistence_diagram: Array) \
     -> OneHotEncodedPersistenceDiagram:

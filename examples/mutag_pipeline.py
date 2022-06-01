@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import DataLoader, Subset
 
 from gdeep.data.datasets import PersistenceDiagramFromFiles
+from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder
 from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
 from gdeep.data import PreprocessingPipeline
@@ -41,8 +42,8 @@ graph_idx = 1
 pd: OneHotEncodedPersistenceDiagram = \
     OneHotEncodedPersistenceDiagram.load(os.path.join(file_path, 
                                                       f"{graph_idx}.npy"))
-names = ["Ord0", "Ext0", "Rel1", "Ext1"]
-pd.plot(names)
+pd.set_homology_dimension_names(["Ord0", "Ext0", "Rel1", "Ext1"])
+pd.plot()
 # %%
 
 pd_mutag_ds = PersistenceDiagramFromFiles(
@@ -56,8 +57,6 @@ pd: OneHotEncodedPersistenceDiagram = pd_mutag_ds[0][0]
 fig = pd.plot(["Ord0", "Ext0", "Rel1", "Ext1"])
 # add title
 fig.show()
-# %%
-pd - torch.tensor([1])
 # %%
 
 # Create the train/validation/test split
@@ -96,16 +95,6 @@ train_dataset = preprocessing_pipeline.attach_transform_to_dataset(train_dataset
 validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validation_dataset)
 test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
 
-# %%
-_compute_mean_of_dataset(
-            TransformingDataset(train_dataset, lambda x: (x[0].mean(dim=0), x[1]))
-            )
-# -> (0.0, 0.0, sth, sth)
-
-_compute_mean_of_dataset(
-            TransformingDataset(train_dataset, lambda x: ((x[0]**2).mean(dim=0), x[1]))
-            )
-# -> (1.0, 1.0, sth, sth)
 # %%
 kwargs_train = {
     "batch_size": 32,
@@ -167,4 +156,13 @@ x = torch.tensor([1.0, 2.0, 3.0])
 a = A(x)
 b = B(x)
 type(a + b)
+# %%
+file_path: str = os.path.join(DEFAULT_GRAPH_DIR,
+                            f"MUTAG_{diffusion_parameter}_extended_persistence", "diagrams")
+graph_idx = 1
+pd = OneHotEncodedPersistenceDiagram.load(os.path.join(file_path, 
+                                                    f"{graph_idx}.npy"))
+# %%
+path = os.path.join(file_path, f"{graph_idx}.npy")
+torch.load(path)
 # %%

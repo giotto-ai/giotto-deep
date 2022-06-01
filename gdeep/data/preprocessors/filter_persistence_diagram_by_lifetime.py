@@ -54,8 +54,8 @@ class FilterPersistenceDiagramByLifetime(AbstractPreprocessing[Tuple[PD, T], Tup
         if not self.is_fitted:
             raise RuntimeError("The filter is not fitted to any dataset. "
                                "Please call fit_to_dataset() first.")
-        out: PD = item[0]
+        out: Tensor = item[0].get_raw_data()
         lifetime: Tensor = out[:, 1] - out[:, 0]
         mask: Tensor = (lifetime >= self.min_lifetime) & (lifetime <= self.max_lifetime)
         out = out[mask]  # type: ignore
-        return (out, item[1])
+        return (PD(out), item[1])

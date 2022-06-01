@@ -38,8 +38,7 @@ def test_mutag_load_and_save():
     file_path: str = os.path.join(DEFAULT_GRAPH_DIR,
                                 f"MUTAG_{diffusion_parameter}_extended_persistence", "diagrams")
     graph_idx = 1
-    pd: OneHotEncodedPersistenceDiagram = \
-        OneHotEncodedPersistenceDiagram.load(os.path.join(file_path, 
-                                                        f"graph_{graph_idx}_persistence_diagram.npy"))
+    pd = OneHotEncodedPersistenceDiagram.load(os.path.join(file_path, 
+                                                        f"{graph_idx}.npy"))
     assert pd_gudhi.all_close(pd, atol=1e-6), \
         "Generated persistence diagram is not equal to the one from GUDHI"

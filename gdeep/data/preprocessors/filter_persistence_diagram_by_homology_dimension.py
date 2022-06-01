@@ -51,14 +51,11 @@ class FilterPersistenceDiagramByHomologyDimension(AbstractPreprocessing[Tuple[PD
         if not self.is_fitted:
             raise RuntimeError("The filter is not fitted to any dataset. "
                                "Please call fit_to_dataset() first.")
-        out: PD = item[0]
-        list_expanded: Tensor = torch.tensor(
-            [0, 0] + [1 if d in self.homology_dimensions_to_filter_by else 0 for d in range(out.shape[1] - 2)]
-        )
+        out: List[Tensor] = []
+        for homology_dimension in self.homology_dimensions_to_filter_by:
+            out.append(item[0].get_all_points_in_homology_dimension(homology_dimension).get_raw_data())
         
-        mask = (out * list_expanded).sum(dim=1) > 0
-        
-        return out[mask], item[1]  # type: ignore
+        return PD(torch.cat(out)), item[1]
         
 
         

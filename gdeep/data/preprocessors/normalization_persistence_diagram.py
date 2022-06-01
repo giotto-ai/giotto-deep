@@ -36,11 +36,11 @@ class NormalizationPersistenceDiagram(AbstractPreprocessing[Tuple[PD, T], Tuple[
     def fit_to_dataset(self, dataset: Dataset[Tuple[PD, T]]) -> None:
         # compute the mean and set the last entries to zero
         self.mean = _compute_mean_of_dataset(
-            TransformingDataset(dataset, lambda x: (x[0].mean(dim=0), x[1]))
+            TransformingDataset(dataset, lambda x: (x[0].get_raw_data().mean(dim=0), x[1]))
             )
         self.mean = self.mean * torch.tensor([1.0, 1.0] + [0.0] * (self.num_homology_dimensions))
         self.stddev = _compute_mean_of_dataset(
-            TransformingDataset(dataset, lambda x: (((x[0] - self.mean)**2).mean(dim=0), x[1]))
+            TransformingDataset(dataset, lambda x: (((x[0].get_raw_data() - self.mean)**2).mean(dim=0), x[1]))
             )
         self.stddev = (self.stddev 
                        * torch.tensor([1.0, 1.0] + [0.0] * (self.num_homology_dimensions))
@@ -56,5 +56,5 @@ class NormalizationPersistenceDiagram(AbstractPreprocessing[Tuple[PD, T], Tuple[
         if not torch.all(self.stddev > 0):
             warnings.warn("The standard deviation contains zeros! Adding 1e-7")
             self.stddev = self.stddev + 1e-7
-        out: PD = PD((item[0]._data - self.mean) / self.stddev)  # type: ignore
+        out: PD = PD(((item[0]._data - self.mean) / self.stddev).float())  # type: ignore
         return (out, item[1])

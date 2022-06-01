@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, List
+from typing import Dict, Optional, Tuple, List
 import os
 from os.path import join
 
@@ -13,7 +13,7 @@ class PersistenceDiagramFromFiles(Dataset[Tuple[OneHotEncodedPersistenceDiagram,
     labels: Dict[int, int]
     
     def __init__(self, 
-                 file_path: str
+                 file_path: str,
                  ):
         """
         Args:
@@ -24,6 +24,7 @@ class PersistenceDiagramFromFiles(Dataset[Tuple[OneHotEncodedPersistenceDiagram,
         self.file_path = file_path
         self.len = len(os.listdir(join(self.file_path, 'diagrams')))
         self._load_labels()
+        
         
     def __len__(self) -> int:
         """
