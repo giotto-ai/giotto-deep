@@ -34,7 +34,11 @@ class Benchmark:
             loss function
         writer (tensorboard SummaryWriter):
             tensorboard writer
-        KFold_class (sklearn.model_selection, default KFold()):
+        training_metric:
+            the function that computes the metric: it shall
+            have two arguments, one for the prediction
+            and the other for the ground truth
+        k_fold_class (sklearn.model_selection, default KFold()):
             the class instance to implement the KFold, can be
             any of the Splitter classes of sklearn. More
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection

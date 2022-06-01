@@ -74,6 +74,10 @@ class Trainer:
             loss function to average over batches
         writer :
             tensorboard writer
+        training_metric:
+            the function that computes the metric: it shall
+            have two arguments, one for the prediction
+            and the other for the ground truth
         k_fold_class (sklearn.model_selection, default ``KFold(5, shuffle=True)``):
             the class instance to implement the KFold, can be
             any of the Splitter classes of sklearn. More
@@ -109,15 +113,13 @@ class Trainer:
         writer = GiottoSummaryWriter()
         # pipeline
         pipe = Trainer(model, [dl_tr, dl_val, dl_ts],
-                        loss_fn, writer,
+                        loss_fn, writer, None,
                         StratifiedKFold(5, shuffle=True))
         # then one needs to train the model using the pipeline!
         pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=5)
 
     """
 
-    # def __init__(self, model, dataloaders, loss_fn, writer,
-    # hyperparams_search = False, search_metric = "accuracy", n_trials = 10):
     def __init__(self, model: torch.nn.Module,
                  dataloaders: List[DataLoader[Tuple[Tensor, Tensor]]],
                  loss_fn: Callable[[Tensor, Tensor], Tensor],
@@ -297,7 +299,8 @@ class Trainer:
                                                           writer_tag,
                                                           length,
                                                           steps)
-        print(f"Epoch training loss: {epoch_loss:>8f} \tEpoch training accuracy: {epoch_metric:.2f}% ".ljust(100))
+        print(f"Epoch training loss: {epoch_loss:>8f} \tEpoch training "
+              f"{self.training_metric.__name__}: {epoch_metric:.2f}% ".ljust(100))
         try:
             self.writer.flush()
         except AttributeError:
