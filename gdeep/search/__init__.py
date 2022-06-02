@@ -11,7 +11,6 @@ __all__ = [
     'HPOConfig',
     'HyperParameterOptimization',
     'GiottoSummaryWriter',
-    '_benchmarking_param',
     'PersformerHyperparameterSearch',
     'clean_up_files'
     ]
