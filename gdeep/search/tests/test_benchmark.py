@@ -90,6 +90,7 @@ temp_dict["dataloaders"] = (dl_tr, dl_ts)
 
 dataloaders_dicts.append(temp_dict)
 
+
 def test_benchmark():
     # initialise loss
     loss_fn = nn.CrossEntropyLoss()

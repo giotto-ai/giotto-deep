@@ -1,18 +1,19 @@
 import warnings
 from typing import Tuple, Any, Dict, Callable, \
-    Type, Optional, List
+    Type, Optional, List, Union
 
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from sklearn.model_selection._split import BaseCrossValidator
+from sklearn.model_selection._split import BaseCrossValidator  # noqa
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
+from optuna.trial._base import BaseTrial  # noqa
+from sklearn.model_selection import KFold
 
 from gdeep.trainer import Trainer
-from gdeep.utility import _are_compatible
-from sklearn.model_selection import KFold
-from gdeep.trainer import accuracy
+from gdeep.utility import _are_compatible  # noqa
+from gdeep.trainer import accuracy, TrainerConfig
 
 Tensor = torch.Tensor
 
@@ -47,8 +48,8 @@ class Benchmark:
     """
 
     def __init__(self,
-                 models_dicts: Dict[str, torch.nn.Module],
-                 dataloaders_dicts: Dict[str, List[DataLoader[Tuple[Tensor, Tensor]]]],
+                 models_dicts: Dict[str, Union[torch.nn.Module, str]],
+                 dataloaders_dicts: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
                  loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
                  writer: SummaryWriter,
                  training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
@@ -78,7 +79,7 @@ class Benchmark:
               optimizer: Type[Optimizer],
               n_epochs: int = 10,
               cross_validation: bool = False,
-              optimizer_param: Optional[Dict[str, Any]] = None,
+              optimizers_param: Optional[Dict[str, Any]] = None,
               dataloaders_param: Optional[Dict[str, Any]] = None,
               lr_scheduler: Optional[Type[_LRScheduler]] = None,
               scheduler_params: Optional[Dict[str, Any]] = None,
@@ -86,7 +87,8 @@ class Benchmark:
               parallel_tpu: bool = False,
               keep_training: bool = False,
               store_grad_layer_hist: bool = False,
-              n_accumulated_grads: int = 0) -> None:
+              n_accumulated_grads: int = 0,
+              writer_tag: str = "") -> None:
         """Method to be called when starting the benchmarking
         
         Args:
@@ -96,7 +98,7 @@ class Benchmark:
                 number of training epochs
             cross_validation:
                 whether or not to use cross-validation
-            optimizer_param:
+            optimizers_param:
                 dictionary of the optimizers
                 parameters, e.g. ``{"lr": 0.001}``
             dataloaders_param:
@@ -123,41 +125,37 @@ class Benchmark:
             n_accumulated_grads:
                 number of accumulated gradients. It is
                 considered only if a positive integer
+            writer_tag:
+                string to be added to the tensorboard items title
         """
 
         print("Benchmarking Started")
+        config = TrainerConfig(
+            optimizer,
+            n_epochs,
+            cross_validation,
+            optimizers_param,
+            dataloaders_param,
+            lr_scheduler,
+            scheduler_params,
+            None,
+            profiling,
+            parallel_tpu,
+            keep_training,
+            store_grad_layer_hist,
+            n_accumulated_grads,
+            writer_tag
+        )
+
         _benchmarking_param(self._inner_function,
-                            [self.models_dicts,
-                             self.dataloaders_dicts],
-                            optimizer, n_epochs,
-                            cross_validation,
-                            optimizer_param,
-                            dataloaders_param,
-                            lr_scheduler,
-                            scheduler_params,
-                            profiling,
-                            parallel_tpu,
-                            keep_training,
-                            store_grad_layer_hist,
-                            n_accumulated_grads,
-                            writer_tag="")
+                            (self.models_dicts,
+                             self.dataloaders_dicts),
+                            config)
 
     def _inner_function(self,
-                        model: Dict[str, torch.nn.Module],
-                        dataloaders: Dict[str, List[DataLoader[Tuple[Tensor, Tensor]]]],
-                        optimizer: Type[Optimizer],
-                        n_epochs: int,
-                        cross_validation: bool,
-                        optimizer_param: Dict[str, Any],
-                        dataloaders_param: Dict[str, Any],
-                        lr_scheduler: Optional[Type[_LRScheduler]],
-                        scheduler_params: Dict[str, Any],
-                        profiling: bool,
-                        parallel_tpu: bool,
-                        keep_training: bool,
-                        store_grad_layer_hist: bool,
-                        n_accumulated_grads: int,
-                        writer_tag: str = ""):
+                        model: Dict[str, Union[torch.nn.Module, str]],
+                        dataloaders: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
+                        config: TrainerConfig) -> None:
         """private method to run the inner
         function of the benchmark loops
         
@@ -169,64 +167,20 @@ class Benchmark:
                 dictionary defining the dataset name
                 and the actual list of dataloaders, e.g.
                 ``[dl_tr, dl_val, dl_ts]``
-            optimizer:
-                a torch optimizer class (not the instance)
-            n_epochs:
-                number of training epochs
-            cross_validation:
-                whether or not to use cross-validation
-            optimizer_param:
-                dictionary of the optimizers
-                parameters, e.g. ``{"lr": 0.001}``
-            dataloaders_param:
-                dictionary of the dataloaders
-                parameters, e.g. ``{"batch_size": 32}``
-            lr_scheduler:
-                a learning rate scheduler class
-            scheduler_params:
-                learning rate scheduler parameters
-            profiling:
-                whether or not you want to activate the
-                profiler
-            parallel_tpu:
-                boolean value to run the computations
-                on multiple TPUs
-            keep_training:
-                boolean flag to use the same model for
-                further training
-            store_grad_layer_hist:
-                flag to store or not the layer's grads
-                on tensorboard
-            n_accumulated_grads:
-                this is the number of accumated grads. It
-                is taken into account only for positive integers
-            writer_tag:
-                the tensorboard writer tag
+            config:
+                the configuration class ``TrainerConfig``.
         """
         pipe = Trainer(model["model"], dataloaders["dataloaders"],
                        self.loss_fn, self.writer, self.training_metric,  # type: ignore
                        self.k_fold_class)
-        writer_tag += "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]  # type: ignore
-        pipe.train(optimizer,
-                   n_epochs,
-                   cross_validation,
-                   optimizer_param,
-                   dataloaders_param,
-                   lr_scheduler,
-                   scheduler_params,
-                   None,
-                   profiling,
-                   parallel_tpu,
-                   keep_training,
-                   store_grad_layer_hist,
-                   n_accumulated_grads,
-                   writer_tag)
+        config.writer_tag += "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]  # type: ignore
+        pipe.train(**config.to_dict())
 
 
 def _benchmarking_param(fun: Callable[[Any], Any],
-                        arguments: Tuple[Dict[str, torch.nn.Module],
-                                         Dict[str, DataLoader[Tuple[Tensor, Tensor]]]],
-                        *args, **kwargs):  # type: ignore
+                        arguments: Tuple[Dict[str, Union[torch.nn.Module, str]],
+                                         Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]],
+                        config: TrainerConfig) -> None:
     """Function to be used as pseudo-decorator for
     benchmarking loops
     
@@ -237,10 +191,8 @@ def _benchmarking_param(fun: Callable[[Any], Any],
             list of arguments to pass to the inner
             function of the wrapper. Expected to receive
             ``models_dicts, dataloaders_dict = arguments``
-        *args (*list):
-            all the args of ``fun``
-        **kwargs (**dict):
-            all the kwargs of ``fun``
+        config:
+            the configuration class ``TrainerConfig``.
 
     """
 
@@ -251,4 +203,4 @@ def _benchmarking_param(fun: Callable[[Any], Any],
                 print("*" * 40)
                 print(f"Performing Gridsearch on Dataset: {dataloaders['name']}"
                       f", Model: {model['name']}")
-                fun(model, dataloaders, *args, **kwargs)
+                fun(model, dataloaders, config)
