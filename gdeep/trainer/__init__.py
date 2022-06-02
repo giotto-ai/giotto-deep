@@ -1,8 +1,10 @@
-
+from .metrics import accuracy
 from .trainer import Trainer
-# from .gridsearch import GridSearch
+from .trainer_config import TrainerConfig
 
 
 __all__ = [
-    'Trainer'
+    'Trainer',
+    'accuracy',
+    'TrainerConfig'
     ]
