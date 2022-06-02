@@ -194,7 +194,7 @@ class Persformer(Module):
         # Apply the attention layers
         for persformer_block in self.persformer_blocks:
             output = persformer_block(output, attention_mask)
-        ouput = self.pooling_layer(output)
+        ouput = self.pooling_layer(output, attention_mask)
         # Apply the classifier layer
         output = self.classifier_layer(output)
         return output
@@ -255,7 +255,8 @@ class MeanPoolingLayer(Module):
             self.config = config
             
         def forward(self,
-                    input_batch: Tensor
+                    input_batch: Tensor,
+                    attention_mask: Optional[Tensor] = None
                     ) -> Tensor:
             """
             Forward pass of the model.
@@ -267,7 +268,7 @@ class MeanPoolingLayer(Module):
                 The pooled output. Of shape (batch_size, hidden_size)
             """
             # Initialize the output tensor
-            output = input_batch
+            output = input_batch  #TODO: incorporate attention mask
             # Apply the max pooling layer
             output = output.mean(dim=-2)
             return output
@@ -281,7 +282,8 @@ class SumPoolingLayer(Module):
             self.config = config
             
         def forward(self,
-                    input_batch: Tensor
+                    input_batch: Tensor,
+                    attention_mask: Optional[Tensor] = None
                     ) -> Tensor:
             """
             Forward pass of the model.
@@ -293,7 +295,7 @@ class SumPoolingLayer(Module):
                 The pooled output. Of shape (batch_size, hidden_size)
             """
             # Initialize the output tensor
-            output = input_batch
+            output = input_batch * attention_mask
             # Apply the max pooling layer
             output = output.sum(dim=-2)
             return output
@@ -315,7 +317,8 @@ class AttentionPoolingLayer(Module):
 
         
     def forward(self,  # type: ignore
-                input_batch: Tensor
+                input_batch: Tensor,
+                attention_mask: Optional[Tensor] = None
                 ) -> Tensor:
         """
         Forward pass of the model.
@@ -327,7 +330,7 @@ class AttentionPoolingLayer(Module):
             The pooled output. Of shape (batch_size, hidden_size)
         """
         return self.scaled_dot_product_attention(self.queries, input_batch, input_batch,
-                                                mask=None,
+                                                mask=attention_mask,
                                                 dropout=None)
 
 

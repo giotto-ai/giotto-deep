@@ -169,7 +169,26 @@ class OneHotEncodedPersistenceDiagram():
         #     " the data will not be correctly converted."
         return OneHotEncodedPersistenceDiagram(torch.from_numpy(data.astype(np.float32)))
     
-
+def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDiagram, int]]) -> \
+    Tuple[Tensor, Tensor, Tensor]:
+    """This function collates the data for the persistence diagram by padding the data, converting
+    the data to tensors, converting the labels to tensors and generating masks for the valid
+    entries.
+    
+    The input is a list of tuples of the form (persistence diagram, label).
+    """
+    max_num_points: int = max([len(x[0].get_raw_data()) for x in batch])
+    input_batch = torch.zeros(len(batch), max_num_points, 2)
+    mask = torch.zeros(len(batch), max_num_points)
+    for i, (pd, _) in enumerate(batch):
+        input_batch[i, :len(pd.get_raw_data()), :] = pd.get_raw_data()
+        mask[i, :len(pd.get_raw_data())] = 1.0
+    
+    label_batch = torch.tensor([x[1] for x in batch])
+    
+    return input_batch, mask, label_batch
+    
+    
 def _check_if_valid(data) -> None:
     if data.ndimension() != 2:
         raise ValueError("The input should be a 2-dimensional tensor."

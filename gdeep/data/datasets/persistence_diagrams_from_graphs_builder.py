@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 import os
-from typing import List, Tuple, Callable, Union, Optional
+from typing import Any, List, Tuple, Callable, Union, Optional
 from types import FunctionType
 
 import numpy as np

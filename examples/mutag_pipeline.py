@@ -1,7 +1,8 @@
 # %%
+from dataclasses import dataclass
 import os
 from shutil import rmtree
-from typing import List, Tuple
+from typing import Any, Callable, List, Tuple
 from sklearn.model_selection import train_test_split
 
 import numpy as np
@@ -12,7 +13,7 @@ from torch.optim import Adam
 from gdeep.data.datasets import PersistenceDiagramFromFiles
 from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder
 from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
-from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
+from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams
 from gdeep.data import PreprocessingPipeline
 from gdeep.data.preprocessors import (
     NormalizationPersistenceDiagram,
@@ -98,27 +99,18 @@ validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validati
 test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
 
 # %%
-kwargs_train = {
-    "batch_size": 32,
-    "shuffle": True,
-    "num_workers": 0,
-}
 
-kwargs_val = {
-    "batch_size": 32,
-    "shuffle": False,
-    "num_workers": 0,
-}
+dl_params = DataLoaderParamsTuples.default(
+    batch_size=32,
+    num_workers=0,
+    collate_fn=collate_fn_persistence_diagrams
+)
 
-kwargs_test = {
-    "batch_size": 32,
-    "shuffle": False,
-    "num_workers": 0,
-}
 
 # Build the data loaders
 dlb = DataLoaderBuilder((train_dataset, validation_dataset, test_dataset))  # type: ignore
-dl_train, dl_val, dl_test = dlb.build((kwargs_train, kwargs_val, kwargs_test))  # type: ignore
+dl_train, dl_val, dl_test = dlb.build(dl_params)  # type: ignore
+#%%
 
 # Define the model
 model_config = PersformerConfig(
@@ -136,3 +128,23 @@ loss_function = lambda logits, target: nn.CrossEntropyLoss()(logits, target)
 trainer = Trainer(model, (train_dataset, validation_dataset, test_dataset), loss_function, writer)
 
 trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16})
+
+# %%
+@dataclass
+class A:
+    a: int
+    b: int
+    
+    def update_a(self, a: int):
+        self.a = a
+        return self
+    
+    def copy(self):
+        return A(self.a, self.b)
+    
+x = A(1, 2)
+print(x)
+y = x.copy().update_a(3)
+print(y)
+print(x)
+# %%
