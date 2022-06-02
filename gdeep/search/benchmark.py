@@ -24,13 +24,13 @@ class Benchmark:
 
     Args:
         models_dicts :
-            each dictionary has two items, `"name":"string"`
+            each dictionary has two items, ``"name":"string"``
             the name of the model and `"model":nn.Module` a
             standard torch model
         dataloaders_dicts :
-            each dictionary has two items, `"name":"string"`
-            the name of the model and `"dataloaders":list` a
-            list of standard torch.dataloaders, e.g. `(dl_tr, dl_ts)`
+            each dictionary has two items, ``"name":"string"``
+            the name of the model and ``"dataloaders":list`` a
+            list of standard torch.dataloaders, e.g. ``(dl_tr, dl_ts)``
         loss_fn:
             loss function
         writer:
@@ -98,10 +98,10 @@ class Benchmark:
                 whether or not to use cross-validation
             optimizer_param:
                 dictionary of the optimizers
-                parameters, e.g. `{"lr": 0.001}`
+                parameters, e.g. ``{"lr": 0.001}``
             dataloaders_param:
                 dictionary of the dataloaders
-                parameters, e.g. `{"batch_size": 32}`
+                parameters, e.g. ``{"batch_size": 32}``
             lr_scheduler:
                 a learning rate scheduler class (not instance)
             scheduler_params:
@@ -177,10 +177,10 @@ class Benchmark:
                 whether or not to use cross-validation
             optimizer_param:
                 dictionary of the optimizers
-                parameters, e.g. `{"lr": 0.001}`
+                parameters, e.g. ``{"lr": 0.001}``
             dataloaders_param:
                 dictionary of the dataloaders
-                parameters, e.g. `{"batch_size": 32}`
+                parameters, e.g. ``{"batch_size": 32}``
             lr_scheduler:
                 a learning rate scheduler class
             scheduler_params:
