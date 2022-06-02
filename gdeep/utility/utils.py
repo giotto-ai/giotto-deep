@@ -1,8 +1,6 @@
-from ctypes import Union
-#import imp
 from IPython import get_ipython  # type: ignore
 import base64
-from typing import Dict, Tuple, Any, Optional, Type
+from typing import Dict, Optional, Type, List
 import os
 import time
 import hashlib
@@ -15,7 +13,7 @@ from torch.optim import Optimizer
 
 
 def _are_compatible(model_dict: Dict[str, nn.Module],
-                    dataloaders_dict: Dict[str, DataLoader]) -> bool:
+                    dataloaders_dict: Dict[str, List[DataLoader]]) -> bool:
     """utility function to check the compatibility of a model
     with a set of dataloaders `(dl_tr, dl_val, dl_ts)`
     """
@@ -29,11 +27,12 @@ def _are_compatible(model_dict: Dict[str, nn.Module],
     else:
         return True
 
+
 def save_model_and_optimizer(model: nn.Module,
-                             model_name: Optional[str]=None,
-                             trial_id: Optional[str]=None,
-                             optimizer: Optional[Optimizer]=None,
-                             store_pickle: bool=False):
+                             model_name: Optional[str] = None,
+                             trial_id: Optional[str] = None,
+                             optimizer: Optional[Optimizer] = None,
+                             store_pickle: bool = False):
     """Save the model and the optimizer state_dict
 
     Args:
@@ -67,7 +66,7 @@ def save_model_and_optimizer(model: nn.Module,
         else:
             torch.save(model.state_dict(),
                        os.path.join("state_dicts",
-                                    model.__class__.__name__+"-"+trial_id+".pth"))
+                                    model.__class__.__name__ + "-" + trial_id + ".pth"))
     else:
         if store_pickle:
             torch.save(model,
@@ -76,27 +75,31 @@ def save_model_and_optimizer(model: nn.Module,
         else:
             torch.save(model.state_dict(),
                        os.path.join("state_dicts",
-                                    model_name +"-"+trial_id+".pth"))
+                                    model_name + "-" + trial_id + ".pth"))
     if optimizer is not None:
         torch.save(optimizer.state_dict(),
                    os.path.join("state_dicts",
-                                str(optimizer).replace("\n","").replace("(","").replace(":","").replace(")","")
-                                +"-"+trial_id+".pth"))
+                                str(optimizer).replace("\n", "").replace("(", "").replace(":", "").replace(")", "")
+                                + "-" + trial_id + ".pth"))
 
 
 def ensemble_wrapper(clss: Type):
     """function to wrap the ensemble estimators
-    of the ``torchensable`` library.
+    of the ``torchensemble`` library.
 
     The only argument is the estimator class. Then
     you can initialise the output of this function
     as you would normally do for the original
-    ``torchensebl``` class
+    ``torchensemble`` class
 
     Args
-        clss (type):
+        clss:
             the class of the estimator, like
             ``VotingClassifier`` for example
+    Returns:
+        type:
+            the initialised ensemble estimator
+            class that is compatible with giotto-deep
     """
 
     class NewEnsembleEstimator(clss):
@@ -112,14 +115,15 @@ def _inner_refactor_scalars(list_, cross_validation, k_folds):
     per epoch"""
     out = []
     for t in range(len(list_)):
-        lis = [x[0] for x in list_ if x[1]==t]
+        lis = [x[0] for x in list_ if x[1] == t]
         value = sum(lis)
         if len(lis) > 0:
             if cross_validation:
-                out.append([value/k_folds , t])
+                out.append([value / k_folds, t])
             else:
                 out.append([value, t])
     return out
+
 
 def is_notebook() -> bool:
     """Check if the current environment is a notebook
@@ -131,14 +135,15 @@ def is_notebook() -> bool:
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
-            return True   # Jupyter notebook or qtconsole
+            return True  # Jupyter notebook or qtconsole
         elif shell == 'TerminalInteractiveShell':
             return False  # Terminal running IPython
         else:
             return False  # Other type (?)
     except NameError:
-        return False      # Probably standard Python interpreter
-    
+        return False  # Probably standard Python interpreter
+
+
 def autoreload_if_notebook() -> None:
     """Autoreload the modules if the environment is a notebook
     
@@ -148,7 +153,8 @@ def autoreload_if_notebook() -> None:
     from IPython import get_ipython  # type: ignore
     get_ipython().magic('load_ext autoreload')
     get_ipython().magic('autoreload 2')
-    
+
+
 def _file_as_bytes(file) -> bytes:
     """Returns a bytes object representing the file
 
@@ -162,13 +168,16 @@ def _file_as_bytes(file) -> bytes:
     """
     with open(file, 'rb') as f:
         return f.read()
-    
+
+
 def get_checksum(file: str, encoding: str = "hex"):
     """Returns the checksum of the file
 
     Args:
-        file (str):
+        file :
             Path to the file
+        encoding:
+            string encoding like ``'hex'``
             
     Raises:
         ValueError: if the file does not exist
@@ -187,7 +196,7 @@ def get_checksum(file: str, encoding: str = "hex"):
     elif encoding == "base64":
         return base64.b64encode(
             bytes.fromhex(hashlib.md5(_file_as_bytes(file)).hexdigest())
-            )
+        )
     else:
         raise ValueError("encoding must be either 'hex' or 'base64'")
 
@@ -196,10 +205,10 @@ class KnownWarningSilencer:
     """silence all warnings within this ``with``
     statement with this class"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def __enter__(self):
+    def __enter__(self) -> 'KnownWarningSilencer':
         warnings.filterwarnings("ignore")
         return self
 

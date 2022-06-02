@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection._split import BaseCrossValidator
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler  # noqa
 
 from gdeep.trainer import Trainer
 from gdeep.utility import _are_compatible
@@ -16,29 +16,30 @@ from gdeep.trainer import accuracy
 
 Tensor = torch.Tensor
 
+
 class Benchmark:
     """This is the generic class that allows
     the user to perform benchmarking over different
     datasets and models.
 
     Args:
-        models_dicts (list of dicts):
+        models_dicts :
             each dictionary has two items, `"name":"string"`
             the name of the model and `"model":nn.Module` a
             standard torch model
-        dataloaders_dicts (utils.DataLoader):
+        dataloaders_dicts :
             each dictionary has two items, `"name":"string"`
             the name of the model and `"dataloaders":list` a
             list of standard torch.dataloaders, e.g. `(dl_tr, dl_ts)`
-        loss_fn (Callables):
+        loss_fn:
             loss function
-        writer (tensorboard SummaryWriter):
+        writer:
             tensorboard writer
         training_metric:
             the function that computes the metric: it shall
             have two arguments, one for the prediction
             and the other for the ground truth
-        k_fold_class (sklearn.model_selection, default KFold()):
+        k_fold_class:
             the class instance to implement the KFold, can be
             any of the Splitter classes of sklearn. More
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
@@ -51,14 +52,14 @@ class Benchmark:
                  loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
                  writer: SummaryWriter,
                  training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
-                 k_fold_class:Optional[BaseCrossValidator]=None) -> None:
+                 k_fold_class: Optional[BaseCrossValidator] = None) -> None:
         self.models_dicts = models_dicts
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
         self.writer = writer
         if not self.writer:
             warnings.warn("No writer detected")
-        
+
         if not k_fold_class:
             self.k_fold_class = KFold(5, shuffle=True)
         else:
@@ -75,51 +76,51 @@ class Benchmark:
 
     def start(self,
               optimizer: Type[Optimizer],
-              n_epochs:int=10,
-              cross_validation:bool=False,
-              optimizer_param:Optional[Dict[str, Any]]=None,
-              dataloaders_param:Optional[Dict[str, Any]]=None,
-              lr_scheduler: Optional[Type[_LRScheduler]]=None,
-              scheduler_params:Optional[Dict[str, Any]]=None,
-              profiling:bool=False,
-              parallel_tpu:bool=False,
-              keep_training:bool=False,
-              store_grad_layer_hist:bool=False,
-              n_accumulated_grads:int=0) -> None:
+              n_epochs: int = 10,
+              cross_validation: bool = False,
+              optimizer_param: Optional[Dict[str, Any]] = None,
+              dataloaders_param: Optional[Dict[str, Any]] = None,
+              lr_scheduler: Optional[Type[_LRScheduler]] = None,
+              scheduler_params: Optional[Dict[str, Any]] = None,
+              profiling: bool = False,
+              parallel_tpu: bool = False,
+              keep_training: bool = False,
+              store_grad_layer_hist: bool = False,
+              n_accumulated_grads: int = 0) -> None:
         """Method to be called when starting the benchmarking
         
         Args:
-            optimizer (torch.optim):
-                a torch optimizers
-            n_epochs (int):
+            optimizer:
+                a torch optimizers class (not the instance)
+            n_epochs:
                 number of training epochs
-            crossvalidation (bool):
+            cross_validation:
                 whether or not to use cross-validation
-            optimizers_param (dict):
+            optimizer_param:
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            dataloaders_param (dict):
+            dataloaders_param:
                 dictionary of the dataloaders
                 parameters, e.g. `{"batch_size": 32}`
-            lr_scheduler (torch.optim):
-                a learning rate scheduler
-            scheduler_params (dict):
+            lr_scheduler:
+                a learning rate scheduler class (not instance)
+            scheduler_params:
                 learning rate scheduler parameters
-            profiling (bool, default=False):
+            profiling:
                 whether or not you want to activate the
                 profiler
-            parallel_tpu (bool):
+            parallel_tpu:
                 boolean value to run the computations
                 on multiple TPUs
-            keep_training (bool):
+            keep_training:
                 This flag allows to restart a training from
                 the existing optimizer as well as the
                 existing model
-            store_grad_layer_hist (bool):
+            store_grad_layer_hist:
                 This flag allows to store the gradients
                 and the layer values in tensorboard for
                 each epoch
-            n_accumulated_grads (int, default=0):
+            n_accumulated_grads:
                 number of accumulated gradients. It is
                 considered only if a positive integer
         """
@@ -141,72 +142,71 @@ class Benchmark:
                             n_accumulated_grads,
                             writer_tag="")
 
-
     def _inner_function(self,
-                        model:Dict[str,torch.nn.Module],
-                        dataloaders:Dict[str, List[DataLoader[Tuple[Tensor, Tensor]]]],
+                        model: Dict[str, torch.nn.Module],
+                        dataloaders: Dict[str, List[DataLoader[Tuple[Tensor, Tensor]]]],
                         optimizer: Type[Optimizer],
-                        n_epochs:int,
-                        cross_validation:bool,
-                        optimizer_param:Dict[str, Any],
-                        dataloaders_param:Dict[str, Any],
-                        lr_scheduler:Optional[Type[_LRScheduler]],
-                        scheduler_params:Dict[str, Any],
-                        profiling:bool,
-                        parallel_tpu:bool,
-                        keep_training:bool,
-                        store_grad_layer_hist:bool,
-                        n_accumulated_grads:int,
-                        writer_tag:str=""):
+                        n_epochs: int,
+                        cross_validation: bool,
+                        optimizer_param: Dict[str, Any],
+                        dataloaders_param: Dict[str, Any],
+                        lr_scheduler: Optional[Type[_LRScheduler]],
+                        scheduler_params: Dict[str, Any],
+                        profiling: bool,
+                        parallel_tpu: bool,
+                        keep_training: bool,
+                        store_grad_layer_hist: bool,
+                        n_accumulated_grads: int,
+                        writer_tag: str = ""):
         """private method to run the inner
         function of the benchmark loops
         
         Args:
-            model (dict):
+            model:
                 dictionary defining the model name
                 and actual nn.Module
-            dataloaders (dict):
+            dataloaders:
                 dictionary defining the dataset name
                 and the actual list of dataloaders, e.g.
                 ``[dl_tr, dl_val, dl_ts]``
-            optimizer (torch.optim):
-                a torch optimizer class
-            n_epochs (int):
+            optimizer:
+                a torch optimizer class (not the instance)
+            n_epochs:
                 number of training epochs
-            cross_validation (bool):
+            cross_validation:
                 whether or not to use cross-validation
-            optimizers_param (dict):
+            optimizer_param:
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            dataloaders_param (dict):
+            dataloaders_param:
                 dictionary of the dataloaders
                 parameters, e.g. `{"batch_size": 32}`
-            lr_scheduler (torch.optim):
+            lr_scheduler:
                 a learning rate scheduler class
-            scheduler_params (dict):
+            scheduler_params:
                 learning rate scheduler parameters
-            profiling (bool, default=False):
+            profiling:
                 whether or not you want to activate the
                 profiler
-            parallel_tpu (bool):
+            parallel_tpu:
                 boolean value to run the computations
                 on multiple TPUs
-            keep_training (bool):
+            keep_training:
                 boolean flag to use the same model for
                 further training
-            store_grad_layer_hist (bool):
+            store_grad_layer_hist:
                 flag to store or not the layer's grads
                 on tensorboard
-            n_accumulated_grads (int):
+            n_accumulated_grads:
                 this is the number of accumated grads. It
                 is taken into account only for positive integers
-            writer_tag (str):
+            writer_tag:
                 the tensorboard writer tag
         """
         pipe = Trainer(model["model"], dataloaders["dataloaders"],
-                       self.loss_fn, self.writer, self.training_metric,
+                       self.loss_fn, self.writer, self.training_metric,  # type: ignore
                        self.k_fold_class)
-        writer_tag += "Dataset:" + dataloaders["name"] +"|Model:" + model["name"]
+        writer_tag += "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]  # type: ignore
         pipe.train(optimizer,
                    n_epochs,
                    cross_validation,
@@ -222,9 +222,10 @@ class Benchmark:
                    n_accumulated_grads,
                    writer_tag)
 
-def _benchmarking_param(fun: Callable[[Any],Any],
-                        arguments:Tuple[Dict[str, torch.nn.Module],
-                                             Dict[str, DataLoader[Tuple[Tensor, Tensor]]]],
+
+def _benchmarking_param(fun: Callable[[Any], Any],
+                        arguments: Tuple[Dict[str, torch.nn.Module],
+                                         Dict[str, DataLoader[Tuple[Tensor, Tensor]]]],
                         *args, **kwargs):  # type: ignore
     """Function to be used as pseudo-decorator for
     benchmarking loops
@@ -247,8 +248,7 @@ def _benchmarking_param(fun: Callable[[Any],Any],
     for dataloaders in dataloaders_dicts:
         for model in models_dicts:
             if _are_compatible(model, dataloaders):
-                print("*"*40)
+                print("*" * 40)
                 print(f"Performing Gridsearch on Dataset: {dataloaders['name']}"
                       f", Model: {model['name']}")
                 fun(model, dataloaders, *args, **kwargs)
-

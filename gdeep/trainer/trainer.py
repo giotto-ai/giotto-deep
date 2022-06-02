@@ -148,7 +148,7 @@ class Trainer:
         self.registered_hook = None
         # used in gradient clipping
         self.clip: int = 5
-        # used by gridsearch:
+        # used by hpo:
         self.run_name: Optional[str] = None
         self.val_loss_list_hparam: List[float] = []
         self.val_acc_list_hparam: List[float] = []
@@ -237,10 +237,6 @@ class Trainer:
             pred = self.model(X)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
-            #try:
-            #    correct += (pred.argmax(1) == y).to(torch.float).sum().item()
-            #except RuntimeError:
-            #    correct += (pred.argmax(2) == y).to(torch.float).sum().item()
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
@@ -418,10 +414,6 @@ class Trainer:
                 loss += self.loss_fn(pred, y).item()
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
-                #try:
-                #    correct += (pred.argmax(1) == y).to(torch.float).sum().item()
-                #except RuntimeError:
-                #    correct += (pred.argmax(2) == y).to(torch.float).sum().item()
                 class_label.append(y)
         epoch_metric = sum(batch_metric_list)/len(batch_metric_list)
         epoch_loss = loss/len(batch_metric_list)
@@ -584,7 +576,7 @@ class Trainer:
         # optuna gridsearch
         search_metric = None
         trial = None
-        if not optuna_params is None:
+        if optuna_params is not None:
             check_optuna = True
             trial, search_metric = optuna_params
         else:
@@ -647,7 +639,6 @@ class Trainer:
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
-            valloss, valacc = 0., 0.
             try:
                 data_idx = self.dataloaders[0].sampler.indices
                 labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
@@ -712,7 +703,7 @@ class Trainer:
                                                optimizer, optimizers_param,
                                                lr_scheduler, scheduler_params)
 
-            if parallel_tpu == False:
+            if not parallel_tpu:
                 valloss, valacc = self._training_loops(n_epochs, dl_tr,
                                                        dl_val, lr_scheduler, self.scheduler,
                                                        check_optuna, search_metric,
@@ -851,6 +842,8 @@ class Trainer:
             dl_val_old:
                 validation dataloader
                 parameters, e.g. `{'batch_size': 32}`
+            optimizers_param:
+                dictionary of parameters for the optimizers
             lr_scheduler :
                 a learning rate scheduler class
             scheduler:
@@ -987,9 +980,9 @@ class Trainer:
 
                 # self.writer.flush()
 
-                if not lr_scheduler is None:
+                if lr_scheduler is not None:
                     scheduler.step()
-                if not self.prof is None:
+                if self.prof is not None:
                     self.prof.step()
 
                 if check_optuna and not cross_validation:

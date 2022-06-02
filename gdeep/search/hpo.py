@@ -2,8 +2,7 @@ import os
 import time
 import warnings
 from itertools import chain, combinations
-from functools import partial
-from typing import Tuple, Any, Dict, Callable, \
+from typing import Tuple, Any, Dict, \
     Type, Optional, List, Union
 
 import torch
@@ -22,15 +21,14 @@ from optuna.trial._base import BaseTrial
 from optuna.study import BaseStudy as Study
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler  # noqa
 
-from gdeep.utility import _are_compatible, _inner_refactor_scalars, KnownWarningSilencer
+from gdeep.utility import _inner_refactor_scalars, KnownWarningSilencer
 from gdeep.trainer import Trainer
 from gdeep.search import Benchmark, _benchmarking_param
 from gdeep.visualisation import plotly2tensor
 from ..utility import save_model_and_optimizer
 from gdeep.utility import DEVICE
-
 
 Tensor = torch.Tensor
 Array = np.ndarray
@@ -39,10 +37,10 @@ Array = np.ndarray
 class GiottoSummaryWriter(SummaryWriter):
     def add_hparams(self, hparam_dict: Dict[str, Any],
                     metric_dict: Dict[str, Any],
-                    hparam_domain_discrete: Optional[Dict[str, List[Any]]]=None,
-                    run_name:str=None,
-                    scalars_lists:Optional[List[List[Tuple[Any, int]]]]=None,
-                    best_not_last:bool=False):
+                    hparam_domain_discrete: Optional[Dict[str, List[Any]]] = None,
+                    run_name: str = None,
+                    scalars_lists: Optional[List[List[Tuple[Any, int]]]] = None,
+                    best_not_last: bool = False):
         """Add a set of hyperparameters to be compared in TensorBoard.
 
         Args:
@@ -84,7 +82,7 @@ class GiottoSummaryWriter(SummaryWriter):
             raise TypeError('hparam_dict and metric_dict should be dictionary.')
         exp, ssi, sei = hparams(hparam_dict, metric_dict, hparam_domain_discrete)
         if not run_name:
-            run_name = str(time.time()).replace(":","-")
+            run_name = str(time.time()).replace(":", "-")
         logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
         with SummaryWriter(log_dir=logdir) as w_hp:
             w_hp.file_writer.add_summary(exp)
@@ -93,12 +91,13 @@ class GiottoSummaryWriter(SummaryWriter):
             if isinstance(scalars_lists, list) or isinstance(scalars_lists, tuple):
                 scalars_list_loss = scalars_lists[0]
                 if best_not_last:
-                    scalars_list_loss = [x for x in scalars_list_loss[:np.argmin(np.array(scalars_list_loss)[:,0])+1]]
+                    scalars_list_loss = [x for x in
+                                         scalars_list_loss[:np.argmin(np.array(scalars_list_loss)[:, 0]) + 1]]
                 for v, t in scalars_list_loss:
                     w_hp.add_scalar("loss", v, t)
                 scalars_list_acc = scalars_lists[1]
                 if best_not_last:
-                    scalars_list_acc = [x for x in scalars_list_acc[:np.argmax(np.array(scalars_list_acc)[:,0])+1]]
+                    scalars_list_acc = [x for x in scalars_list_acc[:np.argmax(np.array(scalars_list_acc)[:, 0]) + 1]]
                 for v, t in scalars_list_acc:
                     w_hp.add_scalar("accuracy", v, t)
 
@@ -151,7 +150,7 @@ class HyperParameterOptimization(Trainer):
         self.df_res = None
         self.db_url = db_url
         self.study_name = study_name
-        if (isinstance(obj, Trainer)):
+        if isinstance(obj, Trainer):
             self.pipe = obj
             super().__init__(self.pipe.model,
                              self.pipe.dataloaders,
@@ -161,7 +160,7 @@ class HyperParameterOptimization(Trainer):
                              self.pipe.k_fold_class)
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
-        elif (isinstance(obj, Benchmark)):
+        elif isinstance(obj, Benchmark):
             self.bench = obj
             self.is_pipe = False
 
@@ -181,11 +180,11 @@ class HyperParameterOptimization(Trainer):
                                        n_warmup_steps=0,
                                        interval_steps=1,
                                        n_min_trials=1)
-        self.scalars_dict : Dict[str, Any]= dict()
+        self.scalars_dict: Dict[str, Any] = dict()
         # can be changed by changing this attribute
-        self.store_pickle:bool = False
+        self.store_pickle: bool = False
 
-    def _initialise_new_model(self, models_hyperparam:Dict[str, Any]) \
+    def _initialise_new_model(self, models_hyperparam: Dict[str, Any]) \
             -> torch.nn.Module:
         """private method to find the maximal compatible set
         between models and hyperparameters
@@ -198,16 +197,16 @@ class HyperParameterOptimization(Trainer):
             nn.Module
                 torch nn.Module
         """
-        
+
         list_of_params_keys = HyperParameterOptimization._powerset(list(models_hyperparam.keys()))
         list_of_params_keys.reverse()
         for params_keys in list_of_params_keys:
-            sub_models_hyperparam = {k:models_hyperparam[k]
+            sub_models_hyperparam = {k: models_hyperparam[k]
                                      for k in models_hyperparam.keys() if k in params_keys}
             try:
-                #print(sub_models_hyperparam)
-                new_model = type(self.model)(**sub_models_hyperparam)
-                #print(new_model.state_dict())
+                # print(sub_models_hyperparam)
+                new_model = type(self.model)(**sub_models_hyperparam)  # noqa
+                # print(new_model.state_dict())
                 raise ValueError
             except TypeError:  # when the parameters do not match the model
                 pass
@@ -215,68 +214,68 @@ class HyperParameterOptimization(Trainer):
                 break
 
         try:
-            new_model
+            new_model  # noqa
         except NameError:
             warnings.warn("Model cannot be re-initialised. Using existing one.")
             new_model = self.model
         return new_model
 
     def _objective(self,
-                   trial:Optional[BaseTrial],
-                   optimizers:List[Type[Optimizer]],
-                   n_epochs:int,
+                   trial: Optional[BaseTrial],
+                   optimizers: List[Type[Optimizer]],
+                   n_epochs: int,
                    cross_validation: bool,
-                   optimizers_params: Optional[Dict[str,Any]],
-                   dataloaders_params: Optional[Dict[str,Any]],
-                   models_hyperparams: Optional[Dict[str,Any]],
+                   optimizers_params: Optional[Dict[str, Any]],
+                   dataloaders_params: Optional[Dict[str, Any]],
+                   models_hyperparams: Optional[Dict[str, Any]],
                    lr_scheduler: Optional[Type[_LRScheduler]],
-                   schedulers_params: Optional[Dict[str,Any]],
+                   schedulers_params: Optional[Dict[str, Any]],
                    profiling: bool,
                    parallel_tpu: bool,
                    keep_training: bool,
                    store_grad_layer_hist: bool,
-                   n_accumulated_grads:int,
-                   writer_tag:str=""):
+                   n_accumulated_grads: int,
+                   writer_tag: str = ""):
         """default callback function for optuna's study
         
         Args:
-            trial (optuna.trial):
+            trial:
                 the independent variable
-            optimizers (list of torch.optim):
+            optimizers:
                 list of torch optimizers
-            n_epochs (int):
+            n_epochs:
                 number of training epochs
-            optimizers_params (dict):
+            optimizers_params:
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            dataloaders_hyperparams (dict):
+            dataloaders_params:
                 dictionary of the dataloaders
                 parameters
-            models_hyperparams (dict):
+            models_hyperparams:
                 dictionary of the model
                 parameters
-            lr_scheduler (torch.optim):
+            lr_scheduler:
                 a learning rate scheduler class
-            schedulers_params (dict):
+            schedulers_params:
                 learning rate scheduler parameters
-            profiling (bool):
+            profiling:
                 whether or not you want to activate the
                 profiler
-            parallel_tpu (bool):
+            parallel_tpu:
                 boolean value to run the computations
                 on multiple TPUs
-            keep_training (bool):
+            keep_training:
                 This flag allows to restart a training from
                 the existing optimizer as well as the
                 existing model
-            store_grad_layer_hist (bool):
+            store_grad_layer_hist:
                 This flag allows to store the gradients
                 and the layer values in tensorboard for
                 each epoch
-            n_accumulated_grads (int):
+            n_accumulated_grads:
                 this is the number of accumated grads. It
                 is taken into account only for positive integers
-            writer_tag (string):
+            writer_tag:
                 tag to prepend to the ouput
                 on tensorboard
 
@@ -298,17 +297,17 @@ class HyperParameterOptimization(Trainer):
         self.models_hyperparam = HyperParameterOptimization._suggest_params(trial, models_hyperparams)
         self.schedulers_param = HyperParameterOptimization._suggest_params(trial, schedulers_params)
         # tag for storing the results
-        writer_tag += "/" + str(trial.datetime_start) # str(self.optimizers_param) + \
-            #str(self.dataloaders_param) + str(self.models_hyperparam) + \
-            #str(self.schedulers_param)
+        writer_tag += "/" + str(trial.datetime_start)  # str(self.optimizers_param) + \
+        # str(self.dataloaders_param) + str(self.models_hyperparam) + \
+        # str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
         self.pipe = Trainer(self.model, self.dataloaders, self.loss_fn,
-                             self.writer, self.training_metric, self.k_fold_class)
+                            self.writer, self.training_metric, self.k_fold_class)
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
-        self.pipe.run_name = str(trial.datetime_start).replace(":","-")
+        self.pipe.run_name = str(trial.datetime_start).replace(":", "-")
         loss, accuracy = self.pipe.train(optimizer, n_epochs,
                                          cross_validation,
                                          self.optimizers_param,
@@ -327,19 +326,17 @@ class HyperParameterOptimization(Trainer):
         # dict of the loss per epoch of the training here above. If CV, multiple scalars are stored
         scalars_dict_value = [self.pipe.val_loss_list_hparam,
                               self.pipe.val_acc_list_hparam]
-        scalar_dict_key = str(trial.datetime_start).replace(":","-")
+        scalar_dict_key = str(trial.datetime_start).replace(":", "-")
         self.scalars_dict[scalar_dict_key] = scalars_dict_value
         # release the run_name
         self.pipe.run_name = None
-        best_loss = self.pipe.best_val_loss
-        best_accuracy = self.pipe.best_val_acc
         self.writer.flush()
         # print
         self._print_output()
-        
+
         # save model and optimizer
         save_model_and_optimizer(self.pipe.model,
-                                 trial_id=str(trial.datetime_start).replace(":","-"),
+                                 trial_id=str(trial.datetime_start).replace(":", "-"),
                                  optimizer=self.pipe.optimizer,
                                  store_pickle=self.store_pickle)
 
@@ -351,18 +348,10 @@ class HyperParameterOptimization(Trainer):
 
         # returns
         if self.search_metric == "loss":
-            #if self.best_not_last:
-            #    self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
-            #    self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
-            #    return best_loss
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return loss
         else:
-            #if self.best_not_last:
-            #    self.best_val_acc_gs = max(self.best_val_acc_gs, best_accuracy)
-            #    self.best_val_loss_gs = min(self.best_val_loss_gs, best_loss)
-            #    return best_accuracy
             self.best_val_acc_gs = max(self.best_val_acc_gs, accuracy)
             self.best_val_loss_gs = min(self.best_val_loss_gs, loss)
             return accuracy
@@ -383,48 +372,54 @@ class HyperParameterOptimization(Trainer):
 
     def start(self,
               optimizers: List[Optimizer],
-              n_epochs:int=1,
-              cross_validation:bool=False,
-              optimizers_params: Optional[Dict[str, Any]]=None,
-              dataloaders_params: Optional[Dict[str, Any]]=None,
-              models_hyperparams: Optional[Dict[str, Any]]=None,
-              lr_scheduler: Type[_LRScheduler]=None,
-              schedulers_params:Optional[Dict[str, Any]]=None,
-              profiling:bool=False,
-              parallel_tpu:bool=False,
-              keep_training:bool=False,
-              store_grad_layer_hist:bool=False,
-              n_accumulated_grads:int=0,
-              writer_tag="") -> float:
+              n_epochs: int = 1,
+              cross_validation: bool = False,
+              optimizers_params: Optional[Dict[str, Any]] = None,
+              dataloaders_params: Optional[Dict[str, Any]] = None,
+              models_hyperparams: Optional[Dict[str, Any]] = None,
+              lr_scheduler: Type[_LRScheduler] = None,
+              schedulers_params: Optional[Dict[str, Any]] = None,
+              profiling: bool = False,
+              parallel_tpu: bool = False,
+              keep_training: bool = False,
+              store_grad_layer_hist: bool = False,
+              n_accumulated_grads: int = 0,
+              writer_tag="") -> None:
         """method to be called when starting the gridsearch
 
         Args:
-            optimizers (list of torch.optim):
+            optimizers:
                 list of torch optimizers
-            n_epochs (int):
+            n_epochs:
                 number of training epochs
-            cross_validation (bool):
+            cross_validation:
                 whether or not to use cross-validation
-            optimizers_params (dict):
+            optimizers_params:
                 dictionary of optimizers params
-            dataloaders_params (int):
+            dataloaders_params:
                 dictionary of dataloaders parameters
-            models_hyperparams (dict):
+            models_hyperparams:
                 dictionary of model parameters
-            lr_scheduler (torch.optim):
+            lr_scheduler:
                 torch learning rate schduler class
-            schedulers_params (dict):
+            schedulers_params:
                 learning rate scheduler parameters
-            profiling (bool, default=False):
+            profiling :
                 whether or not you want to activate the
                 profiler
-            parallel_tpu (bool):
+            parallel_tpu:
                 boolean value to run the computations
                 on multiple TPUs
             n_accumulated_grads (int, default=0):
                 number of accumulated gradients. It is
                 considered only if a positive integer
-            writer_tag (str):
+            keep_training:
+                bool flag to decide whether to continue
+                training or not
+            store_grad_layer_hist:
+                flag to store the gradents of the layers in the
+                tensorboard histograms
+            writer_tag:
                 tag to prepend to the ouput
                 on tensorboard
         """
@@ -433,17 +428,18 @@ class HyperParameterOptimization(Trainer):
                                              sampler=self.sampler,
                                              pruner=self.pruner,
                                              storage=self.db_url,
-                                             study_name=self.study_name if self.study_name is not None else \
-                                                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20)),
+                                             study_name=self.study_name if self.study_name is not None else
+                                             ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in
+                                                     range(20)),
                                              load_if_exists=True)
         else:
             self.study = optuna.create_study(direction="maximize",
                                              sampler=self.sampler,
                                              pruner=self.pruner,
                                              storage=self.db_url,
-                                             study_name=self.study_name if self.study_name is not None else \
-                                                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in
-                                                         range(20)),
+                                             study_name=self.study_name if self.study_name is not None else
+                                             ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in
+                                                     range(20)),
                                              load_if_exists=True)
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
@@ -485,7 +481,6 @@ class HyperParameterOptimization(Trainer):
                                 writer_tag="")
         # self._store_to_tensorboard()
 
-
     def _inner_optimisat_fun(self, model: Union[torch.nn.Module, Dict[str, torch.nn.Module]],
                              dataloaders: Union[List[DataLoader[Tuple[Tensor, Tensor]]], Dict[str, DataLoader]],
                              optimizers: List[Type[Optimizer]],
@@ -496,22 +491,21 @@ class HyperParameterOptimization(Trainer):
                              models_hyperparams: Dict[str, Any],
                              lr_scheduler: _LRScheduler,
                              schedulers_params: Dict[str, Any],
-                             profiling:bool,
-                             parallel_tpu:bool,
-                             keep_training:bool,
-                             store_grad_layer_hist:bool,
-                             n_accumulated_grads:int,
-                             writer_tag:str="") -> None:
+                             profiling: bool,
+                             parallel_tpu: bool,
+                             keep_training: bool,
+                             store_grad_layer_hist: bool,
+                             n_accumulated_grads: int,
+                             writer_tag: str = "") -> None:
         """private method to be decorated with the
         benchmark decorator to have benchmarking
         or simply used as is if no benchmarking is
         needed
         """
-        
-        
+
         try:
             writer_tag = "Dataset:" + dataloaders["name"] + \
-                "|Model:" + model["name"]
+                         "|Model:" + model["name"]
             super().__init__(model["model"],
                              dataloaders["dataloaders"],
                              self.bench.loss_fn,
@@ -542,7 +536,7 @@ class HyperParameterOptimization(Trainer):
         try:
             self._results(model_name=model["name"],
                           dataset_name=dataloaders["name"])
-            #save_model_and_optimizer(self.pipe.model,
+            # save_model_and_optimizer(self.pipe.model,
             #                         model["name"] +
             #                         str(self.optimizers_param) +
             #                         str(self.dataloaders_param) +
@@ -553,11 +547,10 @@ class HyperParameterOptimization(Trainer):
             try:
                 self._results(model_name=self.pipe.model.__class__.__name__,
                               dataset_name=self.pipe.dataloaders[0].dataset.__class__.__name__)
-                #save_model_and_optimizer(self.pipe.model,
+                # save_model_and_optimizer(self.pipe.model,
                 #                         optimizer=self.pipe.optimizer)
             except AttributeError:
                 self._results()
-
 
     def _print_output(self) -> None:
         """Printing the results of an optimisation"""
@@ -576,18 +569,18 @@ class HyperParameterOptimization(Trainer):
                            )
         try:
             # print models, metric and hyperparameters
-            print("*" * 20 + " RESULTS " + 20 * "*"+"\n",
+            print("*" * 20 + " RESULTS " + 20 * "*" + "\n",
                   "\nModel: ", self.pipe.model.__class__.__name__,
                   string_to_print)
         except AttributeError:
-            print("*" * 20 + " RESULTS " + 20 * "*"+"\n" +string_to_print)
+            print("*" * 20 + " RESULTS " + 20 * "*" + "\n" + string_to_print)
 
-    def _store_to_list_each_step(self, trial:BaseTrial,
+    def _store_to_list_each_step(self, trial: BaseTrial,
                                  model_name: str,
                                  dataset_name: str,
-                                 loss:float=np.inf,
-                                 accuracy:float=-1.,
-                                 list_res: Optional[List[Any]]=None) -> List[Any]:
+                                 loss: float = np.inf,
+                                 accuracy: float = -1.,
+                                 list_res: Optional[List[Any]] = None) -> List[Any]:
         """Private method to store all the HPO parameters
         of one trial
         
@@ -621,24 +614,24 @@ class HyperParameterOptimization(Trainer):
                 loss = trial.value
             except AttributeError:
                 loss = loss
-            list_res.append([str(trial.datetime_start).replace(":","-"), model_name,
-                                  dataset_name] + temp_list + [loss, -1])
+            list_res.append([str(trial.datetime_start).replace(":", "-"), model_name,
+                             dataset_name] + temp_list + [loss, -1])
         else:
             try:
                 accuracy = trial.value
             except AttributeError:
                 accuracy = accuracy
-            list_res.append([str(trial.datetime_start).replace(":","-"), model_name,
-                                  dataset_name] + temp_list + [np.inf, accuracy])
+            list_res.append([str(trial.datetime_start).replace(":", "-"), model_name,
+                             dataset_name] + temp_list + [np.inf, accuracy])
         return list_res
 
-    def _store_trial_to_tb(self, trial:BaseTrial,
+    def _store_trial_to_tb(self, trial: BaseTrial,
                            scalars_dict_value: Tuple[List[Any], List[Any]],
-                           scalar_dict_key:str,
-                           model_name:str,
-                           dataset_name:str,
-                           loss:float,
-                           accuracy:float) -> None:
+                           scalar_dict_key: str,
+                           model_name: str,
+                           dataset_name: str,
+                           loss: float,
+                           accuracy: float) -> None:
         """store hyperparameters of a single trial to
         tensorboard
         """
@@ -646,12 +639,13 @@ class HyperParameterOptimization(Trainer):
                                                  dataset_name, loss, accuracy)
 
         keys = ["model", "dataset"] + \
-               list(trial.params.keys())
+            list(trial.params.keys())
 
         # average over the scalars_dict
         scalars_dict_avg = self._refactor_scalars(scalars_dict_value)
         # dict of parameters
-        dictio = {k: (int(v) if isinstance(v, np.int64) or isinstance(v, np.int32) else v) for k, v in zip(keys, list_res[0][1:-2])}
+        dictio = {k: (int(v) if isinstance(v, np.int64) or isinstance(v, np.int32) else v) for k, v in
+                  zip(keys, list_res[0][1:-2])}
 
         try:
             self.writer.add_hparams(dictio,
@@ -665,21 +659,17 @@ class HyperParameterOptimization(Trainer):
 
         self.writer.flush()
 
-
-
-    def _results(self, model_name:str="model",
-                 dataset_name:str="dataset") -> pd.DataFrame:
+    def _results(self, model_name: str = "model",
+                 dataset_name: str = "dataset") -> pd.DataFrame:
         """This method returns the dataframe with all the results of
         the hyperparameters optimisaton.
         It also saves the figures in the writer.
 
         Args:
-            run_name (str):
-                name of the tensorboard run
-            model_name (str):
+            model_name:
                 the model name for the
                 tensorboard gridsearch table
-            dataset_name (str)
+            dataset_name:
                 the dataset name for the
                 tensorboard gridsearch table
 
@@ -703,24 +693,24 @@ class HyperParameterOptimization(Trainer):
             print("DateTime start of the best trial: ", trial_best.datetime_start)
         except ValueError:
             warnings.warn("No best trial found.")
-        
+
         for tria in trials:
             self._store_to_list_each_step(tria, model_name, dataset_name,
                                           tria.value, tria.value, self.list_res)
 
         self.df_res = pd.DataFrame(self.list_res, columns=["run_name", "model", "dataset"] +
-                              list(trial_best.params.keys())+["loss", "accuracy"])
+                                   list(trial_best.params.keys()) + ["loss", "accuracy"])
         # compute hyperparams correlaton
         corr, labels = self._correlation_of_hyperparams()
         if self.n_trials > 1:
             try:
                 fig2 = px.imshow(corr,
-                        labels=dict(x="Parameters",
-                                    y="Parameters",
-                                    color="Correlation"),
-                        x=labels,
-                        y=labels
-                       )
+                                 labels=dict(x="Parameters",
+                                             y="Parameters",
+                                             color="Correlation"),
+                                 x=labels,
+                                 y=labels
+                                 )
                 fig2.update_xaxes(side="top")
                 fig2.show()
                 img2 = plotly2tensor(fig2)
@@ -732,7 +722,7 @@ class HyperParameterOptimization(Trainer):
             except ValueError:
                 warnings.warn("Cannot send the picture of the correlation" +
                               " matrix to tensorboard")
-        
+
         return self.df_res
 
     def _correlation_of_hyperparams(self) -> Tuple[Array, List[Any]]:
@@ -741,19 +731,19 @@ class HyperParameterOptimization(Trainer):
         labels = []
         for col in self.df_res.columns:
             vals = self.df_res[col].values
-            #print("type here", vals.dtype)
-            if vals.dtype in [np.float16, np.float64, 
+            # print("type here", vals.dtype)
+            if vals.dtype in [np.float16, np.float64,
                               np.float32,
                               np.int32, np.int64,
                               np.int16]:
                 list_of_arrays.append(vals)
                 labels.append(col)
-        #print(list_of_arrays)
-        with KnownWarningSilencer() as var1:
+        # print(list_of_arrays)
+        with KnownWarningSilencer():
             corr = np.corrcoef(np.array(list_of_arrays))
         return corr, labels
 
-    #def _store_to_tensorboard(self):
+    # def _store_to_tensorboard(self):
     #    """Store the hyperparameters to tensorboard"""
     #    # average over the scalars_dict
     #    scalars_dict_avg = dict()
@@ -792,19 +782,16 @@ class HyperParameterOptimization(Trainer):
         """
 
         out0 = _inner_refactor_scalars(two_lists[0],
-                                            self._cross_validation,
-                                            self._k_folds)
+                                       self._cross_validation,
+                                       self._k_folds)
         out1 = _inner_refactor_scalars(two_lists[1],
-                                            self._cross_validation,
-                                            self._k_folds)
+                                       self._cross_validation,
+                                       self._k_folds)
         return out0, out1
-
-
-
 
     @staticmethod
     def _suggest_params(trial: BaseTrial,
-                        params: Optional[Dict[str, Any]]=None) -> Optional[Dict[str, Any]]:
+                        params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
         """Utility function to generate the parameters
         for the gridsearch. It is based on optuna `suggest_<type>`.
 
@@ -821,21 +808,21 @@ class HyperParameterOptimization(Trainer):
         if params is None:
             return None
         for k, v in params.items():
-            if (isinstance(v, list) or isinstance(v, tuple)) and len(v)==1:
-                params[k] = 2*v
+            if (isinstance(v, list) or isinstance(v, tuple)) and len(v) == 1:
+                params[k] = 2 * v
         param_temp = {}
-        param_temp = {k:HyperParameterOptimization._new_suggest_float(trial, k,*v) for k,v in
+        param_temp = {k: HyperParameterOptimization._new_suggest_float(trial, k, *v) for k, v in
                       params.items() if (isinstance(v, list) or isinstance(v, tuple))
                       and (isinstance(v[0], float) or isinstance(v[1], float))}
-        param_temp2 = {k:trial.suggest_int(k,*v) for k,v in
+        param_temp2 = {k: trial.suggest_int(k, *v) for k, v in
                        params.items() if (isinstance(v, list) or isinstance(v, tuple))
                        and (isinstance(v[0], int) or isinstance(v[1], int))}
         param_temp.update(param_temp2)
-        param = {k:trial.suggest_categorical(k, v) for k,v in
+        param = {k: trial.suggest_categorical(k, v) for k, v in
                  params.items() if (isinstance(v, list) or isinstance(v, tuple))
                  and (isinstance(v[0], str) or isinstance(v[1], str))}
         param.update(param_temp)
-        #print(param)
+        # print(param)
         return param
 
     @staticmethod
@@ -845,7 +832,6 @@ class HyperParameterOptimization(Trainer):
 
     @staticmethod
     def _powerset(iterable):
-        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+        """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
         s = list(iterable)
         return list(chain.from_iterable(combinations(s, r) for r in range(len(s) + 1)))
-
