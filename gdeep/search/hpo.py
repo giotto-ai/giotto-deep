@@ -32,7 +32,7 @@ from .hpo_config import HPOConfig
 
 Tensor = torch.Tensor
 Array = np.ndarray
-SEARCH_METRICS = ["loss", "accuracy"]
+SEARCH_METRICS = ("loss", "accuracy")
 
 
 class GiottoSummaryWriter(SummaryWriter):
