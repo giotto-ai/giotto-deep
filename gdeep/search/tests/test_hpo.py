@@ -40,6 +40,23 @@ dl_tr, *_ = DataLoaderBuilder([transformed_ds_tr]).build(
     [{"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)}])
 
 
+def test_hpo_failure():
+    # define the model
+    model = Model2()
+
+    # initialise loss
+    loss_fn = nn.CrossEntropyLoss()
+
+    # initialise pipeline class
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer,
+                   k_fold_class=StratifiedKFold(2, shuffle=True))
+
+    # initialise gridsearch
+    try:
+        HyperParameterOptimization(pipe, "accu", 2, best_not_last=True)
+    except AssertionError:
+        pass
+
 def test_hpo_cross_val():
     # define the model
     model = Model2()
