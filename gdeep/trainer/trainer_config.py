@@ -60,7 +60,7 @@ class TrainerConfig:
     dataloaders_param: Optional[Dict[str, Any]] = None
     lr_scheduler: Optional[Type[_LRScheduler]] = None
     scheduler_params: Optional[Dict[str, Any]] = None
-    optuna_params: Optional[Tuple[BaseTrial, str]] = None,
+    optuna_params: Optional[Tuple[BaseTrial, str]] = None
     profiling: bool = False
     parallel_tpu: bool = False
     keep_training: bool = False
