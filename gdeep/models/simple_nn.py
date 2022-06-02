@@ -16,14 +16,15 @@ class FFNet(nn.Module):
             The first number is the dimension of the input! Thhe final
             of the output
     """
-    
+
     def __init__(self, arch=(2, 3, 3, 2)):
         super(FFNet, self).__init__()
-        self.linears = nn.ModuleList([nn.Linear(arch[i], arch[i+1]) for i in range(len(arch)-1)])
+        self.linears = nn.ModuleList(
+            [nn.Linear(arch[i], arch[i + 1]) for i in range(len(arch) - 1)]
+        )
 
     def forward(self, x):
         for i, l in enumerate(self.linears[:-1]):
             x = F.relu(l(x))
         x = self.linears[-1](x)
         return x
-

@@ -3,8 +3,7 @@ import copy
 import time
 from functools import wraps
 import warnings
-from typing import Tuple, Optional, Callable, \
-    Any, Dict, List, Type
+from typing import Tuple, Optional, Callable, Any, Dict, List, Type
 
 import torch.nn.functional as f
 from torch.optim import Optimizer
@@ -48,9 +47,12 @@ def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         pred, val_loss, correct = func(*args, **kwargs)
         try:
             # add data to tensorboard
-            Trainer._add_pr_curve_tb(torch.vstack(pred), kwargs["class_label"],
-                                     kwargs["class_probs"],
-                                     kwargs["writer_tag"] + "/validation")
+            Trainer._add_pr_curve_tb(
+                torch.vstack(pred),
+                kwargs["class_label"],
+                kwargs["class_probs"],
+                kwargs["writer_tag"] + "/validation",
+            )
         except NotImplementedError:
             warnings.warn("The PR curve is not being filled because too few data exist")
         return pred, val_loss, correct
@@ -120,12 +122,15 @@ class Trainer:
 
     """
 
-    def __init__(self, model: torch.nn.Module,
-                 dataloaders: List[DataLoader[Tuple[Tensor, Tensor]]],
-                 loss_fn: Callable[[Tensor, Tensor], Tensor],
-                 writer: Optional[SummaryWriter] = None,
-                 training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
-                 k_fold_class: Optional[BaseCrossValidator] = None) -> None:
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        dataloaders: List[DataLoader[Tuple[Tensor, Tensor]]],
+        loss_fn: Callable[[Tensor, Tensor], Tensor],
+        writer: Optional[SummaryWriter] = None,
+        training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
+        k_fold_class: Optional[BaseCrossValidator] = None,
+    ) -> None:
         self.model = model
         self.initial_model = copy.deepcopy(self.model)
         assert 0 < len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
@@ -173,19 +178,23 @@ class Trainer:
         """
         self.model = copy.deepcopy(self.initial_model)
 
-    def _optimisation_step(self,
-                           steps: int,
-                           loss: Tensor,
-                           epoch_loss: float,
-                           batch_metric: float,
-                           batch: int,
-                           closure: Callable[[], Tensor]) -> float:
+    def _optimisation_step(
+        self,
+        steps: int,
+        loss: Tensor,
+        epoch_loss: float,
+        batch_metric: float,
+        batch: int,
+        closure: Callable[[], Tensor],
+    ) -> float:
         """Backpropagation"""
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
             loss.backward()
             if self.DEVICE.type == "xla":
-                xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+                xm.optimizer_step(
+                    self.optimizer, barrier=True
+                )  # Note: Cloud TPU-specific code!
             else:
                 try:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
@@ -195,37 +204,53 @@ class Trainer:
 
         else:  # if we use gradient accumulation techniques
             (loss / self.n_accumulated_grads).backward()
-            if (batch + 1) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
+            if (
+                batch + 1
+            ) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
                 if self.DEVICE.type == "xla":
-                    xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
+                    xm.optimizer_step(
+                        self.optimizer, barrier=True
+                    )  # Note: Cloud TPU-specific code!
                 else:
                     try:
-                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), self.clip
+                        )
                         self.optimizer.step()
                     except (MissingClosureError,):
                         self.optimizer.step(closure)  # type: ignore
                 self.optimizer.zero_grad()
         if batch % 1 == 0:
             epoch_loss += loss.item()
-            print(f"Batch training loss:  {epoch_loss / (batch + 1)}",
-                  f" \tBatch training {self.training_metric.__name__}: ",
-                  batch_metric,
-                  " \t[", batch + 1, "/", steps, "]                     ", end='\r')
+            print(
+                f"Batch training loss:  {epoch_loss / (batch + 1)}",
+                f" \tBatch training {self.training_metric.__name__}: ",
+                batch_metric,
+                " \t[",
+                batch + 1,
+                "/",
+                steps,
+                "]                     ",
+                end="\r",
+            )
         return epoch_loss
 
-    def _inner_train_loop(self,
-                          dl_tr: DataLoader[Tuple[Tensor, Tensor]],
-                          writer_tag: str,
-                          size: int,
-                          steps: int) -> Tuple[float, float]:
+    def _inner_train_loop(
+        self,
+        dl_tr: DataLoader[Tuple[Tensor, Tensor]],
+        writer_tag: str,
+        size: int,
+        steps: int,
+    ) -> Tuple[float, float]:
         """Private method to run the loop
         over the batches for the optimisation"""
 
         if self.prof is not None:
             self.prof.start()
         metric_list = []
-        epoch_loss = 0.
+        epoch_loss = 0.0
         for batch, (X, y) in enumerate(dl_tr):
+
             def closure() -> Tensor:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
@@ -240,25 +265,32 @@ class Trainer:
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
-                self.writer.add_scalar(writer_tag + "/loss/train",
-                                       loss.item(),
-                                       self.train_epoch * len(dl_tr) + batch)
+                self.writer.add_scalar(
+                    writer_tag + "/loss/train",
+                    loss.item(),
+                    self.train_epoch * len(dl_tr) + batch,
+                )
 
                 try:
                     top2_pred = torch.topk(pred, 2, -1).values
                     try:
-                        self.writer.add_histogram(writer_tag + "/predictions/train",
-                                                  torch.abs(torch.diff(top2_pred, dim=-1)),
-                                                  self.train_epoch * steps + batch)
+                        self.writer.add_histogram(
+                            writer_tag + "/predictions/train",
+                            torch.abs(torch.diff(top2_pred, dim=-1)),
+                            self.train_epoch * steps + batch,
+                        )
                     except ValueError:
-                        warnings.warn(f"The histogram is empty, most likely because your loss"
-                                      f" is exploding. Try use gradient clipping.")
+                        warnings.warn(
+                            f"The histogram is empty, most likely because your loss"
+                            f" is exploding. Try use gradient clipping."
+                        )
                 except RuntimeError:
                     pass
             except AttributeError:
                 pass
-            epoch_loss = self._optimisation_step(steps, loss, epoch_loss,
-                                                 batch_metric, batch, closure)
+            epoch_loss = self._optimisation_step(
+                steps, loss, epoch_loss, batch_metric, batch, closure
+            )
 
             if self.prof is not None:
                 self.prof.step()
@@ -267,13 +299,13 @@ class Trainer:
             self.prof.stop()
 
         # epoch metric and loss:
-        epoch_metric = sum(metric_list)/len(metric_list)
+        epoch_metric = sum(metric_list) / len(metric_list)
         epoch_loss /= steps
         return epoch_metric, epoch_loss
 
-    def _train_loop(self,
-                    dl_tr: DataLoader[Tuple[Tensor, Tensor]],
-                    writer_tag: str = "") -> Tuple[float, float]:
+    def _train_loop(
+        self, dl_tr: DataLoader[Tuple[Tensor, Tensor]], writer_tag: str = ""
+    ) -> Tuple[float, float]:
         """private method to run a single training
         loop
         """
@@ -289,14 +321,16 @@ class Trainer:
             length: int = len(dl_tr.dataset)  # type: ignore
         steps = len(dl_tr)
         tik = time.time()
-        assert self.n_accumulated_grads <= steps, "The number of" + \
-                                                  " accumulated gradients shall be diminished!"
-        epoch_metric, epoch_loss = self._inner_train_loop(dl_tr,
-                                                          writer_tag,
-                                                          length,
-                                                          steps)
-        print(f"Epoch training loss: {epoch_loss:>8f} \tEpoch training "
-              f"{self.training_metric.__name__}: {epoch_metric:.2f}% ".ljust(100))
+        assert self.n_accumulated_grads <= steps, (
+            "The number of" + " accumulated gradients shall be diminished!"
+        )
+        epoch_metric, epoch_loss = self._inner_train_loop(
+            dl_tr, writer_tag, length, steps
+        )
+        print(
+            f"Epoch training loss: {epoch_loss:>8f} \tEpoch training "
+            f"{self.training_metric.__name__}: {epoch_metric:.2f}% ".ljust(100)
+        )
         try:
             self.writer.flush()
         except AttributeError:
@@ -308,9 +342,9 @@ class Trainer:
             pass
         return epoch_metric, epoch_loss
 
-    def _val_loop(self,
-                  dl_val: DataLoader[Tuple[Tensor, Tensor]],
-                  writer_tag: str = "") -> Tuple[float, float]:
+    def _val_loop(
+        self, dl_val: DataLoader[Tuple[Tensor, Tensor]], writer_tag: str = ""
+    ) -> Tuple[float, float]:
         """private method to run a single validation
         loop
         """
@@ -327,36 +361,43 @@ class Trainer:
         class_probs: List[List[Tensor]] = []
         self.model.eval()
 
-        pred_list, epoch_loss, epoch_metric = self._inner_loop(dl=dl_val,
-                                                               class_probs=class_probs,
-                                                               class_label=class_label,
-                                                               writer_tag=writer_tag)
+        pred_list, epoch_loss, epoch_metric = self._inner_loop(
+            dl=dl_val,
+            class_probs=class_probs,
+            class_label=class_label,
+            writer_tag=writer_tag,
+        )
         # accuracy
         try:
             if not self.run_name:
-                self.writer.add_scalar(writer_tag + "/metric/validation",
-                                       epoch_metric, self.val_epoch)
+                self.writer.add_scalar(
+                    writer_tag + "/metric/validation", epoch_metric, self.val_epoch
+                )
             else:
-                self.val_acc_list_hparam.append([epoch_metric,
-                                                 self.val_epoch])
-                self.val_loss_list_hparam.append([epoch_loss,
-                                                  self.val_epoch])
+                self.val_acc_list_hparam.append([epoch_metric, self.val_epoch])
+                self.val_loss_list_hparam.append([epoch_loss, self.val_epoch])
 
             try:
                 top2_pred = torch.topk(torch.vstack(pred_list), 2, -1).values
                 try:
-                    self.writer.add_histogram(writer_tag + "/predictions/validation",
-                                              torch.abs(torch.diff(top2_pred, dim=-1)),
-                                              self.val_epoch)
+                    self.writer.add_histogram(
+                        writer_tag + "/predictions/validation",
+                        torch.abs(torch.diff(top2_pred, dim=-1)),
+                        self.val_epoch,
+                    )
                 except ValueError:
-                    warnings.warn(f"The histogram is empty, most likely because your loss"
-                                  f" is exploding. Try use gradient clipping.")
+                    warnings.warn(
+                        f"The histogram is empty, most likely because your loss"
+                        f" is exploding. Try use gradient clipping."
+                    )
             except RuntimeError:
                 pass
         except AttributeError:
             pass
-        print(f"Validation results: \n {self.training_metric.__name__}: {epoch_metric:.2f}%, \
-                Avg loss: {epoch_loss:>8f} \n")
+        print(
+            f"Validation results: \n {self.training_metric.__name__}: {epoch_metric:.2f}%, \
+                Avg loss: {epoch_loss:>8f} \n"
+        )
         try:
             self.writer.flush()
         except AttributeError:
@@ -365,15 +406,16 @@ class Trainer:
         return epoch_loss, epoch_metric
 
     @staticmethod
-    def _add_pr_curve_tb(pred: Tensor,
-                         class_label: List[Tensor],
-                         class_probs: List[List[Tensor]],
-                         writer: SummaryWriter,
-                         writer_tag: str = "") -> None:
+    def _add_pr_curve_tb(
+        pred: Tensor,
+        class_label: List[Tensor],
+        class_probs: List[List[Tensor]],
+        writer: SummaryWriter,
+        writer_tag: str = "",
+    ) -> None:
         """private function to add the PR curve
         to tensorboard"""
-        probs = torch.cat([torch.stack(batch) for batch in
-                           class_probs]).cpu()
+        probs = torch.cat([torch.stack(batch) for batch in class_probs]).cpu()
         labels = torch.cat(class_label).cpu()
         for class_index in range(len(pred[0])):
             tensorboard_truth = 1 * (labels == class_index).flatten()
@@ -381,49 +423,50 @@ class Trainer:
             # print(tensorboard_truth)
             # print(tensorboard_probs)
             try:
-                writer.add_pr_curve(writer_tag + "/class = " + str(class_index),
-                                    tensorboard_truth,
-                                    tensorboard_probs,
-                                    global_step=0)
+                writer.add_pr_curve(
+                    writer_tag + "/class = " + str(class_index),
+                    tensorboard_truth,
+                    tensorboard_probs,
+                    global_step=0,
+                )
             except AttributeError:
                 warnings.warn("Cannot store data in the PR curve")
             except ValueError:
                 warnings.warn("Cannot store data in the PR curve")
 
     @_add_data_to_tb
-    def _inner_loop(self, *,
-                    dl: DataLoader[Tuple[Tensor, Tensor]],
-                    class_probs: List[List[Tensor]],
-                    class_label: List[Tensor],
-                    writer_tag: str  # noqa
-                    ) -> Tuple[List[Tensor], float, float]:
+    def _inner_loop(
+        self,
+        *,
+        dl: DataLoader[Tuple[Tensor, Tensor]],
+        class_probs: List[List[Tensor]],
+        class_label: List[Tensor],
+        writer_tag: str,  # noqa
+    ) -> Tuple[List[Tensor], float, float]:
         """private function used inside the test
         and validation loops"""
         pred_list = []
         batch_metric_list = []
-        loss = 0.
+        loss = 0.0
         with torch.no_grad():
             for X, y in dl:
                 X = X.to(self.DEVICE)
                 y = y.to(self.DEVICE)
                 pred = self.model(X)
                 pred_list.append(pred)
-                class_probs_batch = [f.softmax(el, dim=0)
-                                     for el in pred]
+                class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
                 class_label.append(y)
-        epoch_metric = sum(batch_metric_list)/len(batch_metric_list)
-        epoch_loss = loss/len(batch_metric_list)
+        epoch_metric = sum(batch_metric_list) / len(batch_metric_list)
+        epoch_loss = loss / len(batch_metric_list)
         return pred_list, epoch_loss, epoch_metric
 
-    def _init_profiler(self,
-                       profiling: bool,
-                       cross_validation: bool,
-                       n_epochs: int,
-                       k_folds: int) -> None:
+    def _init_profiler(
+        self, profiling: bool, cross_validation: bool, n_epochs: int, k_folds: int
+    ) -> None:
         """initialise the profler for profiling"""
         # profiling
         active: int = 10
@@ -437,12 +480,21 @@ class Trainer:
                 self.prof = torch.profiler.profile(
                     activities=[
                         torch.profiler.ProfilerActivity.CPU,
-                        torch.profiler.ProfilerActivity.CUDA],
-                    schedule=torch.profiler.schedule(wait=1, warmup=1, active=active, repeat=1),
+                        torch.profiler.ProfilerActivity.CUDA,
+                    ],
+                    schedule=torch.profiler.schedule(
+                        wait=1, warmup=1, active=active, repeat=1
+                    ),
                     on_trace_ready=torch.profiler.tensorboard_trace_handler(
-                        os.path.join('.', 'runs', (self.model.__class__.__name__ +
-                                                   str(datetime.today())).replace(":", "-")),
-                        worker_name='worker'),
+                        os.path.join(
+                            ".",
+                            "runs",
+                            (
+                                self.model.__class__.__name__ + str(datetime.today())
+                            ).replace(":", "-"),
+                        ),
+                        worker_name="worker",
+                    ),
                     record_shapes=True,
                     profile_memory=True
                     # with_stack=True
@@ -450,13 +502,15 @@ class Trainer:
             except AssertionError:
                 pass
 
-    def _init_optimizer_and_scheduler(self,
-                                      keep_training: bool,
-                                      cross_validation: bool,
-                                      optimizer: Type[Optimizer],
-                                      optimizers_param: Dict[str, Any],
-                                      lr_scheduler: Optional[Type[_LRScheduler]] = None,
-                                      scheduler_params: Optional[Dict[str, Any]] = None) -> None:
+    def _init_optimizer_and_scheduler(
+        self,
+        keep_training: bool,
+        cross_validation: bool,
+        optimizer: Type[Optimizer],
+        optimizers_param: Dict[str, Any],
+        lr_scheduler: Optional[Type[_LRScheduler]] = None,
+        scheduler_params: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Reset or maintain the LR scheduler and the 
         optimizer depending on the training"""
         if not (self.check_has_trained and keep_training):
@@ -476,21 +530,23 @@ class Trainer:
             if lr_scheduler is not None:  # reset scheduler
                 self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
 
-    def train(self,
-              optimizer: Type[Optimizer],
-              n_epochs: int = 10,
-              cross_validation: bool = False,
-              optimizers_param: Optional[Dict[str, Any]] = None,
-              dataloaders_param: Optional[Dict[str, Any]] = None,
-              lr_scheduler: Optional[Type[_LRScheduler]] = None,
-              scheduler_params: Optional[Dict[str, Any]] = None,
-              optuna_params: Optional[Tuple[BaseTrial, str]] = None,
-              profiling: bool = False,
-              parallel_tpu: bool = False,
-              keep_training: bool = False,
-              store_grad_layer_hist: bool = False,
-              n_accumulated_grads: int = 0,
-              writer_tag: str = "") -> Tuple[float, float]:
+    def train(
+        self,
+        optimizer: Type[Optimizer],
+        n_epochs: int = 10,
+        cross_validation: bool = False,
+        optimizers_param: Optional[Dict[str, Any]] = None,
+        dataloaders_param: Optional[Dict[str, Any]] = None,
+        lr_scheduler: Optional[Type[_LRScheduler]] = None,
+        scheduler_params: Optional[Dict[str, Any]] = None,
+        optuna_params: Optional[Tuple[BaseTrial, str]] = None,
+        profiling: bool = False,
+        parallel_tpu: bool = False,
+        keep_training: bool = False,
+        store_grad_layer_hist: bool = False,
+        n_accumulated_grads: int = 0,
+        writer_tag: str = "",
+    ) -> Tuple[float, float]:
         """Function to run all the training cycles.
 
         Args:
@@ -557,7 +613,9 @@ class Trainer:
         # dataloaders_param initialisation
         if dataloaders_param is None:
             if self.dataloaders[1] is not None:
-                dataloaders_param_val = Trainer.copy_dataloader_params(self.dataloaders[1])
+                dataloaders_param_val = Trainer.copy_dataloader_params(
+                    self.dataloaders[1]
+                )
             else:
                 dataloaders_param_val = Trainer.copy_dataloader_params(dl_tr)
             dataloaders_param_tr = Trainer.copy_dataloader_params(dl_tr)
@@ -583,9 +641,9 @@ class Trainer:
             check_optuna = False
 
         # profiling
-        self._init_profiler(profiling,
-                            cross_validation,
-                            n_epochs, self.k_fold_class.n_splits)
+        self._init_profiler(
+            profiling, cross_validation, n_epochs, self.k_fold_class.n_splits
+        )
 
         # remove sampler to avoid conflicts with indexing
         # we will re-introduce the sampler when creating the indexing list
@@ -607,19 +665,23 @@ class Trainer:
             except AttributeError:
                 val_idx = list(range(len(self.dataloaders[1].dataset)))
             # print(val_idx)
-            dl_val = torch.utils.data.DataLoader(self.dataloaders[1].dataset,
-                                                 # pin_memory=True,
-                                                 **dataloaders_param_val,
-                                                 sampler=SubsetRandomSampler(val_idx))
+            dl_val = torch.utils.data.DataLoader(
+                self.dataloaders[1].dataset,
+                # pin_memory=True,
+                **dataloaders_param_val,
+                sampler=SubsetRandomSampler(val_idx),
+            )
             try:
                 tr_idx = self.dataloaders[0].sampler.indices  # type: ignore
             except AttributeError:
                 tr_idx = list(range(len(self.dataloaders[0].dataset)))
             # print(tr_idx)
-            dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                # pin_memory=True,
-                                                **dataloaders_param_tr,
-                                                sampler=SubsetRandomSampler(tr_idx))
+            dl_tr = torch.utils.data.DataLoader(
+                self.dataloaders[0].dataset,
+                # pin_memory=True,
+                **dataloaders_param_tr,
+                sampler=SubsetRandomSampler(tr_idx),
+            )
         else:
             try:
                 data_idx = self.dataloaders[0].sampler.indices  # type: ignore
@@ -627,93 +689,156 @@ class Trainer:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
             # print(data_idx)
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
-            dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                 # pin_memory=True,
-                                                 **dataloaders_param_val,
-                                                 sampler=SubsetRandomSampler(val_idx))
-            dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                # pin_memory=True,
-                                                **dataloaders_param_tr,
-                                                sampler=SubsetRandomSampler(tr_idx))
+            dl_val = torch.utils.data.DataLoader(
+                self.dataloaders[0].dataset,
+                # pin_memory=True,
+                **dataloaders_param_val,
+                sampler=SubsetRandomSampler(val_idx),
+            )
+            dl_tr = torch.utils.data.DataLoader(
+                self.dataloaders[0].dataset,
+                # pin_memory=True,
+                **dataloaders_param_tr,
+                sampler=SubsetRandomSampler(tr_idx),
+            )
 
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
             try:
                 data_idx = self.dataloaders[0].sampler.indices
-                labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
+                labels_for_split = [
+                    self.dataloaders[0].dataset[i][-1] for i in data_idx
+                ]
             except AttributeError:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))
-                labels_for_split = [self.dataloaders[0].dataset[i][-1] for i in data_idx]
+                labels_for_split = [
+                    self.dataloaders[0].dataset[i][-1] for i in data_idx
+                ]
 
-            for fold, (tr_idx, val_idx) in enumerate(self.k_fold_class.split(data_idx, labels_for_split)):
+            for fold, (tr_idx, val_idx) in enumerate(
+                self.k_fold_class.split(data_idx, labels_for_split)
+            ):
                 # prints for class balance
                 # lab_tr_fold = [self.dataloaders[0].dataset[i][-1] for i in tr_idx]
                 # lab_val_fold = [self.dataloaders[0].dataset[i][-1] for i in val_idx]
                 # print("train labels:",[(i, lab_tr_fold.count(i)) for i in np.unique(np.array(lab_tr_fold))])
                 # print("val labels:",[(i, lab_val_fold.count(i)) for i in np.unique(np.array(lab_val_fold))])
                 # print("lenghts: ", len(lab_tr_fold), len(lab_val_fold))
-                self._init_optimizer_and_scheduler(keep_training, cross_validation,
-                                                   optimizer, optimizers_param,
-                                                   lr_scheduler, scheduler_params)
+                self._init_optimizer_and_scheduler(
+                    keep_training,
+                    cross_validation,
+                    optimizer,
+                    optimizers_param,
+                    lr_scheduler,
+                    scheduler_params,
+                )
 
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
-                    warnings.warn("Validation set is ignored in automatic Cross Validation")
-                dl_tr = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                    # pin_memory=True,
-                                                    **dataloaders_param_tr,
-                                                    sampler=SubsetRandomSampler(tr_idx))
-                dl_val = torch.utils.data.DataLoader(self.dataloaders[0].dataset,
-                                                     # pin_memory=True,
-                                                     **dataloaders_param_val,
-                                                     sampler=SubsetRandomSampler(val_idx))
+                    warnings.warn(
+                        "Validation set is ignored in automatic Cross Validation"
+                    )
+                dl_tr = torch.utils.data.DataLoader(
+                    self.dataloaders[0].dataset,
+                    # pin_memory=True,
+                    **dataloaders_param_tr,
+                    sampler=SubsetRandomSampler(tr_idx),
+                )
+                dl_val = torch.utils.data.DataLoader(
+                    self.dataloaders[0].dataset,
+                    # pin_memory=True,
+                    **dataloaders_param_val,
+                    sampler=SubsetRandomSampler(val_idx),
+                )
                 # print n-th fold
                 print("\n\n********** Fold ", fold + 1, "**************")
                 # the training and validation loop
                 if parallel_tpu == False:
-                    valloss, valacc = self._training_loops(n_epochs, dl_tr,
-                                                           dl_val, lr_scheduler, self.scheduler,
-                                                           check_optuna, search_metric,
-                                                           trial, cross_validation,
-                                                           writer_tag + "/fold = " + str(fold + 1))
+                    valloss, valacc = self._training_loops(
+                        n_epochs,
+                        dl_tr,
+                        dl_val,
+                        lr_scheduler,
+                        self.scheduler,
+                        check_optuna,
+                        search_metric,
+                        trial,
+                        cross_validation,
+                        writer_tag + "/fold = " + str(fold + 1),
+                    )
                 else:
-                    valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
-                                                                       dl_val, optimizers_param, lr_scheduler,
-                                                                       self.scheduler,
-                                                                       check_optuna, search_metric,
-                                                                       trial, cross_validation)
+                    valloss, valacc = self.parallel_tpu_training_loops(
+                        n_epochs,
+                        dl_tr,
+                        dl_val,
+                        optimizers_param,
+                        lr_scheduler,
+                        self.scheduler,
+                        check_optuna,
+                        search_metric,
+                        trial,
+                        cross_validation,
+                    )
 
                 mean_val_loss.append(valloss)
                 mean_val_acc.append(valacc)
             # mean of the validation and loss accuracies over folds
             if self.best_not_last:
-                valloss = min(np.array(_inner_refactor_scalars(self.val_loss_list_hparam,
-                                                               True,
-                                                               self.k_fold_class.n_splits))[:, 0])
-                valacc = max(np.array(_inner_refactor_scalars(self.val_acc_list_hparam,
-                                                              True,
-                                                              self.k_fold_class.n_splits))[:, 0])
+                valloss = min(
+                    np.array(
+                        _inner_refactor_scalars(
+                            self.val_loss_list_hparam, True, self.k_fold_class.n_splits
+                        )
+                    )[:, 0]
+                )
+                valacc = max(
+                    np.array(
+                        _inner_refactor_scalars(
+                            self.val_acc_list_hparam, True, self.k_fold_class.n_splits
+                        )
+                    )[:, 0]
+                )
             else:
                 valloss = np.mean(mean_val_loss)
                 valacc = np.mean(mean_val_acc)
 
         else:
-            self._init_optimizer_and_scheduler(keep_training, cross_validation,
-                                               optimizer, optimizers_param,
-                                               lr_scheduler, scheduler_params)
+            self._init_optimizer_and_scheduler(
+                keep_training,
+                cross_validation,
+                optimizer,
+                optimizers_param,
+                lr_scheduler,
+                scheduler_params,
+            )
 
             if not parallel_tpu:
-                valloss, valacc = self._training_loops(n_epochs, dl_tr,
-                                                       dl_val, lr_scheduler, self.scheduler,
-                                                       check_optuna, search_metric,
-                                                       trial, False, writer_tag)
+                valloss, valacc = self._training_loops(
+                    n_epochs,
+                    dl_tr,
+                    dl_val,
+                    lr_scheduler,
+                    self.scheduler,
+                    check_optuna,
+                    search_metric,
+                    trial,
+                    False,
+                    writer_tag,
+                )
             else:
-                valloss, valacc = self.parallel_tpu_training_loops(n_epochs, dl_tr,
-                                                                   dl_val, optimizers_param, lr_scheduler,
-                                                                   self.scheduler,
-                                                                   check_optuna, search_metric,
-                                                                   trial, False)
+                valloss, valacc = self.parallel_tpu_training_loops(
+                    n_epochs,
+                    dl_tr,
+                    dl_val,
+                    optimizers_param,
+                    lr_scheduler,
+                    self.scheduler,
+                    check_optuna,
+                    search_metric,
+                    trial,
+                    False,
+                )
 
         try:
             self.writer.flush()
@@ -725,17 +850,19 @@ class Trainer:
         # put the mean of the cross_val
         return valloss, valacc
 
-    def _training_loops(self,
-                        n_epochs: int,
-                        dl_tr: DataLoader[Tuple[Tensor, Tensor]],
-                        dl_val: DataLoader[Tuple[Tensor, Tensor]],
-                        lr_scheduler: Optional[Type[_LRScheduler]] = None,
-                        scheduler: Optional[_LRScheduler] = None,
-                        check_optuna: bool = False,
-                        search_metric: Optional[str] = None,
-                        trial: Optional[BaseTrial] = None,
-                        cross_validation: bool = False,
-                        writer_tag: str = "") -> Tuple[float, float]:
+    def _training_loops(
+        self,
+        n_epochs: int,
+        dl_tr: DataLoader[Tuple[Tensor, Tensor]],
+        dl_val: DataLoader[Tuple[Tensor, Tensor]],
+        lr_scheduler: Optional[Type[_LRScheduler]] = None,
+        scheduler: Optional[_LRScheduler] = None,
+        check_optuna: bool = False,
+        search_metric: Optional[str] = None,
+        trial: Optional[BaseTrial] = None,
+        cross_validation: bool = False,
+        writer_tag: str = "",
+    ) -> Tuple[float, float]:
         """private method to run the trainign loops
         
         Args:
@@ -768,7 +895,7 @@ class Trainer:
                 the validation loss and validation accuracy
         """
 
-        valloss, valacc = np.inf, 0.
+        valloss, valacc = np.inf, 0.0
         for t in range(n_epochs):
             print(f"Epoch {t + 1}\n-------------------------------")
             self.val_epoch = t
@@ -780,21 +907,35 @@ class Trainer:
                     lista = me.get_layers_param()
                     for k, item in lista.items():
                         try:
-                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/" + k, item, t)
-                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/" + k,
-                                                      torch.log(torch.abs(item) + 1e-8), t)
+                            self.writer.add_histogram(
+                                writer_tag + "/weights&biases/param/train/" + k, item, t
+                            )
+                            self.writer.add_histogram(
+                                writer_tag + "/weights&biases/param/train/log/" + k,
+                                torch.log(torch.abs(item) + 1e-8),
+                                t,
+                            )
                         except ValueError:
-                            warnings.warn(f"The histogram is empty, most likely because your loss"
-                                          f" is exploding. Try use gradient clipping.")
+                            warnings.warn(
+                                f"The histogram is empty, most likely because your loss"
+                                f" is exploding. Try use gradient clipping."
+                            )
                     lista_grad = me.get_layers_grads()
                     for k, item in zip(lista.keys(), lista_grad):
                         try:
-                            self.writer.add_histogram(writer_tag + "/weights&biases/grads/train/" + k, item, t)
-                            self.writer.add_histogram(writer_tag + "/weights&biases/param/train/log/" + k,
-                                                      torch.log(torch.abs(item) + 1e-8), t)
+                            self.writer.add_histogram(
+                                writer_tag + "/weights&biases/grads/train/" + k, item, t
+                            )
+                            self.writer.add_histogram(
+                                writer_tag + "/weights&biases/param/train/log/" + k,
+                                torch.log(torch.abs(item) + 1e-8),
+                                t,
+                            )
                         except ValueError:
-                            warnings.warn(f"The histogram is empty, most likely because your loss"
-                                          f" is exploding. Try use gradient clipping.")
+                            warnings.warn(
+                                f"The histogram is empty, most likely because your loss"
+                                f" is exploding. Try use gradient clipping."
+                            )
                     self.writer.flush()
 
                 except AttributeError:
@@ -818,17 +959,19 @@ class Trainer:
                     raise optuna.exceptions.TrialPruned()
         return valloss, valacc
 
-    def parallel_tpu_training_loops(self,
-                                    n_epochs: int,
-                                    dl_tr_old: DataLoader[Tuple[Tensor, Tensor]],
-                                    dl_val_old: DataLoader[Tuple[Tensor, Tensor]],
-                                    optimizers_param: Dict[str, Any],
-                                    lr_scheduler: Optional[Type[_LRScheduler]] = None,
-                                    scheduler: Optional[_LRScheduler] = None,
-                                    check_optuna: bool = False,
-                                    search_metric: Optional[str] = None,
-                                    trial: Optional[BaseTrial] = None,
-                                    cross_validation: bool = False) -> Tuple[float, float]:
+    def parallel_tpu_training_loops(
+        self,
+        n_epochs: int,
+        dl_tr_old: DataLoader[Tuple[Tensor, Tensor]],
+        dl_val_old: DataLoader[Tuple[Tensor, Tensor]],
+        optimizers_param: Dict[str, Any],
+        lr_scheduler: Optional[Type[_LRScheduler]] = None,
+        scheduler: Optional[_LRScheduler] = None,
+        check_optuna: bool = False,
+        search_metric: Optional[str] = None,
+        trial: Optional[BaseTrial] = None,
+        cross_validation: bool = False,
+    ) -> Tuple[float, float]:
         """Experimental function to run all the training cycles
         on colab TPUs in parallel.
         Note: ``cross_validation`` parameter as well as
@@ -865,9 +1008,11 @@ class Trainer:
         """
         self.val_loss = 0
         self.val_acc = 0
-        warnings.warn("The tensorboard writer is ignored " +
-                      "for multi TPU processing. Also SAM optimisation" +
-                      " does not work for multi TPU training.")
+        warnings.warn(
+            "The tensorboard writer is ignored "
+            + "for multi TPU processing. Also SAM optimisation"
+            + " does not work for multi TPU training."
+        )
 
         def map_fun_custom(index, flags):
             """map function for multi-processing"""
@@ -887,42 +1032,45 @@ class Trainer:
                 dl_tr_old.dataset,
                 num_replicas=xm.xrt_world_size(),
                 rank=xm.get_ordinal(),
-                shuffle=True)
+                shuffle=True,
+            )
 
             dl_tr = torch.utils.data.DataLoader(
                 dl_tr_old.dataset,
                 num_workers=dl_tr_old.num_workers,
                 batch_size=dl_tr_old.batch_size,
                 sampler=train_sampler,
-                drop_last=dl_tr_old.drop_last
+                drop_last=dl_tr_old.drop_last,
             )
 
             val_sampler = torch.utils.data.distributed.DistributedSampler(
                 dl_val_old.dataset,
                 num_replicas=xm.xrt_world_size(),
                 rank=xm.get_ordinal(),
-                shuffle=False)
+                shuffle=False,
+            )
 
             dl_val = torch.utils.data.DataLoader(
                 dl_val_old.dataset,
                 num_workers=dl_val_old.num_workers,
                 batch_size=dl_val_old.batch_size,
                 sampler=val_sampler,
-                drop_last=dl_val_old.drop_last
+                drop_last=dl_val_old.drop_last,
             )
 
             # train loop
             for t in range(n_epochs):
                 model2.train()
-                para_train_loader = pl.ParallelLoader(dl_tr,
-                                                      [device]).per_device_loader(device)
+                para_train_loader = pl.ParallelLoader(
+                    dl_tr, [device]
+                ).per_device_loader(device)
                 print(f"Epoch {t + 1}\n-------------------------------")
                 self.val_epoch = t
                 self.train_epoch = t
 
                 # train batch loop
-                loss = 0.
-                correct = 0.
+                loss = 0.0
+                correct = 0.0
                 tik = time.time()
                 # for batch, (X, y) in enumerate(self.dataloaders[0]):
                 for batch, (X, y) in enumerate(para_train_loader):
@@ -951,32 +1099,38 @@ class Trainer:
                 # evaluation
                 model2.eval()
 
-                loss, correct = 0., 0.
+                loss, correct = 0.0, 0.0
                 class_label: List[Tensor] = []
                 class_probs: List[List[Tensor]] = []
 
-                pred = 0.
-                para_valid_loader = pl.ParallelLoader(dl_val,
-                                                      [device]).per_device_loader(device)
+                pred = 0.0
+                para_valid_loader = pl.ParallelLoader(
+                    dl_val, [device]
+                ).per_device_loader(device)
                 with torch.no_grad():
                     # per batch!!
                     for X, y in para_valid_loader:
                         pred = model2(X)
-                        class_probs_batch = [f.softmax(el, dim=0)
-                                             for el in pred]
+                        class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                         class_probs.append(class_probs_batch)
                         loss += self.loss_fn(pred, y).item()
                         try:
-                            correct += (pred.argmax(1) == y).to(torch.float).sum().item()
+                            correct += (
+                                (pred.argmax(1) == y).to(torch.float).sum().item()
+                            )
                         except RuntimeError:
-                            correct += (pred.argmax(2) == y).to(torch.float).sum().item()
+                            correct += (
+                                (pred.argmax(2) == y).to(torch.float).sum().item()
+                            )
                         class_label.append(y)
                     # add data to tensorboard
                     # self._add_pr_curve_tb(pred, class_label, class_probs, "validation")
 
                 # self.writer.add_scalar("Parallel " + "/Accuracy/validation", correct, self.val_epoch)
-                print(f"Validation results: \n Accuracy: {(100 * correct):.2f}%, \
-                        Avg loss: {loss:>8f} \n")
+                print(
+                    f"Validation results: \n Accuracy: {(100 * correct):.2f}%, \
+                        Avg loss: {loss:>8f} \n"
+                )
 
                 # self.writer.flush()
 
@@ -999,13 +1153,12 @@ class Trainer:
         flags: Dict[Any, Any] = {}
         self.val_acc /= len(dl_val_old) * dl_val_old.batch_size
         self.val_loss /= len(dl_val_old)
-        xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method='fork')
+        xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method="fork")
         return self.val_loss, self.val_acc
 
-    def evaluate_classification(self,
-                                num_class: int = None,
-                                dl: DataLoader[Tuple[Tensor, Tensor]] = None
-                                ) -> Tuple[float, float, np.ndarray]:
+    def evaluate_classification(
+        self, num_class: int = None, dl: DataLoader[Tuple[Tensor, Tensor]] = None
+    ) -> Tuple[float, float, np.ndarray]:
         """Method to evaluate the performance of the model.
         
         Args:
@@ -1023,8 +1176,8 @@ class Trainer:
             dl = self.dataloaders[0]
         class_probs: List[List[Tensor]] = []
         class_label: List[Tensor] = []
-        loss = 0.
-        correct = 0.
+        loss = 0.0
+        correct = 0.0
         confusion_matrix = np.zeros((num_class, num_class))
         self.model.eval()
         with torch.no_grad():
@@ -1032,12 +1185,10 @@ class Trainer:
                 X = X.to(DEVICE)
                 y = y.to(DEVICE)
                 pred = self.model(X)
-                class_probs_batch = [f.softmax(el, dim=0)
-                                     for el in pred]
+                class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) ==
-                            y).to(torch.float).sum().item()
+                correct += (pred.argmax(1) == y).to(torch.float).sum().item()
                 class_label.append(y)
                 for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
@@ -1045,11 +1196,9 @@ class Trainer:
         loss /= len(dl)
         return 100 * correct, loss, confusion_matrix
 
-    def register_pipe_hook(self,
-                           callable: Callable[[Optimizer, int,
-                                               ModelExtractor,
-                                               SummaryWriter],
-                                              Any]) -> None:
+    def register_pipe_hook(
+        self, callable: Callable[[Optimizer, int, ModelExtractor, SummaryWriter], Any]
+    ) -> None:
         """This method registers a function that
         will be called after each trainign step.
 
@@ -1064,28 +1213,30 @@ class Trainer:
                 the function to register"""
         self.registered_hook = callable
 
-    def _run_pipe_hook(self,
-                       epoch: int,
-                       optim: Optimizer,
-                       me: ModelExtractor,
-                       writer: SummaryWriter) -> None:
+    def _run_pipe_hook(
+        self, epoch: int, optim: Optimizer, me: ModelExtractor, writer: SummaryWriter
+    ) -> None:
         """private method that runs the hooked
         function at every epoch, after the single training loop"""
         if self.registered_hook is not None:
             self.registered_hook(epoch, optim, me, writer)
 
     @staticmethod
-    def copy_dataloader_params(original_dataloader: DataLoader[Tuple[Tensor, Tensor]]) -> Dict[str, Any]:
+    def copy_dataloader_params(
+        original_dataloader: DataLoader[Tuple[Tensor, Tensor]]
+    ) -> Dict[str, Any]:
         """returns the dict of init parameters"""
-        return {"batch_size": original_dataloader.batch_size,
-                # "batch_sampler": original_dataloader.batch_sampler,
-                "num_workers": original_dataloader.num_workers,
-                "collate_fn": original_dataloader.collate_fn,
-                "pin_memory": original_dataloader.pin_memory,
-                "drop_last": original_dataloader.drop_last,
-                "timeout": original_dataloader.timeout,
-                "worker_init_fn": original_dataloader.worker_init_fn,
-                "multiprocessing_context": original_dataloader.multiprocessing_context,
-                "generator": original_dataloader.generator,
-                "prefetch_factor": original_dataloader.prefetch_factor,
-                "persistent_workers": original_dataloader.persistent_workers}
+        return {
+            "batch_size": original_dataloader.batch_size,
+            # "batch_sampler": original_dataloader.batch_sampler,
+            "num_workers": original_dataloader.num_workers,
+            "collate_fn": original_dataloader.collate_fn,
+            "pin_memory": original_dataloader.pin_memory,
+            "drop_last": original_dataloader.drop_last,
+            "timeout": original_dataloader.timeout,
+            "worker_init_fn": original_dataloader.worker_init_fn,
+            "multiprocessing_context": original_dataloader.multiprocessing_context,
+            "generator": original_dataloader.generator,
+            "prefetch_factor": original_dataloader.prefetch_factor,
+            "persistent_workers": original_dataloader.persistent_workers,
+        }

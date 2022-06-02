@@ -12,10 +12,16 @@ class SaveOutput(ABC):
     neural networks.
     Outputs will be stored in a list 'outputs'
     """
+
     outputs: List[Any]
 
     @abstractmethod
-    def __call__(self, module: nn.Module, module_in: Tensor, module_out: Union[List[Tensor], Tensor]) -> None:
+    def __call__(
+        self,
+        module: nn.Module,
+        module_in: Tensor,
+        module_out: Union[List[Tensor], Tensor],
+    ) -> None:
         pass
 
     def clear(self) -> None:
@@ -47,8 +53,12 @@ class SaveLayerOutput(SaveOutput):
     def __init__(self) -> None:
         self.outputs = []
 
-    def __call__(self, module: nn.Module, module_in: Tensor,
-                 module_out: Union[List[Tensor], Tensor]) -> None:
+    def __call__(
+        self,
+        module: nn.Module,
+        module_in: Tensor,
+        module_out: Union[List[Tensor], Tensor],
+    ) -> None:
         """This function stores the layer activations
 
         Args:

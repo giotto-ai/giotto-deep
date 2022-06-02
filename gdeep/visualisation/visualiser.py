@@ -10,8 +10,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from captum.attr import LayerAttribution
 from gtda.plotting import plot_diagram, plot_betti_surfaces
-from . import persistence_diagrams_of_activations, \
-    plotly2tensor, Compactification, png2tensor
+from . import (
+    persistence_diagrams_of_activations,
+    plotly2tensor,
+    Compactification,
+    png2tensor,
+)
 
 from gdeep.trainer import Trainer
 from gdeep.analysis.interpretability import Interpreter
@@ -64,27 +68,29 @@ class Visualiser:
         features = torch.cat(features_list).to(DEVICE)
         if len(features.shape) >= 3:
             if len(features.shape) == 3:
-                features = features.reshape(max_number, -1,
-                                            features.shape[1],
-                                            features.shape[2])
+                features = features.reshape(
+                    max_number, -1, features.shape[1], features.shape[2]
+                )
                 grid = make_grid(features)
             else:
                 grid = make_grid(features)
 
-            self.pipe.writer.add_image('dataset',
-                                       grid,
-                                       0)
+            self.pipe.writer.add_image("dataset", grid, 0)
 
-            self.pipe.writer.add_embedding(features.view(max_number, -1),
-                                           metadata=labels_list,
-                                           label_img=features,
-                                           tag='dataset',
-                                           global_step=0)
+            self.pipe.writer.add_embedding(
+                features.view(max_number, -1),
+                metadata=labels_list,
+                label_img=features,
+                tag="dataset",
+                global_step=0,
+            )
         else:
-            self.pipe.writer.add_embedding(features.view(max_number, -1),
-                                           metadata=labels_list,
-                                           tag='dataset',
-                                           global_step=0)
+            self.pipe.writer.add_embedding(
+                features.view(max_number, -1),
+                metadata=labels_list,
+                tag="dataset",
+                global_step=0,
+            )
 
         self.pipe.writer.flush()
 
@@ -107,12 +113,14 @@ class Visualiser:
         acts = me.get_activations(inputs)
         print("Sending the plots to tensorboard: ")
         for i, act in enumerate(acts):
-            print("Step " + str(i+1) + "/" + str(len(acts)), end='\r')
+            print("Step " + str(i + 1) + "/" + str(len(acts)), end="\r")
             length = act.shape[0]
-            self.pipe.writer.add_embedding(act.view(length, -1),
-                                           metadata=labels,
-                                           tag="activations_" + str(i),
-                                           global_step=0)
+            self.pipe.writer.add_embedding(
+                act.view(length, -1),
+                metadata=labels,
+                tag="activations_" + str(i),
+                global_step=0,
+            )
             self.pipe.writer.flush()
 
     def plot_persistence_diagrams(self, example=None):
@@ -129,8 +137,7 @@ class Visualiser:
             if example is not None:
                 inputs = inputs.to(example.dtype)
             activ = me.get_activations(inputs)
-            self.persistence_diagrams = \
-                persistence_diagrams_of_activations(activ)
+            self.persistence_diagrams = persistence_diagrams_of_activations(activ)
         list_of_dgms = []
         for i, persistence_diagram in enumerate(self.persistence_diagrams):
             plot_persistence_diagram = plot_diagram(persistence_diagram)
@@ -138,8 +145,9 @@ class Visualiser:
             list_of_dgms.append(img_t)
         features = torch.stack(list_of_dgms)
         # grid = make_grid(features)
-        self.pipe.writer.add_images("persistence_diagrams_of_activations",
-                                    features, dataformats="NHWC")
+        self.pipe.writer.add_images(
+            "persistence_diagrams_of_activations", features, dataformats="NHWC"
+        )
         self.pipe.writer.flush()
 
     def plot_decision_boundary(self, compact=False):
@@ -157,32 +165,32 @@ class Visualiser:
 
         if compact:
             # initlaisation of the compactification
-            cc = Compactification(precision=0.1,
-                                  n_samples=500,
-                                  epsilon=0.051,
-                                  n_features=x.shape[0],
-                                  n_epochs=100,
-                                  neural_net=self.pipe.model)
+            cc = Compactification(
+                precision=0.1,
+                n_samples=500,
+                epsilon=0.051,
+                n_features=x.shape[0],
+                n_epochs=100,
+                neural_net=self.pipe.model,
+            )
 
             d_final, label_final = cc.create_final_distance_matrix()
-            embedding = MDS(n_components=3,
-                            dissimilarity="precomputed")
+            embedding = MDS(n_components=3, dissimilarity="precomputed")
             db = embedding.fit_transform(d_final)
-            self.pipe.writer.add_embedding(db,
-                                           tag="compactified_decision_boundary",
-                                           global_step=0)
+            self.pipe.writer.add_embedding(
+                db, tag="compactified_decision_boundary", global_step=0
+            )
             self.pipe.writer.flush()
             return db, d_final, label_final
         else:
             db = me.get_decision_boundary(x)
-            self.pipe.writer.add_embedding(db,
-                                           tag="decision_boundary",
-                                           global_step=0)
+            self.pipe.writer.add_embedding(db, tag="decision_boundary", global_step=0)
             self.pipe.writer.flush()
             return db.cpu(), None, None
 
-    def betti_plot_layers(self, homology_dimension: List[int] = (0, 1),
-                          example: Optional[Tensor] = None):
+    def betti_plot_layers(
+        self, homology_dimension: List[int] = (0, 1), example: Optional[Tensor] = None
+    ):
         """
         Args:
             homology_dimension :
@@ -208,14 +216,15 @@ class Visualiser:
             inputs = self.pipe.dataloaders[0].dataset.data[:100]
             if example is not None:
                 inputs = inputs.to(example.dtype)
-            self.persistence_diagrams = \
-                persistence_diagrams_of_activations(me.get_activations(inputs))
+            self.persistence_diagrams = persistence_diagrams_of_activations(
+                me.get_activations(inputs)
+            )
         bc = BettiCurve()
         dgms = bc.fit_transform(self.persistence_diagrams)
 
-        plots = plot_betti_surfaces(dgms,
-                                    samplings=bc.samplings_,
-                                    homology_dimensions=homology_dimension)
+        plots = plot_betti_surfaces(
+            dgms, samplings=bc.samplings_, homology_dimensions=homology_dimension
+        )
 
         for i in range(len(plots)):
             plots[i].show()
@@ -236,14 +245,9 @@ class Visualiser:
         fig = visualization.visualize_text(viz)
         name = "out.png"
         hti = Html2Image()
-        hti.screenshot(
-            html_str=fig.data,
-            save_as=name
-        )
+        hti.screenshot(html_str=fig.data, save_as=name)
         img_ten = png2tensor(name)
-        self.pipe.writer.add_image(interpreter.method,
-                                   img_ten,
-                                   dataformats="HWC")
+        self.pipe.writer.add_image(interpreter.method, img_ten, dataformats="HWC")
         return fig
 
     def plot_interpreter_image(self, interpreter: Interpreter):
@@ -260,25 +264,42 @@ class Visualiser:
         """
 
         try:
-            attrib = torch.permute(interpreter.attribution.squeeze().detach(),
-                                   (1, 2, 0)).detach().cpu().numpy()
+            attrib = (
+                torch.permute(interpreter.attribution.squeeze().detach(), (1, 2, 0))
+                .detach()
+                .cpu()
+                .numpy()
+            )
         except ValueError:
-            attrib = torch.permute(LayerAttribution.interpolate(interpreter.attribution.detach().cpu(),
-                                                                tuple(interpreter.image.squeeze().
-                                                                      detach().cpu().shape[-2:])).squeeze(0),
-                                   (1, 2, 0))
-            attrib = torch.stack([attrib, attrib, attrib], dim=2).squeeze(-1).detach().cpu().numpy()
-        img = torch.permute(interpreter.image.squeeze().detach(),
-                            (1, 2, 0)).detach().cpu().numpy()
+            attrib = torch.permute(
+                LayerAttribution.interpolate(
+                    interpreter.attribution.detach().cpu(),
+                    tuple(interpreter.image.squeeze().detach().cpu().shape[-2:]),
+                ).squeeze(0),
+                (1, 2, 0),
+            )
+            attrib = (
+                torch.stack([attrib, attrib, attrib], dim=2)
+                .squeeze(-1)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+        img = (
+            torch.permute(interpreter.image.squeeze().detach(), (1, 2, 0))
+            .detach()
+            .cpu()
+            .numpy()
+        )
 
         fig, _ = visualization.visualize_image_attr_multiple(
             attrib,
             img,
             ["original_image", "heat_map", "blended_heat_map"],
             ["all", "all", "all"],
-            show_colorbar=True)
-        self.pipe.writer.add_figure(interpreter.method,
-                                    fig)
+            show_colorbar=True,
+        )
+        self.pipe.writer.add_figure(interpreter.method, fig)
         return fig
 
     def plot_interpreter_tabular(self, interpreter: Interpreter):
@@ -296,29 +317,41 @@ class Visualiser:
         # prepare attributions for visualization
         x_test = interpreter.x
         x_axis_data = np.arange(x_test.shape[1])
-        x_axis_data_labels = list(map(lambda idx: idx,
-                                      x_axis_data))
+        x_axis_data_labels = list(map(lambda idx: idx, x_axis_data))
         attribution_sum = interpreter.attribution.detach().cpu().numpy().sum(0)
         attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
 
         width = 0.14
-        legends = ['Int Grads', 'Int Grads w/SmoothGrad', 'DeepLift',
-                   'Feature Ablation', 'Weights']
+        legends = [
+            "Int Grads",
+            "Int Grads w/SmoothGrad",
+            "DeepLift",
+            "Feature Ablation",
+            "Weights",
+        ]
 
         fig = plt.figure(figsize=(20, 10))
 
         ax = plt.subplot()
-        ax.set_title('Comparing input feature importances across ' +
-                     'multiple algorithms and learned weights')
-        ax.set_ylabel('Attributions')
+        ax.set_title(
+            "Comparing input feature importances across "
+            + "multiple algorithms and learned weights"
+        )
+        ax.set_ylabel("Attributions")
 
-        plt.rc('font', size=FONT_SIZE)  # fontsize of the text sizes
-        plt.rc('axes', titlesize=FONT_SIZE)  # fontsize of the axes title
-        plt.rc('axes', labelsize=FONT_SIZE)  # fontsize of the x and y labels
-        plt.rc('legend', fontsize=FONT_SIZE - 4)  # fontsize of the legend
+        plt.rc("font", size=FONT_SIZE)  # fontsize of the text sizes
+        plt.rc("axes", titlesize=FONT_SIZE)  # fontsize of the axes title
+        plt.rc("axes", labelsize=FONT_SIZE)  # fontsize of the x and y labels
+        plt.rc("legend", fontsize=FONT_SIZE - 4)  # fontsize of the legend
 
-        ax.bar(x_axis_data, attribution_norm_sum, width, align='center',
-               alpha=0.8, color='#eb5e7c')
+        ax.bar(
+            x_axis_data,
+            attribution_norm_sum,
+            width,
+            align="center",
+            alpha=0.8,
+            color="#eb5e7c",
+        )
 
         ax.autoscale_view()
         plt.tight_layout()

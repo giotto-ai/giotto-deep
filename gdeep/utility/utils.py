@@ -12,8 +12,9 @@ from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 
 
-def _are_compatible(model_dict: Dict[str, nn.Module],
-                    dataloaders_dict: Dict[str, List[DataLoader]]) -> bool:
+def _are_compatible(
+    model_dict: Dict[str, nn.Module], dataloaders_dict: Dict[str, List[DataLoader]]
+) -> bool:
     """utility function to check the compatibility of a model
     with a set of dataloaders `(dl_tr, dl_val, dl_ts)`
     """
@@ -28,11 +29,13 @@ def _are_compatible(model_dict: Dict[str, nn.Module],
         return True
 
 
-def save_model_and_optimizer(model: nn.Module,
-                             model_name: Optional[str] = None,
-                             trial_id: Optional[str] = None,
-                             optimizer: Optional[Optimizer] = None,
-                             store_pickle: bool = False):
+def save_model_and_optimizer(
+    model: nn.Module,
+    model_name: Optional[str] = None,
+    trial_id: Optional[str] = None,
+    optimizer: Optional[Optimizer] = None,
+    store_pickle: bool = False,
+):
     """Save the model and the optimizer state_dict
 
     Args:
@@ -60,27 +63,45 @@ def save_model_and_optimizer(model: nn.Module,
 
     if model_name is None:
         if store_pickle:
-            torch.save(model,
-                       os.path.join("state_dicts",
-                                    model.__class__.__name__ + "-" + trial_id + ".pickle"))
+            torch.save(
+                model,
+                os.path.join(
+                    "state_dicts", model.__class__.__name__ + "-" + trial_id + ".pickle"
+                ),
+            )
         else:
-            torch.save(model.state_dict(),
-                       os.path.join("state_dicts",
-                                    model.__class__.__name__ + "-" + trial_id + ".pth"))
+            torch.save(
+                model.state_dict(),
+                os.path.join(
+                    "state_dicts", model.__class__.__name__ + "-" + trial_id + ".pth"
+                ),
+            )
     else:
         if store_pickle:
-            torch.save(model,
-                       os.path.join("state_dicts",
-                                    model_name + "-" + trial_id + ".pickle"))
+            torch.save(
+                model,
+                os.path.join("state_dicts", model_name + "-" + trial_id + ".pickle"),
+            )
         else:
-            torch.save(model.state_dict(),
-                       os.path.join("state_dicts",
-                                    model_name + "-" + trial_id + ".pth"))
+            torch.save(
+                model.state_dict(),
+                os.path.join("state_dicts", model_name + "-" + trial_id + ".pth"),
+            )
     if optimizer is not None:
-        torch.save(optimizer.state_dict(),
-                   os.path.join("state_dicts",
-                                str(optimizer).replace("\n", "").replace("(", "").replace(":", "").replace(")", "")
-                                + "-" + trial_id + ".pth"))
+        torch.save(
+            optimizer.state_dict(),
+            os.path.join(
+                "state_dicts",
+                str(optimizer)
+                .replace("\n", "")
+                .replace("(", "")
+                .replace(":", "")
+                .replace(")", "")
+                + "-"
+                + trial_id
+                + ".pth",
+            ),
+        )
 
 
 def ensemble_wrapper(clss: Type):
@@ -105,7 +126,9 @@ def ensemble_wrapper(clss: Type):
     class NewEnsembleEstimator(clss):
         def __init__(self, *args, **kwargs):
             super(NewEnsembleEstimator, self).__init__(*args, **kwargs)
-            self.estimators_ = nn.ModuleList().extend([self._make_estimator() for _ in range(self.n_estimators)])
+            self.estimators_ = nn.ModuleList().extend(
+                [self._make_estimator() for _ in range(self.n_estimators)]
+            )
 
     return NewEnsembleEstimator
 
@@ -134,9 +157,9 @@ def is_notebook() -> bool:
     """
     try:
         shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
+        if shell == "ZMQInteractiveShell":
             return True  # Jupyter notebook or qtconsole
-        elif shell == 'TerminalInteractiveShell':
+        elif shell == "TerminalInteractiveShell":
             return False  # Terminal running IPython
         else:
             return False  # Other type (?)
@@ -151,8 +174,9 @@ def autoreload_if_notebook() -> None:
         None
     """
     from IPython import get_ipython  # type: ignore
-    get_ipython().magic('load_ext autoreload')
-    get_ipython().magic('autoreload 2')
+
+    get_ipython().magic("load_ext autoreload")
+    get_ipython().magic("autoreload 2")
 
 
 def _file_as_bytes(file) -> bytes:
@@ -166,7 +190,7 @@ def _file_as_bytes(file) -> bytes:
         bytes:
             Bytes object representing the file.
     """
-    with open(file, 'rb') as f:
+    with open(file, "rb") as f:
         return f.read()
 
 
@@ -208,7 +232,7 @@ class KnownWarningSilencer:
     def __init__(self) -> None:
         pass
 
-    def __enter__(self) -> 'KnownWarningSilencer':
+    def __enter__(self) -> "KnownWarningSilencer":
         warnings.filterwarnings("ignore")
         return self
 

@@ -41,11 +41,13 @@ class PersformerHyperparameterSearch:
         None
     """
 
-    def __init__(self,
-                 dataset_name: str,
-                 download_directory: str,
-                 path_hpo_metadata: str,
-                 path_writer: str) -> None:
+    def __init__(
+        self,
+        dataset_name: str,
+        download_directory: str,
+        path_hpo_metadata: str,
+        path_writer: str,
+    ) -> None:
         self.dataset_name = dataset_name
         self.download_directory = download_directory
         self.path_hpo_metadata = path_hpo_metadata
@@ -58,12 +60,12 @@ class PersformerHyperparameterSearch:
             torch.utils.data.DataLoader:
             data loader for the dataset specified in the constructor
         """
-        dl_cloud_builder = DlBuilderFromDataCloud(self.dataset_name,
-                                                  self.download_directory)
+        dl_cloud_builder = DlBuilderFromDataCloud(
+            self.dataset_name, self.download_directory
+        )
 
         # create the dataset from the downloaded dataset
-        train_dataloader, _, _ = dl_cloud_builder \
-            .build([{"batch_size": 10}])
+        train_dataloader, _, _ = dl_cloud_builder.build([{"batch_size": 10}])
         return train_dataloader
 
     def search(self) -> None:
@@ -96,32 +98,44 @@ class PersformerHyperparameterSearch:
             optimizers_params = hyperparameters_dicts.optimizers_params
             schedulers_params = hyperparameters_dicts.schedulers_params
 
-        # Initialize pipeline        
-        pipe = Trainer(model, [train_dataloader, None], loss_fn, writer, None,
-                       eval(
-                           hyperparameters_dicts.fold_mode + "(" +
-                           str(hyperparameters_dicts.n_splits) + ", " +
-                           "shuffle=" + str(hyperparameters_dicts.shuffle)
-                           + ")"
-                       )
-                       )
+        # Initialize pipeline
+        pipe = Trainer(
+            model,
+            [train_dataloader, None],
+            loss_fn,
+            writer,
+            None,
+            eval(
+                hyperparameters_dicts.fold_mode
+                + "("
+                + str(hyperparameters_dicts.n_splits)
+                + ", "
+                + "shuffle="
+                + str(hyperparameters_dicts.shuffle)
+                + ")"
+            ),
+        )
 
         pruner = NopPruner()
-        search = HyperParameterOptimization(pipe,
-                                            search_metric=hyperparameters_dicts.search_metric,
-                                            n_trials=hyperparameters_dicts.n_trials,
-                                            best_not_last=True,
-                                            pruner=pruner)
+        search = HyperParameterOptimization(
+            pipe,
+            search_metric=hyperparameters_dicts.search_metric,
+            n_trials=hyperparameters_dicts.n_trials,
+            best_not_last=True,
+            pruner=pruner,
+        )
 
         # starting the hyperparameter search
-        search.start([eval(opt) for opt in hyperparameters_dicts.optimizer],
-                     n_epochs=schedulers_params.num_training_steps[0],
-                     cross_validation=hyperparameters_dicts.cross_validation,
-                     optimizers_params=optimizers_params,
-                     dataloaders_params=dataloaders_params,
-                     models_hyperparams=models_hyperparams,
-                     lr_scheduler=eval(hyperparameters_dicts.scheduler[0]),
-                     schedulers_params=schedulers_params)
+        search.start(
+            [eval(opt) for opt in hyperparameters_dicts.optimizer],
+            n_epochs=schedulers_params.num_training_steps[0],
+            cross_validation=hyperparameters_dicts.cross_validation,
+            optimizers_params=optimizers_params,
+            dataloaders_params=dataloaders_params,
+            models_hyperparams=models_hyperparams,
+            lr_scheduler=eval(hyperparameters_dicts.scheduler[0]),
+            schedulers_params=schedulers_params,
+        )
 
         # Close the Tensorflow writer
         writer.close()

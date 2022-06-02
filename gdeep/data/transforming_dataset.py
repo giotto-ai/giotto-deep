@@ -2,9 +2,9 @@ from typing import Any, Callable, Generic, TypeVar
 
 from torch.utils.data import Dataset
 
-R = TypeVar('R')
-S = TypeVar('S')
-T = TypeVar('T')
+R = TypeVar("R")
+S = TypeVar("S")
+T = TypeVar("T")
 
 
 class TransformingDataset(Dataset[S], Generic[R, S]):
@@ -24,18 +24,18 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
     dataset: Dataset[R]
     transform: Callable[[R], S]
 
-    def __init__(self,
-                 dataset: Dataset[R],
-                 transform: Callable[[R], S]) -> None:
+    def __init__(self, dataset: Dataset[R], transform: Callable[[R], S]) -> None:
         self.dataset = dataset
         self.transform = transform
 
     def __len__(self) -> int:
-        if hasattr(self.dataset, '__len__'):
-            return len(self.dataset)  #type: ignore
+        if hasattr(self.dataset, "__len__"):
+            return len(self.dataset)  # type: ignore
         else:
-            raise NotImplementedError("The dataset does not implement the __len__ method.")
-    
+            raise NotImplementedError(
+                "The dataset does not implement the __len__ method."
+            )
+
     def __getitem__(self, idx: int) -> S:
         """The output of this method is one element
         in the dataset. The type of this element will
@@ -46,14 +46,14 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
         """
         return self.transform(self.dataset[idx])
 
-    
     # forward all other methods of the TransformingDataset to the Dataset
     def __getattr__(self, name: str) -> Any:
         return getattr(self.dataset, name)
 
 
-def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S], T]) \
-    -> TransformingDataset[R, T]:
+def append_transform(
+    dataset: TransformingDataset[R, S], transform: Callable[[S], T]
+) -> TransformingDataset[R, T]:
     """This function allows to concatenate different preprocessors
     that the usr may want to stack.
 
@@ -69,6 +69,8 @@ def append_transform(dataset: TransformingDataset[R, S], transform: Callable[[S]
             A new TransformingDataset that has been transformed
             by the transformation
     """
+
     def new_transform(x: R) -> T:
         return transform(dataset.transform(x))
+
     return TransformingDataset(dataset.dataset, new_transform)

@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 Tensor = torch.Tensor
 
+
 class PeriodicNeuralNetwork(nn.Module):
     """Makes a periodic `nn.Module` of `nn`. `boundary_list` specifies
     the elementary region the periodic neural network is supported on.
@@ -23,21 +24,21 @@ class PeriodicNeuralNetwork(nn.Module):
             defining the boundaries of a hypercube
     """
 
-    def __init__(self, nn: nn.Module,
-                 boundary_list:List[Tuple[float, float]]) -> None:
+    def __init__(self, nn: nn.Module, boundary_list: List[Tuple[float, float]]) -> None:
         super().__init__()
         self.nn = nn
-        self.interval_length = torch.tensor([[b-a for a, b
-                                              in boundary_list]])
-        self.left_interval_bound = torch.tensor([[a for a, b
-                                                  in boundary_list]])
+        self.interval_length = torch.tensor([[b - a for a, b in boundary_list]])
+        self.left_interval_bound = torch.tensor([[a for a, b in boundary_list]])
 
-    def forward(self, x_cont:Tensor) -> Tensor:
-        x_cont = torch.abs(
-                    torch.remainder(
-                        x_cont-self.left_interval_bound,
-                        2.*self.interval_length
-                        ) - self.interval_length
-                        ) + self.left_interval_bound
+    def forward(self, x_cont: Tensor) -> Tensor:
+        x_cont = (
+            torch.abs(
+                torch.remainder(
+                    x_cont - self.left_interval_bound, 2.0 * self.interval_length
+                )
+                - self.interval_length
+            )
+            + self.left_interval_bound
+        )
         x_cont = self.nn.forward(x_cont)
         return x_cont

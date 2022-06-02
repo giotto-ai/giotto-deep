@@ -53,6 +53,7 @@ class TrainerConfig:
             tag to prepend to the ouput
             on tensorboard
     """
+
     optimizer: Type[Optimizer]
     n_epochs: int = 10
     cross_validation: bool = False
@@ -70,6 +71,4 @@ class TrainerConfig:
 
     def to_dict(self) -> Dict[str, Any]:
         """method to transform the config file into a dictionary"""
-        return {
-            k: v for k, v in self.__dict__.items() if not k.startswith("_")
-        }
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}

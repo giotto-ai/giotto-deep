@@ -1,4 +1,3 @@
-
 import torch
 
 Tensor = torch.Tensor
@@ -20,10 +19,10 @@ def accuracy(prediction: Tensor, y: Tensor) -> float:
         float:
             the value of the accuracy
         """
-    correct: float = 0.
+    correct: float = 0.0
     try:
         correct += (prediction.argmax(1) == y).to(torch.float).sum().item()
     except RuntimeError:
         correct += (prediction.argmax(2) == y).to(torch.float).sum().item()
 
-    return correct/y.shape[0]*100
+    return correct / y.shape[0] * 100

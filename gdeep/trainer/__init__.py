@@ -3,8 +3,4 @@ from .trainer import Trainer
 from .trainer_config import TrainerConfig
 
 
-__all__ = [
-    'Trainer',
-    'accuracy',
-    'TrainerConfig'
-    ]
+__all__ = ["Trainer", "accuracy", "TrainerConfig"]

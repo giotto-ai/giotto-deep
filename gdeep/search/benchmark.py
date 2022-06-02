@@ -1,6 +1,5 @@
 import warnings
-from typing import Tuple, Any, Dict, Callable, \
-    Type, Optional, List, Union
+from typing import Tuple, Any, Dict, Callable, Type, Optional, List, Union
 
 import torch
 from torch.utils.data import DataLoader
@@ -47,13 +46,17 @@ class Benchmark:
 
     """
 
-    def __init__(self,
-                 models_dicts: Dict[str, Union[torch.nn.Module, str]],
-                 dataloaders_dicts: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
-                 loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
-                 writer: SummaryWriter,
-                 training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
-                 k_fold_class: Optional[BaseCrossValidator] = None) -> None:
+    def __init__(
+        self,
+        models_dicts: Dict[str, Union[torch.nn.Module, str]],
+        dataloaders_dicts: Dict[
+            str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]
+        ],
+        loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
+        writer: SummaryWriter,
+        training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
+        k_fold_class: Optional[BaseCrossValidator] = None,
+    ) -> None:
         self.models_dicts = models_dicts
         self.dataloaders_dicts = dataloaders_dicts
         self.loss_fn = loss_fn
@@ -73,22 +76,26 @@ class Benchmark:
             raise TypeError("The provided models must be a Python list of dictionaries")
 
         if not isinstance(self.dataloaders_dicts, list):
-            raise TypeError("The provided datasets must be a Python list of dictionaries")
+            raise TypeError(
+                "The provided datasets must be a Python list of dictionaries"
+            )
 
-    def start(self,
-              optimizer: Type[Optimizer],
-              n_epochs: int = 10,
-              cross_validation: bool = False,
-              optimizers_param: Optional[Dict[str, Any]] = None,
-              dataloaders_param: Optional[Dict[str, Any]] = None,
-              lr_scheduler: Optional[Type[_LRScheduler]] = None,
-              scheduler_params: Optional[Dict[str, Any]] = None,
-              profiling: bool = False,
-              parallel_tpu: bool = False,
-              keep_training: bool = False,
-              store_grad_layer_hist: bool = False,
-              n_accumulated_grads: int = 0,
-              writer_tag: str = "") -> None:
+    def start(
+        self,
+        optimizer: Type[Optimizer],
+        n_epochs: int = 10,
+        cross_validation: bool = False,
+        optimizers_param: Optional[Dict[str, Any]] = None,
+        dataloaders_param: Optional[Dict[str, Any]] = None,
+        lr_scheduler: Optional[Type[_LRScheduler]] = None,
+        scheduler_params: Optional[Dict[str, Any]] = None,
+        profiling: bool = False,
+        parallel_tpu: bool = False,
+        keep_training: bool = False,
+        store_grad_layer_hist: bool = False,
+        n_accumulated_grads: int = 0,
+        writer_tag: str = "",
+    ) -> None:
         """Method to be called when starting the benchmarking
         
         Args:
@@ -144,18 +151,19 @@ class Benchmark:
             keep_training,
             store_grad_layer_hist,
             n_accumulated_grads,
-            writer_tag
+            writer_tag,
         )
 
-        _benchmarking_param(self._inner_function,
-                            (self.models_dicts,
-                             self.dataloaders_dicts),
-                            config)
+        _benchmarking_param(
+            self._inner_function, (self.models_dicts, self.dataloaders_dicts), config
+        )
 
-    def _inner_function(self,
-                        model: Dict[str, Union[torch.nn.Module, str]],
-                        dataloaders: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
-                        config: TrainerConfig) -> None:
+    def _inner_function(
+        self,
+        model: Dict[str, Union[torch.nn.Module, str]],
+        dataloaders: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
+        config: TrainerConfig,
+    ) -> None:
         """private method to run the inner
         function of the benchmark loops
         
@@ -170,17 +178,26 @@ class Benchmark:
             config:
                 the configuration class ``TrainerConfig``.
         """
-        pipe = Trainer(model["model"], dataloaders["dataloaders"],
-                       self.loss_fn, self.writer, self.training_metric,  # type: ignore
-                       self.k_fold_class)
+        pipe = Trainer(
+            model["model"],
+            dataloaders["dataloaders"],
+            self.loss_fn,
+            self.writer,
+            self.training_metric,  # type: ignore
+            self.k_fold_class,
+        )
         config.writer_tag += "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]  # type: ignore
         pipe.train(**config.to_dict())
 
 
-def _benchmarking_param(fun: Callable[[Any], Any],
-                        arguments: Tuple[Dict[str, Union[torch.nn.Module, str]],
-                                         Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]],
-                        config: TrainerConfig) -> None:
+def _benchmarking_param(
+    fun: Callable[[Any], Any],
+    arguments: Tuple[
+        Dict[str, Union[torch.nn.Module, str]],
+        Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
+    ],
+    config: TrainerConfig,
+) -> None:
     """Function to be used as pseudo-decorator for
     benchmarking loops
     
@@ -201,6 +218,8 @@ def _benchmarking_param(fun: Callable[[Any], Any],
         for model in models_dicts:
             if _are_compatible(model, dataloaders):
                 print("*" * 40)
-                print(f"Performing Gridsearch on Dataset: {dataloaders['name']}"
-                      f", Model: {model['name']}")
+                print(
+                    f"Performing Gridsearch on Dataset: {dataloaders['name']}"
+                    f", Model: {model['name']}"
+                )
                 fun(model, dataloaders, config)

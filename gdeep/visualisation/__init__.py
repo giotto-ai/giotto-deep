@@ -5,9 +5,9 @@ from .visualiser import Visualiser
 
 
 __all__ = [
-    'Compactification',
-    'persistence_diagrams_of_activations',
-    'plotly2tensor',
-    'png2tensor',
-    'Visualiser'
-    ]
+    "Compactification",
+    "persistence_diagrams_of_activations",
+    "plotly2tensor",
+    "png2tensor",
+    "Visualiser",
+]
