@@ -3,8 +3,9 @@ import time
 import warnings
 from itertools import chain, combinations
 from typing import Tuple, Any, Dict, \
-    Type, Optional, List, Union, Literal
+    Type, Optional, List, Union
 
+from typing_extensions import Literal
 import torch
 import optuna
 from optuna.trial import TrialState

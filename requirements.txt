@@ -33,3 +33,4 @@ google-cloud-storage
 wget
 ipython
 jsonpickle
+typing_extensions; python_version == '3.7'
