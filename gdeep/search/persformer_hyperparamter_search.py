@@ -1,19 +1,17 @@
 from sympy import N
 import torch
-from torch.optim import AdamW, Adam, SGD
-from transformers import get_cosine_with_hard_restarts_schedule_with_warmup # type: ignore
+from torch.optim import *
+from transformers import get_cosine_with_hard_restarts_schedule_with_warmup  # type: ignore
 from sklearn.model_selection import StratifiedKFold, KFold
-
 from dotmap import DotMap  # type:ignore
-
 from json import load
-
 from optuna.pruners import NopPruner
 
 from gdeep.topology_layers import Persformer
 from gdeep.search import GiottoSummaryWriter, HyperParameterOptimization
 from gdeep.data.datasets import DlBuilderFromDataCloud
 from gdeep.trainer import Trainer
+
 
 class PersformerHyperparameterSearch:
     """This class is used to perform hyperparameter search for Persfomer using 
@@ -24,34 +22,35 @@ class PersformerHyperparameterSearch:
     saved in the path provided in the constructor.
     
     Args:
-        dataset_name (str):
+        dataset_name :
             name of the dataset to be used for the 
             hyperparameter search. The dataset must be present in the
             DatasetCloud.
-        download_directory (str):
+        download_directory :
             directory where the dataset is
             either downloaded or already present
-        path_hpo_metadata (str):
+        path_hpo_metadata :
             path to the metadata file containing the
             hyperparameter dictionaries specifying the search space and the
             search metric
-        path_writer (str):
+        path_writer :
             path to the Tensorflow writer directory where the
             Tensorflow summaries are saved during the search process.
             
     Returns:
         None
-    """ 
+    """
+
     def __init__(self,
-                dataset_name,
-                download_directory,
-                path_hpo_metadata,
-                path_writer) -> None:
+                 dataset_name: str,
+                 download_directory: str,
+                 path_hpo_metadata: str,
+                 path_writer: str) -> None:
         self.dataset_name = dataset_name
         self.download_directory = download_directory
         self.path_hpo_metadata = path_hpo_metadata
         self.path_writer = path_writer
-        
+
     def _get_data_loader(self) -> torch.utils.data.DataLoader:
         """Returns the data loader for the dataset specified in the constructor.
         
@@ -60,14 +59,13 @@ class PersformerHyperparameterSearch:
             data loader for the dataset specified in the constructor
         """
         dl_cloud_builder = DlBuilderFromDataCloud(self.dataset_name,
-                                   self.download_directory)
+                                                  self.download_directory)
 
         # create the dataset from the downloaded dataset
-        train_dataloader, _, _ = dl_cloud_builder\
-            .build(({"batch_size" : 10},))
+        train_dataloader, _, _ = dl_cloud_builder \
+            .build([{"batch_size": 10}])
         return train_dataloader
-    
-    
+
     def search(self) -> None:
         """Performs the hyperparameter search. The search is performed using
         the Giotto-Deep GridSearch class. The hyperparameter dictionaries
@@ -79,18 +77,17 @@ class PersformerHyperparameterSearch:
         Returns:
             None
         """
-        
+
         model = Persformer()
-        
+
         train_dataloader = self._get_data_loader()
-        
 
         # initialize loss
         loss_fn = torch.nn.CrossEntropyLoss()
 
         # Initialize the Tensorflow writer
         writer = GiottoSummaryWriter(self.path_writer)
-        
+
         # load hpo metadata
         with open(self.path_hpo_metadata) as config_data_file:
             hyperparameters_dicts = DotMap(load(config_data_file))
@@ -100,15 +97,14 @@ class PersformerHyperparameterSearch:
             schedulers_params = hyperparameters_dicts.schedulers_params
 
         # Initialize pipeline        
-        pipe = Trainer(model, [train_dataloader, None], loss_fn, writer,
-                            eval(
-                                hyperparameters_dicts.fold_mode + "(" +
-                                str(hyperparameters_dicts.n_splits) + ", "+
-                                "shuffle=" + str(hyperparameters_dicts.shuffle)
-                                + ")"
-                            )
-                        )
-
+        pipe = Trainer(model, [train_dataloader, None], loss_fn, writer, None,
+                       eval(
+                           hyperparameters_dicts.fold_mode + "(" +
+                           str(hyperparameters_dicts.n_splits) + ", " +
+                           "shuffle=" + str(hyperparameters_dicts.shuffle)
+                           + ")"
+                       )
+                       )
 
         pruner = NopPruner()
         search = HyperParameterOptimization(pipe,
@@ -119,13 +115,13 @@ class PersformerHyperparameterSearch:
 
         # starting the hyperparameter search
         search.start([eval(opt) for opt in hyperparameters_dicts.optimizer],
-                    n_epochs=schedulers_params.num_training_steps[0],
-                    cross_validation=hyperparameters_dicts.cross_validation,
-                    optimizers_params=optimizers_params,
-                    dataloaders_params=dataloaders_params,
-                    models_hyperparams=models_hyperparams,
-                    lr_scheduler=eval(hyperparameters_dicts.scheduler[0]),
-                    schedulers_params=schedulers_params)
+                     n_epochs=schedulers_params.num_training_steps[0],
+                     cross_validation=hyperparameters_dicts.cross_validation,
+                     optimizers_params=optimizers_params,
+                     dataloaders_params=dataloaders_params,
+                     models_hyperparams=models_hyperparams,
+                     lr_scheduler=eval(hyperparameters_dicts.scheduler[0]),
+                     schedulers_params=schedulers_params)
 
         # Close the Tensorflow writer
         writer.close()

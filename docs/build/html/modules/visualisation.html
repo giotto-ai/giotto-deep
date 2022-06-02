@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -79,28 +80,28 @@
            <div itemprop="articleBody">
              
   <section id="visualisation">
-<h1>Visualisation<a class="headerlink" href="#visualisation" title="Permalink to this headline"></a></h1>
+<h1>Visualisation<a class="headerlink" href="#visualisation" title="Permalink to this heading"></a></h1>
 <span class="target" id="module-gdeep.visualisation"></span><dl class="py class">
 <dt class="sig sig-object py" id="gdeep.visualisation.Compactification">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">Compactification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_tuple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.modules.module.Module</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Compactification" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">Compactification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_tuple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neural_net</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Compactification" title="Permalink to this definition"></a></dt>
 <dd><p>Class to compactify the feature space and get
 better topological insights.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>precision (float, default = 0.4):</dt><dd><p>A tolerance on how close to the decision
+<dt>precision :</dt><dd><p>A tolerance on how close to the decision
 boundary the points shall be.</p>
 </dd>
-<dt>n_features (int, default None):</dt><dd><p>number of input features</p>
+<dt>n_features :</dt><dd><p>number of input features</p>
 </dd>
-<dt>n_samples (int, default 1000):</dt><dd><p>number of samples per chart</p>
+<dt>n_samples:</dt><dd><p>number of samples per chart</p>
 </dd>
-<dt>n_epochs (int, default 5000):</dt><dd><p>number of epochs needed to push points to the
+<dt>n_epochs:</dt><dd><p>number of epochs needed to push points to the
 decison boundary</p>
 </dd>
-<dt>boundary_tuple (list):</dt><dd><p>list of pairs (left,right).
+<dt>boundary_tuple :</dt><dd><p>list of pairs (left,right).
 This list defines the boundaries in each coordinates</p>
 </dd>
-<dt>neural_net (nn.Module):</dt><dd><p>the trained network of which to compute
+<dt>neural_net :</dt><dd><p>the trained network of which to compute
 the boundary</p>
 </dd>
 </dl>
@@ -108,17 +109,17 @@ the boundary</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Compactification.create_final_distance_matrix">
-<span class="sig-name descname"><span class="pre">create_final_distance_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Compactification.create_final_distance_matrix" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_final_distance_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.visualisation.Compactification.create_final_distance_matrix" title="Permalink to this definition"></a></dt>
 <dd><p>This is the main function to call without arguments</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Compactification.plot_chart">
-<span class="sig-name descname"><span class="pre">plot_chart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Compactification.plot_chart" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_chart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Compactification.plot_chart" title="Permalink to this definition"></a></dt>
 <dd><p>This functions plots the points in each chart.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>i (int):</dt><dd><p>the chart index, from <cite>-1</cite> to <cite>n_features</cite></p>
+<dt>i :</dt><dd><p>the chart index, from <code class="docutils literal notranslate"><span class="pre">-1</span></code> to <code class="docutils literal notranslate"><span class="pre">n_features</span></code></p>
 </dd>
 </dl>
 </dd>
@@ -129,32 +130,35 @@ the boundary</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">Visualiser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipe</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">Visualiser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer" title="gdeep.trainer.trainer.Trainer"><span class="pre">Trainer</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser" title="Permalink to this definition"></a></dt>
 <dd><p>This class is the bridge to send to the tensorboard
 the required plots. It converts plots and images of
 different kinds to tensors</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>pipe (Pipeline):</dt><dd><p>the pipeline to get info from</p>
-</dd>
-<dt>writer (tensorboard SummaryWriter):</dt><dd><p>the tensorboard writer</p>
+<dt>pipe :</dt><dd><p>the pipeline to get info from</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.betti_plot_layers">
-<span class="sig-name descname"><span class="pre">betti_plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.betti_plot_layers" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">betti_plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.betti_plot_layers" title="Permalink to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>homology_dimension (int array, optional):</dt><dd><p>An array of
+<dt>homology_dimension :</dt><dd><p>An array of
 homology dimensions</p>
+</dd>
+<dt>example :</dt><dd><p>the selected batch of data to
+compute the activations on. By
+defaults, this method takes the
+first 100 elements</p>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>(None):</dt><dd><p>a tuple of figures representing the Betti surfaces
-of the data accross layers of the NN, with one figure
+of the data across layers of the NN, with one figure
 per dimension in homology_dimensions. Otherwise, a single
 figure representing the Betti curve of the single sample
 present.</p>
@@ -196,7 +200,7 @@ version of the boundary</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_interpreter_image">
-<span class="sig-name descname"><span class="pre">plot_interpreter_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interpreter_image" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_interpreter_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.Interpreter" title="gdeep.analysis.interpretability.captum.Interpreter"><span class="pre">Interpreter</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interpreter_image" title="Permalink to this definition"></a></dt>
 <dd><p>This method allows to plot the results of an
 Interpreter for image data.</p>
 <dl class="simple">
@@ -213,7 +217,7 @@ initilised <code class="docutils literal notranslate"><span class="pre">Interpre
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_interpreter_tabular">
-<span class="sig-name descname"><span class="pre">plot_interpreter_tabular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interpreter_tabular" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_interpreter_tabular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.Interpreter" title="gdeep.analysis.interpretability.captum.Interpreter"><span class="pre">Interpreter</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interpreter_tabular" title="Permalink to this definition"></a></dt>
 <dd><p>This method allows to plot the results of an
 Interpreter for tabular data.</p>
 <dl class="simple">
@@ -230,12 +234,12 @@ initilised <code class="docutils literal notranslate"><span class="pre">Interpre
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_interpreter_text">
-<span class="sig-name descname"><span class="pre">plot_interpreter_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interpreter_text" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_interpreter_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.Interpreter" title="gdeep.analysis.interpretability.captum.Interpreter"><span class="pre">Interpreter</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interpreter_text" title="Permalink to this definition"></a></dt>
 <dd><p>This method allows to plot the results of an
 Interpreter for text data.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>interpreter (Interpreter):</dt><dd><p>this is a <code class="docutils literal notranslate"><span class="pre">gdeep.analysis.interpretability</span></code>
+<dt>interpreter :</dt><dd><p>this is a <code class="docutils literal notranslate"><span class="pre">gdeep.analysis.interpretability</span></code>
 initilised <code class="docutils literal notranslate"><span class="pre">Interpreter</span></code> class</p>
 </dd>
 </dl>
@@ -288,7 +292,7 @@ of the different layers</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="gdeep.visualisation.plotly2tensor">
-<span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">plotly2tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.visualisation.plotly2tensor" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">plotly2tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.visualisation.plotly2tensor" title="Permalink to this definition"></a></dt>
 <dd><p>convert Plotly fig to an array.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">

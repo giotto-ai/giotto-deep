@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -80,7 +81,7 @@
            <div itemprop="articleBody">
              
   <section id="module-gdeep.models">
-<span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this headline"></a></h1>
+<span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.FFNet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
@@ -116,21 +117,21 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">ModelExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.ModelExtractor" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">ModelExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.ModelExtractor" title="Permalink to this definition"></a></dt>
 <dd><p>This class wraps nn.Modules to extract
 weights, activations, gradients and decision boundaries</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>model (nn.Module):</dt><dd><p>standard torch module</p>
+<dt>model:</dt><dd><p>standard torch module</p>
 </dd>
-<dt>loss_fn (Callable):</dt><dd><p>loss function</p>
+<dt>loss_fn :</dt><dd><p>loss function</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_activations">
-<span class="sig-name descname"><span class="pre">get_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_activations" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_activations" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the activations of self.model with input
 <cite>X</cite></p>
 <dl class="simple">
@@ -150,7 +151,7 @@ an input batch of which to compute the activation(s)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_decision_boundary">
-<span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_example</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_decision_boundary" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_example</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the decision boundary for self.model
 with self.loss_fn</p>
 <dl class="simple">
@@ -174,20 +175,18 @@ boundary with dimensions <cite>(n_samples, n_features)</cite></p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_gradients">
-<span class="sig-name descname"><span class="pre">get_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_gradients" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_gradients" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the <strong>averaged gradient</strong> of the self.loss_fn.
 To specify the target variable (e.g. the true class),
 use the keywords argument <cite>target=</cite></p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>x (Tensor):</dt><dd><p>point at which to compute grad</p>
+<dt>x :</dt><dd><p>point at which to compute grad</p>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>tensor:</dt><dd><p>the gradients</p>
-</dd>
-<dt>list:</dt><dd><p>list of tensors, corresponding
+<dt>tensor,  list:</dt><dd><p>the gradients; the list of tensors, corresponding
 to the gradient of the weights.</p>
 </dd>
 </dl>
@@ -197,7 +196,7 @@ to the gradient of the weights.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_layers_grads">
-<span class="sig-name descname"><span class="pre">get_layers_grads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_layers_grads" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_layers_grads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_layers_grads" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the gradients of each layer</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
@@ -211,7 +210,7 @@ to the layer gradients (weights and biases!).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_layers_param">
-<span class="sig-name descname"><span class="pre">get_layers_param</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_layers_param" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_layers_param</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_layers_param" title="Permalink to this definition"></a></dt>
 <dd><p>Returns parameters of layers</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
@@ -228,7 +227,7 @@ the dict is the name of the parameters</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.PeriodicNeuralNetwork">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">PeriodicNeuralNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.PeriodicNeuralNetwork" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">PeriodicNeuralNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.PeriodicNeuralNetwork" title="Permalink to this definition"></a></dt>
 <dd><p>Makes a periodic <cite>nn.Module</cite> of <cite>nn</cite>. <cite>boundary_list</cite> specifies
 the elementary region the periodic neural network is supported on.
 This creates neural networks
@@ -238,9 +237,9 @@ edges of the elementary domain.
 This class can be interpreted as an adapter for periodic neural networks.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>nn (nn.Module):</dt><dd><p>the standard torch module, your network</p>
+<dt>nn :</dt><dd><p>the standard torch module, your network</p>
 </dd>
-<dt>boundary_list (list):</dt><dd><p>list of pairs of floats, each
+<dt>boundary_list :</dt><dd><p>list of pairs of floats, each
 defining the boundaries of a hypercube</p>
 </dd>
 </dl>
@@ -248,7 +247,7 @@ defining the boundaries of a hypercube</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.PeriodicNeuralNetwork.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_cont</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.PeriodicNeuralNetwork.forward" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_cont</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.models.PeriodicNeuralNetwork.forward" title="Permalink to this definition"></a></dt>
 <dd><p>Defines the computation performed at every call.</p>
 <p>Should be overridden by all subclasses.</p>
 <div class="admonition note">
@@ -269,16 +268,25 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.SaveNodeOutput">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveNodeOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.SaveNodeOutput" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveNodeOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.SaveNodeOutput" title="Permalink to this definition"></a></dt>
 <dd><p>Class for saving activations of a node in
 a neural network.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>entry:</dt><dd><p>select the entry row in the output
+of the layer, i.e. the node output</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.SaveOutput">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">SaveOutput</span></span><a class="headerlink" href="#gdeep.models.SaveOutput" title="Permalink to this definition"></a></dt>
-<dd><p>General class for saving outputs
-outputs will be stored in a list ‘outputs’</p>
+<dd><p>General class for saving outputs of
+neural networks.
+Outputs will be stored in a list ‘outputs’</p>
 </dd></dl>
 
 </section>

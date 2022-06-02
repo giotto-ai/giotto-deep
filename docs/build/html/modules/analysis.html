@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -41,7 +42,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Analysis</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.analysis.interpretability">Interpretability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.analysis.decision_boundary">Decision Boundary</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="trainer.html">Trainer</a></li>
@@ -79,19 +84,49 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-gdeep.analysis.interpretability">
-<span id="analysis"></span><h1>Analysis<a class="headerlink" href="#module-gdeep.analysis.interpretability" title="Permalink to this headline"></a></h1>
+  <section id="analysis">
+<h1>Analysis<a class="headerlink" href="#analysis" title="Permalink to this heading"></a></h1>
+<section id="module-gdeep.analysis.interpretability">
+<span id="interpretability"></span><h2>Interpretability<a class="headerlink" href="#module-gdeep.analysis.interpretability" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.AttributionFactory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.interpretability.</span></span><span class="sig-name descname"><span class="pre">AttributionFactory</span></span><a class="headerlink" href="#gdeep.analysis.interpretability.AttributionFactory" title="Permalink to this definition"></a></dt>
+<dd><p>Attribution factory class for the Captum integration.
+This factory will contain the attributions techniques of captum.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.AttributionFactory.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#gdeep.analysis.interpretability.AttributionFactory.build" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns the DataLoader builder
+corresponding to the input key.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>key:</dt><dd><p>the name of the dataset</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.AttributionFactory.register_builder">
+<span class="sig-name descname"><span class="pre">register_builder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">builder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.AttributionFactory.register_builder" title="Permalink to this definition"></a></dt>
+<dd><p>this method adds to the internal builders dictionary
+new dataloader builders</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.interpretability.</span></span><span class="sig-name descname"><span class="pre">Interpreter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'IntegratedGradients'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.interpretability.</span></span><span class="sig-name descname"><span class="pre">Interpreter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'IntegratedGradients'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter" title="Permalink to this definition"></a></dt>
 <dd><p>Class to visualise the activation maps,
-the attribution maps and salicy maps using
+the attribution maps and saliency maps using
 different techniques.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>model (nn.Module):</dt><dd><p>the standard pytorch model</p>
+<dt>model:</dt><dd><p>the standard pytorch model</p>
 </dd>
-<dt>method (string):</dt><dd><p>the interpretability method. Find
+<dt>method:</dt><dd><p>the interpretability method. Find
 more info at <a class="reference external" href="https://captum.ai/tutorials/">https://captum.ai/tutorials/</a></p>
 </dd>
 </dl>
@@ -99,15 +134,15 @@ more info at <a class="reference external" href="https://captum.ai/tutorials/">h
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter.interpret_image">
-<span class="sig-name descname"><span class="pre">interpret_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_image" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">interpret_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_image" title="Permalink to this definition"></a></dt>
 <dd><p>This method creates an image interpreter. This class
 is based on captum.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>X (tensor):</dt><dd><p>the tensor corresponding to the input image.
+<dt>x:</dt><dd><p>the tensor corresponding to the input image.
 It is expected to be of size <code class="docutils literal notranslate"><span class="pre">(b,</span> <span class="pre">c,</span> <span class="pre">h,</span> <span class="pre">w)</span></code></p>
 </dd>
-<dt>y (int or float or str)</dt><dd><p>the label we want to check the interpretability
+<dt>y:</dt><dd><p>the label we want to check the interpretability
 of.</p>
 </dd>
 <dt>layer (nn.Module, optional):</dt><dd><p>some methods will require to specify a layer
@@ -116,7 +151,7 @@ of self.model</p>
 </dl>
 </dd>
 <dt>Returns</dt><dd><dl class="simple">
-<dt>(torch.Tensor, torch.Tensor):</dt><dd><p>the input image and the attribution
+<dt>torch.Tensor, torch.Tensor:</dt><dd><p>the input image and the attribution
 image respectively.</p>
 </dd>
 </dl>
@@ -126,22 +161,13 @@ image respectively.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter.interpret_tabular">
-<span class="sig-name descname"><span class="pre">interpret_tabular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_tabular" title="Permalink to this definition"></a></dt>
-<dd><p>This method creates an image interpreter. This class
+<span class="sig-name descname"><span class="pre">interpret_tabular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_tabular" title="Permalink to this definition"></a></dt>
+<dd><p>This method creates a tabular interpreter. This class
 is based on captum.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>X (tensor):</dt><dd><p>the tensor corresponding to the input image.
+<dt>x :</dt><dd><p>the tensor corresponding to the input image.
 It is expected to be of size <code class="docutils literal notranslate"><span class="pre">(b,</span> <span class="pre">c,</span> <span class="pre">h,</span> <span class="pre">w)</span></code></p>
-</dd>
-<dt>y (int or float or str)</dt><dd><p>the label we want to check the interpretability
-of.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns</dt><dd><dl class="simple">
-<dt>(torch.Tensor, torch.Tensor):</dt><dd><p>the input image and the attribution
-image respectively.</p>
 </dd>
 </dl>
 </dd>
@@ -150,30 +176,26 @@ image respectively.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.analysis.interpretability.Interpreter.interpret_text">
-<span class="sig-name descname"><span class="pre">interpret_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_text" title="Permalink to this definition"></a></dt>
-<dd><p>This method creates an image interpreter. This class
+<span class="sig-name descname"><span class="pre">interpret_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.analysis.interpretability.Interpreter.interpret_text" title="Permalink to this definition"></a></dt>
+<dd><p>This method creates a text interpreter. This class
 is based on captum.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>sentence (string):</dt><dd><p>the input sentence</p>
+<dt>sentence :</dt><dd><p>the input sentence</p>
 </dd>
-<dt>label (int or float or str)</dt><dd><p>the label we want to check the interpretability
+<dt>label:</dt><dd><p>the label we want to check the interpretability
 of.</p>
 </dd>
-<dt>vocab (vocabulary):</dt><dd><p>a <code class="docutils literal notranslate"><span class="pre">gdeep.data.PreprocessText</span></code> vocabulary. Can
-be extracted via the <a href="#id1"><span class="problematic" id="id2">``</span></a>vocabulary``attribute.</p>
+<dt>vocab :</dt><dd><p>a <code class="docutils literal notranslate"><span class="pre">gdeep.data.preprocessors</span></code> vocabulary. Can
+be extracted via the <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> attribute.</p>
 </dd>
-<dt>tokenizer (tokenizer):</dt><dd><p>a <code class="docutils literal notranslate"><span class="pre">gdeep.data.PreprocessText</span></code> tokenizer. Can
-be extracted via the <a href="#id3"><span class="problematic" id="id4">``</span></a>tokenizer``attribute.</p>
+<dt>tokenizer :</dt><dd><p>a <code class="docutils literal notranslate"><span class="pre">gdeep.data.preprocessors</span></code> tokenizer. Can
+be extracted via the <code class="docutils literal notranslate"><span class="pre">tokenizer</span></code> attribute.</p>
 </dd>
-<dt>layer (nn.Module):</dt><dd><p>torch module correspondign to the layer belonging to
+<dt>layer :</dt><dd><p>torch module corresponding to the layer belonging to
 <code class="docutils literal notranslate"><span class="pre">self.model</span></code>.</p>
 </dd>
-</dl>
-</dd>
-<dt>Returns</dt><dd><dl class="simple">
-<dt>(torch.Tensor, torch.Tensor):</dt><dd><p>the input image and the attribution
-image respectively.</p>
+<dt>min_len:</dt><dd><p>minimum length of the text. Shorter texts are padded</p>
 </dd>
 </dl>
 </dd>
@@ -182,14 +204,38 @@ image respectively.</p>
 
 </dd></dl>
 
-<span class="target" id="module-gdeep.analysis.decision_boundary"></span><dl class="py class">
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.analysis.interpretability.get_attr">
+<span class="sig-prename descclassname"><span class="pre">gdeep.analysis.interpretability.</span></span><span class="sig-name descname"><span class="pre">get_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#gdeep.analysis.interpretability.get_attr" title="Permalink to this definition"></a></dt>
+<dd><p>Get a dataset from the factory</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>key :</dt><dd><p>The name of the dataset, corresponding
+to the key in the list of builders</p>
+</dd>
+<dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs:</dt><dd><p>The keyword arguments to pass to the dataset builder</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>captum.attr:</dt><dd><p>The captum interpretability tool</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-gdeep.analysis.decision_boundary">
+<span id="decision-boundary"></span><h2>Decision Boundary<a class="headerlink" href="#module-gdeep.analysis.decision_boundary" title="Permalink to this heading"></a></h2>
+<dl class="py class">
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.DecisionBoundaryCalculator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.decision_boundary.</span></span><span class="sig-name descname"><span class="pre">DecisionBoundaryCalculator</span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator" title="Permalink to this definition"></a></dt>
 <dd><p>Abstract class for calculating the decision boundary of
 a neural network</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.get_decision_boundary">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Return current state and does not make a step</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
@@ -210,7 +256,7 @@ a neural network</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.decision_boundary.</span></span><span class="sig-name descname"><span class="pre">GradientFlowDecisionBoundaryCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.optim.optimizer.Optimizer</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.decision_boundary.</span></span><span class="sig-name descname"><span class="pre">GradientFlowDecisionBoundaryCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optimizer</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator" title="Permalink to this definition"></a></dt>
 <dd><p>Computes Decision Boundary using the gradient flow method</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -229,7 +275,7 @@ argument.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator.get_decision_boundary">
-<span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Return current state and does not make a step</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
@@ -250,11 +296,11 @@ argument.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.decision_boundary.</span></span><span class="sig-name descname"><span class="pre">QuasihyperbolicDecisionBoundaryCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_vectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integrator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.analysis.decision_boundary.</span></span><span class="sig-name descname"><span class="pre">QuasihyperbolicDecisionBoundaryCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_vectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integrator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator" title="Permalink to this definition"></a></dt>
 <dd><p>Computes Decision Boundary by emanating quasihyperbolic geodesics</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator.get_decision_boundary">
-<span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_decision_boundary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator.get_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Return current state and does not make a step</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
@@ -296,6 +342,7 @@ n_samples (int, optional): number of sample points. Defaults to 1000.</p>
 
 </dd></dl>
 
+</section>
 </section>
 
 
