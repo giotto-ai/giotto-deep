@@ -1,8 +1,9 @@
 from .captum import Interpreter
-from .attr_factory import AttrFactory, get_attr
+from .attribution_factory import AttributionFactory, get_attr
+
 
 __all__ = [
     'Interpreter',
-    'AttrFactory',
+    'AttributionFactory',
     'get_attr'
     ]

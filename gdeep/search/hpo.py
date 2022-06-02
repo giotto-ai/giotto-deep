@@ -371,7 +371,7 @@ class HyperParameterOptimization(Trainer):
         return model_name, dataset_name
 
     def start(self,
-              optimizers: List[Optimizer],
+              optimizers: List[Type[Optimizer]],
               n_epochs: int = 1,
               cross_validation: bool = False,
               optimizers_params: Optional[Dict[str, Any]] = None,
@@ -389,7 +389,7 @@ class HyperParameterOptimization(Trainer):
 
         Args:
             optimizers:
-                list of torch optimizers
+                list of torch optimizers classes, not isntances
             n_epochs:
                 number of training epochs
             cross_validation:

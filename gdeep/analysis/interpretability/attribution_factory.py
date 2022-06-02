@@ -8,23 +8,15 @@ from captum import attr
 # https://realpython.com/factory-method-python/
 
 
-class AttrFactory(object):
-    """ Attr factory class for the Captum integration
-    
-    Examples::
-
-        # Create a dataset for the tori dataset
-        dataset = get_dataset("Tori", name="DoubleTori", n_points=100)
-        
-        # Create the MNIST dataset
-        dataset = get_dataset("Torchvision", name="MNIST")
-
+class AttributionFactory(object):
+    """ Attribution factory class for the Captum integration.
+    This factory will contain the attributions techniques of captum.
     """
 
-    _builders: Dict[str, Any]
+    _builders: Dict[str, Any] = {}
 
     def __init__(self):
-        self._builders = {}
+        pass
         
     def register_builder(self, key: str, builder: Any):
         """this method adds to the internal builders dictionary
@@ -46,7 +38,7 @@ class AttrFactory(object):
         return builder(*args, **kwargs)  # type: ignore
 
 
-class AttrBuilder(object):
+class AttributionBuilder(object):
     """Builder class for the torchvision dataset
         and all its variations"""
 
@@ -54,7 +46,7 @@ class AttrBuilder(object):
         self.attr_name = attr_name
 
     def __call__(self, *args, **kwargs):  # type: ignore
-        return attr.__getattribute__(self.attr_name)(
+        return attr.__getattribute__(self.attr_name)(  # type: ignore
             *args, **kwargs  # type: ignore
         )
 
@@ -73,9 +65,9 @@ def get_attr(key: str, *args, **kwargs) -> Any:  # type: ignore
         captum.attr:
             The captum interpretability tool
     """
-    factory = AttrFactory()
+    factory = AttributionFactory()
 
     for attr_name in attr.__all__:
-        factory.register_builder(attr_name, AttrBuilder(attr_name))
+        factory.register_builder(attr_name, AttributionBuilder(attr_name))
 
     return factory.build(key, *args, **kwargs)  # type: ignore

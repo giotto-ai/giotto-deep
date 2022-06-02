@@ -9,14 +9,15 @@ from gdeep.utility import DEVICE
 
 Tensor = torch.Tensor
 
+
 class ModelExtractor:
     """This class wraps nn.Modules to extract
     weights, activations, gradients and decision boundaries
 
     Args:
-        model (nn.Module):
+        model:
             standard torch module
-        loss_fn (Callable):
+        loss_fn :
             loss function
     """
 

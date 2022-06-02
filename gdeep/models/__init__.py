@@ -7,13 +7,9 @@ from .extractor import ModelExtractor
 
 __all__ = [
     'FFNet',
-    'CircleNN',
-    'CircleNN3D',
     'SaveOutput',
     'SaveNodeOutput',
     'SaveLayerOutput',
-    'get_activations',
-    'LayersList',
     'PeriodicNeuralNetwork',
     'ModelExtractor'
     ]

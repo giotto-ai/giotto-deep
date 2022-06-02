@@ -3,7 +3,7 @@ from typing import Any, Tuple, Dict, Callable, List, Optional
 from captum.attr import *
 import torch
 from torch import nn
-from .attr_factory import get_attr
+from .attribution_factory import get_attr
 
 from gdeep.utility import DEVICE
 
