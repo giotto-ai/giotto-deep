@@ -203,7 +203,7 @@ class HyperParameterOptimization(Trainer):
         self.store_pickle: bool = False
 
     def _initialise_new_model(
-        self, models_hyperparam: Dict[str, Any]
+        self, models_hyperparam: Optional[Dict[str, Any]]
     ) -> torch.nn.Module:
         """private method to find the maximal compatible set
         between models and hyperparameters
@@ -216,26 +216,28 @@ class HyperParameterOptimization(Trainer):
             nn.Module
                 torch nn.Module
         """
-
-        list_of_params_keys = HyperParameterOptimization._powerset(
-            list(models_hyperparam.keys())
-        )
-        list_of_params_keys.reverse()
-        for params_keys in list_of_params_keys:
-            sub_models_hyperparam = {
-                k: models_hyperparam[k]
-                for k in models_hyperparam.keys()
-                if k in params_keys
-            }
-            try:
-                # print(sub_models_hyperparam)
-                new_model = type(self.model)(**sub_models_hyperparam)  # noqa
-                # print(new_model.state_dict())
-                raise ValueError
-            except TypeError:  # when the parameters do not match the model
-                pass
-            except ValueError:  # when the parameters match the model
-                break
+        if models_hyperparam:
+            list_of_params_keys = HyperParameterOptimization._powerset(
+                list(models_hyperparam.keys())
+            )
+            list_of_params_keys.reverse()
+            for params_keys in list_of_params_keys:
+                sub_models_hyperparam = {
+                    k: models_hyperparam[k]
+                    for k in models_hyperparam.keys()
+                    if k in params_keys
+                }
+                try:
+                    # print(sub_models_hyperparam)
+                    new_model = type(self.model)(**sub_models_hyperparam)  # noqa
+                    # print(new_model.state_dict())
+                    raise ValueError
+                except TypeError:  # when the parameters do not match the model
+                    pass
+                except ValueError:  # when the parameters match the model
+                    break
+        else:
+            new_model = type(self.model)()
 
         try:
             new_model  # noqa
@@ -867,7 +869,7 @@ class HyperParameterOptimization(Trainer):
             and not (isinstance(v[0], float) or isinstance(v[1], float))
         }
         param.update(param_temp)
-        # print(param)
+        # print("suggested parameters:", param)
         return param
 
     @staticmethod

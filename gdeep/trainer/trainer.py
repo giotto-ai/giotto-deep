@@ -550,46 +550,46 @@ class Trainer:
         """Function to run all the training cycles.
 
         Args:
-            optimizer (torch.optim):
+            optimizer:
                 the torch optimiser class, like `SGD`
-            n_epochs (int):
+            n_epochs :
                 number of training epochs
-            cross_validation (bool):
+            cross_validation:
                 whether or not to perform five-fold cross-validation
-            dataloaders_param (dict):
+            dataloaders_param:
                 dictionary of the dataloaders
                 parameters, e.g. `{'batch_size': 32}`. If ``None``, then
                 the parameters of the training and validation
                 dataloaders will be used.
-            optimizers_param (dict):
+            optimizers_param:
                 dictionary of the optimizers
                 parameters, e.g. `{"lr": 0.001}`
-            lr_scheduler (torch.optim):
+            lr_scheduler:
                 a learning rate scheduler class
-            scheduler_params (dict):
+            scheduler_params:
                 learning rate scheduler parameters
-            optuna_params (tuple, default=None):
+            optuna_params :
                 the parameters `(trial, search_metric)`
                 used in the gridsearch. Saefly ignore for
                 standard trainings
-            profiling (bool, default=False):
+            profiling:
                 whether or not you want to activate the
                 profiler
-            parallel_tpu (bool):
+            parallel_tpu:
                 Use or not parallel TPU cores.
                 Still experimental!
-            keep_training (bool):
+            keep_training:
                 This flag allows to restart a training from
                 the existing optimizer as well as the
                 existing model
-            store_grad_layer_hist (bool):
+            store_grad_layer_hist:
                 This flag allows to store the gradients
                 and the layer values in tensorboard for
                 each epoch
-            n_accumulated_grads (int, default 0):
+            n_accumulated_grads:
                 this is the number of accumulated gradients.
                 Only a positive number will be taken into account
-            writer_tag (str):
+            writer_tag:
                 the tensorboard writer tag
 
         Returns:
