@@ -845,7 +845,7 @@ class HyperParameterOptimization(Trainer):
         for k, v in params.items():
             if (isinstance(v, list) or isinstance(v, tuple)) and len(v) == 1:
                 params[k] = 2 * v
-        param_temp = {}
+        # param_temp = {}
         param_temp = {
             k: HyperParameterOptimization._new_suggest_float(trial, k, *v)
             for k, v in params.items()
@@ -863,7 +863,7 @@ class HyperParameterOptimization(Trainer):
             k: trial.suggest_categorical(k, v)
             for k, v in params.items()
             if (isinstance(v, list) or isinstance(v, tuple))
-            and (isinstance(v[0], str) or isinstance(v[1], str))
+            # and (isinstance(v[0], str) or isinstance(v[1], str))
         }
         param.update(param_temp)
         # print(param)
