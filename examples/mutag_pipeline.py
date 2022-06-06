@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 import os
 from shutil import rmtree
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, List, Literal, Tuple
 from sklearn.model_selection import train_test_split
 
 import numpy as np
@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Subset
 from torch.optim import Adam
 
 from gdeep.data.datasets import PersistenceDiagramFromFiles
-from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder
+from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder, DataLoaderParamsTuples
 from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams
 from gdeep.data import PreprocessingPipeline
@@ -103,7 +103,8 @@ test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
 dl_params = DataLoaderParamsTuples.default(
     batch_size=32,
     num_workers=0,
-    collate_fn=collate_fn_persistence_diagrams
+    collate_fn=collate_fn_persistence_diagrams,
+    with_validation=True,
 )
 
 
@@ -129,22 +130,14 @@ trainer = Trainer(model, (train_dataset, validation_dataset, test_dataset), loss
 
 trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16})
 
+
 # %%
-@dataclass
-class A:
-    a: int
-    b: int
-    
-    def update_a(self, a: int):
-        self.a = a
-        return self
-    
-    def copy(self):
-        return A(self.a, self.b)
-    
-x = A(1, 2)
-print(x)
-y = x.copy().update_a(3)
-print(y)
-print(x)
+# %%
+def fun(item: Literal["loss", "accuracy"]):
+    # check if the item is a SearchMetrics
+    if item not in ["loss", "accuracy"]:
+        raise ValueError(f"{item} is not a valid search metric")
+    print(item)
+
+fun("asf")
 # %%

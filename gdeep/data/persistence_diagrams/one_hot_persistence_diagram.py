@@ -178,7 +178,8 @@ def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDi
     The input is a list of tuples of the form (persistence diagram, label).
     """
     max_num_points: int = max([len(x[0].get_raw_data()) for x in batch])
-    input_batch = torch.zeros(len(batch), max_num_points, 2)
+    num_homology_dimensions: int = batch[0][0].get_num_homology_dimensions()
+    input_batch = torch.zeros(len(batch), max_num_points, num_homology_dimensions + 2)
     mask = torch.zeros(len(batch), max_num_points)
     for i, (pd, _) in enumerate(batch):
         input_batch[i, :len(pd.get_raw_data()), :] = pd.get_raw_data()
