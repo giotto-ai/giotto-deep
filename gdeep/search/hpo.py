@@ -1,8 +1,10 @@
 import os
 import time
 import warnings
+import random
 from itertools import chain, combinations
-from typing import Tuple, Any, Dict, Type, Optional, List, Union
+from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence
+import string
 
 from typing_extensions import Literal
 import torch
@@ -12,12 +14,10 @@ import pandas as pd
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
-import random
-import string
 from torch.optim import *  # noqa
 import plotly.express as px
 from optuna.pruners import MedianPruner, BasePruner
-from optuna.trial._base import BaseTrial
+from optuna.trial._base import BaseTrial  # noqa
 from optuna.study import BaseStudy as Study
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
@@ -860,14 +860,26 @@ class HyperParameterOptimization(Trainer):
         }
         param_temp.update(param_temp2)
         param = {
-            k: trial.suggest_categorical(k, v)
+            k: HyperParameterOptimization._new_suggest_categorical(trial, k, v)
             for k, v in params.items()
             if (isinstance(v, list) or isinstance(v, tuple))
-            # and (isinstance(v[0], str) or isinstance(v[1], str))
+            and not (isinstance(v[0], int) or isinstance(v[1], int))
+            and not (isinstance(v[0], float) or isinstance(v[1], float))
         }
         param.update(param_temp)
         # print(param)
         return param
+
+    @staticmethod
+    def _new_suggest_categorical(trial, name: str, choices: Sequence) -> Any:
+        """A modification of the Optuna function, in order to remove the
+        constraing on the type for categorical choices.
+
+        Expected to get a list with at least two choices!"""
+        if (isinstance(choices, list) or isinstance(choices, tuple)) \
+                and (isinstance(choices[0], str) or isinstance(choices[1], str)):
+            return trial.suggest_categorical(name, choices)
+        return random.choice(choices)
 
     @staticmethod
     def _new_suggest_float(trial, name, low, high, step=None, log=False):
