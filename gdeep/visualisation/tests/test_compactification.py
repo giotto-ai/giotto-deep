@@ -8,7 +8,7 @@ def test_compactification():
     c = Compactification(model,
                          0.4,
                          2,
-                         1000,
+                         1500,
                          0.05,
                          50,
                          [(-1., 1.), (-1., 1.)],
