@@ -1,4 +1,5 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
+import random
 
 import torch
 from torchvision.utils import make_grid
@@ -10,17 +11,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from captum.attr import LayerAttribution
 from gtda.plotting import plot_diagram, plot_betti_surfaces
+
+from gdeep.trainer import Trainer
+from gdeep.analysis.interpretability import Interpreter
+from gdeep.utility import DEVICE
+from ..models import ModelExtractor
 from . import (
     persistence_diagrams_of_activations,
     plotly2tensor,
     Compactification,
     png2tensor,
 )
-
-from gdeep.trainer import Trainer
-from gdeep.analysis.interpretability import Interpreter
-from gdeep.utility import DEVICE
-from ..models import ModelExtractor
 
 FONT_SIZE = 16
 Tensor = torch.Tensor
@@ -166,12 +167,12 @@ class Visualiser:
         if compact:
             # initlaisation of the compactification
             cc = Compactification(
+                neural_net=self.pipe.model,
                 precision=0.1,
                 n_samples=500,
                 epsilon=0.051,
                 n_features=x.shape[0],
                 n_epochs=100,
-                neural_net=self.pipe.model,
             )
 
             d_final, label_final = cc.create_final_distance_matrix()
@@ -189,13 +190,13 @@ class Visualiser:
             return db.cpu(), None, None
 
     def betti_plot_layers(
-        self, homology_dimension: List[int] = (0, 1), example: Optional[Tensor] = None
+        self, homology_dimension: Optional[List[int]] = None, example: Optional[Tensor] = None
     ) -> None:
         """
         Args:
             homology_dimension :
-                An array of
-                homology dimensions
+                A list of
+                homology dimensions, e.g. ``[0, 1, ...]``
             example :
                 the selected batch of data to
                 compute the activations on. By
@@ -210,10 +211,11 @@ class Visualiser:
                 figure representing the Betti curve of the single sample
                 present.
         """
-
+        if homology_dimension is not None:
+            homology_dimension = [0, 1]
         if self.persistence_diagrams is None:
             me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
-            inputs = self.pipe.dataloaders[0].dataset.data[:100]
+            inputs = self.pipe.dataloaders[0].dataset.data[:100]  # type: ignore
             if example is not None:
                 inputs = inputs.to(example.dtype)
             self.persistence_diagrams = persistence_diagrams_of_activations(
@@ -247,7 +249,7 @@ class Visualiser:
         hti = Html2Image()
         hti.screenshot(html_str=fig.data, save_as=name)
         img_ten = png2tensor(name)
-        self.pipe.writer.add_image(interpreter.method, img_ten, dataformats="HWC")
+        self.pipe.writer.add_image(interpreter.method, img_ten, dataformats="HWC")  # type: ignore
         return fig
 
     def plot_interpreter_image(self, interpreter: Interpreter):
@@ -299,7 +301,7 @@ class Visualiser:
             ["all", "all", "all"],
             show_colorbar=True,
         )
-        self.pipe.writer.add_figure(interpreter.method, fig)
+        self.pipe.writer.add_figure(interpreter.method, fig)  # type: ignore
         return fig
 
     def plot_feature_importance(self, interpreter: Interpreter):
@@ -338,13 +340,15 @@ class Visualiser:
         for i in range(len(interpreter.attribution_list)):
             attribution_sum = interpreter.attribution_list[i].detach().cpu().numpy().sum(0)
             attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
+            r = lambda: random.randint(0, 255)  # noqa
+            color = ('#%02X%02X%02X' % (r(), r(), r()))
             ax.bar(
                 x_axis_data,
                 attribution_norm_sum,
                 width,
                 align="center",
                 alpha=0.8,
-                color="#e"+str(i)+"6b"+str(i+2)+"2",
+                color=color,
             )
 
         ax.autoscale_view()
@@ -354,7 +358,7 @@ class Visualiser:
         ax.set_xticklabels(x_axis_data_labels)
 
         plt.legend(legends, loc=3)
-        self.pipe.writer.add_figure("Feature Importance", fig)
+        self.pipe.writer.add_figure("Feature Importance", fig)  # type: ignore
         return plt
 
     def plot_attribution(self, interpreter: Interpreter, **kwargs):
@@ -375,8 +379,8 @@ class Visualiser:
         t2 = Visualiser._adjust_tensors_to_plot(interpreter.attribution)
         fig1, _ = visualization.visualize_image_attr(t1, **kwargs)
         fig2, _ = visualization.visualize_image_attr(t2, **kwargs)
-        self.pipe.writer.add_figure("Datum x", fig1)
-        self.pipe.writer.add_figure("Generic attribution of x", fig2)
+        self.pipe.writer.add_figure("Datum x", fig1)  # type: ignore
+        self.pipe.writer.add_figure("Generic attribution of x", fig2)  # type: ignore
         return fig1, fig2
 
     @staticmethod

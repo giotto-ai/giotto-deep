@@ -1,7 +1,8 @@
 from typing import Any, Tuple, Dict, Callable, List, Optional
 import inspect
 
-from captum.attr import *
+# from captum.attr import *
+from captum.attr import TokenReferenceBase, visualization
 import torch
 from torch import nn
 from .attribution_factory import get_attr
@@ -24,17 +25,17 @@ class Interpreter:
             more info at https://captum.ai/tutorials/
 
     """
+    x: Tensor
+    attribution: Tensor
+    sentence: str
+    y: Tensor
 
     def __init__(self, model: nn.Module,
                  method: str = "IntegratedGradients"):
         # self.model = model
         self.model = model.to(DEVICE)
         self.method = method
-        self.stored_visualisations = []
-        self.image = None
-        self.x = None
-        self.sentence = None
-        self.attribution = None
+        self.stored_visualisations: List = []
 
     def interpret(self,
                   x: Tensor,
@@ -162,7 +163,7 @@ class Interpreter:
         # predict
         pred_temp = torch.softmax(self.model(input_indices), 1)
         pred = torch.max(pred_temp)
-        pred_ind = torch.argmax(pred_temp).item()
+        pred_ind: float = torch.argmax(pred_temp).item()
         # generate reference indices for each sample
         pad_index = 0
         token_reference = TokenReferenceBase(reference_token_idx=pad_index)
@@ -188,7 +189,7 @@ class Interpreter:
     def add_attributions_to_visualizer(attributions,
                                        text: List[str],
                                        pred: Tensor,
-                                       pred_ind: Tensor,
+                                       pred_ind: float,
                                        label: Any,
                                        delta: Any,
                                        vis_data_records: List) -> None:

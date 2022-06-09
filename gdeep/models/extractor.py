@@ -133,7 +133,7 @@ class ModelExtractor:
             output.append(v.grad)
         return output
 
-    def get_gradients(self, x: Tensor, **kwargs) -> Tuple[Tensor, List[Tensor]]:
+    def get_gradients(self, x: Tensor, target: Tensor, **kwargs) -> Tuple[Tensor, List[Tensor]]:
         """Returns the **averaged gradient** of the self.loss_fn.
         To specify the target variable (e.g. the true class),
         use the keywords argument `target=`
@@ -141,6 +141,8 @@ class ModelExtractor:
         Args:
             x :
                 point at which to compute grad
+            target:
+                the expected output (needed to compute the loss)
 
         Returns:
             tensor,  list:
@@ -150,8 +152,8 @@ class ModelExtractor:
 
         x.requires_grad = True
         x = x.to(DEVICE)
-        kwargs["target"] = kwargs["target"].to(DEVICE)
-        loss = self.loss_fn(self.model(x), **kwargs)
+        target = target.to(DEVICE)
+        loss = self.loss_fn(self.model(x), target, **kwargs)
 
         for k, param in self.model.state_dict().items():
             if param.dtype is torch.float:

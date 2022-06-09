@@ -20,7 +20,7 @@ class SaveOutput(ABC):
         self,
         module: nn.Module,
         module_in: Tensor,
-        module_out: Union[List[Tensor], Tensor],
+        module_out: Tensor,
     ) -> None:
         pass
 
@@ -45,7 +45,7 @@ class SaveNodeOutput(SaveOutput):
         self.outputs = []
         self.entry = entry
 
-    def __call__(self, module, module_in: Tensor, module_out: Tensor):
+    def __call__(self, module: nn.Module, module_in: Tensor, module_out: Tensor):
         self.outputs.append(module_out[:, self.entry].detach())
 
 
@@ -57,7 +57,7 @@ class SaveLayerOutput(SaveOutput):
         self,
         module: nn.Module,
         module_in: Tensor,
-        module_out: Union[List[Tensor], Tensor],
+        module_out: Tensor,
     ) -> None:
         """This function stores the layer activations
 

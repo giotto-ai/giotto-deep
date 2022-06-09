@@ -13,6 +13,7 @@ from sklearn.model_selection import KFold
 from gdeep.trainer import Trainer
 from gdeep.utility import _are_compatible  # noqa
 from gdeep.trainer import accuracy, TrainerConfig
+from .hpo_config import HPOConfig
 
 Tensor = torch.Tensor
 
@@ -48,11 +49,11 @@ class Benchmark:
 
     def __init__(
         self,
-        models_dicts: Dict[str, Union[torch.nn.Module, str]],
-        dataloaders_dicts: Dict[
-            str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]
+        models_dicts: List[Dict[str, Union[torch.nn.Module, str]]],
+        dataloaders_dicts: List[Dict[
+            str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]
         ],
-        loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
+        loss_fn: Callable[[Tensor, Tensor], Tensor],
         writer: SummaryWriter,
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
         k_fold_class: Optional[BaseCrossValidator] = None,
@@ -155,7 +156,7 @@ class Benchmark:
         )
 
         _benchmarking_param(
-            self._inner_function, (self.models_dicts, self.dataloaders_dicts), config
+            self._inner_function, (self.models_dicts, self.dataloaders_dicts), config  # type: ignore
         )
 
     def _inner_function(
@@ -179,8 +180,8 @@ class Benchmark:
                 the configuration class ``TrainerConfig``.
         """
         pipe = Trainer(
-            model["model"],
-            dataloaders["dataloaders"],
+            model["model"],  # type: ignore
+            dataloaders["dataloaders"],  # type: ignore
             self.loss_fn,
             self.writer,
             self.training_metric,  # type: ignore
@@ -191,12 +192,12 @@ class Benchmark:
 
 
 def _benchmarking_param(
-    fun: Callable[[Any], Any],
+    fun: Callable[[Any, Any, Any], Any],
     arguments: Tuple[
-        Dict[str, Union[torch.nn.Module, str]],
-        Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
+        List[Dict[str, Union[torch.nn.Module, str]]],
+        List[Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]],
     ],
-    config: TrainerConfig,
+    config: Union[HPOConfig, TrainerConfig],
 ) -> None:
     """Function to be used as pseudo-decorator for
     benchmarking loops

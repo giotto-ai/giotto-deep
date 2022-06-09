@@ -22,15 +22,15 @@ ds_tr_str, ds_val_str, ds_ts_str = bd.build()
 ptd = TokenizerTextClassification()
 
 ptd.fit_to_dataset(ds_tr_str)
-transformed_textds = ptd.attach_transform_to_dataset(ds_tr_str)
-transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)
+transformed_textds = ptd.attach_transform_to_dataset(ds_tr_str)  # type: ignore
+transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)  # type: ignore
 
 # the only part of the training/test set we are interested in
 train_indices = list(range(64 * 10))
 test_indices = list(range(64 * 5))
 
-dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds,
-                                       transformed_textts)).build(({"batch_size": 16,
+dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds,  # type: ignore
+                                       transformed_textts)).build(({"batch_size": 16,  # type: ignore
                                                                     "sampler": SubsetRandomSampler(train_indices)},
                                                                    {"batch_size": 16,
                                                                     "sampler": SubsetRandomSampler(test_indices)}
@@ -57,12 +57,12 @@ class TextClassificationModel(nn.Module):
         return self.fc(mean)
 
 
-vocab_size = len(ptd.vocabulary)
-emsize = 64
+vocab_size: int = len(ptd.vocabulary)  # type: ignore
+emsize: int = 64
 # print(vocab_size, emsize)
 model = TextClassificationModel(vocab_size, emsize, 4)
 loss_fn = nn.CrossEntropyLoss()
-pipe = Trainer(model, (dl_tr2, dl_ts2), loss_fn, writer)
+pipe = Trainer(model, [dl_tr2, dl_ts2], loss_fn, writer)
 
 
 def test_interpret_text() -> None:
@@ -72,9 +72,9 @@ def test_interpret_text() -> None:
 
     inter.interpret_text("I am writing about money and business",
                          0,
-                         ptd.vocabulary,
-                         ptd.tokenizer,
-                         layer=pipe.model.embedding,
+                         ptd.vocabulary,  # type: ignore
+                         ptd.tokenizer,  # type: ignore
+                         layer=pipe.model.embedding,  # type: ignore
                          n_steps=500,
                          return_convergence_delta=True
                          )

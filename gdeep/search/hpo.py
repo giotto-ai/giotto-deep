@@ -101,7 +101,7 @@ class GiottoSummaryWriter(SummaryWriter):
                     scalars_list_loss = [
                         x
                         for x in scalars_list_loss[
-                            : np.argmin(np.array(scalars_list_loss)[:, 0]) + 1
+                            : int(np.argmin(np.array(scalars_list_loss)[:, 0])) + 1
                         ]
                     ]
                 for v, t in scalars_list_loss:
@@ -111,7 +111,7 @@ class GiottoSummaryWriter(SummaryWriter):
                     scalars_list_acc = [
                         x
                         for x in scalars_list_acc[
-                            : np.argmax(np.array(scalars_list_acc)[:, 0]) + 1
+                            : int(np.argmax(np.array(scalars_list_acc)[:, 0])) + 1
                         ]
                     ]
                 for v, t in scalars_list_acc:
@@ -148,10 +148,13 @@ class HyperParameterOptimization(Trainer):
             name of the optuna study
 
     """
+    is_pipe: bool
+    df_res: pd.DataFrame
+    study: Study
 
     def __init__(
         self,
-        obj: Trainer,
+        obj: Union[Trainer, Benchmark],
         search_metric: Literal["loss", "accuracy"] = "loss",
         n_trials: int = 10,
         best_not_last: bool = False,
@@ -161,16 +164,13 @@ class HyperParameterOptimization(Trainer):
         study_name: Optional[str] = None,
     ):
         self.best_not_last_gs = best_not_last
-        self.is_pipe = None
-        self.study: Optional[Study] = None
-        self.best_val_acc_gs = 0
+        self.best_val_acc_gs = 0.
         self.best_val_loss_gs = np.inf
         self.list_res: List[Any] = []
-        self.df_res = None
         self.db_url = db_url
         self.study_name = study_name
         if isinstance(obj, Trainer):
-            self.pipe = obj
+            self.pipe: Trainer = obj
             super().__init__(
                 self.pipe.model,
                 self.pipe.dataloaders,
@@ -182,7 +182,7 @@ class HyperParameterOptimization(Trainer):
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
         elif isinstance(obj, Benchmark):
-            self.bench = obj
+            self.bench: Benchmark = obj
             self.is_pipe = False
         self.search_metric = search_metric
         assert (
@@ -246,7 +246,7 @@ class HyperParameterOptimization(Trainer):
             new_model = self.model
         return new_model
 
-    def _objective(self, trial: Optional[BaseTrial], config: HPOConfig):
+    def _objective(self, trial: BaseTrial, config: HPOConfig):
         """default callback function for optuna's study
         
         Args:
@@ -267,7 +267,7 @@ class HyperParameterOptimization(Trainer):
         self._k_folds = self.k_fold_class.n_splits
         # generate optimizer
         optimizers_names = list(map(lambda x: x.__name__, config.optimizers))
-        optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))
+        optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))  # type: ignore
 
         # generate all the hyperparameters
         self.optimizers_param = HyperParameterOptimization._suggest_params(
@@ -328,7 +328,7 @@ class HyperParameterOptimization(Trainer):
         self.scalars_dict[scalar_dict_key] = scalars_dict_value
         # release the run_name
         self.pipe.run_name = None
-        self.writer.flush()
+        self.writer.flush()  # type: ignore
         # print
         self._print_output()
 
@@ -487,7 +487,7 @@ class HyperParameterOptimization(Trainer):
         else:
             _benchmarking_param(
                 self._inner_optimisat_fun,
-                [self.bench.models_dicts, self.bench.dataloaders_dicts],
+                (self.bench.models_dicts, self.bench.dataloaders_dicts),
                 config,
             )
         # self._store_to_tensorboard()
@@ -508,11 +508,11 @@ class HyperParameterOptimization(Trainer):
 
         try:
             config.writer_tag = (
-                "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]
+                "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]  # type: ignore
             )
             super().__init__(
-                model["model"],
-                dataloaders["dataloaders"],
+                model["model"],  # type: ignore
+                dataloaders["dataloaders"],  # type: ignore
                 self.bench.loss_fn,
                 self.bench.writer,
                 self.bench.training_metric,
@@ -521,12 +521,12 @@ class HyperParameterOptimization(Trainer):
         except TypeError:
             pass
 
-        self.study.optimize(
+        self.study.optimize(  # type: ignore
             lambda tr: self._objective(tr, config), n_trials=self.n_trials, timeout=None
         )
 
         try:
-            self._results(model_name=model["name"], dataset_name=dataloaders["name"])
+            self._results(model_name=model["name"], dataset_name=dataloaders["name"])  # type: ignore
             # save_model_and_optimizer(self.pipe.model,
             #                         model["name"] +
             #                         str(self.optimizers_param) +
@@ -582,8 +582,8 @@ class HyperParameterOptimization(Trainer):
         trial: BaseTrial,
         model_name: str,
         dataset_name: str,
-        loss: float = np.inf,
-        accuracy: float = -1.0,
+        loss: Optional[float] = np.inf,
+        accuracy: Optional[float] = -1.0,
         list_res: Optional[List[Any]] = None,
     ) -> List[Any]:
         """Private method to store all the HPO parameters
@@ -616,30 +616,30 @@ class HyperParameterOptimization(Trainer):
             temp_list.append(val)
         if self.search_metric == "loss":
             try:
-                loss = trial.value
+                loss = trial.value  # type: ignore
             except AttributeError:
                 loss = loss
             list_res.append(
                 [str(trial.datetime_start).replace(":", "-"), model_name, dataset_name]
                 + temp_list
-                + [loss, -1]
+                + [loss, -1]  # type: ignore
             )
         else:
             try:
-                accuracy = trial.value
+                accuracy = trial.value  # type: ignore
             except AttributeError:
                 accuracy = accuracy
             list_res.append(
                 [str(trial.datetime_start).replace(":", "-"), model_name, dataset_name]
                 + temp_list
-                + [np.inf, accuracy]
+                + [np.inf, accuracy]  # type: ignore
             )
         return list_res
 
     def _store_trial_to_tb(
         self,
         trial: BaseTrial,
-        scalars_dict_value: Tuple[List[Any], List[Any]],
+        scalars_dict_value: List[List[List[float]]],
         scalar_dict_key: str,
         model_name: str,
         dataset_name: str,
@@ -664,7 +664,7 @@ class HyperParameterOptimization(Trainer):
         }
 
         try:
-            self.writer.add_hparams(
+            self.writer.add_hparams(  # type: ignore
                 dictio,
                 {"loss": list_res[0][-2], "accuracy": list_res[0][-1]},
                 run_name=scalar_dict_key,
@@ -674,7 +674,7 @@ class HyperParameterOptimization(Trainer):
         except KeyError:  # this happens when trials have been pruned
             pass
 
-        self.writer.flush()
+        self.writer.flush()  # type: ignore
 
     def _results(
         self, model_name: str = "model", dataset_name: str = "dataset"
@@ -698,10 +698,10 @@ class HyperParameterOptimization(Trainer):
         self.list_res = []
         trials = self.study.trials
         pruned_trials = self.study.get_trials(
-            deepcopy=False, states=[TrialState.PRUNED]
+            deepcopy=False, states=(TrialState.PRUNED,)
         )
         complete_trials = self.study.get_trials(
-            deepcopy=False, states=[TrialState.COMPLETE]
+            deepcopy=False, states=(TrialState.COMPLETE,)
         )
 
         print("Study statistics: ")
@@ -742,12 +742,12 @@ class HyperParameterOptimization(Trainer):
                 fig2.show()
                 img2 = plotly2tensor(fig2)
 
-                self.writer.add_images(
+                self.writer.add_images(  # type: ignore
                     "HPO correlation: " + model_name + " " + dataset_name,
                     img2,
                     dataformats="HWC",
                 )
-                self.writer.flush()
+                self.writer.flush()  # type: ignore
             except ValueError:
                 warnings.warn(
                     "Cannot send the picture of the correlation"
@@ -801,7 +801,7 @@ class HyperParameterOptimization(Trainer):
     #    return self.df_res
 
     def _refactor_scalars(
-        self, two_lists: Tuple[List[Any], List[Any]]
+        self, two_lists: List[List[List[float]]]
     ) -> Tuple[List[Any], List[Any]]:
         """private method to transform a list with
         many values for the same epoch into a dictionary

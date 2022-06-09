@@ -121,6 +121,9 @@ class Trainer:
         pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=5)
 
     """
+    scheduler: Optional[_LRScheduler]
+    writer: Optional[SummaryWriter]
+    registered_hook: Optional[Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]] = None
 
     def __init__(
         self,
@@ -138,7 +141,7 @@ class Trainer:
         self.train_epoch = 0
         self.val_epoch = 0
         self.best_val_loss = np.inf
-        self.best_val_acc = 0
+        self.best_val_acc = 0.
         self.loss_fn = loss_fn
         if training_metric:
             self.training_metric = training_metric
@@ -150,13 +153,12 @@ class Trainer:
             warnings.warn("No writer detected")
         self.DEVICE = DEVICE
         self.check_has_trained: bool = False
-        self.registered_hook = None
         # used in gradient clipping
         self.clip: int = 5
         # used by hpo:
         self.run_name: Optional[str] = None
-        self.val_loss_list_hparam: List[float] = []
-        self.val_acc_list_hparam: List[float] = []
+        self.val_loss_list_hparam: List[List[float]] = []
+        self.val_acc_list_hparam: List[List[float]] = []
         self.best_not_last: bool = False
         # profiler
         self.prof: Any = None
@@ -265,7 +267,7 @@ class Trainer:
             loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
-                self.writer.add_scalar(
+                self.writer.add_scalar(  # type: ignore
                     writer_tag + "/loss/train",
                     loss.item(),
                     self.train_epoch * len(dl_tr) + batch,
@@ -274,7 +276,7 @@ class Trainer:
                 try:
                     top2_pred = torch.topk(pred, 2, -1).values
                     try:
-                        self.writer.add_histogram(
+                        self.writer.add_histogram(  # type: ignore
                             writer_tag + "/predictions/train",
                             torch.abs(torch.diff(top2_pred, dim=-1)),
                             self.train_epoch * steps + batch,
@@ -332,7 +334,7 @@ class Trainer:
             f"{self.training_metric.__name__}: {epoch_metric:.2f}% ".ljust(100)
         )
         try:
-            self.writer.flush()
+            self.writer.flush()  # type: ignore
         except AttributeError:
             pass
         print(f"Time taken for this epoch: {round(time.time() - tik):.2f}s")
@@ -362,15 +364,15 @@ class Trainer:
         self.model.eval()
 
         pred_list, epoch_loss, epoch_metric = self._inner_loop(
-            dl=dl_val,
-            class_probs=class_probs,
-            class_label=class_label,
-            writer_tag=writer_tag,
+            dl=dl_val,  # type: ignore
+            class_probs=class_probs,  # type: ignore
+            class_label=class_label,  # type: ignore
+            writer_tag=writer_tag,  # type: ignore
         )
         # accuracy
         try:
             if not self.run_name:
-                self.writer.add_scalar(
+                self.writer.add_scalar(  # type: ignore
                     writer_tag + "/metric/validation", epoch_metric, self.val_epoch
                 )
             else:
@@ -380,7 +382,7 @@ class Trainer:
             try:
                 top2_pred = torch.topk(torch.vstack(pred_list), 2, -1).values
                 try:
-                    self.writer.add_histogram(
+                    self.writer.add_histogram(  # type: ignore
                         writer_tag + "/predictions/validation",
                         torch.abs(torch.diff(top2_pred, dim=-1)),
                         self.val_epoch,
@@ -399,7 +401,7 @@ class Trainer:
                 Avg loss: {epoch_loss:>8f} \n"
         )
         try:
-            self.writer.flush()
+            self.writer.flush()  # type: ignore
         except AttributeError:
             pass
 
@@ -434,7 +436,7 @@ class Trainer:
             except ValueError:
                 warnings.warn("Cannot store data in the PR curve")
 
-    @_add_data_to_tb
+    @_add_data_to_tb  # type: ignore
     def _inner_loop(
         self,
         *,
@@ -518,7 +520,10 @@ class Trainer:
             self._reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             if lr_scheduler is not None:
-                self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                if scheduler_params:
+                    self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                else:
+                    self.scheduler = lr_scheduler(self.optimizer)
         elif cross_validation:
             # reset the model weights
             self._reset_model()
@@ -526,9 +531,12 @@ class Trainer:
             dict_param = self.optimizer.param_groups[0]
             dict_param.pop("params", None)  # model.parameters()
             dict_param.pop("initial_lr", None)
-            self.optimizer.__init__(self.model.parameters(), **dict_param)
+            self.optimizer.__init__(self.model.parameters(), **dict_param)  # type: ignore
             if lr_scheduler is not None:  # reset scheduler
-                self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                if scheduler_params:
+                    self.scheduler = lr_scheduler(self.optimizer, **scheduler_params)
+                else:
+                    self.scheduler = lr_scheduler(self.optimizer)
 
     def train(
         self,
@@ -659,11 +667,11 @@ class Trainer:
 
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
-        if len(self.dataloaders) == 3:
+        if len(self.dataloaders) == 3:  # type: ignore
             try:
                 val_idx = self.dataloaders[1].sampler.indices  # type: ignore
             except AttributeError:
-                val_idx = list(range(len(self.dataloaders[1].dataset)))
+                val_idx = list(range(len(self.dataloaders[1].dataset)))  # type: ignore
             # print(val_idx)
             dl_val = torch.utils.data.DataLoader(
                 self.dataloaders[1].dataset,
@@ -674,7 +682,7 @@ class Trainer:
             try:
                 tr_idx = self.dataloaders[0].sampler.indices  # type: ignore
             except AttributeError:
-                tr_idx = list(range(len(self.dataloaders[0].dataset)))
+                tr_idx = list(range(len(self.dataloaders[0].dataset)))  # type: ignore
             # print(tr_idx)
             dl_tr = torch.utils.data.DataLoader(
                 self.dataloaders[0].dataset,
@@ -686,7 +694,7 @@ class Trainer:
             try:
                 data_idx = self.dataloaders[0].sampler.indices  # type: ignore
             except AttributeError:
-                data_idx = list(range(len(self.dataloaders[0].dataset)))
+                data_idx = list(range(len(self.dataloaders[0].dataset)))  # type: ignore
             # print(data_idx)
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
             dl_val = torch.utils.data.DataLoader(
@@ -706,12 +714,12 @@ class Trainer:
             mean_val_loss = []
             mean_val_acc = []
             try:
-                data_idx = self.dataloaders[0].sampler.indices
+                data_idx = self.dataloaders[0].sampler.indices  # type: ignore
                 labels_for_split = [
                     self.dataloaders[0].dataset[i][-1] for i in data_idx
                 ]
             except AttributeError:
-                data_idx = list(range(len(self.dataloaders[0].dataset)))
+                data_idx = list(range(len(self.dataloaders[0].dataset)))  # type: ignore
                 labels_for_split = [
                     self.dataloaders[0].dataset[i][-1] for i in data_idx
                 ]
@@ -841,7 +849,7 @@ class Trainer:
                 )
 
         try:
-            self.writer.flush()
+            self.writer.flush()  # type: ignore
         except AttributeError:
             pass
         # check for training
@@ -907,10 +915,10 @@ class Trainer:
                     lista = me.get_layers_param()
                     for k, item in lista.items():
                         try:
-                            self.writer.add_histogram(
+                            self.writer.add_histogram(  # type: ignore
                                 writer_tag + "/weights&biases/param/train/" + k, item, t
                             )
-                            self.writer.add_histogram(
+                            self.writer.add_histogram(  # type: ignore
                                 writer_tag + "/weights&biases/param/train/log/" + k,
                                 torch.log(torch.abs(item) + 1e-8),
                                 t,
@@ -923,10 +931,10 @@ class Trainer:
                     lista_grad = me.get_layers_grads()
                     for k, item in zip(lista.keys(), lista_grad):
                         try:
-                            self.writer.add_histogram(
+                            self.writer.add_histogram(  # type: ignore
                                 writer_tag + "/weights&biases/grads/train/" + k, item, t
                             )
-                            self.writer.add_histogram(
+                            self.writer.add_histogram(  # type: ignore
                                 writer_tag + "/weights&biases/param/train/log/" + k,
                                 torch.log(torch.abs(item) + 1e-8),
                                 t,
@@ -936,7 +944,7 @@ class Trainer:
                                 f"The histogram is empty, most likely because your loss"
                                 f" is exploding. Try use gradient clipping."
                             )
-                    self.writer.flush()
+                    self.writer.flush()  # type: ignore
 
                 except AttributeError:
                     pass
@@ -1077,9 +1085,9 @@ class Trainer:
                     # Compute prediction and loss
                     pred = model2(X)
                     try:
-                        correct += (pred.argmax(1) == y).to(torch.float).sum().item()
+                        correct += (pred.argmax(1) == y).to(torch.float).sum().item()  # noqa
                     except RuntimeError:
-                        correct += (pred.argmax(2) == y).to(torch.float).sum().item()
+                        correct += (pred.argmax(2) == y).to(torch.float).sum().item()  # noqa
                     loss = self.loss_fn(pred, y)
                     # Save to tensorboard
                     # self.writer.add_scalar("Parallel" + "/Loss/train",
@@ -1151,8 +1159,8 @@ class Trainer:
             self.val_acc += correct * 100
 
         flags: Dict[Any, Any] = {}
-        self.val_acc /= len(dl_val_old) * dl_val_old.batch_size
-        self.val_loss /= len(dl_val_old)
+        self.val_acc /= len(dl_val_old) * dl_val_old.batch_size  # type: ignore
+        self.val_loss /= len(dl_val_old)  # type: ignore
         xmp.spawn(map_fun_custom, args=(flags,), nprocs=8, start_method="fork")
         return self.val_loss, self.val_acc
 
@@ -1178,7 +1186,7 @@ class Trainer:
         class_label: List[Tensor] = []
         loss = 0.0
         correct = 0.0
-        confusion_matrix = np.zeros((num_class, num_class))
+        confusion_matrix = np.zeros((num_class, num_class))  # type: ignore
         self.model.eval()
         with torch.no_grad():
             for batch, (X, y) in tqdm(enumerate(dl)):
@@ -1192,21 +1200,21 @@ class Trainer:
                 class_label.append(y)
                 for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
-        correct /= len(dl) * dl.batch_size
+        correct /= len(dl) * dl.batch_size  # type: ignore
         loss /= len(dl)
         return 100 * correct, loss, confusion_matrix
 
     def register_pipe_hook(
-        self, callable: Callable[[Optimizer, int, ModelExtractor, SummaryWriter], Any]
+        self, callable: Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]
     ) -> None:
         """This method registers a function that
         will be called after each trainign step.
 
         The arguments of the callable function are, in this order:
-         - current optimizer instance (torch.optim)
-         - current epoch number (int)
-         - the ModelExtractor instance at that epoch (ModelExtractor)
-         - the tensorboard writer (writer)
+         - current epoch number
+         - current optimizer instance
+         - the ModelExtractor instance at that epoch
+         - the tensorboard writer
 
         Args:
             callable (Callable):
@@ -1214,7 +1222,7 @@ class Trainer:
         self.registered_hook = callable
 
     def _run_pipe_hook(
-        self, epoch: int, optim: Optimizer, me: ModelExtractor, writer: SummaryWriter
+        self, epoch: int, optim: Optimizer, me: ModelExtractor, writer: Optional[SummaryWriter] = None
     ) -> None:
         """private method that runs the hooked
         function at every epoch, after the single training loop"""

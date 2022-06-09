@@ -15,8 +15,8 @@ ds_tr_str, ds_val_str, ds_ts_str = bd.build()
 ptd = TokenizerTextClassification()
 
 ptd.fit_to_dataset(ds_tr_str)
-transformed_textds = ptd.attach_transform_to_dataset(ds_tr_str)
-transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)
+transformed_textds = ptd.attach_transform_to_dataset(ds_tr_str)  # type: ignore
+transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)  # type: ignore
 
 # the only part of the training/test set we are interested in
 train_indices = list(range(64*10))

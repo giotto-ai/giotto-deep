@@ -121,12 +121,12 @@ class DatasetBuilder:
             self.test_ds = None
         elif len(dataset_tuple) == 2:
             self.train_ds = dataset_tuple[0]
-            self.valid_ds = dataset_tuple[1]
+            self.valid_ds = dataset_tuple[1]  # type: ignore
             self.test_ds = None
         elif len(dataset_tuple) == 3:
             self.train_ds = dataset_tuple[0]
-            self.valid_ds = dataset_tuple[1]
-            self.test_ds = dataset_tuple[2]
+            self.valid_ds = dataset_tuple[1]  # type: ignore
+            self.test_ds = dataset_tuple[2]  # type: ignore
         else:
             self.train_ds = dataset_tuple  # type: ignore
             self.valid_ds = None

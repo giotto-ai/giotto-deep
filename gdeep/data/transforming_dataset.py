@@ -26,7 +26,7 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
 
     def __init__(self, dataset: Dataset[R], transform: Callable[[R], S]) -> None:
         self.dataset = dataset
-        self.transform = transform
+        self.transform = transform  # type: ignore
 
     def __len__(self) -> int:
         if hasattr(self.dataset, "__len__"):
@@ -44,7 +44,7 @@ class TransformingDataset(Dataset[S], Generic[R, S]):
         dataset, the output would probably be a tuple
         like ``(label, string)``
         """
-        return self.transform(self.dataset[idx])
+        return self.transform(self.dataset[idx])  # type: ignore
 
     # forward all other methods of the TransformingDataset to the Dataset
     def __getattr__(self, name: str) -> Any:
@@ -71,6 +71,6 @@ def append_transform(
     """
 
     def new_transform(x: R) -> T:
-        return transform(dataset.transform(x))
+        return transform(dataset.transform(x))  # type: ignore
 
     return TransformingDataset(dataset.dataset, new_transform)

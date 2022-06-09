@@ -45,15 +45,15 @@ class PreprocessingPipeline(AbstractPreprocessing[T, Any], Generic[T]):
     def attach_transform_to_dataset(
         self, dataset: Dataset[T]
     ) -> TransformingDataset[T, Any]:
-        return TransformingDataset(dataset, self.transform_composition)
+        return TransformingDataset(dataset, self.transform_composition)  # type: ignore
 
     def fit_to_dataset(self, dataset: Dataset[Any]) -> None:
-        self.transform_composition = lambda x: x
-        transformed_dataset = TransformingDataset(dataset, self.transform_composition)
+        self.transform_composition = lambda x: x  # type: ignore
+        transformed_dataset = TransformingDataset(dataset, self.transform_composition)  # type: ignore
         for preprocessor in self.preprocessors:
             preprocessor.fit_to_dataset(transformed_dataset)
             transformed_dataset = append_transform(transformed_dataset, preprocessor)
-        self.transform_composition = transformed_dataset.transform
+        self.transform_composition = transformed_dataset.transform  # type: ignore
 
     def __call__(self, x: T) -> Any:
         if not self.is_fitted:
@@ -61,4 +61,4 @@ class PreprocessingPipeline(AbstractPreprocessing[T, Any], Generic[T]):
                 "The preprocessing pipeline has not been fitted to a dataset."
                 " Please call the ´fit_to_dataset´ method first."
             )
-        return self.transform_composition(x)
+        return self.transform_composition(x)  # type: ignore
