@@ -274,7 +274,7 @@ class Visualiser:
             attrib = torch.permute(
                 LayerAttribution.interpolate(
                     interpreter.attribution.detach().cpu(),
-                    tuple(interpreter.image.squeeze().detach().cpu().shape[-2:]),
+                    tuple(interpreter.x.squeeze().detach().cpu().shape[-2:]),
                 ).squeeze(0),
                 (1, 2, 0),
             )
@@ -286,7 +286,7 @@ class Visualiser:
                 .numpy()
             )
         img = (
-            torch.permute(interpreter.image.squeeze().detach(), (1, 2, 0))
+            torch.permute(interpreter.x.squeeze().detach(), (1, 2, 0))
             .detach()
             .cpu()
             .numpy()
