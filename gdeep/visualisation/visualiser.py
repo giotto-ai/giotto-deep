@@ -190,7 +190,7 @@ class Visualiser:
 
     def betti_plot_layers(
         self, homology_dimension: List[int] = (0, 1), example: Optional[Tensor] = None
-    ):
+    ) -> None:
         """
         Args:
             homology_dimension :
@@ -255,7 +255,7 @@ class Visualiser:
         Interpreter for image data.
 
         Args:
-            interpreter (Interpreter):
+            interpreter:
                 this is a ``gdeep.analysis.interpretability``
                 initilised ``Interpreter`` class
                 
@@ -302,14 +302,14 @@ class Visualiser:
         self.pipe.writer.add_figure(interpreter.method, fig)
         return fig
 
-    def plot_interpreter_tabular(self, interpreter: Interpreter):
+    def plot_feature_importance(self, interpreter: Interpreter):
         """This method allows to plot the results of an
         Interpreter for tabular data.
 
         Args:
-            interpreter (Interpreter):
+            interpreter :
                 this is a ``gdeep.analysis.interpretability``
-                initilised ``Interpreter`` class
+                initialised ``Interpreter`` class
                 
         Returns:
             matplotlib.figure
@@ -318,23 +318,15 @@ class Visualiser:
         x_test = interpreter.x
         x_axis_data = np.arange(x_test.shape[1])
         x_axis_data_labels = list(map(lambda idx: idx, x_axis_data))
-        attribution_sum = interpreter.attribution.detach().cpu().numpy().sum(0)
-        attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
 
         width = 0.14
-        legends = [
-            "Int Grads",
-            "Int Grads w/SmoothGrad",
-            "DeepLift",
-            "Feature Ablation",
-            "Weights",
-        ]
+        legends = interpreter.features_list
 
         fig = plt.figure(figsize=(20, 10))
 
         ax = plt.subplot()
         ax.set_title(
-            "Comparing input feature importances across "
+            "Comparing input feature importance across "
             + "multiple algorithms and learned weights"
         )
         ax.set_ylabel("Attributions")
@@ -343,15 +335,17 @@ class Visualiser:
         plt.rc("axes", titlesize=FONT_SIZE)  # fontsize of the axes title
         plt.rc("axes", labelsize=FONT_SIZE)  # fontsize of the x and y labels
         plt.rc("legend", fontsize=FONT_SIZE - 4)  # fontsize of the legend
-
-        ax.bar(
-            x_axis_data,
-            attribution_norm_sum,
-            width,
-            align="center",
-            alpha=0.8,
-            color="#eb5e7c",
-        )
+        for i in range(len(interpreter.attribution_list)):
+            attribution_sum = interpreter.attribution_list[i].detach().cpu().numpy().sum(0)
+            attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
+            ax.bar(
+                x_axis_data,
+                attribution_norm_sum,
+                width,
+                align="center",
+                alpha=0.8,
+                color="#e"+str(i)+"6b"+str(i+2)+"2",
+            )
 
         ax.autoscale_view()
         plt.tight_layout()
@@ -362,3 +356,46 @@ class Visualiser:
         plt.legend(legends, loc=3)
         self.pipe.writer.add_figure("Feature Importance", fig)
         return plt
+
+    def plot_attribution(self, interpreter: Interpreter, **kwargs):
+        """this method geerically plots the attribution of
+        the interpreter
+
+        Args:
+            interpreter :
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+            kwargs:
+                keywords arguments for the plot (visualize_image_attr of
+                captum)
+
+        Returns:
+            matplotlib.figure, matplotlib.figure"""
+        t1 = Visualiser._adjust_tensors_to_plot(interpreter.x)
+        t2 = Visualiser._adjust_tensors_to_plot(interpreter.attribution)
+        fig1, _ = visualization.visualize_image_attr(t1, **kwargs)
+        fig2, _ = visualization.visualize_image_attr(t2, **kwargs)
+        self.pipe.writer.add_figure("Datum x", fig1)
+        self.pipe.writer.add_figure("Generic attribution of x", fig2)
+        return fig1, fig2
+
+    @staticmethod
+    def _adjust_tensors_to_plot(tensor: Tensor) -> np.ndarray:
+        """make sure that tensors that will be plotted as images have the
+        correct dimensions"""
+        if len(tensor.shape) == 4:
+            tensor = tensor[0, :, :, :]
+        elif len(tensor.shape) > 4:
+            tensor = tensor[0, :, :, :, 0]
+        list_of_permutation = torch.argsort(torch.tensor(tensor.shape)).tolist()
+        list_of_permutation.reverse()
+        tensor = tensor.permute(*list_of_permutation)
+        # if tensor.shape[-1] == 1:
+        #     tensor = tensor.squeeze(-1)
+        if tensor.shape[-1] == 2:
+            temporary = torch.zeros((tensor.shape[0], tensor.shape[1], 3))
+            temporary[:, :, :2] = tensor
+            tensor = temporary
+        else:
+            tensor = tensor[:, :, :4]
+        return tensor.permute(1, 0, 2).cpu().detach().numpy()

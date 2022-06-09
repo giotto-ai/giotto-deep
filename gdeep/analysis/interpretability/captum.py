@@ -1,4 +1,5 @@
 from typing import Any, Tuple, Dict, Callable, List, Optional
+import inspect
 
 from captum.attr import *
 import torch
@@ -35,18 +36,19 @@ class Interpreter:
         self.sentence = None
         self.attribution = None
 
-    def interpret_image(self,
-                        x: Tensor,
-                        y: Any,
-                        layer: Optional[torch.nn.Module] = None,
-                        **kwargs: Any) -> Tuple[Tensor, Tensor]:
-        """This method creates an image interpreter. This class
+    def interpret(self,
+                  x: Tensor,
+                  y: Optional[Any] = None,
+                  layer: Optional[torch.nn.Module] = None,
+                  **kwargs: Any) -> Tuple[Tensor, Tensor]:
+        """This method creates a datum interpreter. This class
         is based on captum.
 
         Args:
             x:
-                the tensor corresponding to the input image.
-                It is expected to be of size ``(b, c, h, w)``
+                the tensor corresponding to the input datum.
+                In case the datum is an image for example,
+                it is expected to be of size ``(b, c, h, w)``
             y:
                 the label we want to check the interpretability
                 of.
@@ -56,47 +58,64 @@ class Interpreter:
 
         Returns
             torch.Tensor, torch.Tensor:
-                the input image and the attribution
+                the input datum and the attribution
                 image respectively.
         """
         self.x = x.to(DEVICE)
-        attr_class = get_attr(self.method, self.model, layer)
+        if layer:
+            attr_class = get_attr(self.method, self.model, layer)
+        else:
+            attr_class = get_attr(self.method, self.model)
         self.model.eval()
-        self.attribution = attr_class.attribute(self.x, target=y, **kwargs)
-        self.image = self.x
+        if y:
+            self.attribution = attr_class.attribute(self.x, target=y, **kwargs)
+        else:
+            self.attribution = attr_class.attribute(self.x, **kwargs)
         return self.x, self.attribution
 
-    def interpret_tabular(self, x: Tensor, **kwargs: Any) -> None:
-        """This method creates a tabular interpreter. This class
+    def feature_importance(self, x: Tensor, y: Tensor, **kwargs: Any) \
+            -> Tuple[Tensor, List[Any]]:
+        """This method creates a tabular data interpreter. This class
         is based on captum.
 
         Args:
-            x :
-                the tensor corresponding to the input image.
-                It is expected to be of size ``(b, c, h, w)``
+            x:
+                the datum
+            y:
+                the target label
+            kwargs:
+                kwargs for the attributions
+
+        Returns:
+            (Tensor, Tensor):
+                returns x and its attribution
 
         """
-        self.x = x.to(DEVICE)  # needed for plotting functions
+        self.x = x.to(DEVICE)  # needed for attribution functions
+        self.y = y.to(DEVICE)
         self.model.eval()
-        attr_class = get_attr(self.method, self.model)
-        self.attribution = attr_class.attribute(self.x,
-                                                **kwargs)
-        # ig = IntegratedGradients(self.model)
-        # ig_nt = NoiseTunnel(ig)
-        # dl = DeepLift(self.model)
-        # gs = GradientShap(self.model)
-        # fa = FeatureAblation(self.model)
-        # self.ig_attr_test = ig.attribute(self.x,
-        #                                  n_steps=50,
-        #                                  target=y,
-        #                                  **kwargs)
+        attr_list = []
+        attribute_dict = {"inputs": self.x, "target": self.y,
+                          "sliding_window_shapes": (1, ),
+                          "n_steps": 50, **kwargs
+                          }
+        self.features_list = ["IntegratedGradients", "IntegratedGradients",
+                              "DeepLift", "FeatureAblation", "Occlusion"]
+        for method in self.features_list:
+            attribution_class = get_attr(method, self.model)
+            args_names = inspect.signature(attribution_class.attribute).parameters.keys()
+            kwargs_of_method = {k: v for k, v in attribute_dict.items() if k in args_names}
+            attr_list.append(attribution_class.attribute(**kwargs_of_method))
+        self.attribution_list = attr_list
+        return self.x, self.attribution_list
 
     def interpret_text(self, sentence: str,
                        label: Any,
                        vocab: Dict[str, int],
                        tokenizer: Callable[[str], List[str]],
-                       layer: torch.nn.Module,
-                       min_len: int = 7) -> None:
+                       layer: Optional[torch.nn.Module] = None,
+                       min_len: int = 7,
+                       **kwargs) -> Tuple[str, Tensor]:
         """This method creates a text interpreter. This class
         is based on captum.
 
@@ -117,11 +136,16 @@ class Interpreter:
                 ``self.model``.
             min_len:
                 minimum length of the text. Shorter texts are padded
+            kwargs:
+                additional arguments for the attribution
 
         """
         self.model.eval()
         self.sentence = sentence
-        attr_class = get_attr(self.method, self.model, layer)
+        if layer:
+            attr_class = get_attr(self.method, self.model, layer)
+        else:
+            attr_class = get_attr(self.method, self.model)
         text = tokenizer(sentence)
         if len(text) < min_len:
             text += [' '] * (min_len - len(text))
@@ -150,8 +174,7 @@ class Interpreter:
         self.attribution, delta = attr_class.attribute(input_indices,
                                                        reference_indices,
                                                        target=label,
-                                                       n_steps=500,
-                                                       return_convergence_delta=True)
+                                                       **kwargs)
 
         print('pred: ', pred_ind, '(', '%.2f' % pred, ')',
               ', delta: ', abs(delta.item()))
@@ -159,6 +182,7 @@ class Interpreter:
         self.add_attributions_to_visualizer(self.attribution, text, pred,
                                             pred_ind, label, delta.item(),
                                             self.stored_visualisations)
+        return sentence, self.attribution
 
     @staticmethod
     def add_attributions_to_visualizer(attributions,

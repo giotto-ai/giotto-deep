@@ -12,7 +12,6 @@ from gdeep.data.datasets import DataLoaderBuilder
 from gdeep.trainer import Trainer
 from torch.utils.tensorboard import SummaryWriter
 
-
 writer = SummaryWriter()
 
 # many time we get an IterableDataset which is good for memory consumption, but cannot be sampled!
@@ -27,15 +26,16 @@ transformed_textds = ptd.attach_transform_to_dataset(ds_tr_str)
 transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)
 
 # the only part of the training/test set we are interested in
-train_indices = list(range(64*10))
-test_indices = list(range(64*5))
+train_indices = list(range(64 * 10))
+test_indices = list(range(64 * 5))
 
 dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds,
-                                      transformed_textts)).build(({"batch_size":16,
-                                                                   "sampler":SubsetRandomSampler(train_indices)},
-                                                                  {"batch_size":16,
-                                                                   "sampler":SubsetRandomSampler(test_indices)}
-                                                                 ))
+                                       transformed_textts)).build(({"batch_size": 16,
+                                                                    "sampler": SubsetRandomSampler(train_indices)},
+                                                                   {"batch_size": 16,
+                                                                    "sampler": SubsetRandomSampler(test_indices)}
+                                                                   ))
+
 
 class TextClassificationModel(nn.Module):
 
@@ -53,8 +53,9 @@ class TextClassificationModel(nn.Module):
 
     def forward(self, text):
         embedded = self.embedding(text)
-        mean = torch.mean(embedded,dim=1)
+        mean = torch.mean(embedded, dim=1)
         return self.fc(mean)
+
 
 vocab_size = len(ptd.vocabulary)
 emsize = 64
@@ -62,6 +63,7 @@ emsize = 64
 model = TextClassificationModel(vocab_size, emsize, 4)
 loss_fn = nn.CrossEntropyLoss()
 pipe = Trainer(model, (dl_tr2, dl_ts2), loss_fn, writer)
+
 
 def test_interpret_text() -> None:
     vs = Visualiser(pipe)
@@ -72,6 +74,9 @@ def test_interpret_text() -> None:
                          0,
                          ptd.vocabulary,
                          ptd.tokenizer,
-                         layer=pipe.model.embedding)
+                         layer=pipe.model.embedding,
+                         n_steps=500,
+                         return_convergence_delta=True
+                         )
 
     vs.plot_interpreter_text(inter)
