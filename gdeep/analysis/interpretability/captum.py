@@ -29,6 +29,9 @@ class Interpreter:
     attribution: Tensor
     sentence: str
     y: Tensor
+    layer: Optional[torch.nn.Module]
+    features_list: Optional[List]
+    attribution_list: Optional[List]
 
     def __init__(self, model: nn.Module,
                  method: str = "IntegratedGradients"):
@@ -63,8 +66,9 @@ class Interpreter:
                 image respectively.
         """
         self.x = x.to(DEVICE)
-        if layer:
-            attr_class = get_attr(self.method, self.model, layer)
+        self.layer = layer
+        if self.layer:
+            attr_class = get_attr(self.method, self.model, self.layer)
         else:
             attr_class = get_attr(self.method, self.model)
         self.model.eval()

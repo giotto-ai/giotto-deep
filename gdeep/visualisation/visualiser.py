@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 import random
 
 import torch
@@ -190,7 +190,7 @@ class Visualiser:
             return db.cpu(), None, None
 
     def betti_plot_layers(
-        self, homology_dimension: Optional[List[int]] = None, example: Optional[Tensor] = None
+            self, homology_dimension: Optional[List[int]] = None, example: Optional[Tensor] = None
     ) -> None:
         """
         Args:
@@ -267,10 +267,7 @@ class Visualiser:
 
         try:
             attrib = (
-                torch.permute(interpreter.attribution.squeeze().detach(), (1, 2, 0))
-                .detach()
-                .cpu()
-                .numpy()
+                torch.permute(interpreter.attribution.squeeze().detach(), (1, 2, 0)).detach().cpu().numpy()
             )
         except ValueError:
             attrib = torch.permute(
@@ -281,17 +278,10 @@ class Visualiser:
                 (1, 2, 0),
             )
             attrib = (
-                torch.stack([attrib, attrib, attrib], dim=2)
-                .squeeze(-1)
-                .detach()
-                .cpu()
-                .numpy()
+                torch.stack([attrib, attrib, attrib], dim=2).squeeze(-1).detach().cpu().numpy()
             )
         img = (
-            torch.permute(interpreter.x.squeeze().detach(), (1, 2, 0))
-            .detach()
-            .cpu()
-            .numpy()
+            torch.permute(interpreter.x.squeeze().detach(), (1, 2, 0)).detach().cpu().numpy()
         )
 
         fig, _ = visualization.visualize_image_attr_multiple(
@@ -337,8 +327,8 @@ class Visualiser:
         plt.rc("axes", titlesize=FONT_SIZE)  # fontsize of the axes title
         plt.rc("axes", labelsize=FONT_SIZE)  # fontsize of the x and y labels
         plt.rc("legend", fontsize=FONT_SIZE - 4)  # fontsize of the legend
-        for i in range(len(interpreter.attribution_list)):
-            attribution_sum = interpreter.attribution_list[i].detach().cpu().numpy().sum(0)
+        for i in range(len(interpreter.attribution_list)):  # type: ignore
+            attribution_sum = interpreter.attribution_list[i].detach().cpu().numpy().sum(0)  # type: ignore
             attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
             r = lambda: random.randint(0, 255)  # noqa
             color = ('#%02X%02X%02X' % (r(), r(), r()))
@@ -382,6 +372,44 @@ class Visualiser:
         self.pipe.writer.add_figure("Datum x", fig1)  # type: ignore
         self.pipe.writer.add_figure("Generic attribution of x", fig2)  # type: ignore
         return fig1, fig2
+
+    def plot_self_attention(self, attention_tensor: List[Tensor], tokens_x: Optional[List[str]] = None,
+                            tokens_y: Optional[List[str]] = None, **kwargs) -> None:
+        """This functions plots the self-attention layer of a transformer.
+
+        Args:
+            attention_tensor:
+                list of the self-attetion tensors (i.e. the tensors
+                corresponding to the activations, given an input
+            tokens_x:
+                The string tokens to be displayed along the
+                x axis of the plot
+            tokens_y:
+                The string tokens to be displayed along the
+                y axis of the plot
+            """
+        fig = plt.figure(**kwargs)
+
+        for idx, scores in enumerate(attention_tensor):
+            scores_np = Visualiser._adjust_tensors_to_plot(scores)
+            ax = fig.add_subplot(4, 3, idx + 1)
+            # append the attention weights
+            im = ax.imshow(scores_np, cmap='viridis')
+
+            fontdict = {'fontsize': 10}
+            if tokens_x:
+                ax.set_xticks(range(len(tokens_x)))
+                ax.set_xticklabels(tokens_x, fontdict=fontdict, rotation=90)
+            if tokens_y:
+                ax.set_yticks(range(len(tokens_y)))
+                ax.set_yticklabels(tokens_y, fontdict=fontdict)
+
+            ax.set_xlabel('Head {}'.format(idx + 1))
+
+            fig.colorbar(im, fraction=0.046, pad=0.04)
+        plt.show()
+        self.pipe.writer.add_figure("Self attention map", fig)  # type: ignore
+        return fig
 
     @staticmethod
     def _adjust_tensors_to_plot(tensor: Tensor) -> np.ndarray:

@@ -74,7 +74,7 @@ class ModelExtractor:
         `X`
 
         Args:
-            input_example (Tensor):
+            x :
                 an example of an input or
                 an input batch of which to compute the activation(s)
 
