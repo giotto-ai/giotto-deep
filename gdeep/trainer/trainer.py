@@ -808,8 +808,8 @@ class Trainer:
                     )[:, 0]
                 )
             else:
-                valloss = np.mean(mean_val_loss)
-                valacc = np.mean(mean_val_acc)
+                valloss = torch.mean(torch.tensor(mean_val_loss))
+                valacc = torch.mean(torch.tensor(mean_val_acc))
 
         else:
             self._init_optimizer_and_scheduler(

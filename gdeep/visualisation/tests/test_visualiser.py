@@ -7,6 +7,8 @@ from gdeep.visualisation import Visualiser
 from gdeep.data.preprocessors import TokenizerTextClassification
 from gdeep.data.datasets import DataLoaderBuilder, DatasetBuilder
 from gdeep.trainer import Trainer
+from gdeep.utility import DEVICE
+
 
 bd = DatasetBuilder(name="AG_NEWS", convert_to_map_dataset=True)
 ds_tr_str, ds_val_str, ds_ts_str = bd.build()
@@ -55,7 +57,7 @@ def test_visualiser():
     vocab_size = len(ptd.vocabulary)
     emsize = 64
     loss_fn = nn.CrossEntropyLoss()
-    model = TextClassificationModel(vocab_size, emsize, 4)
+    model = TextClassificationModel(vocab_size, emsize, 4).to(DEVICE)
     pipe = Trainer(model, [dl_tr2, dl_ts2], loss_fn, writer)
 
     vs = Visualiser(pipe)
