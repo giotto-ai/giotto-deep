@@ -22,11 +22,11 @@ You can find the documentation of this repository here: https://giotto-ai.github
 
 ## Run tensorboard for visualisation
 
-In order to analyse the results of your models, you need to start **tensorboard**. On the terminal, move inside the `/example` folder. There, run the following command:
+In order to analyse the results of your models, you need to start **tensorboard**. On the terminal, move inside the `/examples` folder. There, run the following command:
 ```
 tensorboard --logdir=runs
 ```
-Afterwards go [here](http://localhost:6006/) after running the notebook to see all the visualisation results that you stored in the `writer = SummaryWriter()`.
+Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualisation results that you stored in the `writer = SummaryWriter()`.
 
 ## Install dev version
 
