@@ -4,12 +4,10 @@ import torch  # type: ignore
 import torch.nn as nn  # type: ignore
 from torch import Tensor  # type: ignore
 import torch.nn.functional as F
-from torch.nn import (Module, Linear)
+from torch.nn import Module, Linear
 from gdeep.topology_layers.modules import _ISAB, _PMA, _SAB  # type: ignore
 
 
-    
-    
 class Persformer(Module):
     """
     Persformer architecture as described in
@@ -56,6 +54,7 @@ class Persformer(Module):
         ValueError:
             [description]
     """
+
     def __init__(
         self,
         dim_input=2,  # dimension of input data for each element in the set
@@ -65,7 +64,7 @@ class Persformer(Module):
         dim_hidden=16,
         num_heads="4",
         layer_norm="False",  # use layer norm
-        pre_layer_norm="False", # use pre-layer norm
+        pre_layer_norm="False",  # use pre-layer norm
         simplified_layer_norm="True",
         dropout_enc=0.0,
         dropout_dec=0.0,
@@ -79,92 +78,144 @@ class Persformer(Module):
         super().__init__()
         self._attention_type = attention_type
         bias_attention = eval(bias_attention)
-        if activation == 'gelu':
+        if activation == "gelu":
             activation_layer = nn.GELU()
             activation_function = F.gelu
-        elif activation == 'relu':
+        elif activation == "relu":
             activation_layer = nn.ReLU()
             activation_function = F.relu
         else:
             raise ValueError("Unknown activation '%s'" % activation)
-        
-        if attention_type=="induced_attention":
+
+        if attention_type == "induced_attention":
             self.enc = nn.Sequential(
-                _ISAB(dim_input, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
-                        simplified_layer_norm = eval(simplified_layer_norm),
-                        bias_attention=bias_attention, activation=activation),
-                *[_ISAB(dim_hidden, dim_hidden, eval(num_heads), num_inds, ln=eval(layer_norm),
-                        simplified_layer_norm = eval(simplified_layer_norm),
-                        bias_attention=bias_attention, activation=activation)
-                    for _ in range(num_layer_enc-1)],
+                _ISAB(
+                    dim_input,
+                    dim_hidden,
+                    eval(num_heads),
+                    num_inds,
+                    ln=eval(layer_norm),
+                    simplified_layer_norm=eval(simplified_layer_norm),
+                    bias_attention=bias_attention,
+                    activation=activation,
+                ),
+                *[
+                    _ISAB(
+                        dim_hidden,
+                        dim_hidden,
+                        eval(num_heads),
+                        num_inds,
+                        ln=eval(layer_norm),
+                        simplified_layer_norm=eval(simplified_layer_norm),
+                        bias_attention=bias_attention,
+                        activation=activation,
+                    )
+                    for _ in range(num_layer_enc - 1)
+                ],
             )
-        elif attention_type=="self_attention":
+        elif attention_type == "self_attention":
             self.enc = nn.Sequential(
-                _SAB(dim_input, dim_hidden, eval(num_heads), ln=eval(layer_norm),
-                    simplified_layer_norm = eval(simplified_layer_norm),
-                    bias_attention=bias_attention, activation=activation),
-                *[_SAB(dim_hidden, dim_hidden, eval(num_heads), ln=eval(layer_norm),
-                        simplified_layer_norm = eval(simplified_layer_norm),
-                        bias_attention=bias_attention, activation=activation)
-                    for _ in range(num_layer_enc-1)],
+                _SAB(
+                    dim_input,
+                    dim_hidden,
+                    eval(num_heads),
+                    ln=eval(layer_norm),
+                    simplified_layer_norm=eval(simplified_layer_norm),
+                    bias_attention=bias_attention,
+                    activation=activation,
+                ),
+                *[
+                    _SAB(
+                        dim_hidden,
+                        dim_hidden,
+                        eval(num_heads),
+                        ln=eval(layer_norm),
+                        simplified_layer_norm=eval(simplified_layer_norm),
+                        bias_attention=bias_attention,
+                        activation=activation,
+                    )
+                    for _ in range(num_layer_enc - 1)
+                ],
             )
-        elif attention_type=="pytorch_self_attention":
+        elif attention_type == "pytorch_self_attention":
             emb = Linear(dim_input, dim_hidden)
-            encoder_layer = nn.TransformerEncoderLayer(d_model=dim_hidden,
-                                                    nhead=eval(num_heads),
-                                                    dropout=dropout_enc,
-                                                    activation=activation_function,
-                                                    norm_first=eval(pre_layer_norm),
-                                                    batch_first=True)
-            self.enc = nn.Sequential(
-                    emb,
-                    nn.TransformerEncoder(encoder_layer,
-                                                num_layers=num_layer_enc)
+            encoder_layer = nn.TransformerEncoderLayer(
+                d_model=dim_hidden,
+                nhead=eval(num_heads),
+                dropout=dropout_enc,
+                activation=activation_function,
+                norm_first=eval(pre_layer_norm),
+                batch_first=True,
             )
-        elif attention_type=="pytorch_self_attention_skip":
+            self.enc = nn.Sequential(
+                emb, nn.TransformerEncoder(encoder_layer, num_layers=num_layer_enc)
+            )
+        elif attention_type == "pytorch_self_attention_skip":
             self.emb = Linear(dim_input, dim_hidden)
             self.encoder_layers = nn.ModuleList(
-                [nn.TransformerEncoderLayer(d_model=dim_hidden,
-                                                    nhead=eval(num_heads),
-                                                    dropout=dropout_enc,
-                                                    activation=activation_function,
-                                                    norm_first=eval(pre_layer_norm),
-                                                    batch_first=True) for _ in range(num_layer_enc)]
+                [
+                    nn.TransformerEncoderLayer(
+                        d_model=dim_hidden,
+                        nhead=eval(num_heads),
+                        dropout=dropout_enc,
+                        activation=activation_function,
+                        norm_first=eval(pre_layer_norm),
+                        batch_first=True,
+                    )
+                    for _ in range(num_layer_enc)
+                ]
             )
         else:
             raise ValueError("Unknown attention type: {}".format(attention_type))
-        enc_layer_dim = [2**i if i <= num_layer_dec/2 else num_layer_dec - i for i in range(num_layer_dec)]
+        enc_layer_dim = [
+            2 ** i if i <= num_layer_dec / 2 else num_layer_dec - i
+            for i in range(num_layer_dec)
+        ]
         self.dec = nn.Sequential(
             nn.Dropout(dropout_dec),
-            _PMA(dim_hidden, eval(num_heads), num_outputs, ln=eval(layer_norm_pooling),
-                simplified_layer_norm = eval(simplified_layer_norm),
-                bias_attention=bias_attention, activation=activation),
+            _PMA(
+                dim_hidden,
+                eval(num_heads),
+                num_outputs,
+                ln=eval(layer_norm_pooling),
+                simplified_layer_norm=eval(simplified_layer_norm),
+                bias_attention=bias_attention,
+                activation=activation,
+            ),
             nn.Dropout(dropout_dec),
-            *[nn.Sequential(nn.Linear(enc_layer_dim[i] * dim_hidden, enc_layer_dim[i+1] * dim_hidden),
-                            activation_layer,
-                            nn.Dropout(dropout_dec)) for i in range(num_layer_dec-1)],
+            *[
+                nn.Sequential(
+                    nn.Linear(
+                        enc_layer_dim[i] * dim_hidden, enc_layer_dim[i + 1] * dim_hidden
+                    ),
+                    activation_layer,
+                    nn.Dropout(dropout_dec),
+                )
+                for i in range(num_layer_dec - 1)
+            ],
             nn.Linear(enc_layer_dim[-1] * dim_hidden, dim_output),
         )
-        
+
     @classmethod
     def from_config(cls, config_model, config_data):
-        return cls(dim_input=config_model.dim_input,
-                   dim_output=config_data.num_classes,
-                   num_inds=config_model.num_induced_points,
-                   dim_hidden=config_model.dim_hidden,
-                   num_heads=str(config_model.num_heads),
-                   layer_norm=str(config_model.layer_norm),  # use layer norm
-                   pre_layer_norm=str(config_model.pre_layer_norm),
-                   simplified_layer_norm=str(config_model.simplified_layer_norm),
-                   dropout_enc=config_model.dropout_enc,
-                   dropout_dec=config_model.dropout_dec,
-                   num_layer_enc=config_model.num_layers_encoder,
-                   num_layer_dec=config_model.num_layers_decoder,
-                   activation=config_model.activation,
-                   bias_attention=config_model.bias_attention,
-                   attention_type=config_model.attention_type,
-                   layer_norm_pooling=str(config_model.layer_norm_pooling))
-    
+        return cls(
+            dim_input=config_model.dim_input,
+            dim_output=config_data.num_classes,
+            num_inds=config_model.num_induced_points,
+            dim_hidden=config_model.dim_hidden,
+            num_heads=str(config_model.num_heads),
+            layer_norm=str(config_model.layer_norm),  # use layer norm
+            pre_layer_norm=str(config_model.pre_layer_norm),
+            simplified_layer_norm=str(config_model.simplified_layer_norm),
+            dropout_enc=config_model.dropout_enc,
+            dropout_dec=config_model.dropout_dec,
+            num_layer_enc=config_model.num_layers_encoder,
+            num_layer_dec=config_model.num_layers_decoder,
+            activation=config_model.activation,
+            bias_attention=config_model.bias_attention,
+            attention_type=config_model.attention_type,
+            layer_norm_pooling=str(config_model.layer_norm_pooling),
+        )
 
     def forward(self, input):
         if self._attention_type == "pytorch_self_attention_skip":
@@ -174,6 +225,7 @@ class Persformer(Module):
             return self.dec(x).squeeze(dim=1)
         else:
             return self.dec(self.enc(input)).squeeze(dim=1)
+
     @property
     def num_params(self) -> int:
         """Returns number of trainable parameters.
@@ -184,25 +236,26 @@ class Persformer(Module):
         for parameter in self.parameters():
             total_params += parameter.nelement()
         return total_params
-    
-    
+
 
 class GraphClassifier(nn.Module):
     """Classifier for Graphs using persistence features and additional
     features. The vectorization is based on a set transformer.
     """
-    def __init__(self,
-                 num_features,
-                 dim_input=6,
-                 num_outputs=1,
-                 dim_output=50,
-                 num_classes=2,
-                 ln=True,
-                 num_heads=4,
-                 use_induced_attention=False,
-                 dim_hidden=128,
-                 dropout=0.0,
-                ):
+
+    def __init__(
+        self,
+        num_features,
+        dim_input=6,
+        num_outputs=1,
+        dim_output=50,
+        num_classes=2,
+        ln=True,
+        num_heads=4,
+        use_induced_attention=False,
+        dim_hidden=128,
+        dropout=0.0,
+    ):
         super().__init__()
         self.st = Persformer(
             dim_input=dim_input,
@@ -213,12 +266,13 @@ class GraphClassifier(nn.Module):
             dim_hidden=dim_hidden,
             use_induced_attention=use_induced_attention,
             dropout=dropout,
-            )
+        )
         self.num_classes = num_classes
         self.ln = nn.LayerNorm(dim_output + num_features)
         self.ff_1 = nn.Linear(dim_output + num_features, 50)
         self.ff_2 = nn.Linear(50, 20)
         self.ff_3 = nn.Linear(20, num_classes)
+
     def forward(self, x_pd: Tensor, x_feature: Tensor) -> Tensor:
         """Forward pass of the graph classifier.
         The persistence features are encoded with a set transformer

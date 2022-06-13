@@ -11,7 +11,7 @@ from gdeep.data.datasets import DatasetBuilder, DataLoaderBuilder
 
 bd = DatasetBuilder(name="Blobs")
 ds_tr, ds_val, _ = bd.build()
-dl = DataLoaderBuilder([ds_tr, ds_val])
+dl = DataLoaderBuilder([ds_tr, ds_val])  # type: ignore
 dl_tr, dl_val, dl_ts = dl.build()  # sampler=SubsetRandomSampler(train_indices))
 
 

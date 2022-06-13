@@ -10,6 +10,7 @@ Welcome to giotto-deep's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   introduction
    installation
    modules/index
 

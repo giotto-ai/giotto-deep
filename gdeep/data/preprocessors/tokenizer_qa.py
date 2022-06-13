@@ -1,20 +1,22 @@
 from collections import Counter, OrderedDict
 from typing import Callable, Tuple, List, Optional, Dict
+from functools import partial as Partial
 
 import torch
 from torch.utils.data import Dataset
 from torchtext.vocab import vocab
+from torchtext.vocab.vocab import Vocab
 from torchtext.data.utils import get_tokenizer  # type: ignore
 from gdeep.utility import DEVICE
 
 from ..abstract_preprocessing import AbstractPreprocessing
 from .._utils import MissingVocabularyError
+
 # type definition
 Tensor = torch.Tensor
 
 
-
-class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
+class TokenizerQA(AbstractPreprocessing[Tuple[str, str, List[str], List[int]],
                                         Tuple[Tensor, Tensor]]):
     """Class to preprocess text dataloaders for Q&A
     tasks. The type of dataset is assumed to be of the
@@ -41,13 +43,13 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
     """
     is_fitted: bool
     max_length: int
-    vocabulary: Optional[Dict[str, int]]
-    tokenizer: Optional[Callable[[str], List[str]]]
+    vocabulary: Optional[Vocab]
+    tokenizer: Optional[Partial]
     counter: Dict[str, int]
     pad_item: int
 
-    def __init__(self, vocabulary:Optional[Dict[str, int]]=None,
-                 tokenizer:Optional[Callable[[str], List[str]]]=None):
+    def __init__(self, vocabulary: Optional[Vocab] = None,
+                 tokenizer: Optional[Partial] = None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
@@ -56,9 +58,15 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
         self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_dataset(self, dataset: Dataset[Tuple[str,str,List[str],List[int]]]) -> None:
-        """Method to fit the vocabulary to the input text"""
-        self.counter = Counter() 
+    def fit_to_dataset(self, dataset: Dataset[Tuple[str, str, List[str], List[int]]]) -> None:
+        """Method to fit the vocabulary to the input text
+
+        Args:
+            dataset:
+                the dataset to fit to
+
+            """
+        self.counter = Counter()
         self.ordered_dict = OrderedDict()
         for (context, question, answer, init_position) in dataset:  # type: ignore
             self.counter.update(self.tokenizer(context))  # type: ignore
@@ -79,11 +87,11 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
 
     def __call__(self, datum: Tuple[str, str, List[str], List[int]]) -> Tuple[Tensor, Tensor]:
         """This method implement the transformation once fitted."""
-        #if not self.is_fitted:
+        # if not self.is_fitted:
         #    self.load_pretrained(".")
         if self.vocabulary:
-            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in # type: ignore
-                                       self.tokenizer(x)]  # type: ignore
+            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
+                                                                   self.tokenizer(x)]  # type: ignore
         else:
             raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
 
@@ -93,11 +101,11 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
                                  self.pad_item * torch.ones(self.max_length -
                                                             processed_context.shape[0]).to(DEVICE)])
         processed_question = torch.tensor(text_pipeline(datum[1]),
-                                         dtype=torch.int64).to(DEVICE)
+                                          dtype=torch.int64).to(DEVICE)
 
         out_question = torch.cat([processed_question,
-                         self.pad_item * torch.ones(self.max_length -
-                                                    processed_question.shape[0]).to(DEVICE)])
+                                  self.pad_item * torch.ones(self.max_length -
+                                                             processed_question.shape[0]).to(DEVICE)])
 
         pos_init_char = datum[3][0]
         pos_init = len(self.tokenizer(datum[0][:pos_init_char]))  # type: ignore
@@ -105,6 +113,3 @@ class TokenizerQA(AbstractPreprocessing[Tuple[str,str,List[str],List[int]],
 
         return (torch.stack((out_context, out_question)).to(torch.long),
                 torch.stack((torch.tensor(pos_init), torch.tensor(pos_end))).to(torch.long))
-
-
-

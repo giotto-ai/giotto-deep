@@ -40,6 +40,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
@@ -217,15 +218,15 @@ corresponds to the gridsearch criterion</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.trainer.Trainer.register_pipe_hook">
-<span class="sig-name descname"><span class="pre">register_pipe_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Optimizer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="models.html#gdeep.models.ModelExtractor" title="gdeep.models.extractor.ModelExtractor"><span class="pre">ModelExtractor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">SummaryWriter</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.register_pipe_hook" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">register_pipe_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optimizer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="models.html#gdeep.models.ModelExtractor" title="gdeep.models.extractor.ModelExtractor"><span class="pre">ModelExtractor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">SummaryWriter</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.trainer.Trainer.register_pipe_hook" title="Permalink to this definition"></a></dt>
 <dd><p>This method registers a function that
 will be called after each trainign step.</p>
 <dl class="simple">
 <dt>The arguments of the callable function are, in this order:</dt><dd><ul class="simple">
-<li><p>current optimizer instance (torch.optim)</p></li>
-<li><p>current epoch number (int)</p></li>
-<li><p>the ModelExtractor instance at that epoch (ModelExtractor)</p></li>
-<li><p>the tensorboard writer (writer)</p></li>
+<li><p>current epoch number</p></li>
+<li><p>current optimizer instance</p></li>
+<li><p>the ModelExtractor instance at that epoch</p></li>
+<li><p>the tensorboard writer</p></li>
 </ul>
 </dd>
 <dt>Args:</dt><dd><dl class="simple">
@@ -242,46 +243,46 @@ will be called after each trainign step.</p>
 <dd><p>Function to run all the training cycles.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>optimizer (torch.optim):</dt><dd><p>the torch optimiser class, like <cite>SGD</cite></p>
+<dt>optimizer:</dt><dd><p>the torch optimiser class, like <cite>SGD</cite></p>
 </dd>
-<dt>n_epochs (int):</dt><dd><p>number of training epochs</p>
+<dt>n_epochs :</dt><dd><p>number of training epochs</p>
 </dd>
-<dt>cross_validation (bool):</dt><dd><p>whether or not to perform five-fold cross-validation</p>
+<dt>cross_validation:</dt><dd><p>whether or not to perform five-fold cross-validation</p>
 </dd>
-<dt>dataloaders_param (dict):</dt><dd><p>dictionary of the dataloaders
+<dt>dataloaders_param:</dt><dd><p>dictionary of the dataloaders
 parameters, e.g. <cite>{‘batch_size’: 32}</cite>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, then
 the parameters of the training and validation
 dataloaders will be used.</p>
 </dd>
-<dt>optimizers_param (dict):</dt><dd><p>dictionary of the optimizers
+<dt>optimizers_param:</dt><dd><p>dictionary of the optimizers
 parameters, e.g. <cite>{“lr”: 0.001}</cite></p>
 </dd>
-<dt>lr_scheduler (torch.optim):</dt><dd><p>a learning rate scheduler class</p>
+<dt>lr_scheduler:</dt><dd><p>a learning rate scheduler class</p>
 </dd>
-<dt>scheduler_params (dict):</dt><dd><p>learning rate scheduler parameters</p>
+<dt>scheduler_params:</dt><dd><p>learning rate scheduler parameters</p>
 </dd>
-<dt>optuna_params (tuple, default=None):</dt><dd><p>the parameters <cite>(trial, search_metric)</cite>
+<dt>optuna_params :</dt><dd><p>the parameters <cite>(trial, search_metric)</cite>
 used in the gridsearch. Saefly ignore for
 standard trainings</p>
 </dd>
-<dt>profiling (bool, default=False):</dt><dd><p>whether or not you want to activate the
+<dt>profiling:</dt><dd><p>whether or not you want to activate the
 profiler</p>
 </dd>
-<dt>parallel_tpu (bool):</dt><dd><p>Use or not parallel TPU cores.
+<dt>parallel_tpu:</dt><dd><p>Use or not parallel TPU cores.
 Still experimental!</p>
 </dd>
-<dt>keep_training (bool):</dt><dd><p>This flag allows to restart a training from
+<dt>keep_training:</dt><dd><p>This flag allows to restart a training from
 the existing optimizer as well as the
 existing model</p>
 </dd>
-<dt>store_grad_layer_hist (bool):</dt><dd><p>This flag allows to store the gradients
+<dt>store_grad_layer_hist:</dt><dd><p>This flag allows to store the gradients
 and the layer values in tensorboard for
 each epoch</p>
 </dd>
-<dt>n_accumulated_grads (int, default 0):</dt><dd><p>this is the number of accumulated gradients.
+<dt>n_accumulated_grads:</dt><dd><p>this is the number of accumulated gradients.
 Only a positive number will be taken into account</p>
 </dd>
-<dt>writer_tag (str):</dt><dd><p>the tensorboard writer tag</p>
+<dt>writer_tag:</dt><dd><p>the tensorboard writer tag</p>
 </dd>
 </dl>
 </dd>

@@ -1,8 +1,6 @@
 import numpy
-from gtda.homology import VietorisRipsPersistence, \
-    WeakAlphaPersistence
-from gtda.graphs import KNeighborsGraph, \
-    GraphGeodesicDistance
+from gtda.homology import VietorisRipsPersistence, WeakAlphaPersistence
+from gtda.graphs import KNeighborsGraph, GraphGeodesicDistance
 from typing import List
 
 Array = numpy.ndarray
@@ -26,11 +24,9 @@ def knn_distance_matrix(x: List, k: int = 3):
     return GraphGeodesicDistance(directed=False).fit_transform(adj)
 
 
-def persistence_diagrams_of_activations(activations_list,
-                                        homology_dimensions=(0, 1),
-                                        k=5,
-                                        mode='VR',
-                                        max_edge_length=10):
+def persistence_diagrams_of_activations(
+    activations_list, homology_dimensions=(0, 1), k=5, mode="VR", max_edge_length=10
+):
     """Returns list of persistence diagrams of the activations of all
     layers of type layer_types
 
@@ -60,30 +56,35 @@ def persistence_diagrams_of_activations(activations_list,
         if len(activ.shape) > 2:  # in case of non FF layers
             activations_list[i] = activ.view(activ.shape[0], -1)
 
-    if k > 0 and mode == 'VR':
-        vr = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
-                                     metric='precomputed',
-                                     reduced_homology=False,
-                                     infinity_values=20,
-                                     max_edge_length=max_edge_length,
-                                     collapse_edges=True)
+    if k > 0 and mode == "VR":
+        vr = VietorisRipsPersistence(
+            homology_dimensions=homology_dimensions,
+            metric="precomputed",
+            reduced_homology=False,
+            infinity_values=20,
+            max_edge_length=max_edge_length,
+            collapse_edges=True,
+        )
         # infinity_values set to avoid troubles with
         # multiple topological features living indefinitely
-    elif k == -1 and mode == 'alpha':
-        vr = WeakAlphaPersistence(homology_dimensions=homology_dimensions,
-                                  reduced_homology=False,
-                                  max_edge_length=max_edge_length)
+    elif k == -1 and mode == "alpha":
+        vr = WeakAlphaPersistence(
+            homology_dimensions=homology_dimensions,
+            reduced_homology=False,
+            max_edge_length=max_edge_length,
+        )
     else:
-        vr = VietorisRipsPersistence(homology_dimensions=homology_dimensions,
-                                     reduced_homology=False,
-                                     max_edge_length=max_edge_length,
-                                     collapse_edges=True)
+        vr = VietorisRipsPersistence(
+            homology_dimensions=homology_dimensions,
+            reduced_homology=False,
+            max_edge_length=max_edge_length,
+            collapse_edges=True,
+        )
 
-    if k > 0 and mode == 'VR':
+    if k > 0 and mode == "VR":
         for i, activ in enumerate(activations_list):
             activations_list[i] = activ.cpu()
-        dist_matrix = knn_distance_matrix(activations_list,
-                                          k=k)
+        dist_matrix = knn_distance_matrix(activations_list, k=k)
         persistence_diagrams = vr.fit_transform(dist_matrix)
     else:
         persistence_diagrams = vr.fit_transform(activations_list)

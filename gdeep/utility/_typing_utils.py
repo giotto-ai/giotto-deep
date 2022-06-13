@@ -6,9 +6,10 @@ from numpy import ndarray
 
 Tensor = torch.Tensor
 
-def torch_transform(transform: Union[Callable[[Tensor], Tensor],
-                                     Callable[[ndarray], ndarray]]) \
-                                         -> Callable[[Tensor], Tensor]:
+
+def torch_transform(
+    transform: Union[Callable[[Tensor], Tensor], Callable[[ndarray], ndarray]]
+) -> Callable[[Tensor], Tensor]:
     """ Transforms a numpy array transform to a torch transform. 
     
     Args:
@@ -18,18 +19,24 @@ def torch_transform(transform: Union[Callable[[Tensor], Tensor],
     Returns:
         The torch transform.
     """
-    if get_parameter_types(transform)[0] is Tensor and\
-        get_return_type(transform) is Tensor:
+    if (
+        get_parameter_types(transform)[0] is Tensor
+        and get_return_type(transform) is Tensor
+    ):
         return transform  # type: ignore
-    elif get_parameter_types(transform)[0] is ndarray and\
-        get_return_type(transform) is ndarray:
+    elif (
+        get_parameter_types(transform)[0] is ndarray
+        and get_return_type(transform) is ndarray
+    ):
         return lambda x: torch.tensor(transform(x.numpy()))
     else:
-        raise ValueError("Transform must be a function that takes a tensor or"
-                            "an array and returns a tensor or an array."
-                            "Please provide type annotations.")
+        raise ValueError(
+            "Transform must be a function that takes a tensor or"
+            "an array and returns a tensor or an array."
+            "Please provide type annotations."
+        )
 
-        
+
 def get_parameter_types(func: Callable) -> List[Any]:
     """ Returns a list of the types of the parameters of a function. 
     
@@ -39,7 +46,8 @@ def get_parameter_types(func: Callable) -> List[Any]:
         A list of the types of the parameters of the function.
     """
     return [t.annotation for t in signature(func).parameters.values()]
-    
+
+
 def get_return_type(func: Callable) -> Any:
     """ Returns the type of the return value of a function.
      

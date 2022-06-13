@@ -1,35 +1,20 @@
-import json
-import os
-import shutil
-import warnings
+
 from abc import ABC, abstractmethod
-from os.path import join
-from collections.abc import Iterable
-from typing import Any, Callable, Dict, Optional, Tuple, \
-    TypeVar, Union, List
+from typing import Any, Dict, Optional, TypeVar, List
 
-import numpy as np
-import pandas as pd
 import torch
-from PIL import Image, UnidentifiedImageError
-from sympy import false
 from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import Resize, ToTensor
-from tqdm import tqdm
-
-from .build_datasets import get_dataset
-from .dataset_cloud import DatasetCloud
-from ..transforming_dataset import TransformingDataset
 
 
 Tensor = torch.Tensor
 T = TypeVar('T')
 
+
 class AbstractDataLoaderBuilder(ABC):
     """The abstractr class to interface the
     Giotto dataloaders"""
     @abstractmethod
-    def build(self):
+    def build(self, tuple_of_kwargs: List[Dict[str, Any]]):
         pass
 
 
@@ -50,7 +35,7 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
         assert len(tuple_of_datasets) <= 3, "Too many Dataset inserted: maximum 3."
 
     def build(self,
-              tuple_of_kwargs:Optional[List[Dict[str, Any]]]=None
+              tuple_of_kwargs: Optional[List[Dict[str, Any]]] = None
               ) -> List[DataLoader[Any]]:
         """This method accepts the arguments of the torch
         Dataloader and applies them when creating the
@@ -61,16 +46,16 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
                 List of dictionaries, each one being the
                 kwargs for the corresponding DataLoader
         """
+        out: List = []
         if tuple_of_kwargs:
             assert len(tuple_of_kwargs) == len(self.tuple_of_datasets), \
                 "Cannot match the dataloaders and the parameters. "
-            out: List = []
+
             for dataset, kwargs in zip(self.tuple_of_datasets, tuple_of_kwargs):
                 out.append(DataLoader(dataset, **kwargs))
             out += [None] * (3 - len(out))
             return out
         else:
-            out: List = []
             for i, dataset in enumerate(self.tuple_of_datasets):
                 out.append(DataLoader(dataset))
             out += [None] * (3 - len(out))

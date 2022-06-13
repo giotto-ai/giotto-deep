@@ -10,11 +10,18 @@ Dependencies
 
 The latest stable version of ``giotto-deep`` requires:
 
-- Python (>= 3.6)
-- NumPy (>= 1.19.1)
-- torch (>= 1.5.4)
+- python (>= 3.7)
+- tensorboard (=> 2.9.1)
+- torch (>= 1.11.0)
+- torchdata (>= 0.3.0)
+- torchtext (>) 0.12.0)
+- torchvision (>= 0.12.0)
+
+For all the required dependencies, please refer to the ``requirements.txt`` file.
 
 To run the examples, ``jupyter`` is required.
+
+To run the test, both ``pytest`` and ``mypy`` are required.
 
 
 *****************
@@ -25,8 +32,8 @@ The simplest way to install ``giotto-deep`` is using ``pip``   ::
 
     python -m pip install -U giotto-deep
 
-If necessary, this will also automatically install all the above dependencies. Note: we recommend
-upgrading ``pip`` to a recent version as the above may fail on very old versions.
+If necessary, this command will also automatically install all the above dependencies. 
+Note: we recommend upgrading ``pip`` to a recent version as the above may fail on very old versions.
 
 **********************
 Developer installation
@@ -41,7 +48,7 @@ Source code
 
 You can obtain the latest state of the source code with the command::
 
-    git clone https://github.com/giotto-ai/giotto-ph.git
+    git clone https://github.com/giotto-ai/giotto-deep.git
 
 
 To install:
@@ -59,11 +66,17 @@ Testing
 =======
 
 After installation, you can launch the test suite from inside the
-source directory::
+``/gdeep`` directory::
 
-    pytest
+    pytest .
     
-You can also run the bash script for local tests like this::
+You can also run the typing checks from ``/gdeep`` using::
+
+   mypy --ignore-missing-imports .
+
+You can also run the bash script for local tests (from the root folder!) like this::
 
    bash local_test.bh
+
+
 

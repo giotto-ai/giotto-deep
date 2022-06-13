@@ -1,19 +1,13 @@
-import json
-import os
-import warnings
-from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
-from collections.abc import Sequence
-from typing import Callable, Generic, NewType, Tuple, \
+from typing import Callable, Tuple, \
     Union, Any, Optional, List, Dict
+from functools import partial as Partial  # noqa
 
-import jsonpickle
 import torch
-from torch.nn.functional import pad
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import vocab
-from torchvision.transforms import Resize, ToTensor
+from torchtext.vocab.vocab import Vocab
 
 from gdeep.utility import DEVICE
 from ..abstract_preprocessing import AbstractPreprocessing
@@ -24,7 +18,7 @@ Tensor = torch.Tensor
 
 
 class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
-                                                 Tuple[Tensor, Tensor]]):
+                                                        Tuple[Tensor, Tensor]]):
     """Preprocessing class. This class is useful to convert the data format
     ``(label, text)`` into the proper tensor format ``( word_embedding, label)``.
     The labels shouzld be interagers; f they ar string, they will be converted.
@@ -38,15 +32,15 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
 
     """
 
-
-    max_length:int
-    is_fitted:bool
-    vocabulary: Optional[Dict[str, int]]
-    tokenizer: Optional[Callable[[str], List[str]]]
+    max_length: int
+    is_fitted: bool
+    vocabulary: Optional[Vocab]
+    tokenizer: Optional[Partial]
     counter: Dict[str, int]
+    counter_label: Dict[str, int]
 
-    def __init__(self, tokenizer: Optional[Callable[[str], List[str]]]=None,
-                 vocabulary: Optional[Dict[str, int]]=None):
+    def __init__(self, tokenizer: Optional[Partial] = None,
+                 vocabulary: Optional[Vocab] = None):
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
         else:
@@ -56,13 +50,14 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         self.max_length = 0
         self.is_fitted = False
 
-    def fit_to_dataset(self, dataset:Dataset[Tuple[Any, str]]) -> None:
+    def fit_to_dataset(self, dataset: Dataset[Tuple[Any, str]]) -> None:
         """Method to extract global data, like to length of
         the sentences to be able to pad.
 
         Args:
-            data (iterable):
+            dataset :
                 the data in the format ``(label, text)``
+
         """
 
         self.counter = Counter()  # for the text
@@ -70,7 +65,7 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         self.ordered_dict = OrderedDict()
         self.list_of_possible_labels: List[Any] = []
         for (label, text) in dataset:  # type: ignore
-            #if isinstance(text, tuple) or isinstance(text, list):
+            # if isinstance(text, tuple) or isinstance(text, list):
             #    text = text[0]
             self.counter.update(self.tokenizer(text))  # type: ignore
             self.counter_label.update([label])
@@ -83,10 +78,11 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
             self.list_of_possible_labels = list(self.counter_label.keys())
             self.vocabulary = vocab(self.ordered_dict)
             unk_token = '<unk>'  # type: ignore
-            if unk_token not in self.vocabulary: self.vocabulary.insert_token(unk_token, 0)
+            if unk_token not in self.vocabulary:
+                self.vocabulary.insert_token(unk_token, 0)
             self.vocabulary.set_default_index(self.vocabulary[unk_token])
         self.is_fitted = True
-        #self.save_pretrained(".")
+        # self.save_pretrained(".")
 
     def __call__(self, datum: Tuple[Any, str]) -> Tuple[Tensor, Tensor]:
         """This method is applied to each datum and
@@ -97,28 +93,27 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
                 a single datum, being it a tuple
                 with ``(label, text)``
         """
-        #if not self.is_fitted:
+        # if not self.is_fitted:
         #    self.load_pretrained(".")
         if self.vocabulary:
-            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] 
+            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token]  # type: ignore
                                                                    for token in self.tokenizer(x)]  # type: ignore
         else:
             raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
         pad_item: int = 0
 
         _text = datum[1]
-        #if isinstance(_text, tuple) or isinstance(_text, list):
+        # if isinstance(_text, tuple) or isinstance(_text, list):
         #    _text = _text[1]
         processed_text = torch.tensor(text_pipeline(_text),
                                       dtype=torch.long).to(DEVICE)
         # convert to tensors (padded)
         out_text = torch.cat([processed_text,
-                   pad_item * torch.ones(self.max_length - processed_text.shape[0]
-                                              ).to(DEVICE)]).to(torch.long)
+                              pad_item * torch.ones(self.max_length - processed_text.shape[0]
+                                                    ).to(DEVICE)]).to(torch.long)
         # preprocess labels
         label_pipeline = lambda x: torch.tensor(x, dtype=torch.long)
 
         _label = datum[0]
         out_label = label_pipeline(self.list_of_possible_labels.index(_label)).to(DEVICE)
         return out_text, out_label
-

@@ -1,4 +1,1 @@
-__all__ = [
-    'decision_boundary',
-    'interpretability'
-    ]
+__all__ = ["decision_boundary", "interpretability"]

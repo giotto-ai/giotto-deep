@@ -44,13 +44,14 @@ class HPOConfig:
         writer_tag:
             tag to prepend to the ouput
             on tensorboard"""
+
     optimizers: List[Type[Optimizer]]
     n_epochs: int = 1
     cross_validation: bool = False
     optimizers_params: Optional[Dict[str, Any]] = None
     dataloaders_params: Optional[Dict[str, Any]] = None
     models_hyperparams: Optional[Dict[str, Any]] = None
-    lr_scheduler: Type[_LRScheduler] = None
+    lr_scheduler: Optional[Type[_LRScheduler]] = None
     schedulers_params: Optional[Dict[str, Any]] = None
     profiling: bool = False
     parallel_tpu: bool = False
@@ -61,6 +62,4 @@ class HPOConfig:
 
     def to_dict(self) -> Dict[str, Any]:
         """method to transform the config file into a dictionary"""
-        return {
-            k: v for k, v in self.__dict__.items() if not k.startswith("_")
-        }
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}

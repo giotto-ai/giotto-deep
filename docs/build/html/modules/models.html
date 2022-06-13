@@ -40,6 +40,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
@@ -136,7 +137,7 @@ weights, activations, gradients and decision boundaries</p>
 <cite>X</cite></p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>input_example (Tensor):</dt><dd><p>an example of an input or
+<dt>x :</dt><dd><p>an example of an input or
 an input batch of which to compute the activation(s)</p>
 </dd>
 </dl>
@@ -175,13 +176,15 @@ boundary with dimensions <cite>(n_samples, n_features)</cite></p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_gradients">
-<span class="sig-name descname"><span class="pre">get_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_gradients" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_gradients" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the <strong>averaged gradient</strong> of the self.loss_fn.
 To specify the target variable (e.g. the true class),
 use the keywords argument <cite>target=</cite></p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>x :</dt><dd><p>point at which to compute grad</p>
+</dd>
+<dt>target:</dt><dd><p>the expected output (needed to compute the loss)</p>
 </dd>
 </dl>
 </dd>
