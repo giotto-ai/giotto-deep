@@ -1,4 +1,5 @@
 from typing import List, Dict, Callable, Tuple, Union
+from copy import copy
 
 import torch
 
@@ -35,7 +36,7 @@ class ModelExtractor:
     """
 
     def __init__(
-        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor]
+            self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor]
     ) -> None:
         # self.model = model
         self.model = model.to(DEVICE)
@@ -57,13 +58,23 @@ class ModelExtractor:
                 the prediction for x, x and the label
 
         """
+        new_x: List[Tensor] = []
         if isinstance(x, tuple) or isinstance(x, list):
-            for i, xi in enumerate(x):
-                x[i] = xi.to(DEVICE)
-                xi.requires_grad = True
+            for xi in x:
+                try:
+                    xi.requires_grad = True
+                except RuntimeError:  # only float and complex tensors can have grads
+                    pass
+                new_x.append(xi.to(DEVICE))
+            x = copy(new_x)
+
         else:
+            try:
+                x.requires_grad = True
+            except RuntimeError:  # only float and complex tensors can have grads
+                pass
             x = x.to(DEVICE)
-            x.requires_grad = True
+
         y = y.to(DEVICE)
         # Compute prediction and loss
         if isinstance(x, tuple) or isinstance(x, list):
@@ -73,11 +84,11 @@ class ModelExtractor:
         return prediction, x, y
 
     def get_decision_boundary(
-        self, input_example: Tensor, n_epochs: int = 100, precision: float = 0.1
+            self, input_example: Tensor, n_epochs: int = 100, precision: float = 0.1
     ) -> Tensor:
         """Compute the decision boundary for self.model
         with self.loss_fn
-        
+
         Args:
             n_epochs:
                 number of training cycles to find
@@ -133,16 +144,11 @@ class ModelExtractor:
         saved_output_layers = SaveLayerOutput()
 
         hook_handles = []
-
         for layer in self.model.modules():
             handle = layer.register_forward_hook(saved_output_layers)
             hook_handles.append(handle)
-
         self.model.eval()
-        if isinstance(x, tuple) or isinstance(x, list):
-            self.model(*x)
-        else:
-            self.model(x)
+        _, x, _ = self._send_to_device(x, torch.rand((1, 1)))  # here we also run the model(x)
 
         for handle in hook_handles:
             handle.remove()
@@ -201,7 +207,7 @@ class ModelExtractor:
                 corresponding to the gradient of the weights.
         """
         x, target = batch
-        pred, x, y = self._send_to_device(x, target)
+        pred, x, target = self._send_to_device(x, target)
         loss = self.loss_fn(pred, target, **kwargs)
 
         for k, param in self.model.state_dict().items():
