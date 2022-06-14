@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import random
 
 import torch
@@ -49,16 +49,26 @@ class Visualiser:
         self.pipe = pipe
         self.persistence_diagrams = None
 
-    def plot_data_model(self) -> None:
+    def plot_interactive_model(self) -> None:
         """This function has no arguments: its purpose
-        is to store data to the tensorboard for
-        visualisation.
+        is to store the model to tensorboard for an
+        interactive visualisation.
         """
 
         dataiter = iter(self.pipe.dataloaders[0])
         images, labels = next(dataiter)
-        # print(str(labels.item()))
-        self.pipe.writer.add_graph(self.pipe.model, images.to(DEVICE))  # type: ignore
+        # add interactive model to tensorboard
+        self.pipe.writer.add_graph(self.pipe.model, images)  # type: ignore
+        self.pipe.writer.flush()  # type: ignore
+
+    def plot_3d_dataset(self) -> None:
+        """This function has no arguments: its purpose
+        is to store data to the tensorboard for
+        visualisation. Note that we are expecting the
+        dataset item to be of type Tuple[Tensor, Tensor]
+        """
+        dataiter = iter(self.pipe.dataloaders[0])
+        images, labels = next(dataiter)
         features_list = []
         labels_list = []
         index = 0
@@ -102,22 +112,20 @@ class Visualiser:
 
         self.pipe.writer.flush()  # type: ignore
 
-    def plot_activations(self, example: Optional[Tensor] = None):
+    def plot_activations(self, batch: Optional[List[Union[List[Tensor], Tensor]]] = None) -> None:
         """Plot PCA of the activations of all layers of the
-        `self.model`
+        `self.model`.
+
+        Args:
+            batch:
+                this should be an input batch for the model
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
-        inputs_ls = []
-        labels = []
-        for j, item in enumerate(self.pipe.dataloaders[0]):
-            labels.append(item[1][0])
-            inputs_ls.append(item[0][0])
-            if j == 100:
-                break
-        inputs = torch.stack(inputs_ls)
+        if batch is not None:
+            inputs, labels = batch
+        else:
+            inputs, labels = next(iter(self.pipe.dataloaders[0]))
 
-        if example is not None:
-            inputs = inputs.to(example.dtype)
         acts = me.get_activations(inputs)
         print("Sending the plots to tensorboard: ")
         for i, act in enumerate(acts):
@@ -131,19 +139,16 @@ class Visualiser:
             )
             self.pipe.writer.flush()  # type: ignore
 
-    def plot_persistence_diagrams(self, example=None):
+    def plot_persistence_diagrams(self, batch=None):
         """Plot a persistence diagrams of the activations
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
         if self.persistence_diagrams is None:
-            inputs = []
-            for j, item in enumerate(self.pipe.dataloaders[0]):
-                inputs.append(item[0][0])
-                if j == 100:
-                    break
-            inputs = torch.stack(inputs)
-            if example is not None:
-                inputs = inputs.to(example.dtype)
+            if batch is not None:
+                inputs, _ = batch
+            else:
+                inputs, _ = next(iter(self.pipe.dataloaders[0]))
+
             activ = me.get_activations(inputs)
             self.persistence_diagrams = persistence_diagrams_of_activations(activ)
         list_of_dgms = []
@@ -158,9 +163,12 @@ class Visualiser:
         )
         self.pipe.writer.flush()
 
-    def plot_decision_boundary(self, compact=False):
+    def plot_decision_boundary(self, compact: bool = False):
         """Plot the decision boundary as the intrinsic
-        hypersurface defined by self.loss_fn == 0.5
+        hypersurface defined by self.loss_fn == 0.5. Note that
+        we are expecting a model whose forward function
+        has only one tensor as input (and not multiple
+        arguments).
 
         Args:
             compact (bool):
@@ -178,37 +186,37 @@ class Visualiser:
                 precision=0.1,
                 n_samples=500,
                 epsilon=0.051,
-                n_features=x.shape[0],
+                n_features=x.shape[0],  # if x is not List[Tensor]
                 n_epochs=100,
             )
 
             d_final, label_final = cc.create_final_distance_matrix()
             embedding = MDS(n_components=3, dissimilarity="precomputed")
             db = embedding.fit_transform(d_final)
-            self.pipe.writer.add_embedding(
+            self.pipe.writer.add_embedding(  # type: ignore
                 db, tag="compactified_decision_boundary", global_step=0
             )
-            self.pipe.writer.flush()
+            self.pipe.writer.flush()  # type: ignore
             return db, d_final, label_final
         else:
             db = me.get_decision_boundary(x)
-            self.pipe.writer.add_embedding(db, tag="decision_boundary", global_step=0)
-            self.pipe.writer.flush()
+            self.pipe.writer.add_embedding(db, tag="decision_boundary", global_step=0)  # type: ignore
+            self.pipe.writer.flush()  # type: ignore
             return db.cpu(), None, None
 
     def betti_plot_layers(
-            self, homology_dimension: Optional[List[int]] = None, example: Optional[Tensor] = None
+            self, homology_dimension: Optional[List[int]] = None, batch: Optional[Tensor] = None
     ) -> None:
         """
         Args:
             homology_dimension :
                 A list of
                 homology dimensions, e.g. ``[0, 1, ...]``
-            example :
+            batch :
                 the selected batch of data to
                 compute the activations on. By
                 defaults, this method takes the
-                first 100 elements
+                first batch of elements
 
         Returns:
            (None):
@@ -222,9 +230,10 @@ class Visualiser:
             homology_dimension = [0, 1]
         if self.persistence_diagrams is None:
             me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
-            inputs = self.pipe.dataloaders[0].dataset.data[:100]  # type: ignore
-            if example is not None:
-                inputs = inputs.to(example.dtype)
+            if batch is not None:
+                inputs, _ = batch
+            else:
+                inputs = next(iter(self.pipe.dataloaders[0]))  # type: ignore
             self.persistence_diagrams = persistence_diagrams_of_activations(
                 me.get_activations(inputs)
             )
@@ -359,7 +368,7 @@ class Visualiser:
         return plt
 
     def plot_attribution(self, interpreter: Interpreter, **kwargs):
-        """this method geerically plots the attribution of
+        """this method generically plots the attribution of
         the interpreter
 
         Args:
@@ -429,8 +438,7 @@ class Visualiser:
         list_of_permutation = torch.argsort(torch.tensor(tensor.shape)).tolist()
         list_of_permutation.reverse()
         tensor = tensor.permute(*list_of_permutation)
-        # if tensor.shape[-1] == 1:
-        #     tensor = tensor.squeeze(-1)
+
         if tensor.shape[-1] == 2:
             temporary = torch.zeros((tensor.shape[0], tensor.shape[1], 3))
             temporary[:, :, :2] = tensor

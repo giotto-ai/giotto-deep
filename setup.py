@@ -4,11 +4,11 @@
 import os
 import codecs
 
-from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext
+from setuptools import setup, find_packages
 
 
 version_file = os.path.join("gdeep", "_version.py")
+__version__ = '0.0.1'  # initialise the variable
 with open(version_file) as f:
     exec(f.read())
 

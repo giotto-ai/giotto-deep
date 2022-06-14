@@ -22,5 +22,5 @@ DATASET_BUCKET_NAME = "adversarial_attack"
 # datasets from the PyG (PyTorch Geometric) library are stored
 DEFAULT_GRAPH_DIR = os.path.join(ROOT_DIR, "examples", "data", "GraphDatasets")
 
-# Define the default deevce: "cuda" is available, "cpu" otherwise
+# Define the default device: "cuda" is available, "cpu" otherwise
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

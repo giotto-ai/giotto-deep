@@ -518,7 +518,7 @@ class HyperParameterOptimization(Trainer):
         self,
         model: Union[torch.nn.Module, Dict[str, torch.nn.Module]],
         dataloaders: Union[
-            List[DataLoader[Tuple[Tensor, Tensor]]], Dict[str, DataLoader]
+            List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]], Dict[str, DataLoader]
         ],
         config: HPOConfig,
     ) -> None:

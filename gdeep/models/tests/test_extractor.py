@@ -53,3 +53,12 @@ def test_extractor_get_activations():
     x = next(iter(dl_tr))[0][0]
     list_activations = me.get_activations(x)
     assert len(list_activations) == 2
+
+
+def test_extractor_get_gradients():
+    model = FFNet(arch=[3, 3])
+    loss_fn = nn.CrossEntropyLoss()
+    me = ModelExtractor(model, loss_fn)
+    batch = next(iter(dl_tr))
+    list_activations = me.get_gradients(batch)
+    assert len(list_activations) == 2
