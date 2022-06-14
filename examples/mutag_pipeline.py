@@ -122,7 +122,7 @@ model_config = PersformerConfig(
     num_layers=6,
     num_heads=8,
     input_size= 2 + num_homology_types,
-    pooler_type=PoolerType.ATTENTION,
+    pooler_type=PoolerType.MEAN,
 )
 
 model = Persformer(model_config)
@@ -130,12 +130,22 @@ writer = SummaryWriter()
 
 loss_function =  nn.CrossEntropyLoss()
 
-# trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
+trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 
-# trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16, "collate_fn":collate_fn_persistence_diagrams})
+trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16, "collate_fn":collate_fn_persistence_diagrams})
 
 # %%
-input, mask, labels = next(iter(dl_train))
+# Define the model
+model_config = PersformerConfig(
+    num_layers=6,
+    num_heads=8,
+    input_size= 2 + num_homology_types,
+    pooler_type=PoolerType.MEAN,
+)
+
+model = Persformer(model_config)
+
+(input, mask), labels = next(iter(dl_train))
 model.forward(input, mask)
 
 # %%

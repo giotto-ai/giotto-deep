@@ -209,16 +209,19 @@ def get_pooling_layer(config: PersformerConfig) -> Module:
     Returns:
         The pooling layer.
     """
+    print(config.pooler_type)
+    print(config.pooler_type == PoolerType.MEAN)
     if(config.pooler_type == PoolerType.ATTENTION):
         return AttentionPoolingLayer(config)
     elif(config.pooler_type == PoolerType.MAX):
         return MaxPoolingLayer(config)
     elif(config.pooler_type == PoolerType.MEAN):
+        print("here we are")
         return MeanPoolingLayer(config)
     elif(config.pooler_type == PoolerType.SUM):
         return SumPoolingLayer(config)
     else:
-        raise ValueError("Unknown pooling type.")
+        raise ValueError(f"Pooler type {config.pooler_type} is not supported.")
 
 class MaxPoolingLayer(Module):
     
@@ -294,6 +297,8 @@ class SumPoolingLayer(Module):
             Returns:
                 The pooled output. Of shape (batch_size, hidden_size)
             """
+            print(input_batch.shape)
+            print(attention_mask.shape)
             # Initialize the output tensor
             output = input_batch * attention_mask
             # Apply the max pooling layer
