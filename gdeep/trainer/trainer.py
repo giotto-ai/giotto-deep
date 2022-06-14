@@ -383,7 +383,7 @@ class Trainer:
         class_probs: List[List[Tensor]] = []
         self.model.eval()
 
-        pred_list, epoch_loss, epoch_metric = self._inner_loop(
+        pred_list, epoch_loss, epoch_metric = self._inner_loop(  # type: ignore
             dl=dl_val,  # type: ignore
             class_probs=class_probs,  # type: ignore
             class_label=class_label,  # type: ignore
