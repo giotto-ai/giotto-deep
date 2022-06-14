@@ -1,5 +1,6 @@
 from typing import List, Optional, Union
 import random
+from copy import copy
 
 import torch
 from torchvision.utils import make_grid
@@ -56,9 +57,16 @@ class Visualiser:
         """
 
         dataiter = iter(self.pipe.dataloaders[0])
-        images, labels = next(dataiter)
+        x, labels = next(dataiter)
+        new_x: List[Tensor] = []
+        if isinstance(x, tuple) or isinstance(x, list):
+            for i, xi in enumerate(x):
+                new_x.append(xi.to(DEVICE))
+            x = copy(new_x)
+        else:
+            x = x.to(DEVICE)
         # add interactive model to tensorboard
-        self.pipe.writer.add_graph(self.pipe.model, images)  # type: ignore
+        self.pipe.writer.add_graph(self.pipe.model, x)  # type: ignore
         self.pipe.writer.flush()  # type: ignore
 
     def plot_3d_dataset(self) -> None:
@@ -68,7 +76,6 @@ class Visualiser:
         dataset item to be of type Tuple[Tensor, Tensor]
         """
         dataiter = iter(self.pipe.dataloaders[0])
-        images, labels = next(dataiter)
         features_list = []
         labels_list = []
         index = 0
