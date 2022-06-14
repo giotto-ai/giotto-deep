@@ -1,7 +1,7 @@
+import os
 
 from PIL import Image
 import numpy as np
-import os
 from plotly.io import write_image
 import torch
 

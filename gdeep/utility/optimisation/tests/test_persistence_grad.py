@@ -17,7 +17,7 @@ def test_PersistenceGradient_2d():
     assert pg.phi(X).shape[0] == 14
 
     assert pg.persistence_function(X).item() >= -2.328427314758301 - 0.001
-    pg.SGD(X, n_epochs=4, lr=0.4)
+    pg.sgd(X, n_epochs=4, lr=0.4)
 
 
 def test_PersistenceGradient_3d():
@@ -33,7 +33,7 @@ def test_PersistenceGradient_3d():
     assert pg.phi(X).shape[0] == 14
 
     assert pg.persistence_function(X).item() >= -2.7783148288726807 - 0.001
-    pg.SGD(X, n_epochs=4, lr=0.4)
+    pg.sgd(X, n_epochs=4, lr=0.4)
 
 
 def test_PersistenceGradient_5d():
@@ -49,7 +49,7 @@ def test_PersistenceGradient_5d():
     assert X.dtype == torch.float32
     assert pg.phi(X).shape[0] == 14
     assert pg.persistence_function(X).item() >= -2.7783148288726807 - 0.001
-    pg.SGD(X, n_epochs=4, lr=0.4)
+    pg.sgd(X, n_epochs=4, lr=0.4)
 
 
 def test_PersistenceGradient_4d():
@@ -65,7 +65,7 @@ def test_PersistenceGradient_4d():
     assert X.dtype == torch.float32
     assert pg.phi(X).shape[0] == 14
     assert pg.persistence_function(X).item() >= 0.3467579483985901 + 0.001
-    pg.SGD(X)
+    pg.sgd(X)
 
 
 def test_PersistenceGradient_matrix():
@@ -80,7 +80,7 @@ def test_PersistenceGradient_matrix():
                              metric="precomputed")
     assert all(pg.phi(dist) == torch.tensor([0., 0., 0., 2., 2.2, 3., 3.]))
     assert pg.persistence_function(dist).item() >= -6.3 - 0.0001
-    fig, fig3d, loss_val = pg.SGD(dist, n_epochs=1,
+    fig, fig3d, loss_val = pg.sgd(dist, n_epochs=1,
                                   lr=1)
 
 
@@ -98,7 +98,7 @@ def test_PersistenceGradient_matrix_2():
                                              1., 2., 2., 2., 10.,
                                              10., 10., 10., 10.]))
     assert pg.persistence_function(dist).item() > -23.
-    fig, fig3d, loss_val = pg.SGD(dist, n_epochs=1,
+    fig, fig3d, loss_val = pg.sgd(dist, n_epochs=1,
                                   lr=0.002)
                                   
 
@@ -115,7 +115,7 @@ def test_PersistenceGradient_pts():
     assert all(pg.phi(pts)[:5] == torch.tensor([0., 0., 0.,
                                                 1., 1.]))
 
-    fig, fig3d, loss_val = pg.SGD(pts, n_epochs=1,
+    fig, fig3d, loss_val = pg.sgd(pts, n_epochs=1,
                                   lr=0.002)
 
     assert (pts.grad == torch.tensor([[ 1.,  1.],

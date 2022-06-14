@@ -24,6 +24,7 @@ html2image
 optuna
 sphinx_rtd_theme
 giotto-ph
+tqdm
 Pillow
 h5py
 dotmap
@@ -32,3 +33,4 @@ google-cloud-storage
 wget
 ipython
 jsonpickle
+typing_extensions; python_version == '3.7'
