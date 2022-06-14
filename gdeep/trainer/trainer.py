@@ -256,17 +256,17 @@ class Trainer:
                 the prediction for x, x and the label
 
         """
+        new_x: List[Tensor] = []
         if isinstance(x, tuple) or isinstance(x, list):
-            for i, xi in enumerate(x):
-                x[i] = xi.to(DEVICE)
-        else:
-            x = x.to(DEVICE)
-        y = y.to(DEVICE)
-        # Compute prediction and loss
-        if isinstance(x, tuple) or isinstance(x, list):
+            for xi in x:
+                new_x.append(xi.to(DEVICE))
+            x = new_x
             prediction = self.model(*x)
         else:
+            x = x.to(DEVICE)
             prediction = self.model(x)
+        y = y.to(DEVICE)
+
         return prediction, x, y
 
     def _inner_train_loop(
