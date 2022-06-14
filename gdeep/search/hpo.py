@@ -393,12 +393,12 @@ class HyperParameterOptimization(Trainer):
         if index_ds == -1:
             dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__
         else:
-            dataset_name = writer_tag[index_ds + 8 : writer_tag.find("|Model:")]
+            dataset_name = writer_tag[index_ds + 8: writer_tag.find("|Model:")]
         index_md = writer_tag.find("|Model:")
         if index_md == -1:
             model_name = self.pipe.model.__class__.__name__
         else:
-            model_name = writer_tag[index_md + 7 : writer_tag.find("/")]
+            model_name = writer_tag[index_md + 7: writer_tag.find("/")]
         return model_name, dataset_name
 
     def start(
