@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from torch import nn
 import torchvision.models as models
@@ -55,7 +55,7 @@ transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
 
 # use only 32*7 images from CIFAR10
 train_indices = list(range(32 * 7))
-dl_tr, *_ = DataLoaderBuilder([transformed_ds_tr]).build(
+dl_tr, *_ = DataLoaderBuilder([transformed_ds_tr]).build(  # type: ignore
     [{"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)}])
 
 
@@ -188,7 +188,7 @@ def test_hpo_collate():
         def __len__(self):
             return 100
 
-        def __getitem__(self, item: int) -> Tensor:
+        def __getitem__(self, item: int) -> Tuple[Tensor, Tensor]:
             return self.x[item], self.y[item]
 
     def collate_fn(batch_tuple: List):

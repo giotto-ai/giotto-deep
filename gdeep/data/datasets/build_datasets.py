@@ -1,30 +1,13 @@
-import json
-import os
-import shutil
-import warnings
-from abc import ABC, abstractmethod
-from os.path import join
-from collections.abc import Iterable
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union, List
+from typing import Any, Optional, Tuple, TypeVar, Union
 
 from torchtext.data import to_map_style_dataset
-import numpy as np
-import pandas as pd
 import torch
-from PIL import Image, UnidentifiedImageError
-from sympy import false
-from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import Resize, ToTensor
-from tqdm import tqdm
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, IterDataPipe, Dataset, MapDataPipe
 from torchvision import datasets
 from torchtext import datasets as textdatasets
-
 from .tori import ToriDataset
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR
-from .dataset_cloud import DatasetCloud
 from ..dataset_factory import DatasetFactory
-from ..transforming_dataset import TransformingDataset
 
 Tensor = torch.Tensor
 T = TypeVar('T')
@@ -115,13 +98,13 @@ class DatasetBuilder:
     valid_ds: Optional[Dataset[Any]]
     test_ds: Optional[Dataset[Any]]
 
-    def __init__(self, name: str="MNIST", convert_to_map_dataset:bool=False) -> None:
+    def __init__(self, name: str = "MNIST", convert_to_map_dataset: bool = False) -> None:
         self.convert_to_map_dataset = convert_to_map_dataset
         self.name = name
 
     def build(self, **kwargs) -> Tuple[Dataset[Any],
-                                                Optional[Dataset[Any]],
-                                                Optional[Dataset[Any]]]:
+                                       Optional[Dataset[Any]],
+                                       Optional[Dataset[Any]]]:
         """Method that returns the dataset.
 
         Args:
@@ -131,21 +114,21 @@ class DatasetBuilder:
                 ``split=("train","dev")`` or ``split=("train","test")``
         """
         dataset_tuple: Tuple[Dataset[Any]] = get_dataset(self.name, **kwargs)  # type: ignore
-    
+
         if len(dataset_tuple) == 1:
             self.train_ds = dataset_tuple[0]
             self.valid_ds = None
             self.test_ds = None
         elif len(dataset_tuple) == 2:
             self.train_ds = dataset_tuple[0]
-            self.valid_ds = dataset_tuple[1]
+            self.valid_ds = dataset_tuple[1]  # type: ignore
             self.test_ds = None
         elif len(dataset_tuple) == 3:
             self.train_ds = dataset_tuple[0]
-            self.valid_ds = dataset_tuple[1]
-            self.test_ds = dataset_tuple[2]
+            self.valid_ds = dataset_tuple[1]  # type: ignore
+            self.test_ds = dataset_tuple[2]  # type: ignore
         else:
-            self.train_ds = dataset_tuple
+            self.train_ds = dataset_tuple  # type: ignore
             self.valid_ds = None
             self.test_ds = None
 
@@ -156,18 +139,27 @@ class DatasetBuilder:
         return self.train_ds, self.valid_ds, self.test_ds
 
     def _convert(self, training_data: Dataset[Any],
-                 validation_data: Optional[Dataset[Any]]=None,
-                 test_data: Optional[Dataset[Any]]=None ) -> Tuple[Dataset[Any],
-                                                                   Optional[Dataset[Any]],
-                                                                   Optional[Dataset[Any]]]:
+                 validation_data: Optional[Dataset[Any]] = None,
+                 test_data: Optional[Dataset[Any]] = None) -> Tuple[Dataset[Any],
+                                                                    Optional[Dataset[Any]],
+                                                                    Optional[Dataset[Any]]]:
         """This private method converts and IterableDataset
         to a MapDataset"""
         if isinstance(training_data, torch.utils.data.IterableDataset):
-            training_data = to_map_style_dataset(training_data)
+            training_data = self._to_map_style_dataset(training_data)
         if validation_data is not None:
             if isinstance(validation_data, torch.utils.data.IterableDataset):
-                validation_data = to_map_style_dataset(validation_data)
+                validation_data = self._to_map_style_dataset(validation_data)
         if test_data is not None:
             if isinstance(test_data, torch.utils.data.IterableDataset):
-                test_data = to_map_style_dataset(test_data)
+                test_data = self._to_map_style_dataset(test_data)
         return training_data, validation_data, test_data
+
+    @staticmethod
+    def _to_map_style_dataset(dataset: Union[Dataset, IterDataPipe]) -> Union[Dataset, MapDataPipe]:
+        """our version of to_map_style_dataset, with the
+        possibility to handle DataPipe and Dataset as well
+        """
+        # if isinstance(dataset, IterDataPipe):
+        #    return dataset.to_map_datapipe()
+        return to_map_style_dataset(dataset)

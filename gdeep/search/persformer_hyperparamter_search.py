@@ -101,7 +101,7 @@ class PersformerHyperparameterSearch:
         # Initialize pipeline
         pipe = Trainer(
             model,
-            [train_dataloader, None],
+            [train_dataloader],
             loss_fn,
             writer,
             None,

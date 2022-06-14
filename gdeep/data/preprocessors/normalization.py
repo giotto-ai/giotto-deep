@@ -7,11 +7,11 @@ from torch.utils.data import Dataset
 from ..abstract_preprocessing import AbstractPreprocessing
 from ..transforming_dataset import TransformingDataset
 
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 Tensor = torch.Tensor
 
 T = TypeVar('T')
+
 
 class Normalization(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
     """This class runs the standard normalisation on all the dimensions of
@@ -43,7 +43,7 @@ class Normalization(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
 
 def _compute_mean_of_dataset(dataset: Dataset[Tuple[Tensor, Any]]) -> Tensor:
     """Compute the mean of the whole dataset"""
-    mean: Tensor = torch.zeros(dataset[0][0].shape, dtype=torch.float64, device=DEVICE)
+    mean: Tensor = torch.zeros(dataset[0][0].shape, dtype=torch.float64)
     for idx in range(len(dataset)):  # type: ignore
         if idx == 0:
             mean += dataset[idx][0]

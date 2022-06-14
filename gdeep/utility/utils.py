@@ -1,6 +1,6 @@
 from IPython import get_ipython  # type: ignore
 import base64
-from typing import Dict, Optional, Type, List
+from typing import Dict, Optional, Type, List, Tuple, Union
 import os
 import time
 import hashlib
@@ -11,9 +11,12 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 
+Tensor = torch.Tensor
+
 
 def _are_compatible(
-    model_dict: Dict[str, nn.Module], dataloaders_dict: Dict[str, List[DataLoader]]
+        model_dict: Dict[str, Union[nn.Module, str]],
+        dataloaders_dict: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]
 ) -> bool:
     """utility function to check the compatibility of a model
     with a set of dataloaders `(dl_tr, dl_val, dl_ts)`
@@ -22,7 +25,7 @@ def _are_compatible(
     model = model_dict["model"]
     batch = next(iter(dataloaders_dict["dataloaders"][0]))[0]
     try:
-        model(batch)
+        model(batch)  # type: ignore
     except RuntimeError:
         return False
     else:
@@ -123,7 +126,7 @@ def ensemble_wrapper(clss: Type):
             class that is compatible with giotto-deep
     """
 
-    class NewEnsembleEstimator(clss):
+    class NewEnsembleEstimator(clss):  # type: ignore
         def __init__(self, *args, **kwargs):
             super(NewEnsembleEstimator, self).__init__(*args, **kwargs)
             self.estimators_ = nn.ModuleList().extend(
@@ -206,7 +209,6 @@ def get_checksum(file: str, encoding: str = "hex"):
     Raises:
         ValueError: if the file does not exist
         ValueError: if the encoding is not supported
-        
 
     Returns:
             The checksum of the file. If the file does not exist,

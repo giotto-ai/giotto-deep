@@ -1,14 +1,9 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 # deep learning
 import torch
 import numpy as np
 from torch import nn
-
-from ..analysis.decision_boundary import (
-    UniformlySampledPoint,
-    GradientFlowDecisionBoundaryCalculator,
-)
 
 # plot
 import plotly.express as px
@@ -16,6 +11,11 @@ import pandas as pd
 
 # ML
 from sklearn.metrics import pairwise_distances
+
+from ..analysis.decision_boundary import (
+    UniformlySampledPoint,
+    GradientFlowDecisionBoundaryCalculator,
+)
 
 Tensor = torch.Tensor
 Array = np.ndarray
@@ -43,43 +43,41 @@ class Compactification:
             the trained network of which to compute
             the boundary
     """
+    patches: List
+    list_of_pts_in_patches: List
+    label_final: List
 
     def __init__(
         self,
+        neural_net: nn.Module,
         precision: float = 0.4,
-        n_features: int = None,
+        n_features: Optional[int] = None,
         n_samples: int = 1000,
         epsilon: float = 0.05,
         n_epochs: int = 5000,
-        boundary_tuple: List[Tuple[float, float]] = None,
-        neural_net: nn.Module = None,
+        boundary_tuple: Optional[List[Tuple[float, float]]] = None,
     ) -> None:
 
         if n_features is None:
             raise ValueError("Need to specify the number of features.")
         else:
             self.n_features = n_features
-        if neural_net is None:
-            raise ValueError("Need to specify the trained network.")
-        else:
-            self.neural_net = neural_net
-        if boundary_tuple is None:
-            self.boundary_tuple = [(-1.0, 1.0) for _ in range(self.n_features)]
-        else:
+        self.neural_net = neural_net
+        if boundary_tuple:
             self.boundary_tuple = boundary_tuple
+        else:
+            self.boundary_tuple = [(-1.0, 1.0) for _ in range(self.n_features)]
+
         self.precision = precision
         self.n_samples = n_samples
         self.epsilon = epsilon
         self.n_epochs = n_epochs
-        self.patches = None
-        self.list_of_pts_in_patches = None
-        self.label_final = None
         self.check_compute_charts = False
 
     @staticmethod
     def _transition_to_patch(
         sample_points_tensor: Tensor, i: int
-    ) -> Union[Tensor, Array]:
+    ) -> Tensor:
         stacking_list = []
         if i == -1:
             points = sample_points_tensor
@@ -92,9 +90,7 @@ class Compactification:
                     stacking_list.append(
                         sample_points_tensor[:, dim] / sample_points_tensor[:, i]
                     )
-            if type(sample_points_tensor) == Tensor:
-                return torch.stack(stacking_list, dim=1)
-            return np.stack(stacking_list, axis=1)
+            return torch.stack(stacking_list, dim=1)
 
     def _compute_charts(self) -> List[Tensor]:
         # compute boundary

@@ -51,7 +51,7 @@ class HPOConfig:
     optimizers_params: Optional[Dict[str, Any]] = None
     dataloaders_params: Optional[Dict[str, Any]] = None
     models_hyperparams: Optional[Dict[str, Any]] = None
-    lr_scheduler: Type[_LRScheduler] = None
+    lr_scheduler: Optional[Type[_LRScheduler]] = None
     schedulers_params: Optional[Dict[str, Any]] = None
     profiling: bool = False
     parallel_tpu: bool = False

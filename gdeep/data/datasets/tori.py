@@ -1,12 +1,15 @@
 import math
+from typing import Tuple, Union, List
+
 import numpy as np
-import torch
-from typing import Tuple
-from torch.utils.data import Dataset
 from sklearn.datasets import make_blobs
+import torch
+from torch.utils.data import Dataset
+
 
 Tensor = torch.Tensor
 Array = np.ndarray
+
 
 class Rotation():
     """Class for rotations
@@ -18,7 +21,7 @@ class Rotation():
         self._axis_1 = axis_1
         self._angle = angle
 
-    def return_axis(self, idx:int):
+    def return_axis(self, idx: int):
         return eval('self._axis_'+str(idx))
 
     def return_angle(self) -> float:
@@ -116,7 +119,7 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
 
     @staticmethod
     def _make_torus_point_cloud2(label: int, n_points: int, noise: float,
-                                rotation: Rotation, base_point: Array,
+                                rotation: Rotation, base_point: Union[Array, List],
                                 radius1: float = 1., radius2: float = 1.) -> Tuple[Array, Array]:
         """Generate point cloud of a single torus using
         2 radii for its definition
