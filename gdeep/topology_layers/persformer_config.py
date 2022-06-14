@@ -350,12 +350,10 @@ class AttentionPoolingLayer(Module):
         Returns:
             The pooled output. Of shape (batch_size, hidden_size)
         """
-        print(torch.stack([self.query] * input_batch.shape[0], dim=0).shape)
         output, _ = self.scaled_dot_product_attention(torch.stack([self.query] * input_batch.shape[0], dim=0),
                                                  input_batch,
                                                  input_batch,
                                                  key_padding_mask=attention_mask)
-        print(output.shape)
         return output
 
 
