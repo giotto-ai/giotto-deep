@@ -7,7 +7,9 @@ from sklearn.model_selection import train_test_split
 
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
+from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim import Adam
 
 from gdeep.data.datasets import PersistenceDiagramFromFiles
@@ -22,7 +24,9 @@ from gdeep.data.preprocessors import (
 )
 from gdeep.data.preprocessors.normalization import _compute_mean_of_dataset
 from gdeep.data.transforming_dataset import TransformingDataset
-from gdeep.topology_layers.persformer_config import PersformerConfig
+from gdeep.topology_layers import PersformerConfig, Persformer
+from gdeep.topology_layers.persformer_config import PoolerType
+from gdeep.trainer.trainer import Trainer
 from gdeep.utility.utils import autoreload_if_notebook
 from gdeep.utility import DEFAULT_GRAPH_DIR
 
@@ -118,18 +122,21 @@ model_config = PersformerConfig(
     num_layers=6,
     num_heads=8,
     input_size= 2 + num_homology_types,
+    pooler_type=PoolerType.ATTENTION,
 )
 
 model = Persformer(model_config)
-
 writer = SummaryWriter()
 
-loss_function = lambda logits, target: nn.CrossEntropyLoss()(logits, target)
+loss_function =  nn.CrossEntropyLoss()
 
-trainer = Trainer(model, (train_dataset, validation_dataset, test_dataset), loss_function, writer)
+# trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 
-trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16})
+# trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16, "collate_fn":collate_fn_persistence_diagrams})
 
+# %%
+input, mask, labels = next(iter(dl_train))
+model.forward(input, mask)
 
 # %%
 # %%

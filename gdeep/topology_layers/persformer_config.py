@@ -173,7 +173,7 @@ class Persformer(Module):
         return get_pooling_layer(self.config)
                         
         
-    def forward(self,  # type: ignore
+    def forward(self,
                 input_batch: Tensor,
                 attention_mask: Optional[Tensor] = None
                 ) -> Tensor:
@@ -329,9 +329,9 @@ class AttentionPoolingLayer(Module):
         Returns:
             The pooled output. Of shape (batch_size, hidden_size)
         """
+        # TODO: Fix error in the following line
         return self.scaled_dot_product_attention(self.queries, input_batch, input_batch,
-                                                mask=attention_mask,
-                                                dropout=None)
+                                                attn_mask=attention_mask)
 
 
 class PersformerBlock(Module):
