@@ -147,6 +147,28 @@ class HyperParameterOptimization(Trainer):
         study_name:
             name of the optuna study
 
+    Examples::
+
+        from gdeep.search import HyperParameterOptimization
+        # initialise hpo, you need a `trainer`!
+        search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
+        # if you want to store pickle files of the models instead of the state_dicts
+        search.store_pickle = True
+        # dictionaries of hyperparameters
+        optimizers_params = {"lr": [0.001, 0.01]}
+        dataloaders_params = {"batch_size": [32, 64, 16]}
+        models_hyperparams = {"n_nodes": ["200"]}
+        # starting the HPO
+        search.start(
+            (SGD, Adam),
+            3,
+            False,
+            optimizers_params,
+            dataloaders_params,
+            models_hyperparams,
+            n_accumulated_grads=2,
+        )
+
     """
     is_pipe: bool
     df_res: pd.DataFrame

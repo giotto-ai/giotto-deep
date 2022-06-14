@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Callable, Tuple
+from typing import List, Dict, Callable, Tuple
 
 import torch
 
@@ -19,6 +19,19 @@ class ModelExtractor:
             standard torch module
         loss_fn :
             loss function
+
+    Examples::
+
+        from gdeep.analysis import Extractor
+        # the candidate datum for a question-answering example
+        x = next(iter(transformed_textts))[0].reshape(1, 2, -1).to(DEVICE)
+        # the model extractor: you need a trainer and the loss function
+        ex = ModelExtractor(trainer.model, loss_fn)
+        # getting the names of the layers
+        layer_names = ex.get_layers_param().keys()
+        print("Let's extract the activations of the first attention layer: ", next(iter(layer_names)))
+        self_attention = ex.get_activations(x)[:2]
+
     """
 
     def __init__(
@@ -35,12 +48,15 @@ class ModelExtractor:
         with self.loss_fn
         
         Args:
-            n_epochs (int):
+            n_epochs:
                 number of training cycles to find
                 the decision boundary
-            input_example (Tensor):
+            input_example:
                 an example of a single input,
                 to extract the dimensions of the feature space
+            precision:
+                parameter to filter the spurious data that are
+                close to te decision boundary, but not close enough
 
         Returns:
             Tensor:

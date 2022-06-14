@@ -34,15 +34,22 @@ class Visualiser:
 
     Args:
         pipe :
-            the pipeline to get info from
+            the Trainer instance to get info from
+
+    Examples::
+
+        from gdeep.visualisation import Visualiser
+        # you must have an initialised `trainer`
+        vs = Visualiser(trainer)
+        vs.plot_data_model()
 
     """
 
-    def __init__(self, pipe: Trainer):
+    def __init__(self, pipe: Trainer) -> None:
         self.pipe = pipe
         self.persistence_diagrams = None
 
-    def plot_data_model(self):
+    def plot_data_model(self) -> None:
         """This function has no arguments: its purpose
         is to store data to the tensorboard for
         visualisation.
@@ -51,7 +58,7 @@ class Visualiser:
         dataiter = iter(self.pipe.dataloaders[0])
         images, labels = next(dataiter)
         # print(str(labels.item()))
-        self.pipe.writer.add_graph(self.pipe.model, images.to(DEVICE))
+        self.pipe.writer.add_graph(self.pipe.model, images.to(DEVICE))  # type: ignore
         features_list = []
         labels_list = []
         index = 0
@@ -76,9 +83,9 @@ class Visualiser:
             else:
                 grid = make_grid(features)
 
-            self.pipe.writer.add_image("dataset", grid, 0)
+            self.pipe.writer.add_image("dataset", grid, 0)  # type: ignore
 
-            self.pipe.writer.add_embedding(
+            self.pipe.writer.add_embedding(  # type: ignore
                 features.view(max_number, -1),
                 metadata=labels_list,
                 label_img=features,
@@ -86,28 +93,28 @@ class Visualiser:
                 global_step=0,
             )
         else:
-            self.pipe.writer.add_embedding(
+            self.pipe.writer.add_embedding(  # type: ignore
                 features.view(max_number, -1),
                 metadata=labels_list,
                 tag="dataset",
                 global_step=0,
             )
 
-        self.pipe.writer.flush()
+        self.pipe.writer.flush()  # type: ignore
 
-    def plot_activations(self, example=None):
+    def plot_activations(self, example: Optional[Tensor] = None):
         """Plot PCA of the activations of all layers of the
         `self.model`
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
-        inputs = []
+        inputs_ls = []
         labels = []
         for j, item in enumerate(self.pipe.dataloaders[0]):
             labels.append(item[1][0])
-            inputs.append(item[0][0])
+            inputs_ls.append(item[0][0])
             if j == 100:
                 break
-        inputs = torch.stack(inputs)
+        inputs = torch.stack(inputs_ls)
 
         if example is not None:
             inputs = inputs.to(example.dtype)
@@ -116,13 +123,13 @@ class Visualiser:
         for i, act in enumerate(acts):
             print("Step " + str(i + 1) + "/" + str(len(acts)), end="\r")
             length = act.shape[0]
-            self.pipe.writer.add_embedding(
+            self.pipe.writer.add_embedding(   # type: ignore
                 act.view(length, -1),
                 metadata=labels,
                 tag="activations_" + str(i),
                 global_step=0,
             )
-            self.pipe.writer.flush()
+            self.pipe.writer.flush()  # type: ignore
 
     def plot_persistence_diagrams(self, example=None):
         """Plot a persistence diagrams of the activations

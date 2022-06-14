@@ -12,15 +12,15 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa
 
-sys.path.insert(0, os.path.abspath(os.path.join('..','..')))
+sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'giotto-deep'
-copyright = '2022, L2F SA'
+copyright = '2022, L2F SA'  # noqa
 author = 'Matteo Caorsi'
 
 # The full version, including alpha/beta/rc tags
@@ -41,7 +41,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = []  # type: ignore
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -54,4 +54,4 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []  # ['_static']
+html_static_path = []  # type: ignore

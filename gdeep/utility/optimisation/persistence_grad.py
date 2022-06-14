@@ -53,6 +53,21 @@ class PersistenceGradient:
             whether the input graph is a directed graph
             or not. Relevant only if ``metric = "precomputed"``
 
+    Examples::
+
+        from gdeep.utility.optimisation import PersistenceGradient
+        # prepare the datum
+        X = torch.tensor([[1, 0.], [0, 1.], [2, 2], [2, 1]])
+        # select the homology dimensions
+        hom_dim = [0, 1]
+        # initialise the class
+        pg = PersistenceGradient(homology_dimensions=hom_dim,
+                                 zeta=0.1,
+                                 max_edge_length=3,
+                                 collapse_edges=False)
+        # run the optimisation for four epochs!
+        pg.sgd(X, n_epochs=4, lr=0.4)
+
     """
     dist_mat: Tensor
 
@@ -137,6 +152,14 @@ class PersistenceGradient:
         where K is the top simplicial complex of the VR filtration.
         It is defined as:
         :math:`\\Phi_{\\sigma}(X)=max_{i,j \\in \\sigma}||x_i-x_j||.`
+
+        Args:
+            x:
+                the argument of :math:`\\Phi`, a tensor
+
+        Returns:
+            Tensor:
+                the value of :math:`\\Phi` at ``x``
         """
 
         if self.metric == "precomputed":
@@ -274,10 +297,20 @@ class PersistenceGradient:
     def persistence_function(self, xx: Tensor) -> Tensor:
         """This is the Loss function to optimise.
         :math:`L=-\\sum_i^p |\\epsilon_{i2}-\\epsilon_{i1}|+
-        \\lambda \\sum_{x in X} ||x||_2^2`
+        \\lambda \\sum_{x \\in X} ||x||_2^2`
         It is composed of a regularisation term and a
         function on the filtration values that is (p,q)-permutation
-        invariant."""
+        invariant.
+
+        Args:
+            xx:
+                this is the persistence function argument, a tensor
+
+        Returns:
+            Tensor:
+                the function value at ``xx``
+
+        """
         out: Tensor = torch.tensor(0).to(torch.float)
         persistence_array: Union[List, Array]
         # this is much slower
