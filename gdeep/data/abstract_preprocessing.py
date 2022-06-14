@@ -5,8 +5,6 @@ from typing import Generic, TypeVar
 import warnings
 import jsonpickle
 
-from .transforming_dataset import TransformingDataset
-
 from torch.utils.data import Dataset
 
 from gdeep.data.transforming_dataset import TransformingDataset

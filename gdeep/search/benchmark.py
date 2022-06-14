@@ -13,6 +13,7 @@ from sklearn.model_selection import KFold
 from gdeep.trainer import Trainer
 from gdeep.utility import _are_compatible  # noqa
 from gdeep.trainer import accuracy, TrainerConfig
+from .hpo_config import HPOConfig
 
 Tensor = torch.Tensor
 
@@ -44,15 +45,90 @@ class Benchmark:
             any of the Splitter classes of sklearn. More
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
 
+    Examples::
+
+        from torch import nn
+        from torch.optim import SGD
+        from torch.utils.data.sampler import SubsetRandomSampler
+        from gdeep.data.datasets import DatasetBuilder, DataLoaderBuilder
+        from gdeep.data.preprocessors import ToTensorImage
+        from gdeep.search import Benchmark
+        from gdeep.models import FFNet
+        # initialise dataloader list of dictionaries
+        dataloaders_dicts = []
+        bd = DatasetBuilder(name="CIFAR10")
+        # build first dataloader
+        ds_tr, *_ = bd.build()
+        transformation = ToTensorImage((32, 32))
+        transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
+        # cut down some data
+        test_indices = [64 * 5 + x for x in range(32 * 3)]
+        train_indices = [x for x in range(32 * 2)]
+        dl = DataLoaderBuilder((transformed_ds_tr, transformed_ds_tr))
+        dl_tr, dl_val, _ = dl.build(
+            (
+                {"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},
+                {"batch_size": 32, "sampler": SubsetRandomSampler(test_indices)},
+            )
+        )
+        # prepare the dataloader dictionary
+        temp_dict = {}
+        temp_dict["name"] = "CIFAR10_1000"
+        temp_dict["dataloaders"] = (dl_tr, dl_val, _)
+        # store the dictionary to the list
+        dataloaders_dicts.append(temp_dict)
+        # repeat with another dataset
+        db = DatasetBuilder(name="DoubleTori")
+        ds_tr, ds_val, _ = db.build()
+        dl_tr, dl_ts, _ = DataLoaderBuilder((ds_tr, ds_val)).build(
+            ({"batch_size": 48}, {"batch_size": 32})
+        )
+        temp_dict = {}
+        temp_dict["name"] = "double_tori"
+        temp_dict["dataloaders"] = (dl_tr, dl_ts)
+        dataloaders_dicts.append(temp_dict)
+        # prepare the list of model dictionaries
+        models_dicts = []
+        # define your model as a torch.nn.Module
+        model = model2()
+        temp_dict = {}
+        temp_dict["name"] = "resnet18"
+        temp_dict["model"] = model
+        models_dicts.append(temp_dict)
+        # avoid having exposed paramters that wll not be searched on
+        class model_no_param(nn.Module):
+            def __init__(self):
+                super(model_no_param, self).__init__()
+                self.mod = FFNet([3, 5, 5, 2])
+
+            def forward(self, x):
+                return self.mod(x)
+        # initialise the dictionary of the other model
+        model5 = model_no_param()
+        temp_dict = {}
+        temp_dict["name"] = "ffnn"
+        temp_dict["model"] = model5
+        # append to the model list of dictionaries
+        models_dicts.append(temp_dict)
+        # standard pytorch loss
+        loss_fn = nn.CrossEntropyLoss()
+
+        # initialise benchmark
+        bench = Benchmark(
+            models_dicts, dataloaders_dicts, loss_fn, writer, k_fold_class=KFold(3)
+        )
+        # start the benchmarking
+        bench.start(SGD, 1, True, {"lr": 0.01}, {"batch_size": 23})
+
     """
 
     def __init__(
         self,
-        models_dicts: Dict[str, Union[torch.nn.Module, str]],
-        dataloaders_dicts: Dict[
-            str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]
+        models_dicts: List[Dict[str, Union[torch.nn.Module, str]]],
+        dataloaders_dicts: List[Dict[
+            str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]
         ],
-        loss_fn: Callable[[Tuple[Tensor, Tensor]], Tensor],
+        loss_fn: Callable[[Tensor, Tensor], Tensor],
         writer: SummaryWriter,
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
         k_fold_class: Optional[BaseCrossValidator] = None,
@@ -155,7 +231,7 @@ class Benchmark:
         )
 
         _benchmarking_param(
-            self._inner_function, (self.models_dicts, self.dataloaders_dicts), config
+            self._inner_function, (self.models_dicts, self.dataloaders_dicts), config  # type: ignore
         )
 
     def _inner_function(
@@ -179,8 +255,8 @@ class Benchmark:
                 the configuration class ``TrainerConfig``.
         """
         pipe = Trainer(
-            model["model"],
-            dataloaders["dataloaders"],
+            model["model"],  # type: ignore
+            dataloaders["dataloaders"],  # type: ignore
             self.loss_fn,
             self.writer,
             self.training_metric,  # type: ignore
@@ -191,12 +267,12 @@ class Benchmark:
 
 
 def _benchmarking_param(
-    fun: Callable[[Any], Any],
+    fun: Callable[[Any, Any, Any], Any],
     arguments: Tuple[
-        Dict[str, Union[torch.nn.Module, str]],
-        Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
+        List[Dict[str, Union[torch.nn.Module, str]]],
+        List[Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]],
     ],
-    config: TrainerConfig,
+    config: Union[HPOConfig, TrainerConfig],
 ) -> None:
     """Function to be used as pseudo-decorator for
     benchmarking loops

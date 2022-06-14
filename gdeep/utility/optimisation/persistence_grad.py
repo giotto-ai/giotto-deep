@@ -1,7 +1,7 @@
 from functools import reduce
 from itertools import chain, combinations
 import multiprocessing
-from typing import Iterator, Any, Callable, Tuple, List, Optional
+from typing import Iterator, Any, Callable, Tuple, List, Optional, Union, Set
 
 import torch
 from torch import optim
@@ -53,11 +53,27 @@ class PersistenceGradient:
             whether the input graph is a directed graph
             or not. Relevant only if ``metric = "precomputed"``
 
+    Examples::
+
+        from gdeep.utility.optimisation import PersistenceGradient
+        # prepare the datum
+        X = torch.tensor([[1, 0.], [0, 1.], [2, 2], [2, 1]])
+        # select the homology dimensions
+        hom_dim = [0, 1]
+        # initialise the class
+        pg = PersistenceGradient(homology_dimensions=hom_dim,
+                                 zeta=0.1,
+                                 max_edge_length=3,
+                                 collapse_edges=False)
+        # run the optimisation for four epochs!
+        pg.sgd(X, n_epochs=4, lr=0.4)
+
     """
+    dist_mat: Tensor
 
     def __init__(self,
+                 homology_dimensions: Optional[List[int]],
                  zeta: float = 0.5,
-                 homology_dimensions: List[int] = (0, 1),
                  collapse_edges: bool = False,
                  max_edge_length: float = np.inf,
                  approx_digits: int = 6,
@@ -70,8 +86,10 @@ class PersistenceGradient:
         self.directed = directed
         self.approx_digits = approx_digits
         self.zeta = zeta
-        self.homology_dimensions = homology_dimensions
-        self.dist_mat: Optional[Array] = None
+        if homology_dimensions:
+            self.homology_dimensions = homology_dimensions
+        else:
+            self.homology_dimensions = [0, 1]
 
     @staticmethod
     def powerset(iterable: Iterator,
@@ -103,7 +121,7 @@ class PersistenceGradient:
         chunks = [(func1d, effective_axis, sub_arr, args, kwargs)
                   for sub_arr in np.array_split(arr, n_processes)]
         pool = multiprocessing.Pool(n_processes)
-        individual_results = pool.map(unpacking_apply_along_axis, chunks)
+        individual_results = pool.map(unpacking_apply_along_axis, chunks)  # type: ignore
         # Freeing the workers:
         pool.close()
         pool.join()
@@ -113,7 +131,7 @@ class PersistenceGradient:
         """Private function to compute the pair of indices in X to
         matching the simplices.
         """
-        simplices = list(self.powerset(list(range(0, len(x))),
+        simplices = list(self.powerset(list(range(0, len(x))),  # type: ignore
                          max(self.homology_dimensions) + 2))[1:]
         simplices_array = np.array(simplices, dtype=object).reshape(-1, 1)
         comb_number = comb(max(self.homology_dimensions) + 2, 2)
@@ -134,6 +152,14 @@ class PersistenceGradient:
         where K is the top simplicial complex of the VR filtration.
         It is defined as:
         :math:`\\Phi_{\\sigma}(X)=max_{i,j \\in \\sigma}||x_i-x_j||.`
+
+        Args:
+            x:
+                the argument of :math:`\\Phi`, a tensor
+
+        Returns:
+            Tensor:
+                the value of :math:`\\Phi` at ``x``
         """
 
         if self.metric == "precomputed":
@@ -209,16 +235,16 @@ class PersistenceGradient:
         inv_num_approx = 10**(-self.approx_digits)
         phi_approx: Tensor = torch.round(phi*num_approx)*inv_num_approx
         # find the indices of phi_approx elements that are in approx_pairs
-        indices_in_phi_of_pairs = []
+        indices_in_phi_of_pairs_ls: List = []
         for i in approx_pairs:
-            indices_in_phi_of_pairs += \
+            indices_in_phi_of_pairs_ls += \
                 torch.nonzero(phi_approx == i).flatten().detach().tolist()
-        indices_in_phi_of_pairs = set(indices_in_phi_of_pairs)
+        indices_in_phi_of_pairs: Set = set(indices_in_phi_of_pairs_ls)
         persistence_pairs_array = -np.ones((len(approx_pairs), 2),
                                            dtype=np.int32)
         for i in indices_in_phi_of_pairs:
             try:
-                temp_index: int = approx_pairs.index(round(phi[i].item(),
+                temp_index: int = approx_pairs.index(round(phi[i].item(),  # type: ignore
                                                      self.approx_digits))
                 approx_pairs[temp_index] = float('inf')
                 persistence_pairs_array[temp_index//2,
@@ -271,11 +297,22 @@ class PersistenceGradient:
     def persistence_function(self, xx: Tensor) -> Tensor:
         """This is the Loss function to optimise.
         :math:`L=-\\sum_i^p |\\epsilon_{i2}-\\epsilon_{i1}|+
-        \\lambda \\sum_{x in X} ||x||_2^2`
+        \\lambda \\sum_{x \\in X} ||x||_2^2`
         It is composed of a regularisation term and a
         function on the filtration values that is (p,q)-permutation
-        invariant."""
-        out = 0
+        invariant.
+
+        Args:
+            xx:
+                this is the persistence function argument, a tensor
+
+        Returns:
+            Tensor:
+                the function value at ``xx``
+
+        """
+        out: Tensor = torch.tensor(0).to(torch.float)
+        persistence_array: Union[List, Array]
         # this is much slower
         if self.directed and self.metric == "precomputed":
             persistence_array, phi, _ = self._persistence(xx)
@@ -315,12 +352,12 @@ class PersistenceGradient:
             xx = torch.tensor(xx)
         xx.to(DEVICE)
         xx.requires_grad = True
-        x = np.array([])
-        z = np.array([])
-        y = np.array([])
-        u = np.array([])
-        v = np.array([])
-        w = np.array([])
+        x: Array = np.array([])
+        z: Array = np.array([])
+        y: Array = np.array([])
+        u: Array = np.array([])
+        v: Array = np.array([])
+        w: Array = np.array([])
         loss_val = []
         optimizer = optim.Adam([xx], lr=lr)
         for _ in tqdm(range(n_epochs)):

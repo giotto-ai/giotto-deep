@@ -9,11 +9,7 @@ from collections.abc import Iterable
 from typing import Any, Callable, Dict, Generic, Optional, Sequence, Tuple, \
     TypeVar, Union, List
 
-import numpy as np
-import pandas as pd
 import torch
-from PIL import Image, UnidentifiedImageError
-from sympy import false
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import Resize, ToTensor
 from tqdm import tqdm
@@ -27,11 +23,12 @@ from ..transforming_dataset import TransformingDataset
 Tensor = torch.Tensor
 T = TypeVar('T')
 
+
 class AbstractDataLoaderBuilder(ABC):
     """The abstractr class to interface the
     Giotto dataloaders"""
     @abstractmethod
-    def build(self):
+    def build(self, tuple_of_kwargs: List[Dict[str, Any]]):
         pass
 
 @dataclass

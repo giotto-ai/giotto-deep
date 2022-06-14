@@ -1,5 +1,4 @@
-from typing import List
-import math
+from typing import List, Tuple
 
 import torch
 from torch import nn
@@ -27,7 +26,7 @@ class MyDataset(Dataset):
     def __len__(self):
         return 100
 
-    def __getitem__(self, item: int) -> Tensor:
+    def __getitem__(self, item: int) -> Tuple[Tensor, Tensor]:
         return self.x[item], self.y[item]
 
 
