@@ -96,8 +96,8 @@ class PersformerConfig(PretrainedConfig):
          
     
     def __init__(self,
-                 input_size: int = 4,
-                 ouptut_size: int = 2 + 4,
+                 input_size: int = 2 + 4,
+                 ouptut_size: int = 2,
                  hidden_size: int = 32,
                  num_attention_layers: int = 2,
                  num_attention_heads: int = 4,
@@ -194,7 +194,7 @@ class Persformer(Module):
         # Apply the attention layers
         for persformer_block in self.persformer_blocks:
             output = persformer_block(output, attention_mask)
-        ouput = self.pooling_layer(output, attention_mask)
+        output = self.pooling_layer(output, attention_mask)
         # Apply the classifier layer
         output = self.classifier_layer(output)
         return output
@@ -209,18 +209,26 @@ def get_pooling_layer(config: PersformerConfig) -> Module:
     Returns:
         The pooling layer.
     """
-    print(config.pooler_type)
-    print(config.pooler_type == PoolerType.MEAN)
-    if(config.pooler_type == PoolerType.ATTENTION):
-        return AttentionPoolingLayer(config)
-    elif(config.pooler_type == PoolerType.MAX):
-        return MaxPoolingLayer(config)
-    elif(config.pooler_type == PoolerType.MEAN):
-        print("here we are")
-        return MeanPoolingLayer(config)
-    elif(config.pooler_type == PoolerType.SUM):
-        return SumPoolingLayer(config)
-    else:
+    # if(config.pooler_type is PoolerType.ATTENTION):
+    #     return AttentionPoolingLayer(config)
+    # elif(config.pooler_type is PoolerType.MAX):
+    #     return MaxPoolingLayer(config)
+    # elif(config.pooler_type is PoolerType.MEAN):
+    #     return MeanPoolingLayer(config)
+    # elif(config.pooler_type is PoolerType.SUM):
+    #     return SumPoolingLayer(config)
+    # else:
+    #     raise ValueError(f"Pooler type {config.pooler_type} is not supported.")
+    pooler_dict = {
+        PoolerType.ATTENTION: AttentionPoolingLayer,
+        PoolerType.MAX: MaxPoolingLayer,
+        PoolerType.MEAN: MeanPoolingLayer,
+        PoolerType.SUM: SumPoolingLayer,
+    }
+    
+    try:
+        return pooler_dict[config.pooler_type](config)
+    except KeyError:
         raise ValueError(f"Pooler type {config.pooler_type} is not supported.")
 
 class MaxPoolingLayer(Module):
@@ -232,7 +240,8 @@ class MaxPoolingLayer(Module):
         self.config = config
         
     def forward(self,
-                input_batch: Tensor
+                input_batch: Tensor,
+                attention_mask: Optional[Tensor] = None
                 ) -> Tensor:
         """
         Forward pass of the model.
@@ -244,7 +253,10 @@ class MaxPoolingLayer(Module):
             The logits of the model. Of shape (batch_size, sequence_length, 1)
         """
         # Initialize the output tensor
-        output = input_batch
+        if attention_mask is not None:
+            output = input_batch * attention_mask.unsqueeze(2)
+        else:
+            output = input_batch 
         # Apply the max pooling layer
         output = output.max(dim=-2)[0]
         return output
@@ -271,10 +283,13 @@ class MeanPoolingLayer(Module):
                 The pooled output. Of shape (batch_size, hidden_size)
             """
             # Initialize the output tensor
-            output = input_batch  #TODO: incorporate attention mask
-            # Apply the max pooling layer
-            output = output.mean(dim=-2)
-            return output
+            if attention_mask is not None:
+                output = input_batch * attention_mask.unsqueeze(dim=-1)
+                output = output.sum(dim=-2) / attention_mask.sum(dim=-1, keepdim=True)
+                return output
+            else:
+                output = input_batch
+                return output.mean(dim=-2)
         
 class SumPoolingLayer(Module):
         
@@ -297,10 +312,11 @@ class SumPoolingLayer(Module):
             Returns:
                 The pooled output. Of shape (batch_size, hidden_size)
             """
-            print(input_batch.shape)
-            print(attention_mask.shape)
             # Initialize the output tensor
-            output = input_batch * attention_mask
+            if attention_mask is not None:
+                output = input_batch * attention_mask.unsqueeze(dim=-1)
+            else:
+                output = input_batch
             # Apply the max pooling layer
             output = output.sum(dim=-2)
             return output
@@ -312,7 +328,7 @@ class AttentionPoolingLayer(Module):
     def __init__(self, config: PersformerConfig):
         super().__init__()
         self.config = config
-        self.queries = nn.parameter.Parameter(torch.Tensor(1, config.hidden_size),
+        self.query = nn.parameter.Parameter(torch.Tensor(1, config.hidden_size),
                                               requires_grad=True)
         self.scaled_dot_product_attention = \
             MultiheadAttention(embed_dim=config.hidden_size,
@@ -334,9 +350,13 @@ class AttentionPoolingLayer(Module):
         Returns:
             The pooled output. Of shape (batch_size, hidden_size)
         """
-        # TODO: Fix error in the following line
-        return self.scaled_dot_product_attention(self.queries, input_batch, input_batch,
-                                                attn_mask=attention_mask)
+        print(torch.stack([self.query] * input_batch.shape[0], dim=0).shape)
+        output, _ = self.scaled_dot_product_attention(torch.stack([self.query] * input_batch.shape[0], dim=0),
+                                                 input_batch,
+                                                 input_batch,
+                                                 key_padding_mask=attention_mask)
+        print(output.shape)
+        return output
 
 
 class PersformerBlock(Module):
@@ -555,7 +575,13 @@ class ScaledDotProductAttention(AttentionBase):
         """
         Forward pass.
         """
-        attention_output, _ = self.scaled_dot_product_attention(input, input, input, attention_mask)
+        # if attention_mask is not None:
+        #     attention_mask = torch.stack([attention_mask] * attention_mask.shape[-1], dim=-1)
+        #     attn_mask = torch.concat([attention_mask] * self.config.num_attention_heads, dim=0)
+        # else:
+        #     attn_mask = None
+        attention_output, _ = self.scaled_dot_product_attention(input, input, input,
+                                                                key_padding_mask=attention_mask)
         return self.dropout(attention_output)
 
 class InducedAttention(AttentionBase):

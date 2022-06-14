@@ -170,7 +170,7 @@ class OneHotEncodedPersistenceDiagram():
         return OneHotEncodedPersistenceDiagram(torch.from_numpy(data.astype(np.float32)))
     
 def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDiagram, int]]) -> \
-    Tuple[Tuple[Tensor, Tensor], Tensor]:
+    Tuple[List[Tensor], Tensor]:
     """This function collates the data for the persistence diagram by padding the data, converting
     the data to tensors, converting the labels to tensors and generating masks for the valid
     entries.
@@ -187,7 +187,7 @@ def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDi
     
     label_batch = torch.tensor([x[1] for x in batch])
     
-    return (input_batch, mask), label_batch
+    return [input_batch, mask], label_batch
     
     
 def _check_if_valid(data) -> None:

@@ -11,6 +11,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim import Adam
+from zmq import device
 
 from gdeep.data.datasets import PersistenceDiagramFromFiles
 from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder, DataLoaderParamsTuples
@@ -120,9 +121,10 @@ dl_train, dl_val, dl_test = dlb.build(dl_params)  # type: ignore
 # Define the model
 model_config = PersformerConfig(
     num_layers=6,
-    num_heads=8,
+    num_attention_heads=4,
     input_size= 2 + num_homology_types,
-    pooler_type=PoolerType.MEAN,
+    ouptut_size=2,
+    pooler_type=PoolerType.ATTENTION,
 )
 
 model = Persformer(model_config)
@@ -140,7 +142,8 @@ model_config = PersformerConfig(
     num_layers=6,
     num_heads=8,
     input_size= 2 + num_homology_types,
-    pooler_type=PoolerType.MEAN,
+    ouptut_size=2,
+    pooler_type=PoolerType.ATTENTION,
 )
 
 model = Persformer(model_config)
@@ -150,11 +153,16 @@ model.forward(input, mask)
 
 # %%
 # %%
-def fun(item: Literal["loss", "accuracy"]):
-    # check if the item is a SearchMetrics
-    if item not in ["loss", "accuracy"]:
-        raise ValueError(f"{item} is not a valid search metric")
-    print(item)
+x = torch.randn(10, 10)
+y = torch.randn(10, 10)
 
-fun("asf")
+z = (x, y)
+
+
+# put z to gpu
+z = [x.to(device) for x in z]
+# %%
+# check if cuda is available
+if torch.cuda.is_available():
+    print("cuda is available")
 # %%
