@@ -39,3 +39,4 @@ typing_extensions; python_version == '3.7'
 torch-geometric
 torch-sparse
 torch-scatter
+gudhi
