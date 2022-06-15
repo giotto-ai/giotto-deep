@@ -37,6 +37,4 @@ jsonpickle
 typing_extensions; python_version == '3.7'
 torch-scatter
 torch-sparse
-torch-cluster
-torch-spline-conv
 torch-geometric
