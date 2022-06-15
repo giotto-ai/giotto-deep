@@ -285,10 +285,17 @@ class HyperParameterOptimization(Trainer):
                        loss_fn: Callable[[Tensor, Tensor], Tensor],
                        writer: Optional[SummaryWriter] = None,
                        training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
-                       k_fold_class: Optional[BaseCrossValidator] = None
+                       k_fold_class: Optional[BaseCrossValidator] = None,
+                       search_metric: Literal["loss", "accuracy"] = "loss",
+                       n_trials: int = 10,
+                       best_not_last: bool = False,
+                       pruner: Optional[BasePruner] = None,
+                       sampler=None,
+                       db_url: Optional[str] = None,
+                       study_name: Optional[str] = None,
     ) -> "HyperParameterOptimization":
         """Initialise a HyperParameterOptimization instance from a model builder.
-             
+                
             Args:
                 model_builder:
                     A callable that takes the hyperparameters as input and returns a model.
@@ -308,14 +315,16 @@ class HyperParameterOptimization(Trainer):
         model = model_builder()
         hpo = HyperParameterOptimization(
             obj=Trainer(model, dataloaders, loss_fn, writer, training_metric, k_fold_class),
-            search_metric="loss",
-            n_trials=10,
-            best_not_last=True,
-            pruner=None,
-        
+            search_metric=search_metric,
+            n_trials=n_trials,
+            best_not_last=best_not_last,
+            pruner=pruner,
+            sampler=sampler,
+            db_url=db_url,
+            study_name=study_name,
         )
         hpo._initialise_new_model = model_builder
-        
+
         return hpo
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
