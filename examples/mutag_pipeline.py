@@ -1,35 +1,28 @@
 # %%
-from dataclasses import dataclass
 import os
-from shutil import rmtree
-from typing import Any, Callable, List, Literal, Tuple
-from sklearn.model_selection import train_test_split
+from typing import Tuple
 
-import numpy as np
-import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Subset
-from torch.utils.tensorboard.writer import SummaryWriter
-from torch.optim import Adam
-from zmq import device
-
-from gdeep.data.datasets import PersistenceDiagramFromFiles
-from gdeep.data.datasets.base_dataloaders import DataLoaderBuilder, DataLoaderParamsTuples
-from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import PersistenceDiagramFromGraphBuilder
-from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams
 from gdeep.data import PreprocessingPipeline
+from gdeep.data.datasets import PersistenceDiagramFromFiles
+from gdeep.data.datasets.base_dataloaders import (DataLoaderBuilder,
+                                                  DataLoaderParamsTuples)
+from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import \
+    PersistenceDiagramFromGraphBuilder
+from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
+    OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams)
 from gdeep.data.preprocessors import (
-    NormalizationPersistenceDiagram,
-    FilterPersistenceDiagramByLifetime,
-    FilterPersistenceDiagramByHomologyDimension
-)
-from gdeep.data.preprocessors.normalization import _compute_mean_of_dataset
-from gdeep.data.transforming_dataset import TransformingDataset
-from gdeep.topology_layers import PersformerConfig, Persformer
+    FilterPersistenceDiagramByHomologyDimension,
+    FilterPersistenceDiagramByLifetime, NormalizationPersistenceDiagram)
+from gdeep.topology_layers import Persformer, PersformerConfig
 from gdeep.topology_layers.persformer_config import PoolerType
 from gdeep.trainer.trainer import Trainer
+from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
 from gdeep.utility.utils import autoreload_if_notebook
-from gdeep.utility import DEFAULT_GRAPH_DIR
+from sklearn.model_selection import train_test_split
+from torch.optim import Adam
+from torch.utils.data import Subset
+from torch.utils.tensorboard.writer import SummaryWriter
 
 autoreload_if_notebook()
 
@@ -98,7 +91,6 @@ preprocessing_pipeline = PreprocessingPipeline[Tuple[OneHotEncodedPersistenceDia
 preprocessing_pipeline.fit_to_dataset(train_dataset)
 
 # %%
-
 train_dataset = preprocessing_pipeline.attach_transform_to_dataset(train_dataset)
 validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validation_dataset)
 test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
@@ -134,35 +126,7 @@ loss_function =  nn.CrossEntropyLoss()
 
 trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 
-trainer.train(Adam, 3, False, {"lr":0.01}, {"batch_size":16, "collate_fn":collate_fn_persistence_diagrams})
-
-# %%
-# Define the model
-model_config = PersformerConfig(
-    num_layers=6,
-    num_heads=8,
-    input_size= 2 + num_homology_types,
-    ouptut_size=2,
-    pooler_type=PoolerType.ATTENTION,
-)
-
-model = Persformer(model_config)
-
-(input, mask), labels = next(iter(dl_train))
-model.forward(input, mask)
-
-# %%
-# %%
-x = torch.randn(10, 10)
-y = torch.randn(10, 10)
-
-z = (x, y)
-
-
-# put z to gpu
-z = [x.to(device) for x in z]
-# %%
-# check if cuda is available
-if torch.cuda.is_available():
-    print("cuda is available")
+trainer.train(Adam, 3, False, 
+              {"lr":0.01}, 
+              {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
 # %%

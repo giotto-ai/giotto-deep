@@ -178,8 +178,8 @@ def autoreload_if_notebook() -> None:
     """
     from IPython import get_ipython  # type: ignore
 
-    get_ipython().magic("load_ext autoreload")
-    get_ipython().magic("autoreload 2")
+    get_ipython().magic("load_ext autoreload")  # type: ignore
+    get_ipython().magic("autoreload 2")  # type: ignore
 
 
 def _file_as_bytes(file) -> bytes:
