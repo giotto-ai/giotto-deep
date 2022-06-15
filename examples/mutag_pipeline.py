@@ -129,6 +129,3 @@ trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 trainer.train(Adam, 3, False, 
               {"lr":0.01}, 
               {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
-# %%
-from tensorflow import _api
-# %%
