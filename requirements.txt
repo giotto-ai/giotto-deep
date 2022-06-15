@@ -8,9 +8,8 @@ scikit-learn
 spacy
 scipy
 networkx
--f https://download.pytorch.org/whl/torch_stable.html
--f https://data.pyg.org/whl/torch-1.9.0
-torch==1.9.0
+-f https://data.pyg.org/whl/torch-1.11.0+cpu.html
+torch==1.11.0
 torch-tb-profiler
 torchdiffeq
 torchensemble
