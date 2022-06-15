@@ -1,3 +1,10 @@
+-f https://download.pytorch.org/whl/cpu/torch_stable.html
+-f https://data.pyg.org/whl/torch-1.7.1+cpu.html
+torch==1.7.1+cpu
+torch-scatter==2.0.7
+torch-sparse==0.6.9
+torch-geometric
+torchvision==0.8.2
 giotto-tda
 numpy
 pandas
@@ -8,7 +15,7 @@ scikit-learn
 spacy
 scipy
 networkx
-torch==1.11.0
+#torch==1.11.0
 torch-tb-profiler
 torchdiffeq
 torchensemble
