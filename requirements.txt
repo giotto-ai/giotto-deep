@@ -9,7 +9,6 @@ scikit-learn
 spacy
 scipy
 networkx
-torch
 torch-tb-profiler
 torchdiffeq
 torchensemble
@@ -37,3 +36,4 @@ ipython
 jsonpickle
 typing_extensions; python_version == '3.7'
 torch-geometric
+torch-sparse
