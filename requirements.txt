@@ -35,5 +35,8 @@ wget
 ipython
 jsonpickle
 typing_extensions; python_version == '3.7'
-torch_geometric
-torch_sparse
+torch-scatter
+torch-sparse
+torch-cluster
+torch-spline-conv
+torch-geometric
