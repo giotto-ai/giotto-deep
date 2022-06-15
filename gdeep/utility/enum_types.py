@@ -5,8 +5,6 @@ class PoolerType(Enum):
     MAX = auto()
     MEAN = auto()
     SUM = auto()
-    
-    
 
 class LayerNormStyle(Enum):
     """
@@ -34,3 +32,4 @@ class ActivationFunction(Enum):
     GELU = auto()
     SELU = auto()
     MISH = auto()
+    

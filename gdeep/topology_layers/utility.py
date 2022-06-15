@@ -34,8 +34,6 @@ def get_pooling_layer(config: PersformerConfig) -> Module:
 
 
 
-
-
 def get_feed_forward_layer(config: PersformerConfig) -> Module:
     """
     Get the feed forward layer.
@@ -70,7 +68,6 @@ def get_attention_layer(config: PersformerConfig) -> Module:
     Get the attention layer.
     """
     return AttentionFactory().build(config)  # type: ignore
-
 
 
 def get_activation_function(activation_function: ActivationFunction) -> Module:
