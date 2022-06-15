@@ -1,10 +1,9 @@
-
 from collections import Counter, OrderedDict
 from typing import Callable, Tuple, \
-    Optional, List, Dict
+    Optional, List, Dict, Union
 
 import torch
-from torchtext.data.utils import get_tokenizer    # type: ignore
+from torchtext.data.utils import get_tokenizer  # type: ignore
 from torchtext.vocab import vocab
 from gdeep.utility import DEVICE
 
@@ -15,9 +14,8 @@ from .._utils import MissingVocabularyError
 Tensor = torch.Tensor
 
 
-
-class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str], 
-                                                 Tuple[Tensor, Tensor]
+class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
+                                                 Tuple[Union[Tensor, List[Tensor]], Tensor]
                            ]):
     """Class to preprocess text dataloaders for translation
     tasks. The Dataset type is supposed to be ``(string, string)``.
@@ -25,7 +23,7 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
 
         Args:
             vocabulary :
-                the vocubulary of the source text;
+                the vocabulary of the source text;
                 it can be built automatically or it can be
                 given.
             vocabulary_target :
@@ -58,10 +56,10 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
     ordered_dict: Dict[str, int]
     ordered_dict_target: Dict[str, int]
 
-    def __init__(self, vocabulary:Optional[Dict[str, int]]=None,
-                 vocabulary_target:Optional[Dict[str, int]]=None,
-                 tokenizer:Optional[Callable[[str],List[str]]]=None,
-                 tokenizer_target:Optional[Callable[[str],List[str]]]=None):
+    def __init__(self, vocabulary: Optional[Dict[str, int]] = None,
+                 vocabulary_target: Optional[Dict[str, int]] = None,
+                 tokenizer: Optional[Callable[[str], List[str]]] = None,
+                 tokenizer_target: Optional[Callable[[str], List[str]]] = None):
 
         if tokenizer is None:
             self.tokenizer = get_tokenizer('basic_english')
@@ -73,7 +71,8 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
             self.tokenizer_target = tokenizer_target
         self.vocabulary = vocabulary
         self.vocabulary_target = vocabulary_target
-        self.max_length = 0
+        self.max_length_source: int = 0
+        self.max_length_target: int = 0
         self.is_fitted = False
 
     def fit_to_dataset(self, data):
@@ -84,8 +83,8 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
         for text in data:
             self.counter.update(self.tokenizer(text[0]))
             self.counter_target.update(self.tokenizer_target(text[1]))
-            self.max_length = max(self.max_length, len(self.tokenizer(text[0])))
-            self.max_length = max(self.max_length, len(self.tokenizer_target(text[1])))
+            self.max_length_source = max(self.max_length_source, len(self.tokenizer(text[0])))
+            self.max_length_target = max(self.max_length_target, len(self.tokenizer_target(text[1])))
         # self.vocabulary = Vocab(counter, min_freq=1)
         if self.vocabulary is None:
             self.ordered_dict = OrderedDict(sorted(self.counter.items(),
@@ -97,17 +96,17 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
             self.vocabulary.set_default_index(self.vocabulary[unk_token])
         if self.vocabulary_target is None:
             self.ordered_dict_target = OrderedDict(sorted(self.counter_target.items(),
-                                                   key=lambda x: x[1],
-                                                   reverse=True))
+                                                          key=lambda x: x[1],
+                                                          reverse=True))
             self.vocabulary_target = vocab(self.ordered_dict_target)
             unk_token = '<unk>'  # type: ignore
             if unk_token not in self.vocabulary_target: self.vocabulary_target.insert_token(unk_token, 0)
             self.vocabulary_target.set_default_index(self.vocabulary_target[unk_token])
-            #self.vocabulary_target = Vocab(self.counter_target)
+            # self.vocabulary_target = Vocab(self.counter_target)
         self.is_fitted = True
-        #self.save_pretrained(".")
+        # self.save_pretrained(".")
 
-    def __call__(self, datum: Tuple[str, str]) -> Tuple[Tensor, Tensor]:
+    def __call__(self, datum: Tuple[str, str]) -> Tuple[Union[List[Tensor], Tensor], Tensor]:
         """This method is applied to each item of
         the dataset and
         transforms it following the rule described
@@ -118,17 +117,17 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
                 a single datum
         """
 
-        #if not self.is_fitted:
+        # if not self.is_fitted:
         #    self.load_pretrained(".")
         if self.vocabulary:
             text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
-                                       self.tokenizer(x)]  # type: ignore
+                                                                   self.tokenizer(x)]  # type: ignore
         else:
             raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
 
         if self.vocabulary_target:
-            text_pipeline_target: Callable[[str], List[int]] = lambda x: [self.vocabulary_target[token] for token in  # type: ignore
-                                       self.tokenizer_target(x)]   # type: ignore
+            text_pipeline_target: Callable[[str], List[int]] = \
+                lambda xx: [self.vocabulary_target[token] for token in self.tokenizer_target(xx)]  # type: ignore
         else:
             raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
 
@@ -138,15 +137,14 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
         processed_text = torch.tensor(text_pipeline(datum[0]),
                                       dtype=torch.long).to(DEVICE)
         processed_text_target = torch.tensor(text_pipeline_target(datum[1]),
-                                      dtype=torch.long).to(DEVICE)
+                                             dtype=torch.long).to(DEVICE)
         # convert to tensors (padded)
         out_source = torch.cat([processed_text,
-                                pad_item * torch.ones(self.max_length - processed_text.shape[0]
-                                               ).to(DEVICE)]).to(torch.long)
+                                pad_item * torch.ones(self.max_length_source - processed_text.shape[0]
+                                                      ).to(DEVICE)]).to(torch.long)
         out_target = torch.cat([processed_text_target,
-                                pad_item_target * torch.ones(self.max_length - processed_text_target.shape[0]
-                                               ).to(DEVICE)]).to(torch.long)
-        X = torch.stack([out_source.to(torch.long), out_target.to(torch.long)])
-        y = out_target.to(torch.long)  #.clone().detach()
-        return X, y
-
+                                pad_item_target * torch.ones(self.max_length_target - processed_text_target.shape[0]
+                                                             ).to(DEVICE)]).to(torch.long)
+        x = [out_source.to(torch.long), out_target.to(torch.long)]
+        y = out_target.to(torch.long)  # .clone().detach()
+        return x, y

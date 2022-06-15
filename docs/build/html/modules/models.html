@@ -130,9 +130,21 @@ weights, activations, gradients and decision boundaries</p>
 </dl>
 </dd>
 </dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gdeep.analysis</span> <span class="kn">import</span> <span class="n">Extractor</span>
+<span class="c1"># the candidate datum for a question-answering example</span>
+<span class="n">x</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">transformed_textts</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">DEVICE</span><span class="p">)</span>
+<span class="c1"># the model extractor: you need a trainer and the loss function</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">ModelExtractor</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">loss_fn</span><span class="p">)</span>
+<span class="c1"># getting the names of the layers</span>
+<span class="n">layer_names</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">get_layers_param</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Let&#39;s extract the activations of the first attention layer: &quot;</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">layer_names</span><span class="p">)))</span>
+<span class="n">self_attention</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">get_activations</span><span class="p">(</span><span class="n">x</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_activations">
-<span class="sig-name descname"><span class="pre">get_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_activations" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_activations" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the activations of self.model with input
 <cite>X</cite></p>
 <dl class="simple">
@@ -157,11 +169,14 @@ an input batch of which to compute the activation(s)</p>
 with self.loss_fn</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>n_epochs (int):</dt><dd><p>number of training cycles to find
+<dt>n_epochs:</dt><dd><p>number of training cycles to find
 the decision boundary</p>
 </dd>
-<dt>input_example (Tensor):</dt><dd><p>an example of a single input,
+<dt>input_example:</dt><dd><p>an example of a single input,
 to extract the dimensions of the feature space</p>
+</dd>
+<dt>precision:</dt><dd><p>parameter to filter the spurious data that are
+close to te decision boundary, but not close enough</p>
 </dd>
 </dl>
 </dd>
@@ -176,21 +191,21 @@ boundary with dimensions <cite>(n_samples, n_features)</cite></p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.ModelExtractor.get_gradients">
-<span class="sig-name descname"><span class="pre">get_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_gradients" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.models.ModelExtractor.get_gradients" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the <strong>averaged gradient</strong> of the self.loss_fn.
 To specify the target variable (e.g. the true class),
 use the keywords argument <cite>target=</cite></p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>x :</dt><dd><p>point at which to compute grad</p>
-</dd>
-<dt>target:</dt><dd><p>the expected output (needed to compute the loss)</p>
+<dt>batch:</dt><dd><p>a data batch on which to compute the average
+gradients. f the batch has one single item, then
+it will output the gradients for that single datum</p>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>tensor,  list:</dt><dd><p>the gradients; the list of tensors, corresponding
-to the gradient of the weights.</p>
+<dt>list,  list:</dt><dd><p>the gradients for the inputs; the list of tensors,
+corresponding to the gradient of the weights.</p>
 </dd>
 </dl>
 </dd>

@@ -47,9 +47,18 @@ def test_extractor_get_decision_boundary():
 
 
 def test_extractor_get_activations():
-    model = FFNet(arch=[3, 3])
+    model = FFNet(arch=[3, 4, 3])
     loss_fn = nn.CrossEntropyLoss()
     me = ModelExtractor(model, loss_fn)
     x = next(iter(dl_tr))[0][0]
     list_activations = me.get_activations(x)
+    assert len(list_activations) == 3
+
+
+def test_extractor_get_gradients():
+    model = FFNet(arch=[3, 3, 4, 3])
+    loss_fn = nn.CrossEntropyLoss()
+    me = ModelExtractor(model, loss_fn)
+    batch = next(iter(dl_tr))
+    list_activations = me.get_gradients(batch)
     assert len(list_activations) == 2

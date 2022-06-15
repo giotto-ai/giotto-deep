@@ -247,15 +247,42 @@ or not. Relevant only if <code class="docutils literal notranslate"><span class=
 </dl>
 </dd>
 </dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gdeep.utility.optimisation</span> <span class="kn">import</span> <span class="n">PersistenceGradient</span>
+<span class="c1"># prepare the datum</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="c1"># select the homology dimensions</span>
+<span class="n">hom_dim</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="c1"># initialise the class</span>
+<span class="n">pg</span> <span class="o">=</span> <span class="n">PersistenceGradient</span><span class="p">(</span><span class="n">homology_dimensions</span><span class="o">=</span><span class="n">hom_dim</span><span class="p">,</span>
+                         <span class="n">zeta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                         <span class="n">max_edge_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                         <span class="n">collapse_edges</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># run the optimisation for four epochs!</span>
+<span class="n">pg</span><span class="o">.</span><span class="n">sgd</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_epochs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.utility.optimisation.PersistenceGradient.persistence_function">
 <span class="sig-name descname"><span class="pre">persistence_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.utility.optimisation.PersistenceGradient.persistence_function" title="Permalink to this definition"></a></dt>
 <dd><p>This is the Loss function to optimise.
 <span class="math notranslate nohighlight">\(L=-\sum_i^p |\epsilon_{i2}-\epsilon_{i1}|+
-\lambda \sum_{x in X} ||x||_2^2\)</span>
+\lambda \sum_{x \in X} ||x||_2^2\)</span>
 It is composed of a regularisation term and a
 function on the filtration values that is (p,q)-permutation
 invariant.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>xx:</dt><dd><p>this is the persistence function argument, a tensor</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Tensor:</dt><dd><p>the function value at <code class="docutils literal notranslate"><span class="pre">xx</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -265,6 +292,18 @@ invariant.</p>
 where K is the top simplicial complex of the VR filtration.
 It is defined as:
 <span class="math notranslate nohighlight">\(\Phi_{\sigma}(X)=max_{i,j \in \sigma}||x_i-x_j||.\)</span></p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>x:</dt><dd><p>the argument of <span class="math notranslate nohighlight">\(\Phi\)</span>, a tensor</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Tensor:</dt><dd><p>the value of <span class="math notranslate nohighlight">\(\Phi\)</span> at <code class="docutils literal notranslate"><span class="pre">x</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">

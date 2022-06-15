@@ -3,17 +3,12 @@
 
 import os
 import codecs
-import re
-import sys
-import platform
-import subprocess
 
-from distutils.version import LooseVersion
-from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext
+from setuptools import setup, find_packages
 
 
 version_file = os.path.join("gdeep", "_version.py")
+__version__ = '0.0.1'  # initialise the variable
 with open(version_file) as f:
     exec(f.read())
 
@@ -29,7 +24,7 @@ MAINTAINER = "Matteo Caorsi"
 MAINTAINER_EMAIL = "maintainers@giotto.ai"
 URL = "https://github.com/giotto-ai/giotto-deep"
 LICENSE = "GNU AGPLv3"
-VERSION = __version__  # noqa
+VERSION = __version__  # type: ignore
 DOWNLOAD_URL = "https://github.com/giotto-ai/giotto-deep/tarball/v"+VERSION
 CLASSIFIERS = ["Intended Audience :: Science/Research",
                "Intended Audience :: Developers",

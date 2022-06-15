@@ -3,7 +3,7 @@ import copy
 import time
 from functools import wraps
 import warnings
-from typing import Tuple, Optional, Callable, Any, Dict, List, Type
+from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
 
 import torch.nn.functional as f
 from torch.optim import Optimizer
@@ -34,6 +34,10 @@ try:
     import torch_xla.distributed.xla_multiprocessing as xmp
     import torch_xla.distributed.parallel_loader as pl
 
+    try:
+        DEVICE = xm.xla_device()
+    except NameError:
+        pass
     print("Using TPU!")
 except ModuleNotFoundError:
     print("No TPUs...")
@@ -128,7 +132,7 @@ class Trainer:
     def __init__(
         self,
         model: torch.nn.Module,
-        dataloaders: List[DataLoader[Tuple[Tensor, Tensor]]],
+        dataloaders: List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]],
         loss_fn: Callable[[Tensor, Tensor], Tensor],
         writer: Optional[SummaryWriter] = None,
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
@@ -151,7 +155,6 @@ class Trainer:
         self.writer = writer
         if self.writer is None:
             warnings.warn("No writer detected")
-        self.DEVICE = DEVICE
         self.check_has_trained: bool = False
         # used in gradient clipping
         self.clip: int = 5
@@ -193,7 +196,7 @@ class Trainer:
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
             loss.backward()
-            if self.DEVICE.type == "xla":
+            if DEVICE.type == "xla":
                 xm.optimizer_step(
                     self.optimizer, barrier=True
                 )  # Note: Cloud TPU-specific code!
@@ -209,7 +212,7 @@ class Trainer:
             if (
                 batch + 1
             ) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
-                if self.DEVICE.type == "xla":
+                if DEVICE.type == "xla":
                     xm.optimizer_step(
                         self.optimizer, barrier=True
                     )  # Note: Cloud TPU-specific code!
@@ -237,9 +240,38 @@ class Trainer:
             )
         return epoch_loss
 
+    def _send_to_device(self, x: Union[Tensor, List[Tensor]], y: Tensor) \
+            -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
+        """use this private method to send the
+        ``x`` and ``y`` to the ``DEVICE``.
+
+        Args:
+            x:
+                the input of the model, either a List[Tensor] or a Tensor
+            y:
+                the label
+
+        Returns:
+            (Tensor, Union[Tensor, List[Tensor]], Tensor)
+                the prediction for x, x and the label
+
+        """
+        new_x: List[Tensor] = []
+        if isinstance(x, tuple) or isinstance(x, list):
+            for xi in x:
+                new_x.append(xi.to(DEVICE))
+            x = new_x
+            prediction = self.model(*x)
+        else:
+            x = x.to(DEVICE)
+            prediction = self.model(x)
+        y = y.to(DEVICE)
+
+        return prediction, x, y
+
     def _inner_train_loop(
         self,
-        dl_tr: DataLoader[Tuple[Tensor, Tensor]],
+        dl_tr: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
         writer_tag: str,
         size: int,
         steps: int,
@@ -257,11 +289,7 @@ class Trainer:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
                 return loss2
-
-            X = X.to(self.DEVICE)
-            y = y.to(self.DEVICE)
-            # Compute prediction and loss
-            pred = self.model(X)
+            pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
             loss = self.loss_fn(pred, y)
@@ -306,16 +334,12 @@ class Trainer:
         return epoch_metric, epoch_loss
 
     def _train_loop(
-        self, dl_tr: DataLoader[Tuple[Tensor, Tensor]], writer_tag: str = ""
+        self, dl_tr: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]], writer_tag: str = ""
     ) -> Tuple[float, float]:
         """private method to run a single training
         loop
         """
-        try:
-            self.DEVICE = xm.xla_device()
-        except NameError:
-            pass
-        self.model = self.model.to(self.DEVICE)
+        self.model = self.model.to(DEVICE)
         self.model.train()
         try:
             length: int = len(dl_tr.sampler.indices)  # type: ignore
@@ -345,16 +369,12 @@ class Trainer:
         return epoch_metric, epoch_loss
 
     def _val_loop(
-        self, dl_val: DataLoader[Tuple[Tensor, Tensor]], writer_tag: str = ""
+        self, dl_val: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]], writer_tag: str = ""
     ) -> Tuple[float, float]:
         """private method to run a single validation
         loop
         """
-        try:
-            self.DEVICE = xm.xla_device()
-        except NameError:
-            pass
-        self.model = self.model.to(self.DEVICE)
+        self.model = self.model.to(DEVICE)
         try:
             size = len(dl_val.sampler.indices)  # type: ignore
         except AttributeError:
@@ -363,7 +383,7 @@ class Trainer:
         class_probs: List[List[Tensor]] = []
         self.model.eval()
 
-        pred_list, epoch_loss, epoch_metric = self._inner_loop(
+        pred_list, epoch_loss, epoch_metric = self._inner_loop(  # type: ignore
             dl=dl_val,  # type: ignore
             class_probs=class_probs,  # type: ignore
             class_label=class_label,  # type: ignore
@@ -440,7 +460,7 @@ class Trainer:
     def _inner_loop(
         self,
         *,
-        dl: DataLoader[Tuple[Tensor, Tensor]],
+        dl: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
         class_probs: List[List[Tensor]],
         class_label: List[Tensor],
         writer_tag: str,  # noqa
@@ -452,9 +472,7 @@ class Trainer:
         loss = 0.0
         with torch.no_grad():
             for X, y in dl:
-                X = X.to(self.DEVICE)
-                y = y.to(self.DEVICE)
-                pred = self.model(X)
+                pred, X, y = self._send_to_device(X, y)
                 pred_list.append(pred)
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
@@ -808,8 +826,8 @@ class Trainer:
                     )[:, 0]
                 )
             else:
-                valloss = torch.mean(torch.tensor(mean_val_loss))
-                valacc = torch.mean(torch.tensor(mean_val_acc))
+                valloss = torch.mean(torch.tensor(mean_val_loss)).item()
+                valacc = torch.mean(torch.tensor(mean_val_acc)).item()
 
         else:
             self._init_optimizer_and_scheduler(
@@ -861,8 +879,8 @@ class Trainer:
     def _training_loops(
         self,
         n_epochs: int,
-        dl_tr: DataLoader[Tuple[Tensor, Tensor]],
-        dl_val: DataLoader[Tuple[Tensor, Tensor]],
+        dl_tr: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
+        dl_val: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
         lr_scheduler: Optional[Type[_LRScheduler]] = None,
         scheduler: Optional[_LRScheduler] = None,
         check_optuna: bool = False,
@@ -874,28 +892,28 @@ class Trainer:
         """private method to run the trainign loops
         
         Args:
-            n_epochs (int):
+            n_epochs:
                 number of training epochs
-            dl_tr (torch.DataLoader):
+            dl_tr:
                 training dataloader
-            dl_val (torch.DataLoader):
+            dl_val:
                 validation dataloader
                 parameters, e.g. `{'batch_size': 32}`
-            lr_scheduler (torch.optim):
+            lr_scheduler:
                 a learning rate scheduler class
-            scheduler (torch.optim):
+            scheduler:
                 the actual scheduler instance
-            check_optuna (bool):
+            check_optuna:
                 boolean to store the optuna results of
                 the trial
-            search_metric (string):
+            search_metric:
                 either ``'loss'`` or ``'accuracy'``, this
                 corresponds to the gridsearch criterion
-            trial (optuna.trial):
+            trial:
                 the optuna trial
             cross_validation (bool, default False)
                 the boolean flag for cross validation
-            writer_tag (str):
+            writer_tag:
                 the tensorboard writer tag
 
         Returns:
@@ -970,8 +988,8 @@ class Trainer:
     def parallel_tpu_training_loops(
         self,
         n_epochs: int,
-        dl_tr_old: DataLoader[Tuple[Tensor, Tensor]],
-        dl_val_old: DataLoader[Tuple[Tensor, Tensor]],
+        dl_tr_old: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
+        dl_val_old: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
         optimizers_param: Dict[str, Any],
         lr_scheduler: Optional[Type[_LRScheduler]] = None,
         scheduler: Optional[_LRScheduler] = None,
@@ -1165,14 +1183,14 @@ class Trainer:
         return self.val_loss, self.val_acc
 
     def evaluate_classification(
-        self, num_class: int = None, dl: DataLoader[Tuple[Tensor, Tensor]] = None
+        self, num_class: int = None, dl: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]] = None
     ) -> Tuple[float, float, np.ndarray]:
         """Method to evaluate the performance of the model.
         
         Args:
-            num_class (int):
+            num_class:
                 number of classes
-            dl (torch.DataLoader, default None):
+            dl :
                 the Dataloader to evaluate. If ``None``,
                 we use the training dataloader in ``self``
                 
@@ -1190,9 +1208,7 @@ class Trainer:
         self.model.eval()
         with torch.no_grad():
             for batch, (X, y) in tqdm(enumerate(dl)):
-                X = X.to(DEVICE)
-                y = y.to(DEVICE)
-                pred = self.model(X)
+                pred, X, y = self._send_to_device(X, y)
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
@@ -1231,7 +1247,7 @@ class Trainer:
 
     @staticmethod
     def copy_dataloader_params(
-        original_dataloader: DataLoader[Tuple[Tensor, Tensor]]
+        original_dataloader: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]
     ) -> Dict[str, Any]:
         """returns the dict of init parameters"""
         return {

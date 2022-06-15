@@ -137,23 +137,30 @@ the required plots. It converts plots and images of
 different kinds to tensors</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>pipe :</dt><dd><p>the pipeline to get info from</p>
+<dt>pipe :</dt><dd><p>the Trainer instance to get info from</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">gdeep.visualisation</span> <span class="kn">import</span> <span class="n">Visualiser</span>
+<span class="c1"># you must have an initialised `trainer`</span>
+<span class="n">vs</span> <span class="o">=</span> <span class="n">Visualiser</span><span class="p">(</span><span class="n">trainer</span><span class="p">)</span>
+<span class="n">vs</span><span class="o">.</span><span class="n">plot_data_model</span><span class="p">()</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.betti_plot_layers">
-<span class="sig-name descname"><span class="pre">betti_plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.betti_plot_layers" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">betti_plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.betti_plot_layers" title="Permalink to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>homology_dimension :</dt><dd><p>A list of
 homology dimensions, e.g. <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">...]</span></code></p>
 </dd>
-<dt>example :</dt><dd><p>the selected batch of data to
+<dt>batch :</dt><dd><p>the selected batch of data to
 compute the activations on. By
 defaults, this method takes the
-first 100 elements</p>
+first batch of elements</p>
 </dd>
 </dl>
 </dd>
@@ -170,16 +177,32 @@ present.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_3d_dataset">
+<span class="sig-name descname"><span class="pre">plot_3d_dataset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_3d_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>This function has no arguments: its purpose
+is to store data to the tensorboard for
+visualisation. Note that we are expecting the
+dataset item to be of type Tuple[Tensor, Tensor]</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_activations">
-<span class="sig-name descname"><span class="pre">plot_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_activations" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_activations" title="Permalink to this definition"></a></dt>
 <dd><p>Plot PCA of the activations of all layers of the
-<cite>self.model</cite></p>
+<cite>self.model</cite>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>batch:</dt><dd><p>this should be an input batch for the model</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_attribution">
 <span class="sig-name descname"><span class="pre">plot_attribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpreter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.Interpreter" title="gdeep.analysis.interpretability.captum.Interpreter"><span class="pre">Interpreter</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_attribution" title="Permalink to this definition"></a></dt>
-<dd><p>this method geerically plots the attribution of
+<dd><p>this method generically plots the attribution of
 the interpreter</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
@@ -197,18 +220,13 @@ captum)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_data_model">
-<span class="sig-name descname"><span class="pre">plot_data_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_data_model" title="Permalink to this definition"></a></dt>
-<dd><p>This function has no arguments: its purpose
-is to store data to the tensorboard for
-visualisation.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_decision_boundary">
-<span class="sig-name descname"><span class="pre">plot_decision_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_decision_boundary" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_decision_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compact</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_decision_boundary" title="Permalink to this definition"></a></dt>
 <dd><p>Plot the decision boundary as the intrinsic
-hypersurface defined by self.loss_fn == 0.5</p>
+hypersurface defined by self.loss_fn == 0.5. Note that
+we are expecting a model whose forward function
+has only one tensor as input (and not multiple
+arguments).</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>compact (bool):</dt><dd><p>if plotting the compactified
@@ -234,6 +252,14 @@ initialised <code class="docutils literal notranslate"><span class="pre">Interpr
 <dt>Returns:</dt><dd><p>matplotlib.figure</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_interactive_model">
+<span class="sig-name descname"><span class="pre">plot_interactive_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_interactive_model" title="Permalink to this definition"></a></dt>
+<dd><p>This function has no arguments: its purpose
+is to store the model to tensorboard for an
+interactive visualisation.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -272,7 +298,7 @@ initilised <code class="docutils literal notranslate"><span class="pre">Interpre
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_persistence_diagrams">
-<span class="sig-name descname"><span class="pre">plot_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_persistence_diagrams" title="Permalink to this definition"></a></dt>
 <dd><p>Plot a persistence diagrams of the activations</p>
 </dd></dl>
 

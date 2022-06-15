@@ -62,8 +62,9 @@ def test_visualiser():
 
     vs = Visualiser(pipe)
 
-    x, _ = next(iter(dl_tr2))
-    vs.plot_data_model()
+    x = next(iter(dl_tr2))
+    vs.plot_interactive_model()
+    vs.plot_3d_dataset()
     vs.plot_activations(x)
     vs.plot_persistence_diagrams(x)
     vs.betti_plot_layers([0, 1], x)

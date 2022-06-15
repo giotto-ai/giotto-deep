@@ -147,6 +147,28 @@ class HyperParameterOptimization(Trainer):
         study_name:
             name of the optuna study
 
+    Examples::
+
+        from gdeep.search import HyperParameterOptimization
+        # initialise hpo, you need a `trainer`!
+        search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
+        # if you want to store pickle files of the models instead of the state_dicts
+        search.store_pickle = True
+        # dictionaries of hyperparameters
+        optimizers_params = {"lr": [0.001, 0.01]}
+        dataloaders_params = {"batch_size": [32, 64, 16]}
+        models_hyperparams = {"n_nodes": ["200"]}
+        # starting the HPO
+        search.start(
+            (SGD, Adam),
+            3,
+            False,
+            optimizers_params,
+            dataloaders_params,
+            models_hyperparams,
+            n_accumulated_grads=2,
+        )
+
     """
     is_pipe: bool
     df_res: pd.DataFrame
@@ -371,12 +393,12 @@ class HyperParameterOptimization(Trainer):
         if index_ds == -1:
             dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__
         else:
-            dataset_name = writer_tag[index_ds + 8 : writer_tag.find("|Model:")]
+            dataset_name = writer_tag[index_ds + 8: writer_tag.find("|Model:")]
         index_md = writer_tag.find("|Model:")
         if index_md == -1:
             model_name = self.pipe.model.__class__.__name__
         else:
-            model_name = writer_tag[index_md + 7 : writer_tag.find("/")]
+            model_name = writer_tag[index_md + 7: writer_tag.find("/")]
         return model_name, dataset_name
 
     def start(
@@ -496,7 +518,7 @@ class HyperParameterOptimization(Trainer):
         self,
         model: Union[torch.nn.Module, Dict[str, torch.nn.Module]],
         dataloaders: Union[
-            List[DataLoader[Tuple[Tensor, Tensor]]], Dict[str, DataLoader]
+            List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]], Dict[str, DataLoader]
         ],
         config: HPOConfig,
     ) -> None:
