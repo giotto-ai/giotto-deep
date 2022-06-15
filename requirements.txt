@@ -1,6 +1,3 @@
-torch
-torch-scatter
-torch-sparse
 torch-geometric
 torchvision
 giotto-tda
@@ -13,7 +10,7 @@ scikit-learn
 spacy
 scipy
 networkx
-#torch==1.11.0
+torch
 torch-tb-profiler
 torchdiffeq
 torchensemble
