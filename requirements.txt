@@ -1,10 +1,8 @@
---find-links https://download.pytorch.org/whl/cpu/torch_stable.html
---find-links https://data.pyg.org/whl/torch-1.7.1+cpu.html
-torch==1.7.1+cpu
-torch-scatter==2.0.7
-torch-sparse==0.6.9
+torch
+torch-scatter
+torch-sparse
 torch-geometric
-torchvision==0.8.2
+torchvision
 giotto-tda
 numpy
 pandas
