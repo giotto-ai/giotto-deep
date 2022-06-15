@@ -7,6 +7,8 @@ from gdeep.data import PreprocessingPipeline
 from gdeep.data.datasets import PersistenceDiagramFromFiles
 from gdeep.data.datasets.base_dataloaders import (DataLoaderBuilder,
                                                   DataLoaderParamsTuples)
+from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import \
+    PersistenceDiagramFromGraphBuilder
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
     OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams)
 from gdeep.data.preprocessors import (
@@ -15,23 +17,30 @@ from gdeep.data.preprocessors import (
 from gdeep.topology_layers import Persformer, PersformerConfig
 from gdeep.trainer.trainer import Trainer
 from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
+from gdeep.utility.constants import ROOT_DIR
 from sklearn.model_selection import train_test_split
 from torch.optim import Adam
 from torch.utils.data import Subset
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from gdeep.utility.constants import ROOT_DIR
-
 from ..persformer import Persformer
 
 
 def test_persformer_training():
+    # Parameters
+    name_graph_dataset: str = 'MUTAG'
+    diffusion_parameter: float = 0.1
     num_homology_types: int = 4
+
+
+    # Create the persistence diagram dataset
+    pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, diffusion_parameter)
+    pd_creator.create()
     
     pd_mutag_ds = PersistenceDiagramFromFiles(
         os.path.join(
-            ROOT_DIR, 'gdeep', 'topology_layers', 'tests', 'data'
-        )
+            DEFAULT_GRAPH_DIR, f"MUTAG_{diffusion_parameter}_extended_persistence"
+            )
     )
 
     # Create the train/validation/test split
