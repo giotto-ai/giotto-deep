@@ -3,10 +3,11 @@ import time
 import warnings
 import random
 from itertools import chain, combinations
-from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence
+from typing import Callable, Tuple, Any, Dict, Type, Optional, List, Union, Sequence
 import string
 
 from typing_extensions import Literal
+from sklearn.model_selection import BaseCrossValidator
 import torch
 import optuna
 from optuna.trial import TrialState
@@ -14,6 +15,7 @@ import pandas as pd
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
+from torch.nn import Module
 from torch.optim import *  # noqa
 import plotly.express as px
 from optuna.pruners import MedianPruner, BasePruner
@@ -118,6 +120,52 @@ class GiottoSummaryWriter(SummaryWriter):
                     w_hp.add_scalar("accuracy", v, t)
 
 
+def _initialise_new_model(
+    model: Module, models_hyperparam: Optional[Dict[str, Any]]
+) -> Module:
+    """private method to find the maximal compatible set
+    between models and hyperparameters
+    
+    Args:
+        models_hyperparam (dict):
+            model selected hyperparameters
+    
+    Returns:
+        nn.Module
+            torch nn.Module
+    """
+    if models_hyperparam:
+        list_of_params_keys = HyperParameterOptimization._powerset(
+            list(models_hyperparam.keys())
+        )
+        list_of_params_keys.reverse()
+        for params_keys in list_of_params_keys:
+            sub_models_hyperparam = {
+                k: models_hyperparam[k]
+                for k in models_hyperparam.keys()
+                if k in params_keys
+            }
+            try:
+                # print(sub_models_hyperparam)
+                new_model = type(model)(**sub_models_hyperparam)  # noqa
+                # print(new_model.state_dict())
+                raise ValueError
+            except TypeError:  # when the parameters do not match the model
+                pass
+            except ValueError:  # when the parameters match the model
+                break
+    else:
+        new_model = type(model)()
+
+    try:
+        new_model  # noqa
+    except NameError:
+        warnings.warn("Model cannot be re-initialised. Using existing one.")
+        new_model = model
+    return new_model
+
+
+
 class HyperParameterOptimization(Trainer):
     """This is the generic class that allows
     the user to perform gridsearch over several
@@ -203,9 +251,16 @@ class HyperParameterOptimization(Trainer):
             )
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
+            self._initialise_new_model = lambda hyper_params: _initialise_new_model(model = self.model, 
+                                                                                    models_hyperparam=hyper_params)
         elif isinstance(obj, Benchmark):
             self.bench: Benchmark = obj
             self.is_pipe = False
+            self._initialise_new_model =  lambda hyper_params: _initialise_new_model(self.model, 
+                                                                                     models_hyperparam=hyper_params)
+        else:
+            raise ValueError("obj must be either a Trainer or a Benchmark instance")
+        
         self.search_metric = search_metric
         assert (
             self.search_metric in SEARCH_METRICS
@@ -223,50 +278,45 @@ class HyperParameterOptimization(Trainer):
         self.scalars_dict: Dict[str, Any] = dict()
         # can be changed by changing this attribute
         self.store_pickle: bool = False
-
-    def _initialise_new_model(
-        self, models_hyperparam: Optional[Dict[str, Any]]
-    ) -> torch.nn.Module:
-        """private method to find the maximal compatible set
-        between models and hyperparameters
         
-        Args:
-            models_hyperparam (dict):
-                model selected hyperparameters
-        
-        Returns:
-            nn.Module
-                torch nn.Module
+    @staticmethod
+    def from_model_builder(model_builder: Callable[..., Module],
+                       dataloaders:  List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]],
+                       loss_fn: Callable[[Tensor, Tensor], Tensor],
+                       writer: Optional[SummaryWriter] = None,
+                       training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
+                       k_fold_class: Optional[BaseCrossValidator] = None
+    ) -> "HyperParameterOptimization":
+        """Initialise a HyperParameterOptimization instance from a model builder.
+             
+            Args:
+                model_builder:
+                    A callable that takes the hyperparameters as input and returns a model.
+                dataloaders:
+                    A list of dataloaders.
+                loss_fn:
+                    A callable that takes the output of the model and the target as input and returns the loss.
+                writer:
+                    A SummaryWriter instance.
+                training_metric:
+                    A callable that takes the output of the model and the target as input and returns the training metric.
+                k_fold_class:
+                    A class that implements the BaseCrossValidator interface.
+            Returns:
+                A HyperParameterOptimization instance.
         """
-        if models_hyperparam:
-            list_of_params_keys = HyperParameterOptimization._powerset(
-                list(models_hyperparam.keys())
-            )
-            list_of_params_keys.reverse()
-            for params_keys in list_of_params_keys:
-                sub_models_hyperparam = {
-                    k: models_hyperparam[k]
-                    for k in models_hyperparam.keys()
-                    if k in params_keys
-                }
-                try:
-                    # print(sub_models_hyperparam)
-                    new_model = type(self.model)(**sub_models_hyperparam)  # noqa
-                    # print(new_model.state_dict())
-                    raise ValueError
-                except TypeError:  # when the parameters do not match the model
-                    pass
-                except ValueError:  # when the parameters match the model
-                    break
-        else:
-            new_model = type(self.model)()
-
-        try:
-            new_model  # noqa
-        except NameError:
-            warnings.warn("Model cannot be re-initialised. Using existing one.")
-            new_model = self.model
-        return new_model
+        model = model_builder()
+        hpo = HyperParameterOptimization(
+            obj=Trainer(model, dataloaders, loss_fn, writer, training_metric, k_fold_class),
+            search_metric="loss",
+            n_trials=10,
+            best_not_last=True,
+            pruner=None,
+        
+        )
+        hpo._initialise_new_model = model_builder
+        
+        return hpo
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
         """default callback function for optuna's study
