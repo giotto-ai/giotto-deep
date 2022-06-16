@@ -1,9 +1,8 @@
-from typing import Any, Dict, List, Set, Tuple, TypeVar, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar
 
 import numpy as np
 import plotly.graph_objs as gobj
 import torch
-
 from gdeep.utility.utils import flatten_list_of_lists
 
 T = TypeVar("T")
@@ -12,12 +11,15 @@ Array = np.ndarray
 
 class OneHotEncodedPersistenceDiagram():
     """This class represents a single one-hot encoded persistence diagram.
+    
+    Args:
+        data:
+            The data of the persistence diagram.
     """
     _data: Tensor
     _homology_dimension_names: List[str]
     
     def __init__(self, data: Tensor, homology_dimension_names: Optional[List[str]]=None):  # type: ignore
-        super().__init__()
         _check_if_valid(data)
         self._data = data
         if homology_dimension_names is not None:
@@ -97,7 +99,11 @@ class OneHotEncodedPersistenceDiagram():
     def plot(self, names: Optional[List[str]]=None) -> gobj.Figure:  # type: ignore
         """This method plots the persistence diagram.
         
-        Example:
+        Args:
+            names: 
+                The names of the homology dimensions.
+        
+        Examples::
             >>> pd =  torch.tensor\
                       ([[0.0928, 0.0995, 0.0000, 0.0000, 1.0000, 0.0000],
                         [0.0916, 0.1025, 1.0000, 0.0000, 0.0000, 0.0000],
@@ -151,6 +157,12 @@ class OneHotEncodedPersistenceDiagram():
     def filter_by_lifetime(self, min_lifetime: float, max_lifetime: float) -> \
         'OneHotEncodedPersistenceDiagram':
         """This method filters the persistence diagram by lifetime.
+        
+        Args:
+            min_lifetime:
+                The minimum lifetime of the remaining points.
+            max_lifetime:
+                The maximum lifetime of the remaining points.
         """
         lifetime: Tensor = self.get_lifetimes()
         return OneHotEncodedPersistenceDiagram(
@@ -176,6 +188,13 @@ def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDi
     entries.
     
     The input is a list of tuples of the form (persistence diagram, label).
+    
+    Args:
+        batch:
+            The list of tuples of the form (persistence diagram, label).
+            
+    Returns:
+        The data, the labels and the masks.
     """
     max_num_points: int = max([len(x[0].get_raw_data()) for x in batch])
     num_homology_dimensions: int = batch[0][0].get_num_homology_dimensions()
@@ -191,6 +210,17 @@ def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDi
     
     
 def _check_if_valid(data) -> None:
+    """This method checks if the data is a valid persistence diagram.
+    
+    Args:
+        data:
+            The data to check.
+            
+    Raises:
+        ValueError:
+            If the data is not a valid persistence diagram.
+    """
+    
     if data.ndimension() != 2:
         raise ValueError("The input should be a 2-dimensional tensor."
                             f"The input has {data.ndimension()} dimensions.")

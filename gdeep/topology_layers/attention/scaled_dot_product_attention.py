@@ -1,7 +1,7 @@
 from typing import Optional
 
 import torch
-from torch.nn import MultiheadAttention, Dropout
+from torch.nn import Dropout, MultiheadAttention
 
 from ..persformer_config import PersformerConfig
 from .attention_base import AttentionBase

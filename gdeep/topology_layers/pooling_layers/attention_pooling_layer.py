@@ -2,7 +2,7 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-from torch.nn import MultiheadAttention, Module
+from torch.nn import Module, MultiheadAttention
 
 from ..persformer_config import PersformerConfig
 
@@ -33,7 +33,8 @@ class AttentionPoolingLayer(Module):
         Forward pass of the model.
         
         Args:
-            input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+            input_batch:
+                The input batch. Of shape (batch_size, sequence_length, hidden_size)
             
         Returns:
             The pooled output. Of shape (batch_size, hidden_size)

@@ -1,9 +1,11 @@
-from typing import Dict, Callable
+from typing import Callable, Dict
 
 from gdeep.utility.enum_types import AttentionType
 
-from .attention import AttentionBase, ScaledDotProductAttention, InducedAttention
+from .attention import (AttentionBase, InducedAttention,
+                        ScaledDotProductAttention)
 from .persformer_config import PersformerConfig
+
 
 class AttentionFactory():
     """

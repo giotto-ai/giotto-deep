@@ -25,7 +25,8 @@ class SumPoolingLayer(Module):
             Forward pass of the model.
             
             Args:
-                input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+                input_batch:
+                    The input batch. Of shape (batch_size, sequence_length, hidden_size)
                 
             Returns:
                 The pooled output. Of shape (batch_size, hidden_size)

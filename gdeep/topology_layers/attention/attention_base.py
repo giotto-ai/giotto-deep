@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import torch
-from torch.nn import Module
 from gdeep.topology_layers.persformer_config import PersformerConfig
+from torch.nn import Module
 
 # Type aliases
 Tensor = torch.Tensor

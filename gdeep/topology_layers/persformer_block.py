@@ -1,11 +1,11 @@
 from typing import Optional
-from .utility import get_attention_layer, get_feed_forward_layer
 
-from gdeep.utility.enum_types import LayerNormStyle
 import torch
-from torch.nn import ModuleList, LayerNorm, Module
+from gdeep.utility.enum_types import LayerNormStyle
+from torch.nn import LayerNorm, Module, ModuleList
 
 from .persformer_config import PersformerConfig
+from .utility import get_attention_layer, get_feed_forward_layer
 
 # Type aliases
 Tensor = torch.Tensor
@@ -48,8 +48,10 @@ class PersformerBlock(Module):
         see the paper https://arxiv.org/pdf/2002.04745.pdf for details.
         
         Args:
-            input_batch: The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
-            attention_mask: The attention mask. Of shape (batch_size, sequence_length)
+            input_batch:
+                The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
+            attention_mask:
+                The attention mask. Of shape (batch_size, sequence_length)
         
         Returns:
             The logits of the model. Of shape (batch_size, sequence_length, 1)
@@ -72,8 +74,10 @@ class PersformerBlock(Module):
         Forward pass of the model without layer normalization.
         
         Args:
-            input_batch: The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
-            attention_mask: The attention mask. Of shape (batch_size, sequence_length)
+            input_batch:
+                The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
+            attention_mask:
+                The attention mask. Of shape (batch_size, sequence_length)
         
         Returns:
             The logits of the model. Of shape (batch_size, sequence_length, 1)
@@ -91,8 +95,10 @@ class PersformerBlock(Module):
         Forward pass of the model with pre-layer normalization.
         
         Args:
-            input_batch: The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
-            attention_mask: The attention mask. Of shape (batch_size, sequence_length)
+            input_batch:
+                The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
+            attention_mask:
+                The attention mask. Of shape (batch_size, sequence_length)
         
         Returns:
             The logits of the model. Of shape (batch_size, sequence_length, 1)
@@ -113,8 +119,10 @@ class PersformerBlock(Module):
         Forward pass of the model with post-layer normalization.
         
         Args:
-            input_batch: The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
-            attention_mask: The attention mask. Of shape (batch_size, sequence_length)
+            input_batch:
+                The input batch. Of shape (batch_size, sequence_length, 2 + num_homology_types)
+            attention_mask:
+                The attention mask. Of shape (batch_size, sequence_length)
         
         Returns:
             The logits of the model. Of shape (batch_size, sequence_length, 1)

@@ -14,6 +14,7 @@ PD = OneHotEncodedPersistenceDiagram
 
 T = TypeVar('T')
 
+
 class FilterPersistenceDiagramByLifetime(AbstractPreprocessing[Tuple[PD, T], Tuple[PD, T]]):
     """This class filters the persistence diagrams of a dataset by their lifetime, i.e.
     the difference between the birth and death coordinates.
@@ -24,8 +25,10 @@ class FilterPersistenceDiagramByLifetime(AbstractPreprocessing[Tuple[PD, T], Tup
     in a way that breaks this invariant.
     
     Args:
-        min_lifetime: The minimum lifetime of the points in the diagram.
-        max_lifetime: The maximum lifetime of the points in the diagram.
+        min_lifetime:
+            The minimum lifetime of the points in the diagram.
+        max_lifetime:
+            The maximum lifetime of the points in the diagram.
     """
     is_fitted: bool
     max_lifetime: float
@@ -46,7 +49,8 @@ class FilterPersistenceDiagramByLifetime(AbstractPreprocessing[Tuple[PD, T], Tup
         """Filters the persistence diagram by its lifetime.
         
         Args:
-            item: A tuple of (persistence diagram, label).
+            item:
+                A tuple of (persistence diagram, label).
         
         Returns:
             A tuple of (persistence diagram, label).
@@ -59,3 +63,4 @@ class FilterPersistenceDiagramByLifetime(AbstractPreprocessing[Tuple[PD, T], Tup
         mask: Tensor = (lifetime >= self.min_lifetime) & (lifetime <= self.max_lifetime)
         out = out[mask]  # type: ignore
         return (PD(out), item[1])
+    

@@ -15,17 +15,16 @@ PD = OneHotEncodedPersistenceDiagram
 T = TypeVar('T')
 
 class FilterPersistenceDiagramByHomologyDimension(AbstractPreprocessing[Tuple[PD, T], Tuple[PD, T]]):
-    """This class filters the persistence diagrams of a dataset by their lifetime, i.e.
-    the difference between the birth and death coordinates.
+    """This class filters the persistence diagrams of a dataset by their homology dimension.
     
     Here we assume that the dataset is a tuple of (persistence diagram, label) and that
     the points in the diagram are sorted by ascending lifetime. This is an invariant of
     the OneHotEncodedPersistenceDiagram class but could go wrong if the diagrams are modified
     in a way that breaks this invariant.
-    
+     
     Args:
-        min_lifetime: The minimum lifetime of the points in the diagram.
-        max_lifetime: The maximum lifetime of the points in the diagram.
+        homology_dimensions_to_filter:
+            The homology dimensions of the points in the diagram that should be kept.
     """
     is_fitted: bool
     homology_dimensions_to_filter_by: List[int]
@@ -43,7 +42,8 @@ class FilterPersistenceDiagramByHomologyDimension(AbstractPreprocessing[Tuple[PD
         """Filters the persistence diagram by homology dimension.
         
         Args:
-            item: A tuple of (persistence diagram, label).
+            item: 
+                A tuple of (persistence diagram, label).
         
         Returns:
             A tuple of (persistence diagram, label).

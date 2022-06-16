@@ -1,4 +1,3 @@
-torchvision
 giotto-tda
 numpy
 pandas

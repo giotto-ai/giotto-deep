@@ -55,9 +55,9 @@ pd_mutag_ds = PersistenceDiagramFromFiles(
         )
 )
 
-pd: OneHotEncodedPersistenceDiagram = pd_mutag_ds[0][0]
+pd_sample: OneHotEncodedPersistenceDiagram = pd_mutag_ds[0][0]
 
-fig = pd.plot(["Ord0", "Ext0", "Rel1", "Ext1"])
+fig = pd_sample.plot(["Ord0", "Ext0", "Rel1", "Ext1"])
 # add title
 fig.show()
 # %%
@@ -93,9 +93,9 @@ preprocessing_pipeline = PreprocessingPipeline[Tuple[OneHotEncodedPersistenceDia
 preprocessing_pipeline.fit_to_dataset(train_dataset)
 
 # %%
-train_dataset = preprocessing_pipeline.attach_transform_to_dataset(train_dataset)
-validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validation_dataset)
-test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
+train_dataset = preprocessing_pipeline.attach_transform_to_dataset(train_dataset)  # type: ignore
+validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validation_dataset)  # type: ignore
+test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)  # type: ignore
 
 # %%
 

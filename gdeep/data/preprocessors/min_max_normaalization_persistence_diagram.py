@@ -1,23 +1,22 @@
 import warnings
-from typing import TypeVar, Tuple, Any
-from matplotlib.pyplot import axis
+from typing import Any, Tuple, TypeVar
 
 import torch
+from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import \
+    OneHotEncodedPersistenceDiagram
+from gdeep.utility import DEVICE
+from matplotlib.pyplot import axis
 from torch.utils.data import Dataset
-
-from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import OneHotEncodedPersistenceDiagram
 
 from ..abstract_preprocessing import AbstractPreprocessing
 from ..transforming_dataset import TransformingDataset
-
 from .min_max_scalar import _compute_min_max_of_dataset
-
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 Tensor = torch.Tensor
 PD = OneHotEncodedPersistenceDiagram
 
 T = TypeVar('T')
+
 
 class MinMaxScalarPersistenceDiagram(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
     """This class runs the standard min-max normalisation on the birth and death times 

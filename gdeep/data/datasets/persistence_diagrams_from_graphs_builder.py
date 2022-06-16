@@ -1,24 +1,15 @@
-from dataclasses import dataclass
 import os
-from typing import Any, List, Tuple, Callable, Union, Optional
-from types import FunctionType
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
-from requests import HTTPError
-import torch
+from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import \
+    OneHotEncodedPersistenceDiagram
+from gdeep.extended_persistence.utils import graph_extended_persistence_hks
+from gdeep.utility.constants import DEFAULT_GRAPH_DIR
 from torch_geometric.datasets import TUDataset  # type: ignore
 from torch_geometric.utils import to_dense_adj  # type: ignore
 from tqdm import tqdm
-from torch.utils.data import Dataset
-
-from gdeep.extended_persistence.utils import \
-    graph_extended_persistence_hks
-from gdeep.utility.constants import DEFAULT_GRAPH_DIR
-from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import \
-    OneHotEncodedPersistenceDiagram
-
-
 
 PD = OneHotEncodedPersistenceDiagram
 
@@ -37,8 +28,10 @@ class PersistenceDiagramFromGraphBuilder:
         Initialize the dataset.
         
         Args:
-            dataset_name: The name of the graph dataset to load, e.g. "MUTAG".
-            diffusion_parameter: The diffusion parameter of the heat kernel
+            dataset_name:
+                The name of the graph dataset to load, e.g. "MUTAG".
+            diffusion_parameter:
+                The diffusion parameter of the heat kernel
                 signature. These are usually chosen to be as {0.1, 1.0, 10.0}.
         """
         self.dataset_name: str = dataset_name
@@ -81,7 +74,8 @@ class PersistenceDiagramFromGraphBuilder:
         The labels are saved in a csv file in the output directory.
         
         Args:
-            output_dir: The directory where to save the persistence diagrams.
+            output_dir:
+                The directory where to save the persistence diagrams.
         """        
         # Load the dataset
         self.graph_dataset = TUDataset(root=DEFAULT_GRAPH_DIR,

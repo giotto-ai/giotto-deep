@@ -191,9 +191,9 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
             tuple_of_kwargs:
                 List of dictionaries, each one being the
                 kwargs for the corresponding DataLoader
-        """        
+        """
+        out: List = []  
         if tuple_of_kwargs is None:
-            out: List = []
             for i, dataset in enumerate(self.tuple_of_datasets):
                 out.append(DataLoader(dataset))
             out += [None] * (3 - len(out))
@@ -206,7 +206,6 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
             "this point")
         assert len(tuple_of_kwargs) == len(self.tuple_of_datasets), \
             "Cannot match the dataloaders and the parameters. "
-        out: List = []
         for dataset, kwargs in zip(self.tuple_of_datasets, tuple_of_kwargs):
             out.append(DataLoader(dataset, **kwargs))
         out += [None] * (3 - len(out))

@@ -25,7 +25,8 @@ class MaxPoolingLayer(Module):
         Forward pass of the model.
         
         Args:
-            input_batch: The input batch. Of shape (batch_size, sequence_length, hidden_size)
+            input_batch:
+                The input batch. Of shape (batch_size, sequence_length, hidden_size)
             
         Returns:
             The logits of the model. Of shape (batch_size, sequence_length, 1)
