@@ -140,28 +140,3 @@ search.start(
     models_hyperparams,
 )
 
-# %%
-#check if trainer.model is on gpu by looking at trainer.model.parameters()
-if torch.cuda.is_available():
-    if list(search.model.parameters())[0].is_cuda:
-        print("Model is on GPU")
-    else:
-        print("Model is on CPU")
-# %%
-# Compute the number of trainable parameters of wrapped_model
-num_trainable_parameters = sum(
-    param.numel() for param in wrapped_model.parameters() if param.requires_grad
-)
-# %%
-search.model
-# %%
-search.train(Adam, 3, False, 
-              {"lr":0.01}, 
-              {"batch_size":16})
-# %%
-search.model(next(iter(dl_train))[0])
-# %%
-search.model.to('cuda')
-# %%
-x = torch.rand(1, 2, device='cuda')
-# %%
