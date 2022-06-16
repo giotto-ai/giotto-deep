@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import os
 from typing import Tuple
 
+import torch
 import torch.nn as nn
 from gdeep.data import PreprocessingPipeline
 from gdeep.data.datasets import PersistenceDiagramFromFiles
@@ -33,7 +34,7 @@ autoreload_if_notebook()
 # %%
 @dataclass
 class Orbit5kConfig():
-    batch_size_train: int = 32
+    batch_size_train: int = 4
     num_orbits_per_class: int = 32
     validation_percentage: float = 0.0
     test_percentage: float = 0.0
@@ -87,9 +88,9 @@ loss_function =  nn.CrossEntropyLoss()
 
 trainer = Trainer(model, [dl_train], loss_function, writer)
 
-# trainer.train(Adam, 3, False, 
-#               {"lr":0.01}, 
-#               {"batch_size":16})
+trainer.train(Adam, 3, False, 
+              {"lr":0.01}, 
+              {"batch_size":16})
     
     
 # %%
@@ -116,14 +117,18 @@ search.store_pickle = True
 
 # dictionaries of hyperparameters
 optimizers_params = {"lr": [0.001, 0.01]}
-dataloaders_params = {"batch_size": [32, 64, 16]}
+dataloaders_params = {"batch_size": [2, 4, 2]}
 models_hyperparams = {
     "input_size": [4],
     "output_size": [5],
     "num_attention_layers": [1, 2, 1],
     "num_attention_heads": [8, 16, 8],
+    "hidden_size": [16],
+    "intermediate_size": [16],
+    "use_attention_only": [True],
 }
 
+# %%
 # starting the HPO
 search.start(
     [Adam],
@@ -134,4 +139,14 @@ search.start(
     models_hyperparams,
 )
 
+# %%
+#check if trainer.model is on gpu by looking at trainer.model.parameters()
+if torch.cuda.is_available():
+    if list(trainer.model.parameters())[0].is_cuda:
+        print("Model is on GPU")
+# %%
+# Compute the number of trainable parameters of wrapped_model
+num_trainable_parameters = sum(
+    param.numel() for param in wrapped_model.parameters() if param.requires_grad
+)
 # %%
