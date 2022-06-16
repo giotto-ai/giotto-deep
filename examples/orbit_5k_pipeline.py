@@ -80,17 +80,19 @@ model_config = PersformerConfig(
     num_attention_heads=8,
 )
 
-model = Persformer(model_config)
+# %%
 
-writer = SummaryWriter()
+# model = Persformer(model_config)
 
-loss_function =  nn.CrossEntropyLoss()
+# writer = SummaryWriter()
 
-trainer = Trainer(model, [dl_train], loss_function, writer)
+# loss_function =  nn.CrossEntropyLoss()
 
-trainer.train(Adam, 3, False, 
-              {"lr":0.01}, 
-              {"batch_size":16})
+# trainer = Trainer(model, [dl_train], loss_function, writer)
+
+# trainer.train(Adam, 3, False, 
+#               {"lr":0.01}, 
+#               {"batch_size":16})
     
     
 # %%
@@ -107,7 +109,7 @@ writer = GiottoSummaryWriter()
 
 loss_function =  nn.CrossEntropyLoss()
 
-trainer = Trainer(wrapped_model, [dl_train], loss_function, writer)
+trainer = Trainer(wrapped_model, [dl_train, dl_train], loss_function, writer)  # type: ignore
 
 # initialise hpo object
 search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
@@ -125,7 +127,6 @@ models_hyperparams = {
     "num_attention_heads": [8, 16, 8],
     "hidden_size": [16],
     "intermediate_size": [16],
-    "use_attention_only": [True],
 }
 
 # %%
@@ -142,11 +143,25 @@ search.start(
 # %%
 #check if trainer.model is on gpu by looking at trainer.model.parameters()
 if torch.cuda.is_available():
-    if list(trainer.model.parameters())[0].is_cuda:
+    if list(search.model.parameters())[0].is_cuda:
         print("Model is on GPU")
+    else:
+        print("Model is on CPU")
 # %%
 # Compute the number of trainable parameters of wrapped_model
 num_trainable_parameters = sum(
     param.numel() for param in wrapped_model.parameters() if param.requires_grad
 )
+# %%
+search.model
+# %%
+search.train(Adam, 3, False, 
+              {"lr":0.01}, 
+              {"batch_size":16})
+# %%
+search.model(next(iter(dl_train))[0])
+# %%
+search.model.to('cuda')
+# %%
+x = torch.rand(1, 2, device='cuda')
 # %%

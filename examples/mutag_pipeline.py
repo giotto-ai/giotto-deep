@@ -112,28 +112,28 @@ dlb = DataLoaderBuilder((train_dataset, validation_dataset, test_dataset))  # ty
 dl_train, dl_val, dl_test = dlb.build(dl_params)  # type: ignore
 #%%
 
-# Define the model
-model_config = PersformerConfig(
-    num_layers=6,
-    num_attention_heads=4,
-    input_size= 2 + num_homology_types,
-    ouptut_size=2,
-    pooler_type=PoolerType.ATTENTION,
-)
+# # Define the model
+# model_config = PersformerConfig(
+#     num_layers=6,
+#     num_attention_heads=4,
+#     input_size= 2 + num_homology_types,
+#     ouptut_size=2,
+#     pooler_type=PoolerType.ATTENTION,
+# )
 
-model = Persformer(model_config)
-writer = SummaryWriter()
+# model = Persformer(model_config)
+# writer = SummaryWriter()
 
-loss_function =  nn.CrossEntropyLoss()
+# loss_function =  nn.CrossEntropyLoss()
 
-trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
+# trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 
-trainer.train(Adam, 3, False, 
-              {"lr":0.01}, 
-              {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
+# trainer.train(Adam, 3, False, 
+#               {"lr":0.01}, 
+#               {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
 # %%
-# Define the model by using a Wrapper for the Persformer model
 
+# Define the model by using a Wrapper for the Persformer model
 wrapped_model = PersformerWrapper(
     num_attention_layers=3,
     num_attention_heads=4,
@@ -155,9 +155,11 @@ search.store_pickle = True
 
 # dictionaries of hyperparameters
 optimizers_params = {"lr": [0.001, 0.01]}
-dataloaders_params = {"batch_size": [32, 64, 16], "collate_fn": [collate_fn_persistence_diagrams]}
-models_hyperparams = {"num_attention_layers": [2, 6, 1],
-                      "num_attention_heads": [8, 16, 8],
+dataloaders_params = {"batch_size": [32, 64, 16], 
+                      "collate_fn": [collate_fn_persistence_diagrams]}
+models_hyperparams = {
+    "num_attention_layers": [2, 6, 1],
+    "num_attention_heads": [8, 16, 8],
 }
 
 # starting the HPO
@@ -170,4 +172,5 @@ search.start(
     models_hyperparams,
     n_accumulated_grads=2,
 )
+# %%
 # %%

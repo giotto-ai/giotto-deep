@@ -52,7 +52,7 @@ class PersformerConfig(PretrainedConfig):
     
     def __init__(self,
                  input_size: int = 2 + 4,
-                 ouptut_size: int = 2,
+                 output_size: int = 2,
                  hidden_size: int = 32,
                  num_attention_layers: int = 2,
                  num_attention_heads: int = 4,
@@ -73,7 +73,7 @@ class PersformerConfig(PretrainedConfig):
                  ):
         super().__init__(**kwargs)  # type: ignore
         self.input_size = input_size
-        self.output_size = ouptut_size
+        self.output_size = output_size
         self.hidden_size = hidden_size
         self.num_attention_layers = num_attention_layers
         self.num_attention_heads = num_attention_heads
