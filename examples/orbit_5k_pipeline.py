@@ -87,9 +87,9 @@ loss_function =  nn.CrossEntropyLoss()
 
 trainer = Trainer(model, [dl_train], loss_function, writer)
 
-trainer.train(Adam, 3, False, 
-              {"lr":0.01}, 
-              {"batch_size":16})
+# trainer.train(Adam, 3, False, 
+#               {"lr":0.01}, 
+#               {"batch_size":16})
     
     
 # %%
@@ -99,7 +99,7 @@ wrapped_model = PersformerWrapper(
     num_attention_layers=3,
     num_attention_heads=4,
     input_size= 2 + 2,
-    ouptut_size=2,
+    ouptut_size=5,
     pooler_type=PoolerType.ATTENTION,
 )
 writer = GiottoSummaryWriter()
@@ -117,8 +117,11 @@ search.store_pickle = True
 # dictionaries of hyperparameters
 optimizers_params = {"lr": [0.001, 0.01]}
 dataloaders_params = {"batch_size": [32, 64, 16]}
-models_hyperparams = {"num_attention_layers": [2, 6, 1],
-                      "num_attention_heads": [8, 16, 8],
+models_hyperparams = {
+    "input_size": [4],
+    "output_size": [5],
+    "num_attention_layers": [1, 2, 1],
+    "num_attention_heads": [8, 16, 8],
 }
 
 # starting the HPO
@@ -131,6 +134,4 @@ search.start(
     models_hyperparams,
 )
 
-# %%
-next(iter(dl_train))
 # %%

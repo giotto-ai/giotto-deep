@@ -1,9 +1,15 @@
 
+from typing import Optional
+
+import torch
+from gdeep.utility.enum_types import (ActivationFunction, AttentionType,
+                                      LayerNormStyle, PoolerType)
 from torch.nn import Module
+
 from .persformer import Persformer
 from .persformer_config import PersformerConfig
-from gdeep.utility.enum_types import ActivationFunction, PoolerType, AttentionType, LayerNormStyle
 
+Tensor = torch.Tensor
 
 class PersformerWrapper(Module):
     
@@ -18,5 +24,8 @@ class PersformerWrapper(Module):
         )
         self.model = Persformer(self.config)
     
-    def forward(self, input, attention_mask):
+    def forward(self, 
+                input: Tensor,
+                attention_mask: Optional[Tensor] = None
+                ):
         return self.model(input, attention_mask)
