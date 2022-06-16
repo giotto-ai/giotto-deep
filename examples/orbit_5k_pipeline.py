@@ -118,7 +118,7 @@ search.store_pickle = True
 optimizers_params = {"lr": [0.001, 0.01]}
 dataloaders_params = {"batch_size": [32, 64, 16]}
 models_hyperparams = {"num_attention_layers": [2, 6, 1],
-                      "num_attention_heads": [2, 16, 4],
+                      "num_attention_heads": [8, 16, 8],
 }
 
 # starting the HPO
