@@ -142,6 +142,7 @@ class HyperParameterOptimization(Trainer):
         study_name:
             name of the optuna study
     Examples::
+    
         from gdeep.search import HyperParameterOptimization
         # initialise hpo, you need a `trainer`!
         search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
