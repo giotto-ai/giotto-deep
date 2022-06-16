@@ -19,6 +19,13 @@ from .constants import (
 
 from ._typing_utils import torch_transform, get_parameter_types, get_return_type
 
+from .enum_types import (
+    PoolerType,
+    LayerNormStyle,
+    AttentionType,
+    ActivationFunction,
+)
+
 __all__ = [
     "save_model_and_optimizer",
     "optimisation",
@@ -36,4 +43,8 @@ __all__ = [
     "torch_transform",
     "get_parameter_types",
     "KnownWarningSilencer",
+    "PoolerType",
+    "LayerNormStyle",
+    "AttentionType",
+    "ActivationFunction",
 ]

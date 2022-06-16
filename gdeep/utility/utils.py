@@ -178,8 +178,8 @@ def autoreload_if_notebook() -> None:
     """
     from IPython import get_ipython  # type: ignore
 
-    get_ipython().magic("load_ext autoreload")
-    get_ipython().magic("autoreload 2")
+    get_ipython().magic("load_ext autoreload")  # type: ignore
+    get_ipython().magic("autoreload 2")  # type: ignore
 
 
 def _file_as_bytes(file) -> bytes:
@@ -240,3 +240,15 @@ class KnownWarningSilencer:
 
     def __exit__(self, type, value, traceback):
         warnings.filterwarnings("default")
+
+        
+def flatten_list_of_lists(list_: list) -> list:
+    """Flatten a list of lists
+    Args:
+        list_ (list):
+            the list to flatten
+    Returns:
+        list:
+            the flattened list
+    """
+    return [item for sublist in list_ for item in sublist]

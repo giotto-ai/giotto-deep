@@ -1,7 +1,11 @@
-from .persformer import Persformer, GraphClassifier
-from .modules import _ISAB, _PMA, _SAB, _FastAttention
+from .persformer_config import PersformerConfig
+
+from .persformer import Persformer
+
+from .persformer_wrapper import PersformerWrapper
 
 __all__ = [
-    "Persformer",
-    "GraphClassifier",
+    'PersformerConfig',
+    'Persformer',
+    'PersformerWrapper',
 ]

@@ -5,10 +5,10 @@ plotly
 matplotlib
 matplotlib_venn
 scikit-learn
+torch
 spacy
 scipy
 networkx
-torch
 torch-tb-profiler
 torchdiffeq
 torchensemble
@@ -35,3 +35,7 @@ wget
 ipython
 jsonpickle
 typing_extensions; python_version == '3.7'
+torch-geometric
+torch-sparse
+torch-scatter
+gudhi
