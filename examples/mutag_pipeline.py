@@ -132,12 +132,9 @@ trainer.train(Adam, 3, False,
               {"lr":0.01}, 
               {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
 # %%
+# Define the model by using a Wrapper for the Persformer model
 
-# Option 1: Using a Wrapper for the Persformer model
-
-# Define the model
-
-model = PersformerWrapper(
+wrapped_model = PersformerWrapper(
     num_attention_layers=3,
     num_attention_heads=4,
     input_size= 2 + num_homology_types,
@@ -148,7 +145,7 @@ writer = GiottoSummaryWriter()
 
 loss_function =  nn.CrossEntropyLoss()
 
-trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
+trainer = Trainer(wrapped_model, [dl_train, dl_val, dl_test], loss_function, writer)
 
 # initialise hpo object
 search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
@@ -160,7 +157,7 @@ search.store_pickle = True
 optimizers_params = {"lr": [0.001, 0.01]}
 dataloaders_params = {"batch_size": [32, 64, 16], "collate_fn": [collate_fn_persistence_diagrams]}
 models_hyperparams = {"num_attention_layers": [2, 6, 1],
-                      "num_attention_heads": [2, 16, 4],
+                      "num_attention_heads": [8, 16, 8],
 }
 
 # starting the HPO

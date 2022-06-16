@@ -34,7 +34,7 @@ autoreload_if_notebook()
 @dataclass
 class Orbit5kConfig():
     batch_size_train: int = 32
-    num_orbits_per_class: int = 1000
+    num_orbits_per_class: int = 32
     validation_percentage: float = 0.0
     test_percentage: float = 0.0
     num_jobs: int = 8
@@ -70,5 +70,67 @@ if len(config_data.homology_dimensions) == 0:
 else:
     dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
     
+model_config = PersformerConfig(
+    input_size=2 + 2, # there are 2 coordinates and 2 homology dimensions
+    ouptut_size=5,  # there are 5 classes
+    hidden_size=64,
+    intermediate_size=128,
+    num_attention_layers=2,
+    num_attention_heads=8,
+)
+
+model = Persformer(model_config)
+
+writer = SummaryWriter()
+
+loss_function =  nn.CrossEntropyLoss()
+
+trainer = Trainer(model, [dl_train], loss_function, writer)
+
+trainer.train(Adam, 3, False, 
+              {"lr":0.01}, 
+              {"batch_size":16})
     
+    
+# %%
+# Define the model by using a Wrapper for the Persformer model
+
+wrapped_model = PersformerWrapper(
+    num_attention_layers=3,
+    num_attention_heads=4,
+    input_size= 2 + 2,
+    ouptut_size=2,
+    pooler_type=PoolerType.ATTENTION,
+)
+writer = GiottoSummaryWriter()
+
+loss_function =  nn.CrossEntropyLoss()
+
+trainer = Trainer(wrapped_model, [dl_train], loss_function, writer)
+
+# initialise hpo object
+search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
+
+# if you want to store pickle files of the models instead of the state_dicts
+search.store_pickle = True
+
+# dictionaries of hyperparameters
+optimizers_params = {"lr": [0.001, 0.01]}
+dataloaders_params = {"batch_size": [32, 64, 16]}
+models_hyperparams = {"num_attention_layers": [2, 6, 1],
+                      "num_attention_heads": [2, 16, 4],
+}
+
+# starting the HPO
+search.start(
+    [Adam],
+    3,
+    False,
+    optimizers_params,
+    dataloaders_params,
+    models_hyperparams,
+)
+
+# %%
+next(iter(dl_train))
 # %%
