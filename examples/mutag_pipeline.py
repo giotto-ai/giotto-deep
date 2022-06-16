@@ -14,9 +14,11 @@ from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
 from gdeep.data.preprocessors import (
     FilterPersistenceDiagramByHomologyDimension,
     FilterPersistenceDiagramByLifetime, NormalizationPersistenceDiagram)
-from gdeep.topology_layers import Persformer, PersformerConfig
+from gdeep.search.hpo import GiottoSummaryWriter
+from gdeep.topology_layers import Persformer, PersformerConfig, PersformerWrapper
 from gdeep.topology_layers.persformer_config import PoolerType
 from gdeep.trainer.trainer import Trainer
+from gdeep.search import HyperParameterOptimization
 from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
 from gdeep.utility.utils import autoreload_if_notebook
 from sklearn.model_selection import train_test_split
@@ -129,4 +131,46 @@ trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 trainer.train(Adam, 3, False, 
               {"lr":0.01}, 
               {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
+# %%
+
+# Option 1: Using a Wrapper for the Persformer model
+
+# Define the model
+
+model = PersformerWrapper(
+    num_attention_layers=3,
+    num_attention_heads=4,
+    input_size= 2 + num_homology_types,
+    ouptut_size=2,
+    pooler_type=PoolerType.ATTENTION,
+)
+writer = GiottoSummaryWriter()
+
+loss_function =  nn.CrossEntropyLoss()
+
+trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
+
+# initialise hpo object
+search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
+
+# if you want to store pickle files of the models instead of the state_dicts
+search.store_pickle = True
+
+# dictionaries of hyperparameters
+optimizers_params = {"lr": [0.001, 0.01]}
+dataloaders_params = {"batch_size": [32, 64, 16], "collate_fn": [collate_fn_persistence_diagrams]}
+models_hyperparams = {"num_attention_layers": [2, 6, 1],
+                      "num_attention_heads": [2, 16, 4],
+}
+
+# starting the HPO
+search.start(
+    [Adam],
+    3,
+    False,
+    optimizers_params,
+    dataloaders_params,
+    models_hyperparams,
+    n_accumulated_grads=2,
+)
 # %%

@@ -46,6 +46,7 @@ class PersformerConfig(PretrainedConfig):
     attention_type: AttentionType
     activation_fn: ActivationFunction
     pooler_type: PoolerType
+    use_attention_only: bool
          
     
     def __init__(self,
@@ -65,7 +66,7 @@ class PersformerConfig(PretrainedConfig):
                  attention_type: AttentionType = \
                      AttentionType.DOT_PRODUCT,
                  pooler_type: PoolerType = PoolerType.ATTENTION,
-                 **kwargs  # type: ignore
+                 use_attention_only: bool = False,
                  ):
         super().__init__(**kwargs)  # type: ignore
         self.input_size = input_size
@@ -82,5 +83,6 @@ class PersformerConfig(PretrainedConfig):
         self.layer_norm_style = use_layer_norm
         self.attention_type = attention_type
         self.pooler_type = pooler_type
+        self.use_attention_only = use_attention_only
 
 

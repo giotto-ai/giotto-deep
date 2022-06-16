@@ -3,11 +3,10 @@ import time
 import warnings
 import random
 from itertools import chain, combinations
-from typing import Callable, Tuple, Any, Dict, Type, Optional, List, Union, Sequence
+from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence
 import string
 
 from typing_extensions import Literal
-from sklearn.model_selection import BaseCrossValidator
 import torch
 import optuna
 from optuna.trial import TrialState
@@ -15,7 +14,6 @@ import pandas as pd
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
-from torch.nn import Module
 from torch.optim import *  # noqa
 import plotly.express as px
 from optuna.pruners import MedianPruner, BasePruner
@@ -48,7 +46,6 @@ class GiottoSummaryWriter(SummaryWriter):
         best_not_last: bool = False,
     ):
         """Add a set of hyperparameters to be compared in TensorBoard.
-
         Args:
             hparam_dict (dict):
                 Each key-value pair in the dictionary is the
@@ -76,15 +73,12 @@ class GiottoSummaryWriter(SummaryWriter):
             best_not_last:
                 boolean flag to dcide what value to store in the
                 tensorboard tables for the whole training cycle
-
         Examples::
-
             from torch.utils.tensorboard import SummaryWriter
             with GiottoSummaryWriter() as w:
                 for i in range(5):
                     w.add_hparams({'lr': 0.1*i, 'bsize': i},
                                   {'hparam/accuracy': 10*i, 'hparam/loss': 10*i})
-
         """
         torch._C._log_api_usage_once("tensorboard.logging.add_hparams")  # type: ignore
         if (not isinstance(hparam_dict, dict)) or (not isinstance(metric_dict, dict)):
@@ -120,57 +114,10 @@ class GiottoSummaryWriter(SummaryWriter):
                     w_hp.add_scalar("accuracy", v, t)
 
 
-def _initialise_new_model(
-    model: Module, models_hyperparam: Optional[Dict[str, Any]]
-) -> Module:
-    """private method to find the maximal compatible set
-    between models and hyperparameters
-    
-    Args:
-        models_hyperparam (dict):
-            model selected hyperparameters
-    
-    Returns:
-        nn.Module
-            torch nn.Module
-    """
-    if models_hyperparam:
-        list_of_params_keys = HyperParameterOptimization._powerset(
-            list(models_hyperparam.keys())
-        )
-        list_of_params_keys.reverse()
-        for params_keys in list_of_params_keys:
-            sub_models_hyperparam = {
-                k: models_hyperparam[k]
-                for k in models_hyperparam.keys()
-                if k in params_keys
-            }
-            try:
-                # print(sub_models_hyperparam)
-                new_model = type(model)(**sub_models_hyperparam)  # noqa
-                # print(new_model.state_dict())
-                raise ValueError
-            except TypeError:  # when the parameters do not match the model
-                pass
-            except ValueError:  # when the parameters match the model
-                break
-    else:
-        new_model = type(model)()
-
-    try:
-        new_model  # noqa
-    except NameError:
-        warnings.warn("Model cannot be re-initialised. Using existing one.")
-        new_model = model
-    return new_model
-
-
-
 class HyperParameterOptimization(Trainer):
     """This is the generic class that allows
     the user to perform gridsearch over several
     parameters such as learning rate, optimizer.
-
     Args:
         obj :
             either a Trainer or a Bechmark class
@@ -194,9 +141,7 @@ class HyperParameterOptimization(Trainer):
             ``mysql+mysqldb://usr:psw@host:port/db_name``
         study_name:
             name of the optuna study
-
     Examples::
-
         from gdeep.search import HyperParameterOptimization
         # initialise hpo, you need a `trainer`!
         search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
@@ -216,7 +161,6 @@ class HyperParameterOptimization(Trainer):
             models_hyperparams,
             n_accumulated_grads=2,
         )
-
     """
     is_pipe: bool
     df_res: pd.DataFrame
@@ -251,16 +195,9 @@ class HyperParameterOptimization(Trainer):
             )
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
-            self._initialise_new_model = lambda hyper_params: _initialise_new_model(model = self.model, 
-                                                                                    models_hyperparam=hyper_params)
         elif isinstance(obj, Benchmark):
             self.bench: Benchmark = obj
             self.is_pipe = False
-            self._initialise_new_model =  lambda hyper_params: _initialise_new_model(self.model, 
-                                                                                     models_hyperparam=hyper_params)
-        else:
-            raise ValueError("obj must be either a Trainer or a Benchmark instance")
-        
         self.search_metric = search_metric
         assert (
             self.search_metric in SEARCH_METRICS
@@ -278,54 +215,50 @@ class HyperParameterOptimization(Trainer):
         self.scalars_dict: Dict[str, Any] = dict()
         # can be changed by changing this attribute
         self.store_pickle: bool = False
-        
-    @staticmethod
-    def from_model_builder(model_builder: Callable[..., Module],
-                       dataloaders:  List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]],
-                       loss_fn: Callable[[Tensor, Tensor], Tensor],
-                       writer: Optional[SummaryWriter] = None,
-                       training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
-                       k_fold_class: Optional[BaseCrossValidator] = None,
-                       search_metric: Literal["loss", "accuracy"] = "loss",
-                       n_trials: int = 10,
-                       best_not_last: bool = False,
-                       pruner: Optional[BasePruner] = None,
-                       sampler=None,
-                       db_url: Optional[str] = None,
-                       study_name: Optional[str] = None,
-    ) -> "HyperParameterOptimization":
-        """Initialise a HyperParameterOptimization instance from a model builder.
-                
-            Args:
-                model_builder:
-                    A callable that takes the hyperparameters as input and returns a model.
-                dataloaders:
-                    A list of dataloaders.
-                loss_fn:
-                    A callable that takes the output of the model and the target as input and returns the loss.
-                writer:
-                    A SummaryWriter instance.
-                training_metric:
-                    A callable that takes the output of the model and the target as input and returns the training metric.
-                k_fold_class:
-                    A class that implements the BaseCrossValidator interface.
-            Returns:
-                A HyperParameterOptimization instance.
-        """
-        model = model_builder()
-        hpo = HyperParameterOptimization(
-            obj=Trainer(model, dataloaders, loss_fn, writer, training_metric, k_fold_class),
-            search_metric=search_metric,
-            n_trials=n_trials,
-            best_not_last=best_not_last,
-            pruner=pruner,
-            sampler=sampler,
-            db_url=db_url,
-            study_name=study_name,
-        )
-        hpo._initialise_new_model = model_builder
 
-        return hpo
+    def _initialise_new_model(
+        self, models_hyperparam: Optional[Dict[str, Any]]
+    ) -> torch.nn.Module:
+        """private method to find the maximal compatible set
+        between models and hyperparameters
+        
+        Args:
+            models_hyperparam (dict):
+                model selected hyperparameters
+        
+        Returns:
+            nn.Module
+                torch nn.Module
+        """
+        if models_hyperparam:
+            list_of_params_keys = HyperParameterOptimization._powerset(
+                list(models_hyperparam.keys())
+            )
+            list_of_params_keys.reverse()
+            for params_keys in list_of_params_keys:
+                sub_models_hyperparam = {
+                    k: models_hyperparam[k]
+                    for k in models_hyperparam.keys()
+                    if k in params_keys
+                }
+                try:
+                    # print(sub_models_hyperparam)
+                    new_model = type(self.model)(**sub_models_hyperparam)  # noqa
+                    # print(new_model.state_dict())
+                    raise ValueError
+                except TypeError:  # when the parameters do not match the model
+                    pass
+                except ValueError:  # when the parameters match the model
+                    break
+        else:
+            new_model = type(self.model)()
+
+        try:
+            new_model  # noqa
+        except NameError:
+            warnings.warn("Model cannot be re-initialised. Using existing one.")
+            new_model = self.model
+        return new_model
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
         """default callback function for optuna's study
@@ -336,8 +269,6 @@ class HyperParameterOptimization(Trainer):
             config:
                 configuration class HPOConfig,
                 containing all the parameters needed
-
-
         Returns:
             float
                 metric (either loss or accuracy)
@@ -478,7 +409,6 @@ class HyperParameterOptimization(Trainer):
         writer_tag: str = "",
     ) -> None:
         """method to be called when starting the gridsearch
-
         Args:
             optimizers:
                 list of torch optimizers classes, not isntances
@@ -683,7 +613,6 @@ class HyperParameterOptimization(Trainer):
                 the value of the accuracy for te current trial
             list_res (list):
                 list of results
-
         Returns:
             list:
                 list of HPOs and metrics. the first element is the
@@ -763,7 +692,6 @@ class HyperParameterOptimization(Trainer):
         """This method returns the dataframe with all the results of
         the hyperparameters optimisaton.
         It also saves the figures in the writer.
-
         Args:
             model_name:
                 the model name for the
@@ -771,7 +699,6 @@ class HyperParameterOptimization(Trainer):
             dataset_name:
                 the dataset name for the
                 tensorboard gridsearch table
-
         Returns:
             pd.DataFrame:
                 the hyperparameter table
@@ -887,12 +814,10 @@ class HyperParameterOptimization(Trainer):
         """private method to transform a list with
         many values for the same epoch into a dictionary
         compatible with ``add_scalar`` averaged per epoch
-
         Args:
             two_lists :
                 two lists with pairs (value, time) with possible
                 repetition of the same time
-
         Returns:
             list of list:
                 compatible with ``add_scalar``
@@ -912,13 +837,11 @@ class HyperParameterOptimization(Trainer):
     ) -> Optional[Dict[str, Any]]:
         """Utility function to generate the parameters
         for the gridsearch. It is based on optuna `suggest_<type>`.
-
         Args:
             trial (optuna.trial):
                 optuna trial variable
             params (dict):
                 dictionary of parameters
-
         Returns:
             (dict):
                 dictionary of selected parameters values
@@ -957,7 +880,6 @@ class HyperParameterOptimization(Trainer):
     def _new_suggest_categorical(trial, name: str, choices: Sequence) -> Any:
         """A modification of the Optuna function, in order to remove the
         constraing on the type for categorical choices.
-
         Expected to get a list with at least two choices!"""
         if (isinstance(choices, list) or isinstance(choices, tuple)) \
                 and (isinstance(choices[0], str) or isinstance(choices[1], str)):

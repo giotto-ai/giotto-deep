@@ -92,3 +92,5 @@ state_dicts/*
 
 # pylance files
 *.pyi
+
+giotto-env/
