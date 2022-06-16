@@ -31,7 +31,8 @@ class PersformerBlock(Module):
         Build the model.
         """
         self.attention_layer = get_attention_layer(self.config)
-        self.feed_forward_layer = get_feed_forward_layer(self.config)
+        if not self.config.use_attention_only:
+            self.feed_forward_layer = get_feed_forward_layer(self.config)
        
         if self.config.layer_norm_style == LayerNormStyle.PRE_LAYER_NORMALIZATION or \
             self.config.layer_norm_style == LayerNormStyle.POST_LAYER_NORMALIZATION:
@@ -78,7 +79,8 @@ class PersformerBlock(Module):
             The logits of the model. Of shape (batch_size, sequence_length, 1)
         """
         output = self.attention_layer(input_batch, attention_mask) + input_batch  # type: ignore
-        output = self.feed_forward_layer(output) + output
+        if not self.config.use_attention_only:
+            output = self.feed_forward_layer(output) + output
         return output
         
     def _forward_pre_layer_norm(self,
@@ -98,8 +100,9 @@ class PersformerBlock(Module):
         assert self.layer_norms is not None
         normalized = self.layer_norms[0](input_batch)
         output = self.attention_layer(normalized, attention_mask) + input_batch
-        normalized = self.layer_norms[1](output)
-        output = self.feed_forward_layer(normalized) + output
+        if not self.config.use_attention_only:
+            normalized = self.layer_norms[1](output)
+            output = self.feed_forward_layer(normalized) + output
         return output
     
     def _forward_post_layer_norm(self,
@@ -119,6 +122,7 @@ class PersformerBlock(Module):
         assert self.layer_norms is not None
         output = self.attention_layer(input_batch, attention_mask) + input_batch
         output = self.layer_norms[0](output)
-        output = self.feed_forward_layer(output) + output
-        output = self.layer_norms[1](output)
+        if not self.config.use_attention_only:
+            output = self.feed_forward_layer(output) + output
+            output = self.layer_norms[1](output)
         return output

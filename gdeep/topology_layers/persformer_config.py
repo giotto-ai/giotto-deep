@@ -47,6 +47,7 @@ class PersformerConfig(PretrainedConfig):
     activation_fn: ActivationFunction
     pooler_type: PoolerType
     use_attention_only: bool
+    use_skip_connections_for_persformer_blocks: bool
          
     
     def __init__(self,
@@ -67,6 +68,8 @@ class PersformerConfig(PretrainedConfig):
                      AttentionType.DOT_PRODUCT,
                  pooler_type: PoolerType = PoolerType.ATTENTION,
                  use_attention_only: bool = False,
+                 use_skip_connections_for_persformer_blocks=False,
+                 **kwargs
                  ):
         super().__init__(**kwargs)  # type: ignore
         self.input_size = input_size
@@ -84,5 +87,6 @@ class PersformerConfig(PretrainedConfig):
         self.attention_type = attention_type
         self.pooler_type = pooler_type
         self.use_attention_only = use_attention_only
+        self.use_skip_connections_for_persformer_blocks = use_skip_connections_for_persformer_blocks
 
 
