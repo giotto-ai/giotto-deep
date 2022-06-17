@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 
 version_file = os.path.join("gdeep", "_version.py")
-__version__ = '0.0.1'  # initialise the variable
+__version__ = '0.0.0'  # initialise the variable
 with open(version_file) as f:
     exec(f.read())
 
@@ -19,7 +19,7 @@ DISTNAME = "giotto-deep"
 DESCRIPTION = "Toolbox for Deep Learning and Topological Data Analysis."
 with codecs.open("README.md", encoding="utf-8-sig") as f:
     LONG_DESCRIPTION = f.read()
-LONG_DESCRIPTION_TYPE = "text/x-md"
+LONG_DESCRIPTION_TYPE = "text/markdown"
 MAINTAINER = "Matteo Caorsi"
 MAINTAINER_EMAIL = "maintainers@giotto.ai"
 URL = "https://github.com/giotto-ai/giotto-deep"
@@ -29,7 +29,6 @@ DOWNLOAD_URL = "https://github.com/giotto-ai/giotto-deep/tarball/v"+VERSION
 CLASSIFIERS = ["Intended Audience :: Science/Research",
                "Intended Audience :: Developers",
                "License :: OSI Approved",
-               "Programming Language :: C++",
                "Programming Language :: Python",
                "Topic :: Software Development",
                "Topic :: Scientific/Engineering",
@@ -37,14 +36,15 @@ CLASSIFIERS = ["Intended Audience :: Science/Research",
                "Operating System :: POSIX",
                "Operating System :: Unix",
                "Operating System :: MacOS",
-               "Programming Language :: Python :: 3.6",
                "Programming Language :: Python :: 3.7",
-               "Programming Language :: Python :: 3.8"]
+               "Programming Language :: Python :: 3.8",
+               "Programming Language :: Python :: 3.9"]
 KEYWORDS = "deep learning, topological data analysis, persistent " \
            "homology, persistence diagrams"
 INSTALL_REQUIRES = requirements
 EXTRAS_REQUIRE = {"tests": ["pytest",
-                            "flake8"],
+                            "flake8",
+                            "mypy"],
                   "doc": ["openml",
                           "sphinx",
                           "nbconvert",
