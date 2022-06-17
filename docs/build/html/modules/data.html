@@ -47,6 +47,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Data</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.preprocessors">Preprocessors</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.datasets">Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.persistence_diagrams">Persistence Diagrams</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
@@ -198,7 +199,7 @@ in a way that breaks this invariant.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension.fit_to_dataset">
-<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">OneHotEncodedPersistenceDiagram</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension.fit_to_dataset" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension.fit_to_dataset" title="Permalink to this definition"></a></dt>
 <dd><p>This method does nothing.</p>
 </dd></dl>
 
@@ -224,7 +225,7 @@ in a way that breaks this invariant.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime.fit_to_dataset">
-<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">OneHotEncodedPersistenceDiagram</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime.fit_to_dataset" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime.fit_to_dataset" title="Permalink to this definition"></a></dt>
 <dd><p>This method does nothing.</p>
 </dd></dl>
 
@@ -762,6 +763,11 @@ Returns:</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.datasets.PersistenceDiagramFromFiles">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">PersistenceDiagramFromFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.PersistenceDiagramFromFiles" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.datasets.Rotation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">Rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.datasets.Rotation" title="Permalink to this definition"></a></dt>
 <dd><p>Class for rotations</p>
@@ -775,29 +781,6 @@ family of tori-datasets</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>name:</dt><dd><p>name of the torus dataset to generate</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="gdeep.data.datasets.collate_fn_persistence_diagrams">
-<span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">collate_fn_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.collate_fn_persistence_diagrams" title="Permalink to this definition"></a></dt>
-<dd><p>Collate a batch of persistence diagrams and labels by padding the
-persistence diagrams to the same length.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>batch: </dt><dd><p>A list of tuples of the form (persistence_diagram, label).</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>persistence_diagrams: </dt><dd><p>A tensor of the form (batch_size, persistence_diagram_length, 6).</p>
-</dd>
-<dt>masks: </dt><dd><p>A tensor of the form (batch_size, persistence_diagram_length).</p>
-</dd>
-<dt>labels: </dt><dd><p>A tensor of the form (batch_size, 1).</p>
 </dd>
 </dl>
 </dd>
@@ -876,6 +859,195 @@ to the key in the list of builders</p>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>torch.utils.data.Dataset:</dt><dd><p>The dataset</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-gdeep.data.persistence_diagrams">
+<span id="persistence-diagrams"></span><h2>Persistence Diagrams<a class="headerlink" href="#module-gdeep.data.persistence_diagrams" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.persistence_diagrams.</span></span><span class="sig-name descname"><span class="pre">OneHotEncodedPersistenceDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimension_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="Permalink to this definition"></a></dt>
+<dd><p>This class represents a single one-hot encoded persistence diagram.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>data:</dt><dd><p>The data of the persistence diagram.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.all_close">
+<span class="sig-name descname"><span class="pre">all_close</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-07</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.all_close" title="Permalink to this definition"></a></dt>
+<dd><p>This method checks if the persistence diagrams are close.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.filter_by_lifetime">
+<span class="sig-name descname"><span class="pre">filter_by_lifetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_lifetime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lifetime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.filter_by_lifetime" title="Permalink to this definition"></a></dt>
+<dd><p>This method filters the persistence diagram by lifetime.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>min_lifetime:</dt><dd><p>The minimum lifetime of the remaining points.</p>
+</dd>
+<dt>max_lifetime:</dt><dd><p>The maximum lifetime of the remaining points.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.from_numpy">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.from_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>This method creates a persistence diagram from a numpy array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_all_points_in_homology_dimension">
+<span class="sig-name descname"><span class="pre">get_all_points_in_homology_dimension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_all_points_in_homology_dimension" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns all points in a given homology dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_lifetimes">
+<span class="sig-name descname"><span class="pre">get_lifetimes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_lifetimes" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns the lifetimes of the points.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_num_homology_dimensions">
+<span class="sig-name descname"><span class="pre">get_num_homology_dimensions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_num_homology_dimensions" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns the number of homology dimensions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_num_points">
+<span class="sig-name descname"><span class="pre">get_num_points</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_num_points" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns the number of points.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_points_in_homology_dimension">
+<span class="sig-name descname"><span class="pre">get_points_in_homology_dimension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_points_in_homology_dimension" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns all points in a given homology dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_raw_data">
+<span class="sig-name descname"><span class="pre">get_raw_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_raw_data" title="Permalink to this definition"></a></dt>
+<dd><p>This method returns the raw data of the persistence diagram.
+This function should not be used to change the data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.load" title="Permalink to this definition"></a></dt>
+<dd><p>This method loads a persistence diagram from a file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Figure</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.plot" title="Permalink to this definition"></a></dt>
+<dd><p>This method plots the persistence diagram.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>names: </dt><dd><p>The names of the homology dimensions.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span> <span class="o">=</span>  <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span>                      <span class="p">([[</span><span class="mf">0.0928</span><span class="p">,</span> <span class="mf">0.0995</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0916</span><span class="p">,</span> <span class="mf">0.1025</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0978</span><span class="p">,</span> <span class="mf">0.1147</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0978</span><span class="p">,</span> <span class="mf">0.1147</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0916</span><span class="p">,</span> <span class="mf">0.1162</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0740</span><span class="p">,</span> <span class="mf">0.0995</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0728</span><span class="p">,</span> <span class="mf">0.0995</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0740</span><span class="p">,</span> <span class="mf">0.1162</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0728</span><span class="p">,</span> <span class="mf">0.1162</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0719</span><span class="p">,</span> <span class="mf">0.1343</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0830</span><span class="p">,</span> <span class="mf">0.2194</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0830</span><span class="p">,</span> <span class="mf">0.2194</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0719</span><span class="p">,</span> <span class="mf">0.2194</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">1.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="mf">0.0000</span><span class="p">]])</span>
+
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Ord0&quot;</span><span class="p">,</span> <span class="s2">&quot;Ext0&quot;</span><span class="p">,</span> <span class="s2">&quot;Rel1&quot;</span><span class="p">,</span> <span class="s2">&quot;Ext1&quot;</span><span class="p">]</span>
+<span class="n">pd</span> <span class="o">=</span> <span class="n">OneHotEncodedPersistenceDiagram</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span> <span class="n">names</span><span class="p">)</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.save" title="Permalink to this definition"></a></dt>
+<dd><p>This method saves the persistence diagram to a file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.set_homology_dimension_names">
+<span class="sig-name descname"><span class="pre">set_homology_dimension_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.set_homology_dimension_names" title="Permalink to this definition"></a></dt>
+<dd><p>This method sets the homology dimension names.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.collate_fn_persistence_diagrams">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.persistence_diagrams.</span></span><span class="sig-name descname"><span class="pre">collate_fn_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.collate_fn_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<dd><p>This function collates the data for the persistence diagram by padding the data, converting
+the data to tensors, converting the labels to tensors and generating masks for the valid
+entries.</p>
+<p>The input is a list of tuples of the form (persistence diagram, label).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>batch:</dt><dd><p>The list of tuples of the form (persistence diagram, label).</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>The data, the labels and the masks.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gtda">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.persistence_diagrams.</span></span><span class="sig-name descname"><span class="pre">get_one_hot_encoded_persistence_diagram_from_gtda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persistence_diagram</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gtda" title="Permalink to this definition"></a></dt>
+<dd><p>This function takes a single persistence diagram from giotto-tda and returns a one-hot encoded
+persistence diagram.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>persistence_diagram: An array of shape (num_points, 3) where the first two columns</dt><dd><p>represent the coordinates of the points and the third column
+represents the index of the homology dimension.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>A one-hot encoded persistence diagram. If the persistence diagram has only one homology
+dimension, the third column will be filled with ones.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gudhi_extended">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.persistence_diagrams.</span></span><span class="sig-name descname"><span class="pre">get_one_hot_encoded_persistence_diagram_from_gudhi_extended</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">diagram</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gudhi_extended" title="Permalink to this definition"></a></dt>
+<dd><p>Convert an extended persistence diagram of a single graph to an
+array with one-hot encoded homology type.
+Args:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>diagram (Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]):</dt><dd><p>The diagram of an extended persistence of a single graph.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>np.ndarray:</dt><dd><p>The diagram in one-hot encoded homology type of size
+(num_points, 6).</p>
 </dd>
 </dl>
 </dd>

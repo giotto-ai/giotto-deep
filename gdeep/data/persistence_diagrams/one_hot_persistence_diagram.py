@@ -9,7 +9,8 @@ T = TypeVar("T")
 Tensor = torch.Tensor
 Array = np.ndarray
 
-class OneHotEncodedPersistenceDiagram():
+
+class OneHotEncodedPersistenceDiagram:
     """This class represents a single one-hot encoded persistence diagram.
     
     Args:
@@ -104,7 +105,8 @@ class OneHotEncodedPersistenceDiagram():
                 The names of the homology dimensions.
         
         Examples::
-            >>> pd =  torch.tensor\
+
+            pd =  torch.tensor\
                       ([[0.0928, 0.0995, 0.0000, 0.0000, 1.0000, 0.0000],
                         [0.0916, 0.1025, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0978, 0.1147, 1.0000, 0.0000, 0.0000, 0.0000],
@@ -118,11 +120,11 @@ class OneHotEncodedPersistenceDiagram():
                         [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0719, 0.2194, 0.0000, 1.0000, 0.0000, 0.0000]])
-                    
-            >>> names = ["Ord0", "Ext0", "Rel1", "Ext1"]
-            >>> pd = OneHotEncodedPersistenceDiagram(pd, names)
-            >>> pd.plot()
-            
+
+            names = ["Ord0", "Ext0", "Rel1", "Ext1"]
+            pd = OneHotEncodedPersistenceDiagram(pd, names)
+            pd.plot()
+
         """
         names = self._homology_dimension_names if names is None else names
         assert len(names) == self.get_num_homology_dimensions(), \
@@ -180,7 +182,8 @@ class OneHotEncodedPersistenceDiagram():
         # assert data.dtype == np.float32, "The data must be of type np.float32. Otherwise,"\
         #     " the data will not be correctly converted."
         return OneHotEncodedPersistenceDiagram(torch.from_numpy(data.astype(np.float32)))
-    
+
+
 def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDiagram, int]]) -> \
     Tuple[List[Tensor], Tensor]:
     """This function collates the data for the persistence diagram by padding the data, converting

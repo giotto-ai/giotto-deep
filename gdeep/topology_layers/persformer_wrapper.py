@@ -11,8 +11,11 @@ from .persformer_config import PersformerConfig
 
 Tensor = torch.Tensor
 
+
 class PersformerWrapper(Module):
-    
+    """The wrapper for persformer to allow compatibility
+    with the HPO classes.
+    """
     config: PersformerConfig
     model: Module
     

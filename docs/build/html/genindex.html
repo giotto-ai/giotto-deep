@@ -107,6 +107,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/search.html#gdeep.search.GiottoSummaryWriter.add_hparams">add_hparams() (gdeep.search.GiottoSummaryWriter method)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.all_close">all_close() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
       <li><a href="modules/utility.html#gdeep.utility.AttentionType">AttentionType (class in gdeep.utility)</a>
 </li>
       <li><a href="modules/analysis.html#gdeep.analysis.interpretability.AttributionFactory">AttributionFactory (class in gdeep.analysis.interpretability)</a>
@@ -147,7 +149,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/search.html#gdeep.search.clean_up_files">clean_up_files() (in module gdeep.search)</a>
 </li>
-      <li><a href="modules/data.html#gdeep.data.datasets.collate_fn_persistence_diagrams">collate_fn_persistence_diagrams() (in module gdeep.data.datasets)</a>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.collate_fn_persistence_diagrams">collate_fn_persistence_diagrams() (in module gdeep.data.persistence_diagrams)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification">Compactification (class in gdeep.visualisation)</a>
 </li>
@@ -205,6 +207,8 @@
 </li>
       <li><a href="modules/models.html#gdeep.models.FFNet">FFNet (class in gdeep.models)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.filter_by_lifetime">filter_by_lifetime() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
       <li><a href="modules/data.html#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension">FilterPersistenceDiagramByHomologyDimension (class in gdeep.data.preprocessors)</a>
 </li>
       <li><a href="modules/data.html#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime">FilterPersistenceDiagramByLifetime (class in gdeep.data.preprocessors)</a>
@@ -231,6 +235,8 @@
         <li><a href="modules/topology_layers.html#gdeep.topology_layers.PersformerWrapper.forward">(gdeep.topology_layers.PersformerWrapper method)</a>
 </li>
       </ul></li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.from_numpy">from_numpy() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram static method)</a>
+</li>
       <li><a href="modules/data.html#gdeep.data.datasets.FromArray">FromArray (class in gdeep.data.datasets)</a>
 </li>
   </ul></td>
@@ -265,6 +271,13 @@
 
       <ul>
         <li><a href="modules/data.html#module-gdeep.data.datasets">module</a>
+</li>
+      </ul></li>
+      <li>
+    gdeep.data.persistence_diagrams
+
+      <ul>
+        <li><a href="modules/data.html#module-gdeep.data.persistence_diagrams">module</a>
 </li>
       </ul></li>
       <li>
@@ -310,6 +323,13 @@
 </li>
       </ul></li>
       <li>
+    gdeep.utility.extended_persistence
+
+      <ul>
+        <li><a href="modules/utility.html#module-gdeep.utility.extended_persistence">module</a>
+</li>
+      </ul></li>
+      <li>
     gdeep.utility.optimisation
 
       <ul>
@@ -323,11 +343,13 @@
         <li><a href="modules/visualisation.html#module-gdeep.visualisation">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/data.html#gdeep.data.datasets.generate_orbit_parallel">generate_orbit_parallel() (in module gdeep.data.datasets)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_activations">get_activations() (gdeep.models.ModelExtractor method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_all_points_in_homology_dimension">get_all_points_in_homology_dimension() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
 </li>
       <li><a href="modules/analysis.html#gdeep.analysis.interpretability.get_attr">get_attr() (in module gdeep.analysis.interpretability)</a>
 </li>
@@ -359,7 +381,17 @@
 </li>
       <li><a href="modules/models.html#gdeep.models.ModelExtractor.get_layers_param">get_layers_param() (gdeep.models.ModelExtractor method)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_lifetimes">get_lifetimes() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
       <li><a href="modules/data.html#gdeep.data.datasets.DlBuilderFromDataCloud.get_metadata">get_metadata() (gdeep.data.datasets.DlBuilderFromDataCloud method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_num_homology_dimensions">get_num_homology_dimensions() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_num_points">get_num_points() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gtda">get_one_hot_encoded_persistence_diagram_from_gtda() (in module gdeep.data.persistence_diagrams)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gudhi_extended">get_one_hot_encoded_persistence_diagram_from_gudhi_extended() (in module gdeep.data.persistence_diagrams)</a>
 </li>
       <li><a href="modules/data.html#gdeep.data.datasets.OrbitsGenerator.get_orbits">get_orbits() (gdeep.data.datasets.OrbitsGenerator method)</a>
 </li>
@@ -367,11 +399,17 @@
 </li>
       <li><a href="modules/data.html#gdeep.data.datasets.OrbitsGenerator.get_persistence_diagrams">get_persistence_diagrams() (gdeep.data.datasets.OrbitsGenerator method)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_points_in_homology_dimension">get_points_in_homology_dimension() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.get_raw_data">get_raw_data() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
       <li><a href="modules/utility.html#gdeep.utility.get_return_type">get_return_type() (in module gdeep.utility)</a>
 </li>
       <li><a href="modules/search.html#gdeep.search.GiottoSummaryWriter">GiottoSummaryWriter (class in gdeep.search)</a>
 </li>
       <li><a href="modules/analysis.html#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator">GradientFlowDecisionBoundaryCalculator (class in gdeep.analysis.decision_boundary)</a>
+</li>
+      <li><a href="modules/utility.html#gdeep.utility.extended_persistence.graph_extended_persistence_hks">graph_extended_persistence_hks() (in module gdeep.utility.extended_persistence)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -420,6 +458,10 @@
       <li><a href="modules/utility.html#gdeep.utility.LayerNormStyle">LayerNormStyle (class in gdeep.utility)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.load">load() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram static method)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="M">M</h2>
@@ -445,6 +487,8 @@
 </li>
         <li><a href="modules/data.html#module-gdeep.data.datasets">gdeep.data.datasets</a>
 </li>
+        <li><a href="modules/data.html#module-gdeep.data.persistence_diagrams">gdeep.data.persistence_diagrams</a>
+</li>
         <li><a href="modules/data.html#module-gdeep.data.preprocessors">gdeep.data.preprocessors</a>
 </li>
         <li><a href="modules/models.html#module-gdeep.models">gdeep.models</a>
@@ -456,6 +500,8 @@
         <li><a href="modules/trainer.html#module-gdeep.trainer">gdeep.trainer</a>
 </li>
         <li><a href="modules/utility.html#module-gdeep.utility">gdeep.utility</a>
+</li>
+        <li><a href="modules/utility.html#module-gdeep.utility.extended_persistence">gdeep.utility.extended_persistence</a>
 </li>
         <li><a href="modules/utility.html#module-gdeep.utility.optimisation">gdeep.utility.optimisation</a>
 </li>
@@ -480,6 +526,10 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram">OneHotEncodedPersistenceDiagram (class in gdeep.data.persistence_diagrams)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="modules/data.html#gdeep.data.datasets.OrbitsGenerator">OrbitsGenerator (class in gdeep.data.datasets)</a>
 </li>
   </ul></td>
@@ -502,18 +552,22 @@
 </li>
       <li><a href="modules/utility.html#gdeep.utility.optimisation.PersistenceGradient.persistence_function">persistence_function() (gdeep.utility.optimisation.PersistenceGradient method)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.datasets.PersistenceDiagramFromFiles">PersistenceDiagramFromFiles (class in gdeep.data.datasets)</a>
+</li>
       <li><a href="modules/utility.html#gdeep.utility.optimisation.PersistenceGradient">PersistenceGradient (class in gdeep.utility.optimisation)</a>
 </li>
       <li><a href="modules/utility.html#gdeep.utility.optimisation.PersistenceGradient.phi">phi() (gdeep.utility.optimisation.PersistenceGradient method)</a>
+</li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.plot">plot() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_3d_dataset">plot_3d_dataset() (gdeep.visualisation.Visualiser method)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_activations">plot_activations() (gdeep.visualisation.Visualiser method)</a>
 </li>
-      <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_attribution">plot_attribution() (gdeep.visualisation.Visualiser method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_attribution">plot_attribution() (gdeep.visualisation.Visualiser method)</a>
+</li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Compactification.plot_chart">plot_chart() (gdeep.visualisation.Compactification method)</a>
 </li>
       <li><a href="modules/visualisation.html#gdeep.visualisation.Visualiser.plot_decision_boundary">plot_decision_boundary() (gdeep.visualisation.Visualiser method)</a>
@@ -574,6 +628,8 @@
 </li>
       <li><a href="modules/utility.html#gdeep.utility.optimisation.SAMOptimizer">SAMOptimizer (class in gdeep.utility.optimisation)</a>
 </li>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.save">save() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
       <li><a href="modules/utility.html#gdeep.utility.save_model_and_optimizer">save_model_and_optimizer() (in module gdeep.utility)</a>
 </li>
       <li><a href="modules/models.html#gdeep.models.SaveLayerOutput">SaveLayerOutput (class in gdeep.models)</a>
@@ -584,6 +640,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="modules/data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram.set_homology_dimension_names">set_homology_dimension_names() (gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram method)</a>
+</li>
       <li><a href="modules/utility.html#gdeep.utility.optimisation.PersistenceGradient.sgd">sgd() (gdeep.utility.optimisation.PersistenceGradient method)</a>
 </li>
       <li><a href="modules/search.html#gdeep.search.Benchmark.start">start() (gdeep.search.Benchmark method)</a>

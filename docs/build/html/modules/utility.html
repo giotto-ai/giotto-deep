@@ -52,6 +52,7 @@
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Utility</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#module-gdeep.utility.optimisation">Persistence Gradient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.utility.extended_persistence">Extended Persistence</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
@@ -400,6 +401,29 @@ behaves extcly like the SAM optimiser</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>optimizer (torch.optim):</dt><dd><p>the optimiser class (not the instance)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-gdeep.utility.extended_persistence">
+<span id="extended-persistence"></span><h2>Extended Persistence<a class="headerlink" href="#module-gdeep.utility.extended_persistence" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.utility.extended_persistence.graph_extended_persistence_hks">
+<span class="sig-prename descclassname"><span class="pre">gdeep.utility.extended_persistence.</span></span><span class="sig-name descname"><span class="pre">graph_extended_persistence_hks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adj_mat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffusion_parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="gdeep.data.persistence_diagrams.one_hot_persistence_diagram.OneHotEncodedPersistenceDiagram"><span class="pre">OneHotEncodedPersistenceDiagram</span></a></span></span><a class="headerlink" href="#gdeep.utility.extended_persistence.graph_extended_persistence_hks" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the extended persistence of a graph.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>adj_mat:</dt><dd><p>The adjacency matrix of the graph.</p>
+</dd>
+<dt>diffusion_parameter:</dt><dd><p>The diffusion parameter of the heat kernel.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>ndarray:</dt><dd><p>The extended persistence of the graph.</p>
 </dd>
 </dl>
 </dd>

@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 import random
 from copy import copy
+import warnings
 
 import torch
 from torchvision.utils import make_grid
@@ -69,28 +70,35 @@ class Visualiser:
         self.pipe.writer.add_graph(self.pipe.model, x)  # type: ignore
         self.pipe.writer.flush()  # type: ignore
 
-    def plot_3d_dataset(self) -> None:
+    def plot_3d_dataset(self, n_pts: int = 100) -> None:
         """This function has no arguments: its purpose
         is to store data to the tensorboard for
         visualisation. Note that we are expecting the
         dataset item to be of type Tuple[Tensor, Tensor]
+
+        Args:
+            n_pts:
+                number of points to display
         """
         dataiter = iter(self.pipe.dataloaders[0])
-        features_list = []
-        labels_list = []
-        index = 0
+        features_list: List[Tensor] = []
+        labels_list: List[str] = []
 
-        for img, lab in dataiter:
-            index += 1
-            features_list.append(img[0])
+        for img, lab in dataiter:  # loop over batches
+            if isinstance(img, tuple) or isinstance(img, list):
+                features_list = features_list + [img[i][0] for i in range(len(img))]
+            else:
+                features_list = features_list + [img[i] for i in range(len(img))]
             try:
-                labels_list.append(str(lab[0].item()))
+                labels_list = labels_list + [str(lab[i].item()) for i in range(len(lab))]
             except ValueError:
-                labels_list.append("Label not available")
-            if index == 1000:
+                labels_list = labels_list + ["Label not available" for _ in range(len(img))]
+            if len(features_list) >= n_pts:
                 break
-        max_number = min(1000, len(labels_list))
+        max_number = len(features_list)  # effective number of points
+
         features = torch.cat(features_list).to(DEVICE)
+
         if len(features.shape) >= 3:
             if len(features.shape) == 3:
                 features = features.reshape(
@@ -170,7 +178,7 @@ class Visualiser:
         )
         self.pipe.writer.flush()
 
-    def plot_decision_boundary(self, compact: bool = False):
+    def plot_decision_boundary(self, compact: bool = False, n_epochs: int = 100, precision: float = 0.1):
         """Plot the decision boundary as the intrinsic
         hypersurface defined by self.loss_fn == 0.5. Note that
         we are expecting a model whose forward function
@@ -178,9 +186,16 @@ class Visualiser:
         arguments).
 
         Args:
-            compact (bool):
+            compact:
                 if plotting the compactified
                 version of the boundary
+            n_epochs:
+                number of training cycles to find
+                the decision boundary
+            precision:
+                parameter to filter the spurious data that are
+                close to te decision boundary, but not close enough
+
         """
 
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
@@ -206,9 +221,12 @@ class Visualiser:
             self.pipe.writer.flush()  # type: ignore
             return db, d_final, label_final
         else:
-            db = me.get_decision_boundary(x)
-            self.pipe.writer.add_embedding(db, tag="decision_boundary", global_step=0)  # type: ignore
-            self.pipe.writer.flush()  # type: ignore
+            db = me.get_decision_boundary(x, n_epochs, precision)
+            if len(db) > 0:
+                self.pipe.writer.add_embedding(db, tag="decision_boundary", global_step=0)  # type: ignore
+                self.pipe.writer.flush()  # type: ignore
+            else:
+                warnings.warn("No points sampled over the decision boundary")
             return db.cpu(), None, None
 
     def betti_plot_layers(

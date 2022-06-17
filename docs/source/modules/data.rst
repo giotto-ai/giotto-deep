@@ -15,3 +15,9 @@ Datasets
 
 .. automodule:: gdeep.data.datasets
    :members:
+
+Persistence Diagrams
+--------------------
+
+.. automodule:: gdeep.data.persistence_diagrams
+   :members:

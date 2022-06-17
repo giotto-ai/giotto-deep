@@ -51,8 +51,8 @@ You can obtain the latest state of the source code with the command::
     git clone https://github.com/giotto-ai/giotto-deep.git
 
 
-To install:
-===========
+To install
+==========
 
 .. code-block:: bash
 

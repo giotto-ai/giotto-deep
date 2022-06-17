@@ -1,7 +1,6 @@
 import os
 from typing import Tuple
 
-import torch
 import torch.nn as nn
 from gdeep.data import PreprocessingPipeline
 from gdeep.data.datasets import PersistenceDiagramFromFiles
@@ -9,7 +8,7 @@ from gdeep.data.datasets.base_dataloaders import (DataLoaderBuilder,
                                                   DataLoaderParamsTuples)
 from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import \
     PersistenceDiagramFromGraphBuilder
-from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
+from gdeep.data.persistence_diagrams import (
     OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams)
 from gdeep.data.preprocessors import (
     FilterPersistenceDiagramByHomologyDimension,
@@ -17,7 +16,6 @@ from gdeep.data.preprocessors import (
 from gdeep.topology_layers import Persformer, PersformerConfig
 from gdeep.trainer.trainer import Trainer
 from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
-from gdeep.utility.constants import ROOT_DIR
 from sklearn.model_selection import train_test_split
 from torch.optim import Adam
 from torch.utils.data import Subset
@@ -32,15 +30,14 @@ def test_persformer_training():
     diffusion_parameter: float = 0.1
     num_homology_types: int = 4
 
-
     # Create the persistence diagram dataset
     pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, diffusion_parameter)
     pd_creator.create()
-    
+
     pd_mutag_ds = PersistenceDiagramFromFiles(
         os.path.join(
             DEFAULT_GRAPH_DIR, f"MUTAG_{diffusion_parameter}_extended_persistence"
-            )
+        )
     )
 
     # Create the train/validation/test split
@@ -50,7 +47,7 @@ def test_persformer_training():
         random_state=42,
     )
 
-    train_indices , validation_indices = train_test_split(
+    train_indices, validation_indices = train_test_split(
         train_indices,
         test_size=0.2,
         random_state=42,
@@ -76,14 +73,12 @@ def test_persformer_training():
     validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validation_dataset)
     test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
 
-
     dl_params = DataLoaderParamsTuples.default(
         batch_size=32,
         num_workers=0,
         collate_fn=collate_fn_persistence_diagrams,
         with_validation=True,
     )
-
 
     # Build the data loaders
     dlb = DataLoaderBuilder((train_dataset, validation_dataset, test_dataset))  # type: ignore
@@ -93,7 +88,7 @@ def test_persformer_training():
     model_config = PersformerConfig(
         num_layers=6,
         num_attention_heads=4,
-        input_size= 2 + num_homology_types,
+        input_size=2 + num_homology_types,
         ouptut_size=2,
         pooler_type=PoolerType.SUM,
     )
@@ -101,10 +96,10 @@ def test_persformer_training():
     model = Persformer(model_config)
     writer = SummaryWriter()
 
-    loss_function =  nn.CrossEntropyLoss()
+    loss_function = nn.CrossEntropyLoss()
 
     trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 
-    trainer.train(Adam, 3, False, 
-                {"lr":0.01}, 
-                {"batch_size":16, "collate_fn": collate_fn_persistence_diagrams})
+    trainer.train(Adam, 3, False,
+                  {"lr": 0.01},
+                  {"batch_size": 16, "collate_fn": collate_fn_persistence_diagrams})

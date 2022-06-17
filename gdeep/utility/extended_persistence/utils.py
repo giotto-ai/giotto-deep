@@ -13,9 +13,10 @@ from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
 
 Array = np.ndarray
 
+
 # Compute the heat kernel signature of a graph.
 def _heat_kernel_signature(adj_mat: Array,
-                          diffusion_parameter: float = 1.0) -> Array:
+                           diffusion_parameter: float = 1.0) -> Array:
     """Given a graph adjacency matrix, compute the heat kernel signature.
     
     Args:
@@ -25,6 +26,7 @@ def _heat_kernel_signature(adj_mat: Array,
             The diffusion parameter of the heat kernel.
             
     Returns:
+        ndarray:
             The heat kernel signature of the graph. The shape of the array is
             (num_vertices).
     """
@@ -32,7 +34,8 @@ def _heat_kernel_signature(adj_mat: Array,
     hks = (np.square(eigenvectors) * np.exp(-diffusion_parameter * eigenvals))\
         .sum(axis=1)
     return hks
-    
+
+
 def _get_eigenvalues_eigenvectors(adj_mat) -> Tuple[Array, Array]:
     """Compute the eigenvector and eigenvalue of the adjacency matrix.
     
@@ -41,6 +44,7 @@ def _get_eigenvalues_eigenvectors(adj_mat) -> Tuple[Array, Array]:
             The adjacency matrix of the graph.
         
     Returns:
+        (ndarray, ndarray):
             The eigenvectors and eigenvalues of the adjacency matrix.
     """
     # Compute the Laplacian matrix
@@ -48,6 +52,7 @@ def _get_eigenvalues_eigenvectors(adj_mat) -> Tuple[Array, Array]:
     # Compute the eigenvalues and eigenvectors of the Laplacian matrix
     eigenvalues, eigenvectors = eigh(laplacian_mat)
     return eigenvalues, eigenvectors
+
 
 def graph_extended_persistence_hks(adj_mat: Array,
                                    diffusion_parameter: float = 1.0) \
@@ -61,7 +66,7 @@ def graph_extended_persistence_hks(adj_mat: Array,
             The diffusion parameter of the heat kernel.
             
     Returns:
-        Array:
+        ndarray:
             The extended persistence of the graph.
     """
     # Compute the heat kernel signature
@@ -71,6 +76,7 @@ def graph_extended_persistence_hks(adj_mat: Array,
     return get_one_hot_encoded_persistence_diagram_from_gudhi_extended(
         persistence_diagram
     )
+
 
 def graph_extended_persistence_gudhi(A: Array,
                                      filtration_val: Array)\
