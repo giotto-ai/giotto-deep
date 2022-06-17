@@ -10,7 +10,7 @@ Tensor = torch.Tensor
 
 
 class MaxPoolingLayer(Module):
-    
+    """Implementation of the max pooling layer"""
     config: PersformerConfig
     
     def __init__(self, config: PersformerConfig):

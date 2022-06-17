@@ -8,7 +8,11 @@ from torch.nn import Module
 # Type aliases
 Tensor = torch.Tensor
 
+
 class AttentionBase(Module, ABC):
+    """Base class for attention layers. This class
+    can be used in generic transformer models.
+    """
     def __init__(self, config: PersformerConfig):
         super().__init__()
         self.config = config

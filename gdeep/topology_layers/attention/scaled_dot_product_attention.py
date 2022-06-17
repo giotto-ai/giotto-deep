@@ -24,8 +24,7 @@ class ScaledDotProductAttention(AttentionBase):
                                dropout=config.attention_probs_dropout_prob,
                                batch_first=True)
         self.dropout = Dropout(config.hidden_dropout_prob)
-    
-    
+
     def forward(self,  # type: ignore
                 input: Tensor,
                 attention_mask: Optional[Tensor] = None

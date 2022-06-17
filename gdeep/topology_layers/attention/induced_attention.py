@@ -10,6 +10,7 @@ Tensor = torch.Tensor
 
 
 class InducedAttention(AttentionBase):
+    """Class implementing the induced attention"""
     def __init__(self, config: PersformerConfig) -> None:
         super().__init__(config)
         raise NotImplementedError

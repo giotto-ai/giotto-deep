@@ -9,8 +9,11 @@ from ..persformer_config import PersformerConfig
 # Type aliases
 Tensor = torch.Tensor
 
+
 class AttentionPoolingLayer(Module):
-    
+    """This class implements the attention mechanism
+    with a pooling layer to enforce permutation
+    invariance"""
     config: PersformerConfig
     
     def __init__(self, config: PersformerConfig):
