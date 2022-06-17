@@ -8,4 +8,6 @@ __all__ = [
     'PersformerConfig',
     'Persformer',
     'PersformerWrapper',
+    "attention",
+    "pooling_layers"
 ]
