@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import \
     OneHotEncodedPersistenceDiagram
-from gdeep.extended_persistence.utils import graph_extended_persistence_hks
+from gdeep.utility.extended_persistence import graph_extended_persistence_hks
 from gdeep.utility.constants import DEFAULT_GRAPH_DIR
 from torch_geometric.datasets import TUDataset  # type: ignore
 from torch_geometric.utils import to_dense_adj  # type: ignore

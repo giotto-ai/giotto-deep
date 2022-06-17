@@ -29,6 +29,7 @@ from .enum_types import (
 __all__ = [
     "save_model_and_optimizer",
     "optimisation",
+    "extended_persistence",
     "ensemble_wrapper",
     "is_notebook",
     "autoreload_if_notebook",

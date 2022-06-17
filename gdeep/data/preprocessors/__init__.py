@@ -7,7 +7,7 @@ from .tokenizer_text_classification import TokenizerTextClassification
 from .filter_persistence_diagram_by_lifetime import FilterPersistenceDiagramByLifetime
 from .filter_persistence_diagram_by_homology_dimension import FilterPersistenceDiagramByHomologyDimension
 from .normalization_persistence_diagram import NormalizationPersistenceDiagram
-from .min_max_normaalization_persistence_diagram import MinMaxScalarPersistenceDiagram
+from .min_max_normalization_persistence_diagram import MinMaxScalarPersistenceDiagram
 
 __all__ = [
     'Normalization',

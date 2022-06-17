@@ -9,7 +9,8 @@ T = TypeVar("T")
 Tensor = torch.Tensor
 Array = np.ndarray
 
-class OneHotEncodedPersistenceDiagram():
+
+class OneHotEncodedPersistenceDiagram:
     """This class represents a single one-hot encoded persistence diagram.
     
     Args:
@@ -180,7 +181,8 @@ class OneHotEncodedPersistenceDiagram():
         # assert data.dtype == np.float32, "The data must be of type np.float32. Otherwise,"\
         #     " the data will not be correctly converted."
         return OneHotEncodedPersistenceDiagram(torch.from_numpy(data.astype(np.float32)))
-    
+
+
 def collate_fn_persistence_diagrams(batch: List[Tuple[OneHotEncodedPersistenceDiagram, int]]) -> \
     Tuple[List[Tensor], Tensor]:
     """This function collates the data for the persistence diagram by padding the data, converting

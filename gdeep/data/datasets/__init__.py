@@ -10,8 +10,7 @@ from .dataset_form_array import FromArray
 from .dataloader_cloud import DlBuilderFromDataCloud
 from .parallel_orbit import generate_orbit_parallel, create_pd_orbits,\
     OrbitsGenerator, DataLoaderKwargs
-from .persistence_diagrams_from_files import PersistenceDiagramFromFiles,\
-    collate_fn_persistence_diagrams
+from .persistence_diagrams_from_files import PersistenceDiagramFromFiles
 
 
 __all__ = [
@@ -30,6 +29,5 @@ __all__ = [
     'FromArray',
     'DatasetCloud',
     'DlBuilderFromDataCloud',
-    'PersistenceDiagramsFromFiles',
-    'collate_fn_persistence_diagrams',
+    'PersistenceDiagramFromFiles'
     ]
