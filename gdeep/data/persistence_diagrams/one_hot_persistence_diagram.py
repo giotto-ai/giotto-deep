@@ -105,7 +105,8 @@ class OneHotEncodedPersistenceDiagram:
                 The names of the homology dimensions.
         
         Examples::
-            >>> pd =  torch.tensor\
+
+            pd =  torch.tensor\
                       ([[0.0928, 0.0995, 0.0000, 0.0000, 1.0000, 0.0000],
                         [0.0916, 0.1025, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0978, 0.1147, 1.0000, 0.0000, 0.0000, 0.0000],
@@ -119,11 +120,11 @@ class OneHotEncodedPersistenceDiagram:
                         [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
                         [0.0719, 0.2194, 0.0000, 1.0000, 0.0000, 0.0000]])
-                    
-            >>> names = ["Ord0", "Ext0", "Rel1", "Ext1"]
-            >>> pd = OneHotEncodedPersistenceDiagram(pd, names)
-            >>> pd.plot()
-            
+
+            names = ["Ord0", "Ext0", "Rel1", "Ext1"]
+            pd = OneHotEncodedPersistenceDiagram(pd, names)
+            pd.plot()
+
         """
         names = self._homology_dimension_names if names is None else names
         assert len(names) == self.get_num_homology_dimensions(), \

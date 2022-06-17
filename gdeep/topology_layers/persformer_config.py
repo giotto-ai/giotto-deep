@@ -15,20 +15,16 @@ class PersformerConfig(PretrainedConfig):
     """
     Configuration class to define a persformer model.
     
-    Examples:
-    ```python
-    >>> from gdeep.topological_layers import PersformerConfig, PersformerModel
-    
-    # Initialize the configuration object
-    >>> config = PersformerConfig()
-    
-    # Initialize the model
-    >>> model = Persformer(config)
-    
-    # Access the configuration object
-    >>> config = model.config
-    
-    ```
+    Examples::
+
+        from gdeep.topological_layers import PersformerConfig, PersformerModel
+        # Initialize the configuration object
+        config = PersformerConfig()
+        # Initialize the model
+        model = Persformer(config)
+        # Access the configuration object
+        config = model.config
+
     """
     
     input_size: int # input size of the model

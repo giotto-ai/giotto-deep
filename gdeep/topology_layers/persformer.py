@@ -13,18 +13,18 @@ from .utility import get_activation_function, get_pooling_layer
 # Type aliases
 Tensor = torch.Tensor
 
+
 class Persformer(Module):
     """Persformer model as described in the paper: https://arxiv.org/abs/2112.15210
 
-    Examples:
-    ```python
-    >>> from gdeep.topological_layers import PersformerConfig, PersformerModel
-    
-    # Initialize the configuration object
-    >>> config = PersformerConfig()
-    
-    # Initialize the model
-    >>> model = Persformer(config)
+    Examples::
+
+        from gdeep.topological_layers import PersformerConfig, PersformerModel
+        # Initialize the configuration object
+        config = PersformerConfig()
+        # Initialize the model
+        model = Persformer(config)
+
     """
     
 
