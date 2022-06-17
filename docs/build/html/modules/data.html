@@ -182,12 +182,77 @@ preprocessors inherits from <code class="docutils literal notranslate"><span cla
 <section id="module-gdeep.data.preprocessors">
 <span id="preprocessors"></span><h2>Preprocessors<a class="headerlink" href="#module-gdeep.data.preprocessors" title="Permalink to this heading"></a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">FilterPersistenceDiagramByHomologyDimension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimensions_to_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension" title="Permalink to this definition"></a></dt>
+<dd><p>This class filters the persistence diagrams of a dataset by their homology dimension.</p>
+<p>Here we assume that the dataset is a tuple of (persistence diagram, label) and that
+the points in the diagram are sorted by ascending lifetime. This is an invariant of
+the OneHotEncodedPersistenceDiagram class but could go wrong if the diagrams are modified
+in a way that breaks this invariant.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>homology_dimensions_to_filter:</dt><dd><p>The homology dimensions of the points in the diagram that should be kept.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension.fit_to_dataset">
+<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">OneHotEncodedPersistenceDiagram</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension.fit_to_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>This method does nothing.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">FilterPersistenceDiagramByLifetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_lifetime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_lifetime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime" title="Permalink to this definition"></a></dt>
+<dd><p>This class filters the persistence diagrams of a dataset by their lifetime, i.e.
+the difference between the birth and death coordinates.</p>
+<p>Here we assume that the dataset is a tuple of (persistence diagram, label) and that
+the points in the diagram are sorted by ascending lifetime. This is an invariant of
+the OneHotEncodedPersistenceDiagram class but could go wrong if the diagrams are modified
+in a way that breaks this invariant.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>min_lifetime:</dt><dd><p>The minimum lifetime of the points in the diagram.</p>
+</dd>
+<dt>max_lifetime:</dt><dd><p>The maximum lifetime of the points in the diagram.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime.fit_to_dataset">
+<span class="sig-name descname"><span class="pre">fit_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">OneHotEncodedPersistenceDiagram</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime.fit_to_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>This method does nothing.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.MinMaxScalarPersistenceDiagram">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">MinMaxScalarPersistenceDiagram</span></span><a class="headerlink" href="#gdeep.data.preprocessors.MinMaxScalarPersistenceDiagram" title="Permalink to this definition"></a></dt>
+<dd><p>This class runs the standard min-max normalisation on the birth and death times 
+of the persistence diagrams. For example. The transformation is:
+X_scaled = X_std * (max - min) + min</p>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.preprocessors.Normalization">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">Normalization</span></span><a class="headerlink" href="#gdeep.data.preprocessors.Normalization" title="Permalink to this definition"></a></dt>
 <dd><p>This class runs the standard normalisation on all the dimensions of
-the tensors of a dataloader. For example, in case of images where each item is of
+the tensors of a dataset. For example, in case of images where each item is of
 shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>, the average will and the standard deviations
 will be tensors of shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gdeep.data.preprocessors.NormalizationPersistenceDiagram">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">NormalizationPersistenceDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_homology_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.preprocessors.NormalizationPersistenceDiagram" title="Permalink to this definition"></a></dt>
+<dd><p>This class runs the standard normalisation on the birth and death coordinates
+of the persistence diagrams of a dataset accross all the homology dimensions.</p>
+<p>The one-hot encoded persistence diagrams are kept as is.</p>
 </dd></dl>
 
 <dl class="py class">
@@ -351,7 +416,7 @@ validation afterwards.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.datasets.DataLoaderBuilder.build">
-<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuple_of_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DataLoaderBuilder.build" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuple_of_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoaderParamsTuples</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.DataLoaderBuilder.build" title="Permalink to this definition"></a></dt>
 <dd><p>This method accepts the arguments of the torch
 Dataloader and applies them when creating the
 tuple</p>
@@ -710,6 +775,29 @@ family of tori-datasets</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>name:</dt><dd><p>name of the torus dataset to generate</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gdeep.data.datasets.collate_fn_persistence_diagrams">
+<span class="sig-prename descclassname"><span class="pre">gdeep.data.datasets.</span></span><span class="sig-name descname"><span class="pre">collate_fn_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.collate_fn_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<dd><p>Collate a batch of persistence diagrams and labels by padding the
+persistence diagrams to the same length.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>batch: </dt><dd><p>A list of tuples of the form (persistence_diagram, label).</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>persistence_diagrams: </dt><dd><p>A tensor of the form (batch_size, persistence_diagram_length, 6).</p>
+</dd>
+<dt>masks: </dt><dd><p>A tensor of the form (batch_size, persistence_diagram_length).</p>
+</dd>
+<dt>labels: </dt><dd><p>A tensor of the form (batch_size, 1).</p>
 </dd>
 </dl>
 </dd>

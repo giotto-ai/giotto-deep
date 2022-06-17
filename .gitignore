@@ -77,6 +77,7 @@ examples/diagrams_5000_1000_0_1.npy
 # virtualenv
 giotto-deep/
 venv/
+myenv/
 
 examples/model_data_specifications
 runs/
@@ -91,3 +92,5 @@ state_dicts/*
 
 # pylance files
 *.pyi
+
+giotto-env/

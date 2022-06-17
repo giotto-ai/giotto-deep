@@ -46,7 +46,6 @@ class GiottoSummaryWriter(SummaryWriter):
         best_not_last: bool = False,
     ):
         """Add a set of hyperparameters to be compared in TensorBoard.
-
         Args:
             hparam_dict (dict):
                 Each key-value pair in the dictionary is the
@@ -74,15 +73,12 @@ class GiottoSummaryWriter(SummaryWriter):
             best_not_last:
                 boolean flag to dcide what value to store in the
                 tensorboard tables for the whole training cycle
-
         Examples::
-
             from torch.utils.tensorboard import SummaryWriter
             with GiottoSummaryWriter() as w:
                 for i in range(5):
                     w.add_hparams({'lr': 0.1*i, 'bsize': i},
                                   {'hparam/accuracy': 10*i, 'hparam/loss': 10*i})
-
         """
         torch._C._log_api_usage_once("tensorboard.logging.add_hparams")  # type: ignore
         if (not isinstance(hparam_dict, dict)) or (not isinstance(metric_dict, dict)):
@@ -122,7 +118,6 @@ class HyperParameterOptimization(Trainer):
     """This is the generic class that allows
     the user to perform gridsearch over several
     parameters such as learning rate, optimizer.
-
     Args:
         obj :
             either a Trainer or a Bechmark class
@@ -146,9 +141,8 @@ class HyperParameterOptimization(Trainer):
             ``mysql+mysqldb://usr:psw@host:port/db_name``
         study_name:
             name of the optuna study
-
     Examples::
-
+    
         from gdeep.search import HyperParameterOptimization
         # initialise hpo, you need a `trainer`!
         search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
@@ -168,7 +162,6 @@ class HyperParameterOptimization(Trainer):
             models_hyperparams,
             n_accumulated_grads=2,
         )
-
     """
     is_pipe: bool
     df_res: pd.DataFrame
@@ -277,8 +270,6 @@ class HyperParameterOptimization(Trainer):
             config:
                 configuration class HPOConfig,
                 containing all the parameters needed
-
-
         Returns:
             float
                 metric (either loss or accuracy)
@@ -419,7 +410,6 @@ class HyperParameterOptimization(Trainer):
         writer_tag: str = "",
     ) -> None:
         """method to be called when starting the gridsearch
-
         Args:
             optimizers:
                 list of torch optimizers classes, not isntances
@@ -624,7 +614,6 @@ class HyperParameterOptimization(Trainer):
                 the value of the accuracy for te current trial
             list_res (list):
                 list of results
-
         Returns:
             list:
                 list of HPOs and metrics. the first element is the
@@ -704,7 +693,6 @@ class HyperParameterOptimization(Trainer):
         """This method returns the dataframe with all the results of
         the hyperparameters optimisaton.
         It also saves the figures in the writer.
-
         Args:
             model_name:
                 the model name for the
@@ -712,7 +700,6 @@ class HyperParameterOptimization(Trainer):
             dataset_name:
                 the dataset name for the
                 tensorboard gridsearch table
-
         Returns:
             pd.DataFrame:
                 the hyperparameter table
@@ -828,12 +815,10 @@ class HyperParameterOptimization(Trainer):
         """private method to transform a list with
         many values for the same epoch into a dictionary
         compatible with ``add_scalar`` averaged per epoch
-
         Args:
             two_lists :
                 two lists with pairs (value, time) with possible
                 repetition of the same time
-
         Returns:
             list of list:
                 compatible with ``add_scalar``
@@ -853,13 +838,11 @@ class HyperParameterOptimization(Trainer):
     ) -> Optional[Dict[str, Any]]:
         """Utility function to generate the parameters
         for the gridsearch. It is based on optuna `suggest_<type>`.
-
         Args:
             trial (optuna.trial):
                 optuna trial variable
             params (dict):
                 dictionary of parameters
-
         Returns:
             (dict):
                 dictionary of selected parameters values
@@ -898,7 +881,6 @@ class HyperParameterOptimization(Trainer):
     def _new_suggest_categorical(trial, name: str, choices: Sequence) -> Any:
         """A modification of the Optuna function, in order to remove the
         constraing on the type for categorical choices.
-
         Expected to get a list with at least two choices!"""
         if (isinstance(choices, list) or isinstance(choices, tuple)) \
                 and (isinstance(choices[0], str) or isinstance(choices[1], str)):

@@ -34,7 +34,12 @@ The first step to install the developer version of the package is to `git clone`
 ```
 git clone https://github.com/giotto-ai/giotto-deep.git
 ```
-The change the current working directory to the Repository root folder, e.g. `cd giotto-deep`. 
+The change the current working directory to the Repository root folder, e.g. `cd giotto-deep`.
+Make sure you have the latest version of pytorch installed. 
+You can do this by running the following command (if you have a GPU):
+```
+pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
+```
 Once you are in the root folder, install the package dynamically with:
 ```
 pip install -e .
