@@ -19,6 +19,9 @@ transformers
 einops
 tensorboard
 captum
+rq
+rq-dashboard
+redis
 psutil
 kaleido
 html2image
@@ -28,6 +31,7 @@ giotto-ph
 tqdm
 Pillow
 h5py
+mysql-connector-python
 dotmap
 sympy
 google-cloud-storage

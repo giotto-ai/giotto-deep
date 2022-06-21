@@ -279,8 +279,9 @@ class HyperParameterOptimization(Trainer):
         self._cross_validation = config.cross_validation
         self._k_folds = self.k_fold_class.n_splits
         # generate optimizer
-        optimizers_names = list(map(lambda x: x.__name__, config.optimizers))
-        optimizer = eval(trial.suggest_categorical("optimizer", optimizers_names))  # type: ignore
+        optimizer = HyperParameterOptimization._new_suggest_categorical(
+            trial, "optimizer", config.optimizers
+        )
 
         # generate all the hyperparameters
         self.optimizers_param = HyperParameterOptimization._suggest_params(
@@ -880,11 +881,19 @@ class HyperParameterOptimization(Trainer):
     @staticmethod
     def _new_suggest_categorical(trial, name: str, choices: Sequence) -> Any:
         """A modification of the Optuna function, in order to remove the
-        constraing on the type for categorical choices.
-        Expected to get a list with at least two choices!"""
-        if (isinstance(choices, list) or isinstance(choices, tuple)) \
-                and (isinstance(choices[0], str) or isinstance(choices[1], str)):
-            return trial.suggest_categorical(name, choices)
+        constraints on the type for categorical choices.
+        Expected to get a list with items of the same type (or base class).
+        For example, ``choices`` being a list of Callables or classes would
+        work.
+        """
+
+        if isinstance(choices, list) or isinstance(choices, tuple):
+            if isinstance(choices[0], str) or isinstance(choices[0], int) or isinstance(choices[0], float):
+                return trial.suggest_categorical(name, choices)
+            else:  # in case optuna cannot handle the types
+                dict_choices = {x.__name__: x for x in choices}
+                key = trial.suggest_categorical(name, dict_choices.keys())  # random choice on the names
+                return dict_choices[key]  # return the corresponding value
         return random.choice(choices)
 
     @staticmethod

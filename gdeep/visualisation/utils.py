@@ -1,4 +1,5 @@
 import os
+import time
 
 from PIL import Image
 import numpy as np
@@ -18,13 +19,14 @@ def plotly2tensor(fig) -> torch.Tensor:
             the tensor discretisation of the
             figure
     """
+    now = str(time.time()).replace(".", "-")
     try:
-        write_image(fig, "deleteme.jpeg", format="jpeg", engine="orca")
+        write_image(fig, "deleteme"+now+".jpeg", format="jpeg", engine="orca")
     except ValueError:
-        write_image(fig, "deleteme.jpeg", format="jpeg")
-    with Image.open("deleteme.jpeg") as img:
+        write_image(fig, "deleteme"+now+".jpeg", format="jpeg")
+    with Image.open("deleteme"+now+".jpeg") as img:
         arr = np.asarray(img).copy()
-    os.remove("deleteme.jpeg")
+    os.remove("deleteme"+now+".jpeg")
     return torch.from_numpy(arr)
 
 

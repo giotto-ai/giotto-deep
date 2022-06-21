@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdeep-rq-worker-deployment
+  namespace: main
+  labels:
+    app: gdeep-rq-worker
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: gdeep-rq-worker
+  template:
+    metadata:
+      labels:
+        app: gdeep-rq-worker
+    spec:
+      containers:
+      - name: gdeep-lab
+        image: matteocao/giotto-deep:gdeep-lab
+      command: ["rq"]
+      args: ["worker", "high", "low", "default"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdeep-rq-service
+  namespace: main
+spec:
+  selector:
+    app: gdeep-rq
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8088 # internal port for the cluster
+      targetPort: 8088 # match the container port
