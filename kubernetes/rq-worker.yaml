@@ -6,7 +6,7 @@ metadata:
   labels:
     app: gdeep-rq-worker
 spec:
-  replicas: 5
+  replicas: 2
   selector:
     matchLabels:
       app: gdeep-rq-worker
@@ -16,21 +16,21 @@ spec:
         app: gdeep-rq-worker
     spec:
       containers:
-      - name: gdeep-lab
-        image: matteocao/giotto-deep:gdeep-lab
-      command: ["rq"]
-      args: ["worker", "high", "low", "default"]
+      - name: gdeep-worker
+        image: matteocao/giotto-deep:gdeep-worker
+        command: ["rq", "worker"] 
+        args: ["--url", "redis://redis-service", "high", "default", "low"]
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: gdeep-rq-service
+  name: gdeep-rq-worker-service
   namespace: main
 spec:
   selector:
-    app: gdeep-rq
+    app: gdeep-rq-worker
   type: NodePort
   ports:
     - protocol: TCP
-      port: 8088 # internal port for the cluster
-      targetPort: 8088 # match the container port
+      port: 9181 # internal port for the cluster
+      targetPort: 9181 # match the container port

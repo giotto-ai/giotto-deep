@@ -1,4 +1,5 @@
 import sys
+import subprocess
 
 from torch import nn
 from torch.optim import SGD
@@ -14,7 +15,7 @@ from gdeep.search import HyperParameterOptimization
 
 def install(package):
     """function to install a package, like
-    ``'mysql-connector-python'``"""
+    ``'mysql-connector-python'`` in case not present"""
     print(f"Installing the package {package}...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
@@ -79,8 +80,8 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
     bd = DatasetBuilder(name="DoubleTori")
     ds_tr, ds_val, _ = bd.build()
 
-    dl_builder = DataLoaderBuilder((ds_tr, ds_val))
-    dl_tr, dl_val, dl_ts = dl_builder.build(({"batch_size": 23}, {"batch_size": 23}))
+    dl_builder = DataLoaderBuilder([ds_tr, ds_val])
+    dl_tr, dl_val, dl_ts = dl_builder.build([{"batch_size": 23}, {"batch_size": 23}])
 
     # build the model
     class Model1(nn.Module):
@@ -99,7 +100,7 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
     # initialise the pipelien class
     pipe = Trainer(
         model,
-        (dl_tr, dl_val),
+        [dl_tr, dl_val],
         loss_fn,
         writer,
         k_fold_class=StratifiedKFold(3, shuffle=True),
@@ -117,7 +118,7 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
 
     # starting the HPO
     search.start(
-        [optim],
+        [optim],  # type: ignore
         5,
         False,
         optimizers_params,
