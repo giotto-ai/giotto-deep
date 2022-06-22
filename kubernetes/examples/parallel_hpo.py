@@ -79,7 +79,7 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
     bd = DatasetBuilder(name="DoubleTori")
     ds_tr, ds_val, _ = bd.build()
 
-    dl_builder = DataLoaderBuilder([ds_tr, ds_val])
+    dl_builder = DataLoaderBuilder([ds_tr, ds_val])  # type: ignore
     dl_tr, dl_val, dl_ts = dl_builder.build([{"batch_size": 23}, {"batch_size": 23}])
 
     # build the model

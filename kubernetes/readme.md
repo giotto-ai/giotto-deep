@@ -37,7 +37,7 @@ kubectl apply -f mysql.yaml
 kubectl apply -f tensorboard.yaml
 kubectl apply -f gdeep-lab.yaml
 kubectl apply -f redis.yaml
-kubectl apply -f rq-worker.yaml
+kubectl apply -f rq-worker.yaml  # to run the workers; if you change the location of the parallel_hpo.py file, make sure to change the --path here!
 kubectl apply -f lab-ingress.yaml 
 ```
  
