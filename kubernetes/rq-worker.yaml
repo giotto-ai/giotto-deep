@@ -15,11 +15,18 @@ spec:
       labels:
         app: gdeep-rq-worker
     spec:
+      volumes:
+      - name: task-pv-storage
+        persistentVolumeClaim:
+          claimName: task-pv-claim
       containers:
       - name: gdeep-worker
         image: matteocao/giotto-deep:gdeep-worker
-        command: ["rq", "worker"] 
-        args: ["--url", "redis://redis-service", "high", "default", "low"]
+        volumeMounts:
+        - mountPath: "/giotto-deep"
+          name: task-pv-storage
+        command: ["rq"] 
+        args: ["worker", "--url", "redis://redis-service", "--path", "/giotto-deep/giotto-deep/kubernetes/examples", "high", "default", "low"]
 ---
 apiVersion: v1
 kind: Service
