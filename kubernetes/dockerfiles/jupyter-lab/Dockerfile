@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 RUN apt-get update && apt-get install -y sudo openssh-server vim
 RUN apt-get install -y supervisor
@@ -17,6 +17,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 COPY requirements.txt .
 
 RUN ["apt-get", "install", "-y", "python3-pip"]
+RUN ["pip3", "install", "torch"]
 RUN ["pip3", "install", "-r", "requirements.txt"]
 RUN ["pip3", "install", "jupyterlab"]
 

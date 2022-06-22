@@ -243,13 +243,6 @@ class Visualiser:
                 defaults, this method takes the
                 first batch of elements
 
-        Returns:
-           (None):
-                a tuple of figures representing the Betti surfaces
-                of the data across layers of the NN, with one figure
-                per dimension in homology_dimensions. Otherwise, a single
-                figure representing the Betti curve of the single sample
-                present.
         """
         if homology_dimension is not None:
             homology_dimension = [0, 1]
