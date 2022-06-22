@@ -1,5 +1,8 @@
 import sys
 import subprocess
+import socket
+from datetime import datetime
+import os
 
 from torch import nn
 from torch.optim import SGD
@@ -74,7 +77,10 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
         host:
             IP of the host. Port is 3306
     """
-    writer = GiottoSummaryWriter()
+
+    current_time: str = datetime.now().strftime('%b%d_%H-%M-%S')
+    log_dir = os.path.join('giotto-deep', 'runs', current_time + '_' + socket.gethostname())
+    writer = GiottoSummaryWriter(log_dir=log_dir)
 
     bd = DatasetBuilder(name="DoubleTori")
     ds_tr, ds_val, _ = bd.build()
@@ -108,8 +114,8 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
     # initialise the SAM optimiser
     optim = SGD  # this is a class, not an instance!
 
-    search = HyperParameterOptimization(pipe, "loss", 20, study_name="distributed-example-6",
-                                        db_url="mysql+mysqldb://"+usr+":"+psw+"@"+host+":3306/example")
+    search = HyperParameterOptimization(pipe, "loss", 20, study_name="distributed-example-1",
+                                        db_url="mysql+mysqldb://" + usr + ":" + psw + "@" + host + ":3306/example")
     # dictionaries of hyperparameters
     optimizers_params = {"lr": [0.001, 0.01]}
     dataloaders_params = {"batch_size": [32, 64, 16]}
