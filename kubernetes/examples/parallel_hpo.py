@@ -6,7 +6,6 @@ from torch.optim import SGD
 from sklearn.model_selection import StratifiedKFold
 
 from gdeep.models import FFNet
-from gdeep.utility.optimisation import SAMOptimizer
 from gdeep.trainer import Trainer
 from gdeep.data.datasets import DatasetBuilder, DataLoaderBuilder
 from gdeep.search import GiottoSummaryWriter
@@ -107,14 +106,13 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
     )
 
     # initialise the SAM optimiser
-    optim = SAMOptimizer(SGD)  # this is a class, not an instance!
+    optim = SGD  # this is a class, not an instance!
 
     search = HyperParameterOptimization(pipe, "loss", 20, study_name="distributed-example-6",
                                         db_url="mysql+mysqldb://"+usr+":"+psw+"@"+host+":3306/example")
     # dictionaries of hyperparameters
     optimizers_params = {"lr": [0.001, 0.01]}
     dataloaders_params = {"batch_size": [32, 64, 16]}
-    models_hyperparams = {"n_nodes": ["200"]}
 
     # starting the HPO
     search.start(
@@ -123,6 +121,5 @@ def run_hpo_parallel(usr: str, psw: str, host: str) -> None:
         False,
         optimizers_params,
         dataloaders_params,
-        models_hyperparams,
         n_accumulated_grads=2,
     )
