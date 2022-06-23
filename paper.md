@@ -58,8 +58,10 @@ scientific explorations of the behavior of deep learning models, hopefully shedi
 new lights on the generalisability and robustness of such complex and powerful
 models.
 
-`giotto-deep` architecture is schematised, using UML, in the picture \autoref{fig:arch}:
-![architecture.\label{fig:arch}](gdeep.arch.png){ width=90% }
+![Architecture UML diagram.\label{fig:arch}](gdeep_arch.png)
+
+`giotto-deep` architecture is schematised, using UML, in picture \autoref{fig:arch}.
+
 
 The hyper perameter searches (HPO) can aslo be distributed on a `kubernetes` cluster
 using [python RQ](https://python-rq.org). Many topological computations in `giotto-deep` 
