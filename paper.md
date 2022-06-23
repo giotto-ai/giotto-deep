@@ -1,112 +1,77 @@
 ---
-title: 'Gala: A Python package for galactic dynamics'
+title: 'giotto-deep: A Python package for topological deep learning'
 tags:
   - Python
-  - astronomy
-  - dynamics
-  - galactic dynamics
-  - milky way
+  - topological data analysis
+  - deep learning
+  - persformer
 authors:
-  - name: Adrian M. Price-Whelan^[Co-first author] # note this makes a footnote saying 'Co-first author'
+  - name: Matteo Caorsi^[Co-first author, Corresponding author] # note this makes a footnote saying 'Co-first author'
     orcid: 0000-0000-0000-0000
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID^[Co-first author] # note this makes a footnote saying 'Co-first author'
+    affiliation: 1 # (Multiple affiliations must be quoted)
+  - name: Raphael Reinauer^[Co-first author] # note this makes a footnote saying 'Co-first author'
     affiliation: 2
-  - name: Author with no affiliation^[Corresponding author]
-    affiliation: 3
+  - name: Nicolas Berkouk
+    affiliation: 2
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University, USA
+ - name: L2F SA, Rue du Centre 9, Saint-Sulpice, 1025, CH
    index: 1
- - name: Institution Name, Country
+ - name: EPFL, Lausanne, VAUD (CH)
    index: 2
- - name: Independent Researcher, Country
-   index: 3
-date: 13 August 2017
+date: 01 July 2022
 bibliography: paper.bib
 
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
 
-The forces on stars, galaxies, and dark matter under external gravitational
-fields lead to the dynamical evolution of structures in the universe. The orbits
-of these bodies are therefore key to understanding the formation, history, and
-future state of galaxies. The field of "galactic dynamics," which aims to model
-the gravitating components of galaxies to study their structure and evolution,
-is now well-established, commonly taught, and frequently used in astronomy.
-Aside from toy problems and demonstrations, the majority of problems require
-efficient numerical tools, many of which require the same base code (e.g., for
-performing numerical orbit integration).
+Topological data analysis (TDA) has already provided many novel insights to machine learning 
+[@carriere2020perslay] due to its capabilities of synthesising the shape information 
+into a multiset of points in two dimensions: the persistence diagrams [@wasserman2016topological]. 
+The hope of many researchers in the field is to give new insights into deep-learning
+models by applying TDA techniques to study the models weights, the activations values in
+the different layers and their evolution during the training phase [@naitzat2020topology]. 
+Despite the continuous progress and improvements in the field, the computational 
+tools available are scattered all over the Internet and there is currently
+little compatibility between the different tools and, in general, between the 
+data structures needed in TDA and standard deep-learning frameworks
+like PyTorch [@paszke2019pytorch].
 
 # Statement of need
 
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+`giotto-deep` is an deep-learning Python package that seamlessly integrate topological
+data analysis models and data structures. The library is founded on a PyTorch core
+due to the extensive use of such library in the machine-learning community.
+The API for `giotto-deep` was designed to provide a class-based and user-friendly 
+interface to fast implementations of common machine learning tasks, 
+such as data preprocessing, model building,
+model training and validation, reporting and logging, as well as image classification, 
+Q&A, translation, persistence diagram vectorisation (via Persformer [@reinauer2021persformer]), 
+but also more advanced tasks such as hyper parameter optimisation. 
+`giotto-deep` also relies heavily on optuna [@akiba2019optuna] for (distributed, multi pod) 
+hyper parameter searches.
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
+`giotto-deep` has been designed to be used by both mathematics researchers and by
+machine learning engineers. The combination of speed, versatility, design, and 
+support for TDA data structures in `giotto-deep` will enable exciting
+scientific explorations of the behavior of deep learning models, hopefully sheding 
+new lights on the generalisability and robustness of such complex and powerful
+models.
 
-# Mathematics
+`giotto-deep` architecture is schematised, using UML, in the picture \autoref{fig:arch}:
+![architecture.\label{fig:arch}](gdeep.arch.png){ width=90% }
 
-Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
+The hyper perameter searches (HPO) can aslo be distributed on a `kubernetes` cluster
+using [python RQ](https://python-rq.org). Many topological computations in `giotto-deep` 
+are performed by `giotto-tda` [@tauzin2021giotto].
 
-Double dollars make self-standing equations:
+# Mentions
 
-$$\Theta(x) = \left\{\begin{array}{l}
-0\textrm{ if } x < 0\cr
-1\textrm{ else}
-\end{array}\right.$$
-
-You can also use plain \LaTeX for equations
-\begin{equation}\label{eq:fourier}
-\hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx
-\end{equation}
-and refer to \autoref{eq:fourier} from text.
-
-# Citations
-
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
-
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
-# Figures
-
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](gdeep.arch.png)
-and referenced from text using \autoref{fig:example}.
-
-Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](gdeep.arch.png){ width=20% }
+The current most relevant application of this software is the Persformer: a novel
+algorithms to automatically transform persistence diagrams into vectors [@reinauer2021persformer].
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+The authors acknowledge the financial support of the nnosuisse project 41665.1 IP-ICT.
 
 # References
