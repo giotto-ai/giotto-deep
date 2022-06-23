@@ -1,5 +1,5 @@
 ---
-title: 'giotto-deep: A Python package for topological deep learning'
+title: 'giotto-deep: A Python Package for Topological Deep Learning'
 tags:
   - Python
   - topological data analysis
