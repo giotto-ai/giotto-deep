@@ -7,7 +7,7 @@ tags:
   - persformer
 authors:
   - name: Matteo Caorsi^[Co-first author, Corresponding author] # note this makes a footnote saying 'Co-first author'
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0001-9416-9090
     affiliation: 1 # (Multiple affiliations must be quoted)
   - name: Raphael Reinauer^[Co-first author] # note this makes a footnote saying 'Co-first author'
     affiliation: 2
@@ -31,6 +31,7 @@ into a multiset of points in two dimensions: the persistence diagrams [@wasserma
 The hope of many researchers in the field is to give new insights into deep-learning
 models by applying TDA techniques to study the models weights, the activations values in
 the different layers and their evolution during the training phase [@naitzat2020topology]. 
+
 Despite the continuous progress and improvements in the field, the computational 
 tools available are scattered all over the Internet and there is currently
 little compatibility between the different tools and, in general, between the 
@@ -62,18 +63,20 @@ models.
 
 `giotto-deep` architecture is schematised, using UML, in picture \autoref{fig:arch}.
 
-
 The hyper perameter searches (HPO) can aslo be distributed on a `kubernetes` cluster
-using [python RQ](https://python-rq.org). Many topological computations in `giotto-deep` 
+using [python RQ](https://python-rq.org), speeding up the computation: this is an 
+essential aspect when deal with large models and large hyper parameters searches. 
+Many topological computations in `giotto-deep` 
 are performed by `giotto-tda` [@tauzin2021giotto].
 
-# Mentions
+# Research projects using `giotto-deep`
 
-The current most relevant application of this software is the Persformer: a novel
-algorithms to automatically transform persistence diagrams into vectors [@reinauer2021persformer].
+The current most relevant scientific application of this software is the Persformer: 
+a novel algorithm to automatise the persistence diagrams vectorisation [@reinauer2021persformer].
 
 # Acknowledgements
 
-The authors acknowledge the financial support of the nnosuisse project 41665.1 IP-ICT.
+The authors would like to acknowledge the financial support of the Swiss federation:
+Innosuisse project 41665.1 IP-ICT.
 
 # References
