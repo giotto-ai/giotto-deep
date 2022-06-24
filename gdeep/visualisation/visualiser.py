@@ -155,7 +155,7 @@ class Visualiser:
             )
             self.pipe.writer.flush()  # type: ignore
 
-    def plot_persistence_diagrams(self, batch=None,
+    def plot_persistence_diagrams(self, batch: Optional[List[Tensor]] = None,
                                   **kwargs) -> None:  # type: ignore
         """Plot a persistence diagrams of the activations
 
