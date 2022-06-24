@@ -1,9 +1,11 @@
 import numpy
+import torch
 from gtda.homology import VietorisRipsPersistence, WeakAlphaPersistence
 from gtda.graphs import KNeighborsGraph, GraphGeodesicDistance
-from typing import List
+from typing import List, Any
 
 Array = numpy.ndarray
+Tensor = torch.Tensor
 
 
 def knn_distance_matrix(x: List, k: int = 3):
@@ -25,8 +27,8 @@ def knn_distance_matrix(x: List, k: int = 3):
 
 
 def persistence_diagrams_of_activations(
-    activations_list, homology_dimensions=(0, 1), k=5, mode="VR", max_edge_length=10
-):
+        activations_list: List[Tensor], homology_dimensions=(0, 1), k: int = 5,
+        mode: str = "VR", max_edge_length: int = 10) -> List[Any]:
     """Returns list of persistence diagrams of the activations of all
     layers of type layer_types
 
@@ -39,7 +41,10 @@ def persistence_diagrams_of_activations(
             dimensions. Defaults to `[0, 1]`.
         k (optional) :
             number of neighbors parameter
-            of the k-NN distance .
+            of the k-NN distance. If ``k <= 0``, then
+            the list of activations is considered
+            as a point cloud and no knn distance is
+            computed
         mode (optional) :
             choose the filtration ('VR'
             or 'alpha') to compute persistence default to 'VR'.
@@ -67,7 +72,7 @@ def persistence_diagrams_of_activations(
         )
         # infinity_values set to avoid troubles with
         # multiple topological features living indefinitely
-    elif k == -1 and mode == "alpha":
+    elif k <= 0 and mode == "alpha":
         vr = WeakAlphaPersistence(
             homology_dimensions=homology_dimensions,
             reduced_homology=False,
@@ -82,11 +87,20 @@ def persistence_diagrams_of_activations(
         )
 
     if k > 0 and mode == "VR":
-        for i, activ in enumerate(activations_list):
-            activations_list[i] = activ.cpu()
-        dist_matrix = knn_distance_matrix(activations_list, k=k)
+        activations_list_array = _convert_list_of_tensor_to_numpy(activations_list)
+        dist_matrix = knn_distance_matrix(activations_list_array, k=k)
         persistence_diagrams = vr.fit_transform(dist_matrix)
     else:
-        persistence_diagrams = vr.fit_transform(activations_list)
+        activations_list_array = _convert_list_of_tensor_to_numpy(activations_list)
+        persistence_diagrams = vr.fit_transform(activations_list_array)
 
     return persistence_diagrams
+
+
+def _convert_list_of_tensor_to_numpy(input_list: List[Tensor]) -> List[Array]:
+    """private method to convert a list of tensors to a
+    list of arrays"""
+    output_list: List[Array] = []
+    for item in input_list:
+        output_list.append(item.detach().cpu().numpy())
+    return output_list

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdeep-rq-worker-deployment
+  namespace: main
+  labels:
+    app: gdeep-rq-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gdeep-rq-worker
+  template:
+    metadata:
+      labels:
+        app: gdeep-rq-worker
+    spec:
+      volumes:
+      - name: task-pv-storage
+        persistentVolumeClaim:
+          claimName: task-pv-claim
+      containers:
+      - name: gdeep-worker
+        image: matteocao/giotto-deep:gdeep-worker
+        volumeMounts:
+        - mountPath: "/giotto-deep"
+          name: task-pv-storage
+        command: ["rq"] 
+        args: ["worker", "--url", "redis://redis-service", "--path", "/giotto-deep/giotto-deep/kubernetes/examples", "high", "default", "low"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdeep-rq-worker-service
+  namespace: main
+spec:
+  selector:
+    app: gdeep-rq-worker
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 9181 # internal port for the cluster
+      targetPort: 9181 # match the container port

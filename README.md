@@ -28,6 +28,16 @@ tensorboard --logdir=runs
 ```
 Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualisation results that you stored in the `writer = SummaryWriter()`.
 
+## Install user version
+
+The simplest way to install `giotto-deep` is using `pip`:
+```
+python -m pip install -U giotto-deep
+```
+If necessary, this command will also automatically install all the library dependencies. 
+**Note:** we recommend upgrading ``pip`` to a recent version as the above may fail on very old versions.
+
+
 ## Install dev version
 
 The first step to install the developer version of the package is to `git clone` this repository:

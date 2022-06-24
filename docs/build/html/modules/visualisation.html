@@ -41,6 +41,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributed.html">Distributed computing</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
@@ -151,7 +152,7 @@ different kinds to tensors</p>
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.betti_plot_layers">
-<span class="sig-name descname"><span class="pre">betti_plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.betti_plot_layers" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">betti_plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">homology_dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.betti_plot_layers" title="Permalink to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
 <dt>homology_dimension :</dt><dd><p>A list of
@@ -162,14 +163,8 @@ compute the activations on. By
 defaults, this method takes the
 first batch of elements</p>
 </dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>(None):</dt><dd><p>a tuple of figures representing the Betti surfaces
-of the data across layers of the NN, with one figure
-per dimension in homology_dimensions. Otherwise, a single
-figure representing the Betti curve of the single sample
-present.</p>
+<dt>kwargs:</dt><dd><p>optional arguments for the creation of
+persistence diagrams</p>
 </dd>
 </dl>
 </dd>
@@ -311,8 +306,17 @@ initilised <code class="docutils literal notranslate"><span class="pre">Interpre
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.visualisation.Visualiser.plot_persistence_diagrams">
-<span class="sig-name descname"><span class="pre">plot_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_persistence_diagrams" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gdeep.visualisation.Visualiser.plot_persistence_diagrams" title="Permalink to this definition"></a></dt>
 <dd><p>Plot a persistence diagrams of the activations</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>batch:</dt><dd><p>a batch of data, in the shape of (datum, label)</p>
+</dd>
+<dt>kwargs:</dt><dd><p>arguments for the <code class="docutils literal notranslate"><span class="pre">persistence_diagrams_of_activations</span></code></p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -339,7 +343,7 @@ y axis of the plot</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="gdeep.visualisation.persistence_diagrams_of_activations">
-<span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">persistence_diagrams_of_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activations_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'VR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_edge_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.visualisation.persistence_diagrams_of_activations" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">gdeep.visualisation.</span></span><span class="sig-name descname"><span class="pre">persistence_diagrams_of_activations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activations_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'VR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_edge_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.visualisation.persistence_diagrams_of_activations" title="Permalink to this definition"></a></dt>
 <dd><p>Returns list of persistence diagrams of the activations of all
 layers of type layer_types</p>
 <dl class="simple">
@@ -351,7 +355,10 @@ tensors for each layer</p>
 dimensions. Defaults to <cite>[0, 1]</cite>.</p>
 </dd>
 <dt>k (optional) :</dt><dd><p>number of neighbors parameter
-of the k-NN distance .</p>
+of the k-NN distance. If <code class="docutils literal notranslate"><span class="pre">k</span> <span class="pre">&lt;=</span> <span class="pre">0</span></code>, then
+the list of activations is considered
+as a point cloud and no knn distance is
+computed</p>
 </dd>
 <dt>mode (optional) :</dt><dd><p>choose the filtration (‘VR’
 or ‘alpha’) to compute persistence default to ‘VR’.</p>

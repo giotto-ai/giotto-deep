@@ -24,20 +24,6 @@ spec:
                 name: gdeep-lab-service
                 port: 
                   number: 22
-          - path: /two
-            pathType: Prefix
-            backend:
-              service:
-                name: gdeep-lab-service-1
-                port: 
-                  number: 8080
-          - path: /ssh-two
-            pathType: Prefix
-            backend:
-              service:
-                name: gdeep-lab-service-1
-                port:
-                  number: 22
           - path: /plot
             pathType: Prefix
             backend:
