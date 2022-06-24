@@ -12,6 +12,7 @@ Welcome to giotto-deep's documentation!
 
    introduction
    installation
+   distributed
    modules/index
 
 References

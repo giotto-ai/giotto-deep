@@ -27,6 +27,7 @@ from . import (
 
 FONT_SIZE = 16
 Tensor = torch.Tensor
+Array = np.ndarray
 
 
 class Visualiser:
@@ -46,10 +47,10 @@ class Visualiser:
         vs.plot_data_model()
 
     """
+    persistence_diagrams: Optional[List[Array]] = None
 
     def __init__(self, pipe: Trainer) -> None:
         self.pipe = pipe
-        self.persistence_diagrams = None
 
     def plot_interactive_model(self) -> None:
         """This function has no arguments: its purpose
@@ -154,8 +155,15 @@ class Visualiser:
             )
             self.pipe.writer.flush()  # type: ignore
 
-    def plot_persistence_diagrams(self, batch=None):
+    def plot_persistence_diagrams(self, batch=None,
+                                  **kwargs) -> None:  # type: ignore
         """Plot a persistence diagrams of the activations
+
+        Args:
+            batch:
+                a batch of data, in the shape of (datum, label)
+            kwargs:
+                arguments for te persistence diagrams of activations
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
         if self.persistence_diagrams is None:
@@ -165,7 +173,7 @@ class Visualiser:
                 inputs, _ = next(iter(self.pipe.dataloaders[0]))
 
             activ = me.get_activations(inputs)
-            self.persistence_diagrams = persistence_diagrams_of_activations(activ)
+            self.persistence_diagrams = persistence_diagrams_of_activations(activ, **kwargs)
         list_of_dgms = []
         for i, persistence_diagram in enumerate(self.persistence_diagrams):
             plot_persistence_diagram = plot_diagram(persistence_diagram)
@@ -173,10 +181,10 @@ class Visualiser:
             list_of_dgms.append(img_t)
         features = torch.stack(list_of_dgms)
         # grid = make_grid(features)
-        self.pipe.writer.add_images(
+        self.pipe.writer.add_images(  # type: ignore
             "persistence_diagrams_of_activations", features, dataformats="NHWC"
         )
-        self.pipe.writer.flush()
+        self.pipe.writer.flush()  # type: ignore
 
     def plot_decision_boundary(self, compact: bool = False, n_epochs: int = 100, precision: float = 0.1):
         """Plot the decision boundary as the intrinsic
@@ -230,8 +238,9 @@ class Visualiser:
             return db.cpu(), None, None
 
     def betti_plot_layers(
-            self, homology_dimension: Optional[List[int]] = None, batch: Optional[Tensor] = None
-    ) -> None:
+            self, homology_dimension: Optional[List[int]] = None,
+            batch: Optional[Tensor] = None,
+            **kwargs) -> None:  # type: ignore
         """
         Args:
             homology_dimension :
@@ -242,6 +251,9 @@ class Visualiser:
                 compute the activations on. By
                 defaults, this method takes the
                 first batch of elements
+            kwargs:
+                optional arguments for the creation of
+                persistence diagrams
 
         """
         if homology_dimension is not None:
@@ -253,7 +265,7 @@ class Visualiser:
             else:
                 inputs = next(iter(self.pipe.dataloaders[0]))  # type: ignore
             self.persistence_diagrams = persistence_diagrams_of_activations(
-                me.get_activations(inputs)
+                me.get_activations(inputs), **kwargs
             )
         bc = BettiCurve()
         dgms = bc.fit_transform(self.persistence_diagrams)
