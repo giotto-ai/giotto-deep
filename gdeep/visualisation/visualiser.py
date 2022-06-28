@@ -163,7 +163,7 @@ class Visualiser:
             batch:
                 a batch of data, in the shape of (datum, label)
             kwargs:
-                arguments for te persistence diagrams of activations
+                arguments for the ``persistence_diagrams_of_activations``
         """
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
         if self.persistence_diagrams is None:
