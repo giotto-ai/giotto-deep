@@ -72,7 +72,7 @@ class Interpreter:
         else:
             attr_class = get_attr(self.method, self.model)
         self.model.eval()
-        if y:
+        if y is not None:
             self.attribution = attr_class.attribute(self.x, target=y, **kwargs)
         else:
             self.attribution = attr_class.attribute(self.x, **kwargs)
