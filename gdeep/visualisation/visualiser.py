@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 import random
 from copy import copy
 import warnings
@@ -20,6 +20,7 @@ from gdeep.utility import DEVICE
 from ..models import ModelExtractor
 from . import (
     persistence_diagrams_of_activations,
+    _simplified_persistence_of_activations,
     plotly2tensor,
     Compactification,
     png2tensor,
@@ -266,7 +267,7 @@ class Visualiser:
                 persistence diagrams
 
         """
-        if homology_dimensions is not None:
+        if homology_dimensions is None:
             homology_dimensions = [0, 1]
         if self.persistence_diagrams is None:
             me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
@@ -309,7 +310,7 @@ class Visualiser:
                 persistence diagrams
 
         """
-        if homology_dimensions is not None:
+        if homology_dimensions is None:
             homology_dimensions = [0, 1]
         if self.persistence_diagrams is None:
             me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
@@ -458,7 +459,7 @@ class Visualiser:
         self.pipe.writer.add_figure("Feature Importance", fig)  # type: ignore
         return plt
 
-    def plot_attribution(self, interpreter: Interpreter, **kwargs):
+    def plot_attribution(self, interpreter: Interpreter, **kwargs) -> Tuple[plt.Figure, plt.Figure]:
         """this method generically plots the attribution of
         the interpreter
 
@@ -482,7 +483,7 @@ class Visualiser:
         return fig1, fig2
 
     def plot_self_attention(self, attention_tensor: List[Tensor], tokens_x: Optional[List[str]] = None,
-                            tokens_y: Optional[List[str]] = None, **kwargs) -> None:
+                            tokens_y: Optional[List[str]] = None, **kwargs) -> plt.Figure:
         """This functions plots the self-attention layer of a transformer.
 
         Args:
@@ -495,6 +496,10 @@ class Visualiser:
             tokens_y:
                 The string tokens to be displayed along the
                 y axis of the plot
+
+        Returns:
+             Figure:
+                 matplotlib pyplot
             """
         fig = plt.figure(**kwargs)
 
@@ -520,7 +525,7 @@ class Visualiser:
         self.pipe.writer.flush()  # type: ignore
         return fig
 
-    def plot_attributions_persistence_diagrams(self, interpreter: Interpreter, **kwargs):
+    def plot_attributions_persistence_diagrams(self, interpreter: Interpreter, **kwargs) -> plt.Figure:
         """this method allows the plot, on top of the persistence
         diagram, of the attribution values. For example, this would
         be the method to call when you run saliency maps on the
@@ -535,7 +540,7 @@ class Visualiser:
                 keywords arguments for the plot (``matplotlib.pyplot``)
 
         Returns:
-            matplotlib.figure, matplotlib.figure
+            matplotlib.figure.Figure
         """
 
         pd_x: Array = interpreter.x.detach().cpu().numpy()
@@ -551,6 +556,63 @@ class Visualiser:
         plt.ylabel("Death")
 
         self.pipe.writer.add_figure("Persistence diagrams attributions", fig)  # type: ignore
+        self.pipe.writer.flush()  # type: ignore
+
+        return fig
+
+    def plot_betti_numbers_layers(
+            self, homology_dimensions: Optional[List[int]] = None,
+            filtration_value: float = 1.,
+            batch: Optional[Tensor] = None,
+            **kwargs) -> plt.Figure:  # type: ignore
+        """
+        Args:
+            homology_dimensions :
+                A list of
+                homology dimensions, e.g. ``[0, 1, ...]``
+            filtration_value:
+                the filtration value you want to threshold the
+                filtration at
+            batch :
+                the selected batch of data to
+                compute the activations on. By
+                defaults, this method takes the
+                first batch of elements
+            kwargs:
+                optional arguments for the creation of
+                persistence diagrams
+
+        """
+        if homology_dimensions is None:
+            homology_dimensions = [0, 1]
+
+        me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
+        if batch is not None:
+            inputs, _ = batch
+        else:
+            inputs = next(iter(self.pipe.dataloaders[0]))  # type: ignore
+
+        simplified_persistence_diagrams = _simplified_persistence_of_activations(me.get_activations(inputs),
+                                                                                 homology_dimensions,
+                                                                                 filtration_value, ** kwargs)
+
+        betti_numbers = []
+
+        for dgm in simplified_persistence_diagrams:
+            xx = dgm[:, 2]
+            betti_numbers.append(
+                [len(xx[(dgm[:, 2] == dim) * (dgm[:, 1] == 1.)]) for dim in homology_dimensions]
+            )
+        betti_array = np.array(betti_numbers).T
+
+        fig = plt.figure(figsize=(10, 6.8))
+        for i, array in enumerate(betti_array):
+            plt.plot(array, label=str(i) + "-th betti number")
+        plt.xlabel("Layers")
+        plt.ylabel("Betti numbers")
+        plt.legend()
+
+        self.pipe.writer.add_figure("Betti numbers over the layers", fig)  # type: ignore
         self.pipe.writer.flush()  # type: ignore
 
         return fig

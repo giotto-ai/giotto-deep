@@ -69,3 +69,4 @@ def test_visualiser():
     vs.plot_persistence_diagrams(x)
     vs.plot_betti_surface_layers([0, 1], x)
     vs.plot_betti_curves_layers([0, 1], x)
+    vs.plot_betti_numbers_layers(batch=x, filtration_value=0.3)
