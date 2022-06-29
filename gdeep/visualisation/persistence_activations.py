@@ -2,7 +2,7 @@ import numpy
 import torch
 from gtda.homology import VietorisRipsPersistence, WeakAlphaPersistence
 from gtda.graphs import KNeighborsGraph, GraphGeodesicDistance
-from typing import List, Any
+from typing import List, Any, Optional
 
 Array = numpy.ndarray
 Tensor = torch.Tensor
@@ -27,28 +27,28 @@ def knn_distance_matrix(x: List, k: int = 3):
 
 
 def persistence_diagrams_of_activations(
-        activations_list: List[Tensor], homology_dimensions=(0, 1), k: int = 5,
+        activations_list: List[Tensor], homology_dimensions: Optional[List[int]] = None, k: int = 5,
         mode: str = "VR", max_edge_length: int = 10) -> List[Any]:
     """Returns list of persistence diagrams of the activations of all
     layers of type layer_types
 
     Args:
-        activations_list (list):
+        activations_list:
             list of activation
             tensors for each layer
-        homology_dimensions (list, optional):
+        homology_dimensions :
             list of homology
             dimensions. Defaults to `[0, 1]`.
-        k (optional) :
+        k  :
             number of neighbors parameter
             of the k-NN distance. If ``k <= 0``, then
             the list of activations is considered
             as a point cloud and no knn distance is
             computed
-        mode (optional) :
+        mode  :
             choose the filtration ('VR'
             or 'alpha') to compute persistence default to 'VR'.
-        max_edge_length (float):
+        max_edge_length :
             maximum edge length of the simplices forming
             the complex
 
@@ -57,6 +57,8 @@ def persistence_diagrams_of_activations(
             list of persistence diagrams of activations
             of the different layers
     """
+    if homology_dimensions is not None:
+        homology_dimensions = [0, 1]
     for i, activ in enumerate(activations_list):
         if len(activ.shape) > 2:  # in case of non FF layers
             activations_list[i] = activ.view(activ.shape[0], -1)

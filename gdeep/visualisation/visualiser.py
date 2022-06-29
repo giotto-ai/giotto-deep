@@ -10,9 +10,9 @@ from gtda.diagrams import BettiCurve
 from html2image import Html2Image
 from captum.attr import visualization
 import numpy as np
-import matplotlib.pyplot as plt
 from captum.attr import LayerAttribution
-from gtda.plotting import plot_diagram, plot_betti_surfaces
+from gtda.plotting import plot_diagram, plot_betti_surfaces, plot_betti_curves
+import matplotlib.pyplot as plt
 
 from gdeep.trainer import Trainer
 from gdeep.analysis.interpretability import Interpreter
@@ -156,15 +156,21 @@ class Visualiser:
             self.pipe.writer.flush()  # type: ignore
 
     def plot_persistence_diagrams(self, batch: Optional[List[Tensor]] = None,
+                                  homology_dimensions: Optional[List[int]] = None,
                                   **kwargs) -> None:  # type: ignore
         """Plot a persistence diagrams of the activations
 
         Args:
             batch:
                 a batch of data, in the shape of (datum, label)
+            homology_dimensions:
+                a list of the homology dimensions, like ``[0, 1]``
             kwargs:
                 arguments for the ``persistence_diagrams_of_activations``
         """
+
+        if homology_dimensions is None:
+            homology_dimensions = [0, 1]
         me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
         if self.persistence_diagrams is None:
             if batch is not None:
@@ -173,7 +179,9 @@ class Visualiser:
                 inputs, _ = next(iter(self.pipe.dataloaders[0]))
 
             activ = me.get_activations(inputs)
-            self.persistence_diagrams = persistence_diagrams_of_activations(activ, **kwargs)
+            self.persistence_diagrams = persistence_diagrams_of_activations(activ,
+                                                                            homology_dimensions=homology_dimensions,
+                                                                            **kwargs)
         list_of_dgms = []
         for i, persistence_diagram in enumerate(self.persistence_diagrams):
             plot_persistence_diagram = plot_diagram(persistence_diagram)
@@ -182,13 +190,15 @@ class Visualiser:
         features = torch.stack(list_of_dgms)
         # grid = make_grid(features)
         self.pipe.writer.add_images(  # type: ignore
-            "persistence_diagrams_of_activations", features, dataformats="NHWC"
+            "Persistence diagrams of the activations", features, dataformats="NHWC"
         )
         self.pipe.writer.flush()  # type: ignore
 
     def plot_decision_boundary(self, compact: bool = False, n_epochs: int = 100, precision: float = 0.1):
         """Plot the decision boundary as the intrinsic
-        hypersurface defined by self.loss_fn == 0.5. Note that
+        hypersurface defined by ``self.loss_fn == 0.5``
+        in the case of 2 classes. The method also works
+        for an arbitrary number of classes. Note that
         we are expecting a model whose forward function
         has only one tensor as input (and not multiple
         arguments).
@@ -237,13 +247,13 @@ class Visualiser:
                 warnings.warn("No points sampled over the decision boundary")
             return db.cpu(), None, None
 
-    def betti_plot_layers(
-            self, homology_dimension: Optional[List[int]] = None,
+    def plot_betti_surface_layers(
+            self, homology_dimensions: Optional[List[int]] = None,
             batch: Optional[Tensor] = None,
             **kwargs) -> None:  # type: ignore
         """
         Args:
-            homology_dimension :
+            homology_dimensions :
                 A list of
                 homology dimensions, e.g. ``[0, 1, ...]``
             batch :
@@ -256,8 +266,8 @@ class Visualiser:
                 persistence diagrams
 
         """
-        if homology_dimension is not None:
-            homology_dimension = [0, 1]
+        if homology_dimensions is not None:
+            homology_dimensions = [0, 1]
         if self.persistence_diagrams is None:
             me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
             if batch is not None:
@@ -265,17 +275,68 @@ class Visualiser:
             else:
                 inputs = next(iter(self.pipe.dataloaders[0]))  # type: ignore
             self.persistence_diagrams = persistence_diagrams_of_activations(
-                me.get_activations(inputs), **kwargs
+                me.get_activations(inputs),
+                homology_dimensions=homology_dimensions,
+                **kwargs
             )
         bc = BettiCurve()
         dgms = bc.fit_transform(self.persistence_diagrams)
 
         plots = plot_betti_surfaces(
-            dgms, samplings=bc.samplings_, homology_dimensions=homology_dimension
+            dgms, samplings=bc.samplings_,
+            homology_dimensions=homology_dimensions
         )
 
         for i in range(len(plots)):
             plots[i].show()
+
+    def plot_betti_curves_layers(
+            self, homology_dimensions: Optional[List[int]] = None,
+            batch: Optional[Tensor] = None,
+            **kwargs) -> None:  # type: ignore
+        """
+        Args:
+            homology_dimensions :
+                A list of
+                homology dimensions, e.g. ``[0, 1, ...]``
+            batch :
+                the selected batch of data to
+                compute the activations on. By
+                defaults, this method takes the
+                first batch of elements
+            kwargs:
+                optional arguments for the creation of
+                persistence diagrams
+
+        """
+        if homology_dimensions is not None:
+            homology_dimensions = [0, 1]
+        if self.persistence_diagrams is None:
+            me = ModelExtractor(self.pipe.model, self.pipe.loss_fn)
+            if batch is not None:
+                inputs, _ = batch
+            else:
+                inputs = next(iter(self.pipe.dataloaders[0]))  # type: ignore
+            self.persistence_diagrams = persistence_diagrams_of_activations(
+                me.get_activations(inputs),
+                homology_dimensions=homology_dimensions,
+                **kwargs
+            )
+        bc = BettiCurve()
+        bc_curves = bc.fit_transform(self.persistence_diagrams)
+        list_of_plts = []
+        for bc_curve in bc_curves:
+            plots = plot_betti_curves(
+                bc_curve, samplings=bc.samplings_,
+                homology_dimensions=homology_dimensions
+            )
+            img_t = plotly2tensor(plots)
+            list_of_plts.append(img_t)
+        features = torch.stack(list_of_plts)
+        self.pipe.writer.add_images(  # type: ignore
+            "Betti curves for each layer", features, dataformats="NHWC"
+        )
+        self.pipe.writer.flush()  # type: ignore
 
     def plot_interpreter_text(self, interpreter: Interpreter):
         """This method allows to plot the results of an
@@ -410,7 +471,8 @@ class Visualiser:
                 captum)
 
         Returns:
-            matplotlib.figure, matplotlib.figure"""
+            matplotlib.figure, matplotlib.figure
+                they correspond respectively to the datum and attribution"""
         t1 = Visualiser._adjust_tensors_to_plot(interpreter.x)
         t2 = Visualiser._adjust_tensors_to_plot(interpreter.attribution)
         fig1, _ = visualization.visualize_image_attr(t1, **kwargs)
@@ -455,6 +517,42 @@ class Visualiser:
             fig.colorbar(im, fraction=0.046, pad=0.04)
         plt.show()
         self.pipe.writer.add_figure("Self attention map", fig)  # type: ignore
+        self.pipe.writer.flush()  # type: ignore
+        return fig
+
+    def plot_attributions_persistence_diagrams(self, interpreter: Interpreter, **kwargs):
+        """this method allows the plot, on top of the persistence
+        diagram, of the attribution values. For example, this would
+        be the method to call when you run saliency maps on the
+        persistence diagrams. Note that all homology dimensions
+        are plot together
+
+        Args:
+            interpreter :
+                this is a ``gdeep.analysis.interpretability``
+                initilised ``Interpreter`` class
+            kwargs:
+                keywords arguments for the plot (``matplotlib.pyplot``)
+
+        Returns:
+            matplotlib.figure, matplotlib.figure
+        """
+
+        pd_x: Array = interpreter.x.detach().cpu().numpy()
+        pd_attr: Array = interpreter.attribution.detach().cpu().numpy()
+
+        yy: Array = (np.abs(pd_attr.T[0]) + np.abs(pd_attr.T[1])).flatten()
+        yy = (yy - yy.min(axis=0)) / (yy.max(axis=0) - yy.min(axis=0))
+        fig = plt.figure(figsize=(10, 10))
+        plt.scatter(x=pd_x.T[0], y=pd_x.T[1], c=yy, **kwargs)
+        line = np.arange(0, max(pd_x.T[1]) * 1.1, 0.01)
+        plt.plot(line, line, '--', color="black")
+        plt.xlabel("Birth")
+        plt.ylabel("Death")
+
+        self.pipe.writer.add_figure("Persistence diagrams attributions", fig)  # type: ignore
+        self.pipe.writer.flush()  # type: ignore
+
         return fig
 
     @staticmethod

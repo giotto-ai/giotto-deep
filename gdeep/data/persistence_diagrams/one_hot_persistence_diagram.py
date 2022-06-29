@@ -246,13 +246,15 @@ def get_one_hot_encoded_persistence_diagram_from_gtda(persistence_diagram: Array
     persistence diagram.
     
     Args:
-        persistence_diagram: An array of shape (num_points, 3) where the first two columns
-                                represent the coordinates of the points and the third column
-                                represents the index of the homology dimension.
+        persistence_diagram:
+            An array of shape (num_points, 3) where the first two columns
+            represent the coordinates of the points and the third column
+            represents the index of the homology dimension.
         
     Returns:
-        A one-hot encoded persistence diagram. If the persistence diagram has only one homology
-        dimension, the third column will be filled with ones.
+        OneHotEncodedPersistenceDiagram:
+            A one-hot encoded persistence diagram. If the persistence diagram has only one homology
+            dimension, the third column will be filled with ones.
     """
     assert persistence_diagram.ndim == 2 and persistence_diagram.shape[1] >= 2, \
         "The input should be a 2-dimensional array of shape (num_points, 3) or (num_points, 2)."
@@ -318,25 +320,25 @@ def get_one_hot_encoded_persistence_diagram_from_gudhi_extended(
 
 def _plot_diagram(diagram, names: List[str], homology_dimensions=None, plotly_params=None):
     """Plot a single persistence diagram.
-    Parameters
-    ----------
-    diagram : ndarray of shape (n_points, 3)
-        The persistence diagram to plot, where the third dimension along axis 1
-        contains homology dimensions, and the first two contain (birth, death)
-        pairs to be used as coordinates in the two-dimensional plot.
-    homology_dimensions : list of int or None, optional, default: ``None``
-        Homology dimensions which will appear on the plot. If ``None``, all
-        homology dimensions which appear in `diagram` will be plotted.
-    plotly_params : dict or None, optional, default: ``None``
-        Custom parameters to configure the plotly figure. Allowed keys are
-        ``"traces"`` and ``"layout"``, and the corresponding values should be
-        dictionaries containing keyword arguments as would be fed to the
-        :meth:`update_traces` and :meth:`update_layout` methods of
-        :class:`plotly.graph_objects.Figure`.
-    Returns
-    -------
-    fig : :class:`plotly.graph_objects.Figure` object
-        Figure representing the persistence diagram.
+
+    Args:
+        diagram, ndarray of shape (n_points, 3):
+            The persistence diagram to plot, where the third dimension along axis 1
+            contains homology dimensions, and the first two contain (birth, death)
+            pairs to be used as coordinates in the two-dimensional plot.
+        homology_dimensions, list of int or None, optional, default: ``None``:
+            Homology dimensions which will appear on the plot. If ``None``, all
+            homology dimensions which appear in `diagram` will be plotted.
+        plotly_params, dict or None, optional, default: ``None``:
+            Custom parameters to configure the plotly figure. Allowed keys are
+            ``"traces"`` and ``"layout"``, and the corresponding values should be
+            dictionaries containing keyword arguments as would be fed to the
+            :meth:`update_traces` and :meth:`update_layout` methods of
+            :class:`plotly.graph_objects.Figure`.
+    Returns:
+        fig :
+            :class:`plotly.graph_objects.Figure` object;
+            Figure representing the persistence diagram.
     """
     # TODO: increase the marker size
     if homology_dimensions is None:
