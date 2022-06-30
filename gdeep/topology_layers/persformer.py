@@ -2,7 +2,6 @@
 from typing import Optional
 
 import torch
-import torch.nn as nn
 from torch.nn import Dropout, Linear, Module, ModuleList, Sequential
 
 from .attention_factory import AttentionFactory
@@ -19,20 +18,18 @@ class Persformer(Module):
 
     Examples::
 
-        from gdeep.topological_layers import PersformerConfig, PersformerModel
+        from gdeep.topology_layers import PersformerConfig, PersformerModel
         # Initialize the configuration object
         config = PersformerConfig()
         # Initialize the model
         model = Persformer(config)
 
     """
-    
-
-    
     config: PersformerConfig
     embedding_layer: Module
     persformer_blocks: ModuleList
     classifier_layer: Module
+    pooling_layer: Module
     
     def __init__(self, config: PersformerConfig):
         super().__init__()
@@ -68,8 +65,7 @@ class Persformer(Module):
                                
     def _get_pooling_layer(self) -> Module:
         return get_pooling_layer(self.config)
-                        
-        
+
     def forward(self,
                 input_batch: Tensor,
                 attention_mask: Optional[Tensor] = None
@@ -95,4 +91,3 @@ class Persformer(Module):
         # Apply the classifier layer
         output = self.classifier_layer(output)
         return output
-
