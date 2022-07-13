@@ -276,8 +276,8 @@ def get_one_hot_encoded_persistence_diagram_from_gtda(persistence_diagram: Array
         birth_death_diagram: Tensor = torch.tensor(persistence_diagram[:, :2])
 
         return OneHotEncodedPersistenceDiagram(
-            torch.stack((birth_death_diagram,
-                         one_hot_encoding), dim=1))
+            torch.cat((birth_death_diagram,
+                         one_hot_encoding), dim=1).float())
 
 
 def get_one_hot_encoded_persistence_diagram_from_gudhi_extended(
