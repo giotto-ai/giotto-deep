@@ -9,8 +9,7 @@ import numpy as np
 from gdeep.trainer import Trainer
 from gdeep.models import FFNet
 from gdeep.search import GiottoSummaryWriter
-from gdeep.data.datasets import FromArray, DataLoaderBuilder, \
-    get_dataset
+from gdeep.data.datasets import FromArray, DataLoaderBuilder
 from gdeep.search import clean_up_files
 
 Tensor = torch.Tensor
@@ -59,7 +58,7 @@ def test_trainer_from_array():
     # dataloaders
     X = np.array(np.random.rand(100, 4), dtype=np.float32)
     y = np.array(np.random.randint(2, size=100*2).reshape(-1, 2), dtype=np.int64)
-    dl_tr, *_ = DataLoaderBuilder((FromArray(X, y),)).build(({"batch_size": 23},))
+    dl_tr, *_ = DataLoaderBuilder([FromArray(X, y)]).build([{"batch_size": 23}])
 
     # loss function
     loss_fn = nn.CrossEntropyLoss()
@@ -89,3 +88,6 @@ def test_trainer_collate():
                    loss_fn, writer)
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
+
+    # evaluation
+    assert len(pipe.evaluate_classification(2)) == 3
