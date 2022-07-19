@@ -86,21 +86,24 @@
 <span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.FFNet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch=(2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation=&lt;function</span> <span class="pre">relu&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
 <dd><p>This is the class to build a custom feed
 forward network that is easily built from an array,
-in which the number and dimensions of the layers is specified.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
+in which the number and dimensions of the layers is specified.
+Args:</p>
+<blockquote>
+<div><dl class="simple">
 <dt>arch (list of int or 1d array, default=[2,3,3,2]):</dt><dd><p>this is the list containing the dimension of the layers
 inside your network. all laysers have <code class="docutils literal notranslate"><span class="pre">relu</span></code> except for
 the last one which has <code class="docutils literal notranslate"><span class="pre">sigmoid</span></code> as activation function.
-The first number is the dimension of the input! Thhe final
+The first number is the dimension of the input! The final
 of the output</p>
 </dd>
-</dl>
+<dt>activation (callable, default = torch.nn.functional.relu):</dt><dd><p>this is the activation function that will be applied between
+each layer of the fully connected network</p>
 </dd>
 </dl>
+</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.FFNet.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet.forward" title="Permalink to this definition"></a></dt>

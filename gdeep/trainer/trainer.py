@@ -1202,6 +1202,7 @@ class Trainer:
             dl = self.dataloaders[0]
         class_probs: List[List[Tensor]] = []
         class_label: List[Tensor] = []
+        batch_metric_list = []
         loss = 0.0
         correct = 0.0
         confusion_matrix = np.zeros((num_class, num_class))  # type: ignore
@@ -1212,13 +1213,14 @@ class Trainer:
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
-                correct += (pred.argmax(1) == y).to(torch.float).sum().item()
+                batch_metric = self.training_metric(pred, y)
+                batch_metric_list.append(batch_metric)
                 class_label.append(y)
                 for t, p in zip(y.view(-1), pred.argmax(1).view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
-        correct /= len(dl) * dl.batch_size  # type: ignore
-        loss /= len(dl)
-        return 100 * correct, loss, confusion_matrix
+        epoch_metric = sum(batch_metric_list) / len(batch_metric_list)
+        epoch_loss = loss / len(batch_metric_list)
+        return epoch_metric, epoch_loss, confusion_matrix
 
     def register_pipe_hook(
         self, callable: Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]

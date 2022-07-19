@@ -1022,13 +1022,17 @@ entries.</p>
 persistence diagram.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>persistence_diagram: An array of shape (num_points, 3) where the first two columns</dt><dd><p>represent the coordinates of the points and the third column
+<dt>persistence_diagram:</dt><dd><p>An array of shape (num_points, 3) where the first two columns
+represent the coordinates of the points and the third column
 represents the index of the homology dimension.</p>
 </dd>
 </dl>
 </dd>
-<dt>Returns:</dt><dd><p>A one-hot encoded persistence diagram. If the persistence diagram has only one homology
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>OneHotEncodedPersistenceDiagram:</dt><dd><p>A one-hot encoded persistence diagram. If the persistence diagram has only one homology
 dimension, the third column will be filled with ones.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>

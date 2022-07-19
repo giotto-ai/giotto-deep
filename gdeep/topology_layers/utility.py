@@ -1,12 +1,12 @@
-import torch
+
 import torch.nn as nn
+from torch.nn import Dropout, Linear, Module, Sequential
+
 from gdeep.topology_layers.pooling_layers import (AttentionPoolingLayer,
                                                   MaxPoolingLayer,
                                                   MeanPoolingLayer,
                                                   SumPoolingLayer)
 from gdeep.utility.enum_types import ActivationFunction, PoolerType
-from torch.nn import Dropout, Linear, Module, Sequential
-
 from .attention_factory import AttentionFactory
 from .persformer_config import PersformerConfig
 
@@ -21,17 +21,16 @@ def get_pooling_layer(config: PersformerConfig) -> Module:
     Returns:
         The pooling layer.
     """
-    if(config.pooler_type is PoolerType.ATTENTION):
+    if config.pooler_type is PoolerType.ATTENTION:
         return AttentionPoolingLayer(config)  # type: ignore
-    elif(config.pooler_type is PoolerType.MAX):
+    elif config.pooler_type is PoolerType.MAX:
         return MaxPoolingLayer(config)  # type: ignore
-    elif(config.pooler_type is PoolerType.MEAN):
+    elif config.pooler_type is PoolerType.MEAN:
         return MeanPoolingLayer(config)  # type: ignore
-    elif(config.pooler_type is PoolerType.SUM):
+    elif config.pooler_type is PoolerType.SUM:
         return SumPoolingLayer(config)  # type: ignore
     else:
         raise ValueError(f"Pooler type {config.pooler_type} is not supported.")
-
 
 
 def get_feed_forward_layer(config: PersformerConfig) -> Module:
@@ -74,13 +73,13 @@ def get_activation_function(activation_function: ActivationFunction) -> Module:
     """
     Get the activation function.
     """
-    if(activation_function is ActivationFunction.RELU):
+    if activation_function is ActivationFunction.RELU:
         return nn.ReLU()
-    elif(activation_function is ActivationFunction.GELU):
+    elif activation_function is ActivationFunction.GELU:
         return nn.GELU()
-    elif(activation_function is ActivationFunction.SELU):
+    elif activation_function is ActivationFunction.SELU:
         return nn.SELU()
-    elif(activation_function is ActivationFunction.MISH):
+    elif activation_function is ActivationFunction.MISH:
         return nn.Mish()
     else:
         raise ValueError("Unknown activation function.")

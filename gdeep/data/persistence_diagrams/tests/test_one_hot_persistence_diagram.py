@@ -1,9 +1,10 @@
 import numpy as np
 import torch
+from gtda.homology import VietorisRipsPersistence
 
-from .. import (
-    OneHotEncodedPersistenceDiagram,
-)
+from .. import (OneHotEncodedPersistenceDiagram,
+                get_one_hot_encoded_persistence_diagram_from_gtda)
+
 
 def test_one_hot_encoded_persistence_diagram():
     pd_one_hot = OneHotEncodedPersistenceDiagram(
@@ -39,3 +40,17 @@ def test_from_numpy():
                                       [0.5000, 0.9000, 0.0000, 1.0000],
                                       [0.4000, 0.8000, 1.0000, 0.0000]])
     ))
+
+def test_get_one_hot_encoded_persistence_diagram_from_gtda():
+    vr = VietorisRipsPersistence(homology_dimensions=[0, 1])
+
+    # set ranom seed
+    np.random.seed(0)
+
+    points = np.random.rand(100, 2)
+
+    diagrams = vr.fit_transform([points])
+
+    diagram = diagrams[0]
+
+    get_one_hot_encoded_persistence_diagram_from_gtda(diagram)._data.shape == (123, 4)
