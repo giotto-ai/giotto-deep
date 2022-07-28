@@ -59,7 +59,13 @@ Make sure you have upgraded to the last version of `pip` with
 python -m pip install --upgrade pip
 ```
 
-## Run local tests
+
+## Contributing
+The `giotto-deep` project welcomes contributions of all kinds. We are using pre-commit hooks to ensure that the code is formatted correctly. To install the pre-commit hooks, run the following command from the root folder:
+```
+pre-commit install
+```
+
 To run both unit and integration tests on *macOS* or *Linux*, simply run the following command from the root folder:
 ```
 bash local_test.bh
