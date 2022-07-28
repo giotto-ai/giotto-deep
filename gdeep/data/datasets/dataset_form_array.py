@@ -45,7 +45,7 @@ class FromArray(Dataset[Tuple[Tensor, Tensor]]):
         a long tensor of a float tensor"""
         if isinstance(y, torch.Tensor):
             return y
-        if y.dtype in [np.float16, np.float32, np.float64]:
+        if y.dtype in [np.float16, np.float32, np.float64]:  # type: ignore
             return torch.tensor(y).float()
         return torch.tensor(y).long()
 
