@@ -125,8 +125,8 @@ class Benchmark:
     def __init__(
         self,
         models_dicts: List[Dict[str, Union[torch.nn.Module, str]]],
-        dataloaders_dicts: List[Dict[
-            str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]
+        dataloaders_dicts: List[
+            Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]
         ],
         loss_fn: Callable[[Tensor, Tensor], Tensor],
         writer: SummaryWriter,
@@ -173,7 +173,7 @@ class Benchmark:
         writer_tag: str = "",
     ) -> None:
         """Method to be called when starting the benchmarking
-        
+
         Args:
             optimizer:
                 a torch optimizers class (not the instance)
@@ -242,7 +242,7 @@ class Benchmark:
     ) -> None:
         """private method to run the inner
         function of the benchmark loops
-        
+
         Args:
             model:
                 dictionary defining the model name
@@ -276,7 +276,7 @@ def _benchmarking_param(
 ) -> None:
     """Function to be used as pseudo-decorator for
     benchmarking loops
-    
+
     Args:
         fun (Callable):
             the function to decorate

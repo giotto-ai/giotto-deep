@@ -1,4 +1,3 @@
-
 import socket
 from datetime import datetime
 import os
@@ -28,8 +27,10 @@ def hpo_parallel(usr: str, psw: str, host: str, study_name: str) -> None:
             the name of the optuna study
     """
 
-    current_time: str = datetime.now().strftime('%b%d_%H-%M-%S')
-    log_dir = os.path.join('giotto-deep', 'runs', current_time + '_' + socket.gethostname())
+    current_time: str = datetime.now().strftime("%b%d_%H-%M-%S")
+    log_dir = os.path.join(
+        "giotto-deep", "runs", current_time + "_" + socket.gethostname()
+    )
     writer = GiottoSummaryWriter(log_dir=log_dir)
 
     bd = DatasetBuilder(name="DoubleTori")
@@ -64,8 +65,13 @@ def hpo_parallel(usr: str, psw: str, host: str, study_name: str) -> None:
     # initialise the SAM optimiser
     optim = SGD  # this is a class, not an instance!
 
-    search = HyperParameterOptimization(pipe, "loss", 20, study_name=study_name,
-                                        db_url="mysql+mysqldb://" + usr + ":" + psw + "@" + host + ":3306/example")
+    search = HyperParameterOptimization(
+        pipe,
+        "loss",
+        20,
+        study_name=study_name,
+        db_url="mysql+mysqldb://" + usr + ":" + psw + "@" + host + ":3306/example",
+    )
     # dictionaries of hyperparameters
     optimizers_params = {"lr": [0.001, 0.01]}
     dataloaders_params = {"batch_size": [32, 64, 16]}

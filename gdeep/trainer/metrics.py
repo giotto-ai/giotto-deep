@@ -18,7 +18,7 @@ def accuracy(prediction: Tensor, y: Tensor) -> float:
     Returns:
         float:
             the value of the accuracy
-        """
+    """
     correct: float = 0.0
     try:
         correct += (prediction.argmax(1) == y).to(torch.float).sum().item()

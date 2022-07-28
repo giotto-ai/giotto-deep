@@ -4,7 +4,7 @@ from .induced_attention import InducedAttention
 
 
 __all__ = [
-    'AttentionBase',
-    'ScaledDotProductAttention',
-    'InducedAttention',
+    "AttentionBase",
+    "ScaledDotProductAttention",
+    "InducedAttention",
 ]

@@ -1,5 +1,2 @@
-class CategoricalDataCloud():
+class CategoricalDataCloud:
     pass
-
-
-

@@ -43,3 +43,4 @@ torch-geometric
 torch-sparse
 torch-scatter
 gudhi
+pre-commit

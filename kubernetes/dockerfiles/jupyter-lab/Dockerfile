@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y sudo openssh-server vim
 RUN apt-get install -y supervisor
 RUN mkdir /var/run/sshd
-RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 matteo 
+RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 matteo
 RUN echo 'matteo:i_like_giotto' | chpasswd
 RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
@@ -30,7 +30,7 @@ RUN pip install mysqlclient
 RUN apt-get install -y git
 
 # for multiprocesses
-ADD kubernetes/dockerfiles/jupyter-lab/supervisord.conf supervisord.conf 
+ADD kubernetes/dockerfiles/jupyter-lab/supervisord.conf supervisord.conf
 
 # expose the port for jupyter and ssh
 EXPOSE 8888 22

@@ -15,8 +15,8 @@ Tensor = torch.Tensor
 
 
 def _are_compatible(
-        model_dict: Dict[str, Union[nn.Module, str]],
-        dataloaders_dict: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]
+    model_dict: Dict[str, Union[nn.Module, str]],
+    dataloaders_dict: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
 ) -> bool:
     """utility function to check the compatibility of a model
     with a set of dataloaders `(dl_tr, dl_val, dl_ts)`
@@ -153,7 +153,7 @@ def _inner_refactor_scalars(list_, cross_validation, k_folds):
 
 def is_notebook() -> bool:
     """Check if the current environment is a notebook
-    
+
     Returns:
         bool:
             True if the environment is a notebook, False otherwise
@@ -172,7 +172,7 @@ def is_notebook() -> bool:
 
 def autoreload_if_notebook() -> None:
     """Autoreload the modules if the environment is a notebook
-    
+
     Returns:
         None
     """
@@ -205,7 +205,7 @@ def get_checksum(file: str, encoding: str = "hex"):
             Path to the file
         encoding:
             string encoding like ``'hex'``
-            
+
     Raises:
         ValueError: if the file does not exist
         ValueError: if the encoding is not supported
@@ -241,7 +241,7 @@ class KnownWarningSilencer:
     def __exit__(self, type, value, traceback):
         warnings.filterwarnings("default")
 
-        
+
 def flatten_list_of_lists(list_: list) -> list:
     """Flatten a list of lists
     Args:

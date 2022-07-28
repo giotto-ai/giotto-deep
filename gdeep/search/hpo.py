@@ -134,7 +134,7 @@ class HyperParameterOptimization(Trainer):
         pruner :
             Instance of an optuna pruner, can be user-defined
         sampler :
-            If left unspecified, ``TPESample`` is used during single-objective 
+            If left unspecified, ``TPESample`` is used during single-objective
             optimization and ``NSGAIISampler`` during multi-objective optimization
         db_url:
             name of the database to connect to. For example
@@ -142,7 +142,7 @@ class HyperParameterOptimization(Trainer):
         study_name:
             name of the optuna study
     Examples::
-    
+
         from gdeep.search import HyperParameterOptimization
         # initialise hpo, you need a `trainer`!
         search = HyperParameterOptimization(trainer, "accuracy", 2, best_not_last=True)
@@ -163,6 +163,7 @@ class HyperParameterOptimization(Trainer):
             n_accumulated_grads=2,
         )
     """
+
     is_pipe: bool
     df_res: pd.DataFrame
     study: Study
@@ -179,7 +180,7 @@ class HyperParameterOptimization(Trainer):
         study_name: Optional[str] = None,
     ):
         self.best_not_last_gs = best_not_last
-        self.best_val_acc_gs = 0.
+        self.best_val_acc_gs = 0.0
         self.best_val_loss_gs = np.inf
         self.list_res: List[Any] = []
         self.db_url = db_url
@@ -222,11 +223,11 @@ class HyperParameterOptimization(Trainer):
     ) -> torch.nn.Module:
         """private method to find the maximal compatible set
         between models and hyperparameters
-        
+
         Args:
             models_hyperparam (dict):
                 model selected hyperparameters
-        
+
         Returns:
             nn.Module
                 torch nn.Module
@@ -263,7 +264,7 @@ class HyperParameterOptimization(Trainer):
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
         """default callback function for optuna's study
-        
+
         Args:
             trial:
                 the independent variable
@@ -385,12 +386,12 @@ class HyperParameterOptimization(Trainer):
         if index_ds == -1:
             dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__
         else:
-            dataset_name = writer_tag[index_ds + 8: writer_tag.find("|Model:")]
+            dataset_name = writer_tag[index_ds + 8 : writer_tag.find("|Model:")]
         index_md = writer_tag.find("|Model:")
         if index_md == -1:
             model_name = self.pipe.model.__class__.__name__
         else:
-            model_name = writer_tag[index_md + 7: writer_tag.find("/")]
+            model_name = writer_tag[index_md + 7 : writer_tag.find("/")]
         return model_name, dataset_name
 
     def start(
@@ -509,7 +510,8 @@ class HyperParameterOptimization(Trainer):
         self,
         model: Union[torch.nn.Module, Dict[str, torch.nn.Module]],
         dataloaders: Union[
-            List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]], Dict[str, DataLoader]
+            List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]],
+            Dict[str, DataLoader],
         ],
         config: HPOConfig,
     ) -> None:
@@ -601,7 +603,7 @@ class HyperParameterOptimization(Trainer):
     ) -> List[Any]:
         """Private method to store all the HPO parameters
         of one trial
-        
+
         Args:
             trial (optuna.trial):
                 the trial at hand
@@ -618,7 +620,7 @@ class HyperParameterOptimization(Trainer):
         Returns:
             list:
                 list of HPOs and metrics. the first element is the
-                run name and the last two are the metrics (loss 
+                run name and the last two are the metrics (loss
                 and accuracy)
         """
         if list_res is None:
@@ -888,11 +890,17 @@ class HyperParameterOptimization(Trainer):
         """
 
         if isinstance(choices, list) or isinstance(choices, tuple):
-            if isinstance(choices[0], str) or isinstance(choices[0], int) or isinstance(choices[0], float):
+            if (
+                isinstance(choices[0], str)
+                or isinstance(choices[0], int)
+                or isinstance(choices[0], float)
+            ):
                 return trial.suggest_categorical(name, choices)
             else:  # in case optuna cannot handle the types
                 dict_choices = {x.__name__: x for x in choices}
-                key = trial.suggest_categorical(name, dict_choices.keys())  # random choice on the names
+                key = trial.suggest_categorical(
+                    name, dict_choices.keys()
+                )  # random choice on the names
                 return dict_choices[key]  # return the corresponding value
         return random.choice(choices)
 

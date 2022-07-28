@@ -34,7 +34,7 @@ The simplest way to install `giotto-deep` is using `pip`:
 ```
 python -m pip install -U giotto-deep
 ```
-If necessary, this command will also automatically install all the library dependencies. 
+If necessary, this command will also automatically install all the library dependencies.
 **Note:** we recommend upgrading ``pip`` to a recent version as the above may fail on very old versions.
 
 
@@ -45,7 +45,7 @@ The first step to install the developer version of the package is to `git clone`
 git clone https://github.com/giotto-ai/giotto-deep.git
 ```
 The change the current working directory to the Repository root folder, e.g. `cd giotto-deep`.
-Make sure you have the latest version of pytorch installed. 
+Make sure you have the latest version of pytorch installed.
 You can do this by running the following command (if you have a GPU):
 ```
 pip install torch --extra-index-url https://download.pytorch.org/whl/cu113

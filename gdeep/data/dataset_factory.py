@@ -7,14 +7,14 @@ from typing import Dict, Any
 
 
 class DatasetFactory(object):
-    """ Dataset factory class for the tori dataset and torchvision datasets
+    """Dataset factory class for the tori dataset and torchvision datasets
     using the factory design pattern
-    
+
     Examples::
 
         # Create a dataset for the tori dataset
         dataset = get_dataset("Tori", name="DoubleTori", n_points=100)
-        
+
         # Create the MNIST dataset
         dataset = get_dataset("Torchvision", name="MNIST")
 

@@ -15,9 +15,12 @@ from gdeep.search import HyperParameterOptimization, GiottoSummaryWriter, Benchm
 class model2(nn.Module):
     def __init__(self, n_nodes="100"):
         super(model2, self).__init__()
-        self.md = nn.Sequential(nn.Sequential(models.resnet18(pretrained=True),
-                                              nn.Linear(1000, eval(n_nodes))),
-                                nn.Linear(eval(n_nodes), 10))
+        self.md = nn.Sequential(
+            nn.Sequential(
+                models.resnet18(pretrained=True), nn.Linear(1000, eval(n_nodes))
+            ),
+            nn.Linear(eval(n_nodes), 10),
+        )
 
     def forward(self, x):
         return self.md(x)
@@ -63,12 +66,16 @@ transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
 dataloaders_dicts = []
 
 
-test_indices = [64*5 + x for x in range(32*3)]
-train_indices = [x for x in range(32*2)]
+test_indices = [64 * 5 + x for x in range(32 * 3)]
+train_indices = [x for x in range(32 * 2)]
 
 dl = DataLoaderBuilder([transformed_ds_tr, transformed_ds_tr])
-dl_tr, dl_val, _ = dl.build([{"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},  # type: ignore
-                             {"batch_size": 32, "sampler": SubsetRandomSampler(test_indices)}])
+dl_tr, dl_val, _ = dl.build(
+    [
+        {"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},  # type: ignore
+        {"batch_size": 32, "sampler": SubsetRandomSampler(test_indices)},
+    ]
+)
 
 
 temp_dict = {"name": "CIFAR10_1000", "dataloaders": [dl_tr, dl_val]}  # type: ignore

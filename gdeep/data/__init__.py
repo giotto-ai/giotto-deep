@@ -13,5 +13,5 @@ __all__ = [
     "MissingVocabularyError",
     "datasets",
     "persistence_diagrams",
-    "preprocessors"
+    "preprocessors",
 ]

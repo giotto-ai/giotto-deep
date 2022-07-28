@@ -16,8 +16,7 @@ writer = SummaryWriter()
 
 # many time we get an IterableDataset which is good for memory consumption, but cannot be sampled!
 # we can load the whole dataset in memory and sample it
-bd = DatasetBuilder(name="AG_NEWS",
-                    convert_to_map_dataset=True)
+bd = DatasetBuilder(name="AG_NEWS", convert_to_map_dataset=True)
 ds_tr_str, ds_val_str, ds_ts_str = bd.build()
 ptd = TokenizerTextClassification()
 
@@ -29,16 +28,20 @@ transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)  # type: ignore
 train_indices = list(range(64 * 10))
 test_indices = list(range(64 * 5))
 
-dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds,  # type: ignore
-                                       transformed_textts)).build(({"batch_size": 16,  # type: ignore
-                                                                    "sampler": SubsetRandomSampler(train_indices)},
-                                                                   {"batch_size": 16,
-                                                                    "sampler": SubsetRandomSampler(test_indices)}
-                                                                   ))
+dl_tr2, dl_ts2, _ = DataLoaderBuilder(
+    (transformed_textds, transformed_textts)  # type: ignore
+).build(
+    (
+        {
+            "batch_size": 16,  # type: ignore
+            "sampler": SubsetRandomSampler(train_indices),
+        },
+        {"batch_size": 16, "sampler": SubsetRandomSampler(test_indices)},
+    )
+)
 
 
 class TextClassificationModel(nn.Module):
-
     def __init__(self, vocab_size, embed_dim, num_class):
         super(TextClassificationModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embed_dim, sparse=True)
@@ -67,16 +70,16 @@ pipe = Trainer(model, [dl_tr2, dl_ts2], loss_fn, writer)
 
 def test_interpret_text() -> None:
     vs = Visualiser(pipe)
-    inter = Interpreter(pipe.model,
-                        method="LayerIntegratedGradients")
+    inter = Interpreter(pipe.model, method="LayerIntegratedGradients")
 
-    inter.interpret_text("I am writing about money and business",
-                         0,
-                         ptd.vocabulary,  # type: ignore
-                         ptd.tokenizer,  # type: ignore
-                         layer=pipe.model.embedding,  # type: ignore
-                         n_steps=500,
-                         return_convergence_delta=True
-                         )
+    inter.interpret_text(
+        "I am writing about money and business",
+        0,
+        ptd.vocabulary,  # type: ignore
+        ptd.tokenizer,  # type: ignore
+        layer=pipe.model.embedding,  # type: ignore
+        n_steps=500,
+        return_convergence_delta=True,
+    )
 
     vs.plot_interpreter_text(inter)

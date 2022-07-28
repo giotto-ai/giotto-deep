@@ -1,11 +1,12 @@
-
 import torch.nn as nn
 from torch.nn import Dropout, Linear, Module, Sequential
 
-from gdeep.topology_layers.pooling_layers import (AttentionPoolingLayer,
-                                                  MaxPoolingLayer,
-                                                  MeanPoolingLayer,
-                                                  SumPoolingLayer)
+from gdeep.topology_layers.pooling_layers import (
+    AttentionPoolingLayer,
+    MaxPoolingLayer,
+    MeanPoolingLayer,
+    SumPoolingLayer,
+)
 from gdeep.utility.enum_types import ActivationFunction, PoolerType
 from .attention_factory import AttentionFactory
 from .persformer_config import PersformerConfig
@@ -14,10 +15,10 @@ from .persformer_config import PersformerConfig
 def get_pooling_layer(config: PersformerConfig) -> Module:
     """
     Get the pooling layer.
-    
+
     Args:
         config: The configuration of the model.
-        
+
     Returns:
         The pooling layer.
     """
@@ -39,26 +40,17 @@ def get_feed_forward_layer(config: PersformerConfig) -> Module:
     """
     feed_forward_layer = Sequential()
     feed_forward_layer.add_module(
-                                    "intermediate",
-                                    Linear(config.hidden_size, config.intermediate_size)
-                                )
+        "intermediate", Linear(config.hidden_size, config.intermediate_size)
+    )
     feed_forward_layer.add_module(
-                                    "activation",
-                                    get_activation_function(config.hidden_act)
-                                )
+        "activation", get_activation_function(config.hidden_act)
+    )
+    feed_forward_layer.add_module("dropout", Dropout(config.hidden_dropout_prob))
+
     feed_forward_layer.add_module(
-                                    "dropout",
-                                    Dropout(config.hidden_dropout_prob)
-                                )
-    
-    feed_forward_layer.add_module(
-                                    "output",
-                                    Linear(config.intermediate_size, config.hidden_size)
-                                    )
-    feed_forward_layer.add_module(
-                                    "dropout",
-                                    Dropout(config.hidden_dropout_prob)
-                                )
+        "output", Linear(config.intermediate_size, config.hidden_size)
+    )
+    feed_forward_layer.add_module("dropout", Dropout(config.hidden_dropout_prob))
     return feed_forward_layer
 
 
