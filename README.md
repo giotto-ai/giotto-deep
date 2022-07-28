@@ -61,7 +61,11 @@ python -m pip install --upgrade pip
 
 
 ## Contributing
-The `giotto-deep` project welcomes contributions of all kinds. We are using pre-commit hooks to ensure that the code is formatted correctly. To install the pre-commit hooks, run the following command from the root folder:
+The `giotto-deep` project welcomes contributions of all kinds. Please see our [contributing guidelines](
+    https://giotto-ai.github.io/gtda-docs/latest/contributing/#guidelines
+) for more information.
+
+We are using pre-commit hooks to ensure that the code is formatted correctly. To install the pre-commit hooks, run the following command from the root folder:
 ```
 pre-commit install
 ```
