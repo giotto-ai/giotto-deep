@@ -4,15 +4,22 @@ from typing import Tuple
 import torch.nn as nn
 from gdeep.data import PreprocessingPipeline
 from gdeep.data.datasets import PersistenceDiagramFromFiles
-from gdeep.data.datasets.base_dataloaders import (DataLoaderBuilder,
-                                                  DataLoaderParamsTuples)
-from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import \
-    PersistenceDiagramFromGraphBuilder
+from gdeep.data.datasets.base_dataloaders import (
+    DataLoaderBuilder,
+    DataLoaderParamsTuples,
+)
+from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import (
+    PersistenceDiagramFromGraphBuilder,
+)
 from gdeep.data.persistence_diagrams import (
-    OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams)
+    OneHotEncodedPersistenceDiagram,
+    collate_fn_persistence_diagrams,
+)
 from gdeep.data.preprocessors import (
     FilterPersistenceDiagramByHomologyDimension,
-    FilterPersistenceDiagramByLifetime, NormalizationPersistenceDiagram)
+    FilterPersistenceDiagramByLifetime,
+    NormalizationPersistenceDiagram,
+)
 from gdeep.topology_layers import Persformer, PersformerConfig
 from gdeep.trainer.trainer import Trainer
 from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
@@ -26,12 +33,14 @@ from ..persformer import Persformer
 
 def test_persformer_training():
     # Parameters
-    name_graph_dataset: str = 'MUTAG'
+    name_graph_dataset: str = "MUTAG"
     diffusion_parameter: float = 0.1
     num_homology_types: int = 4
 
     # Create the persistence diagram dataset
-    pd_creator = PersistenceDiagramFromGraphBuilder(name_graph_dataset, diffusion_parameter)
+    pd_creator = PersistenceDiagramFromGraphBuilder(
+        name_graph_dataset, diffusion_parameter
+    )
     pd_creator.create()
 
     pd_mutag_ds = PersistenceDiagramFromFiles(
@@ -59,10 +68,14 @@ def test_persformer_training():
     test_dataset = Subset(pd_mutag_ds, test_indices)
 
     # Preprocess the data
-    preprocessing_pipeline = PreprocessingPipeline[Tuple[OneHotEncodedPersistenceDiagram, int]](
+    preprocessing_pipeline = PreprocessingPipeline[
+        Tuple[OneHotEncodedPersistenceDiagram, int]
+    ](
         (
             FilterPersistenceDiagramByHomologyDimension[int]([0, 1]),
-            FilterPersistenceDiagramByLifetime[int](min_lifetime=-0.1, max_lifetime=1.0),
+            FilterPersistenceDiagramByLifetime[int](
+                min_lifetime=-0.1, max_lifetime=1.0
+            ),
             NormalizationPersistenceDiagram[int](num_homology_dimensions=4),
         )
     )
@@ -70,7 +83,9 @@ def test_persformer_training():
     preprocessing_pipeline.fit_to_dataset(train_dataset)
 
     train_dataset = preprocessing_pipeline.attach_transform_to_dataset(train_dataset)
-    validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(validation_dataset)
+    validation_dataset = preprocessing_pipeline.attach_transform_to_dataset(
+        validation_dataset
+    )
     test_dataset = preprocessing_pipeline.attach_transform_to_dataset(test_dataset)
 
     dl_params = DataLoaderParamsTuples.default(
@@ -100,6 +115,10 @@ def test_persformer_training():
 
     trainer = Trainer(model, [dl_train, dl_val, dl_test], loss_function, writer)
 
-    trainer.train(Adam, 3, False,
-                  {"lr": 0.01},
-                  {"batch_size": 16, "collate_fn": collate_fn_persistence_diagrams})
+    trainer.train(
+        Adam,
+        3,
+        False,
+        {"lr": 0.01},
+        {"batch_size": 16, "collate_fn": collate_fn_persistence_diagrams},
+    )

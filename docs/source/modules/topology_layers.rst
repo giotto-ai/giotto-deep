@@ -14,4 +14,4 @@ Pooling Layers
 --------------
 
 .. automodule:: gdeep.gdeep.topology_layers.pooling_layers
-   :members:   
+   :members:

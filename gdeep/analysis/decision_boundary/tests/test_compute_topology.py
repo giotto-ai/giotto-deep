@@ -5,8 +5,7 @@ from .. import UniformlySampledPoint
 
 
 def test_sample_points_uniformly():
-    sample_points = UniformlySampledPoint([(2, 3), (1, 2)],
-                                          n_samples=1000)
+    sample_points = UniformlySampledPoint([(2, 3), (1, 2)], n_samples=1000)
 
     print(sample_points().shape)
     assert sample_points().shape == (1000, 2)

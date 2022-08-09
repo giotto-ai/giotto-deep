@@ -48,6 +48,7 @@ class Visualiser:
         vs.plot_data_model()
 
     """
+
     persistence_diagrams: Optional[List[Array]] = None
 
     def __init__(self, pipe: Trainer) -> None:
@@ -92,9 +93,13 @@ class Visualiser:
             else:
                 features_list = features_list + [img[i] for i in range(len(img))]
             try:
-                labels_list = labels_list + [str(lab[i].item()) for i in range(len(lab))]
+                labels_list = labels_list + [
+                    str(lab[i].item()) for i in range(len(lab))
+                ]
             except ValueError:
-                labels_list = labels_list + ["Label not available" for _ in range(len(img))]
+                labels_list = labels_list + [
+                    "Label not available" for _ in range(len(img))
+                ]
             if len(features_list) >= n_pts:
                 break
         max_number = len(features_list)  # effective number of points
@@ -129,7 +134,9 @@ class Visualiser:
 
         self.pipe.writer.flush()  # type: ignore
 
-    def plot_activations(self, batch: Optional[List[Union[List[Tensor], Tensor]]] = None) -> None:
+    def plot_activations(
+        self, batch: Optional[List[Union[List[Tensor], Tensor]]] = None
+    ) -> None:
         """Plot PCA of the activations of all layers of the
         `self.model`.
 
@@ -148,7 +155,7 @@ class Visualiser:
         for i, act in enumerate(acts):
             print("Step " + str(i + 1) + "/" + str(len(acts)), end="\r")
             length = act.shape[0]
-            self.pipe.writer.add_embedding(   # type: ignore
+            self.pipe.writer.add_embedding(  # type: ignore
                 act.view(length, -1),
                 metadata=labels,
                 tag="activations_" + str(i),
@@ -156,9 +163,12 @@ class Visualiser:
             )
             self.pipe.writer.flush()  # type: ignore
 
-    def plot_persistence_diagrams(self, batch: Optional[List[Tensor]] = None,
-                                  homology_dimensions: Optional[List[int]] = None,
-                                  **kwargs) -> None:  # type: ignore
+    def plot_persistence_diagrams(
+        self,
+        batch: Optional[List[Tensor]] = None,
+        homology_dimensions: Optional[List[int]] = None,
+        **kwargs
+    ) -> None:  # type: ignore
         """Plot a persistence diagrams of the activations
 
         Args:
@@ -180,9 +190,9 @@ class Visualiser:
                 inputs, _ = next(iter(self.pipe.dataloaders[0]))
 
             activ = me.get_activations(inputs)
-            self.persistence_diagrams = persistence_diagrams_of_activations(activ,
-                                                                            homology_dimensions=homology_dimensions,
-                                                                            **kwargs)
+            self.persistence_diagrams = persistence_diagrams_of_activations(
+                activ, homology_dimensions=homology_dimensions, **kwargs
+            )
         list_of_dgms = []
         for i, persistence_diagram in enumerate(self.persistence_diagrams):
             plot_persistence_diagram = plot_diagram(persistence_diagram)
@@ -195,7 +205,9 @@ class Visualiser:
         )
         self.pipe.writer.flush()  # type: ignore
 
-    def plot_decision_boundary(self, compact: bool = False, n_epochs: int = 100, precision: float = 0.1):
+    def plot_decision_boundary(
+        self, compact: bool = False, n_epochs: int = 100, precision: float = 0.1
+    ):
         """Plot the decision boundary as the intrinsic
         hypersurface defined by ``self.loss_fn == 0.5``
         in the case of 2 classes. The method also works
@@ -249,9 +261,11 @@ class Visualiser:
             return db.cpu(), None, None
 
     def plot_betti_surface_layers(
-            self, homology_dimensions: Optional[List[int]] = None,
-            batch: Optional[Tensor] = None,
-            **kwargs) -> None:  # type: ignore
+        self,
+        homology_dimensions: Optional[List[int]] = None,
+        batch: Optional[Tensor] = None,
+        **kwargs
+    ) -> None:  # type: ignore
         """
         Args:
             homology_dimensions :
@@ -284,17 +298,18 @@ class Visualiser:
         dgms = bc.fit_transform(self.persistence_diagrams)
 
         plots = plot_betti_surfaces(
-            dgms, samplings=bc.samplings_,
-            homology_dimensions=homology_dimensions
+            dgms, samplings=bc.samplings_, homology_dimensions=homology_dimensions
         )
 
         for i in range(len(plots)):
             plots[i].show()
 
     def plot_betti_curves_layers(
-            self, homology_dimensions: Optional[List[int]] = None,
-            batch: Optional[Tensor] = None,
-            **kwargs) -> None:  # type: ignore
+        self,
+        homology_dimensions: Optional[List[int]] = None,
+        batch: Optional[Tensor] = None,
+        **kwargs
+    ) -> None:  # type: ignore
         """
         Args:
             homology_dimensions :
@@ -328,8 +343,9 @@ class Visualiser:
         list_of_plts = []
         for bc_curve in bc_curves:
             plots = plot_betti_curves(
-                bc_curve, samplings=bc.samplings_,
-                homology_dimensions=homology_dimensions
+                bc_curve,
+                samplings=bc.samplings_,
+                homology_dimensions=homology_dimensions,
             )
             img_t = plotly2tensor(plots)
             list_of_plts.append(img_t)
@@ -347,7 +363,7 @@ class Visualiser:
             interpreter :
                 this is a ``gdeep.analysis.interpretability``
                 initilised ``Interpreter`` class
-                
+
         Returns:
             matplotlib.figure
         """
@@ -368,14 +384,17 @@ class Visualiser:
             interpreter:
                 this is a ``gdeep.analysis.interpretability``
                 initilised ``Interpreter`` class
-                
+
         Returns:
             matplotlib.figure
         """
 
         try:
             attrib = (
-                torch.permute(interpreter.attribution.squeeze().detach(), (1, 2, 0)).detach().cpu().numpy()
+                torch.permute(interpreter.attribution.squeeze().detach(), (1, 2, 0))
+                .detach()
+                .cpu()
+                .numpy()
             )
         except ValueError:
             attrib = torch.permute(
@@ -386,10 +405,17 @@ class Visualiser:
                 (1, 2, 0),
             )
             attrib = (
-                torch.stack([attrib, attrib, attrib], dim=2).squeeze(-1).detach().cpu().numpy()
+                torch.stack([attrib, attrib, attrib], dim=2)
+                .squeeze(-1)
+                .detach()
+                .cpu()
+                .numpy()
             )
         img = (
-            torch.permute(interpreter.x.squeeze().detach(), (1, 2, 0)).detach().cpu().numpy()
+            torch.permute(interpreter.x.squeeze().detach(), (1, 2, 0))
+            .detach()
+            .cpu()
+            .numpy()
         )
 
         fig, _ = visualization.visualize_image_attr_multiple(
@@ -410,7 +436,7 @@ class Visualiser:
             interpreter :
                 this is a ``gdeep.analysis.interpretability``
                 initialised ``Interpreter`` class
-                
+
         Returns:
             matplotlib.figure
         """
@@ -437,9 +463,11 @@ class Visualiser:
         plt.rc("legend", fontsize=FONT_SIZE - 4)  # fontsize of the legend
         for i in range(len(interpreter.attribution_list)):  # type: ignore
             attribution_sum = interpreter.attribution_list[i].detach().cpu().numpy().sum(0)  # type: ignore
-            attribution_norm_sum = attribution_sum / np.linalg.norm(attribution_sum, ord=1)
+            attribution_norm_sum = attribution_sum / np.linalg.norm(
+                attribution_sum, ord=1
+            )
             r = lambda: random.randint(0, 255)  # noqa
-            color = ('#%02X%02X%02X' % (r(), r(), r()))
+            color = "#%02X%02X%02X" % (r(), r(), r())
             ax.bar(
                 x_axis_data,
                 attribution_norm_sum,
@@ -459,7 +487,9 @@ class Visualiser:
         self.pipe.writer.add_figure("Feature Importance", fig)  # type: ignore
         return plt
 
-    def plot_attribution(self, interpreter: Interpreter, **kwargs) -> Tuple[plt.Figure, plt.Figure]:
+    def plot_attribution(
+        self, interpreter: Interpreter, **kwargs
+    ) -> Tuple[plt.Figure, plt.Figure]:
         """this method generically plots the attribution of
         the interpreter
 
@@ -482,8 +512,13 @@ class Visualiser:
         self.pipe.writer.add_figure("Generic attribution of x", fig2)  # type: ignore
         return fig1, fig2
 
-    def plot_self_attention(self, attention_tensor: List[Tensor], tokens_x: Optional[List[str]] = None,
-                            tokens_y: Optional[List[str]] = None, **kwargs) -> plt.Figure:
+    def plot_self_attention(
+        self,
+        attention_tensor: List[Tensor],
+        tokens_x: Optional[List[str]] = None,
+        tokens_y: Optional[List[str]] = None,
+        **kwargs
+    ) -> plt.Figure:
         """This functions plots the self-attention layer of a transformer.
 
         Args:
@@ -500,16 +535,16 @@ class Visualiser:
         Returns:
              Figure:
                  matplotlib pyplot
-            """
+        """
         fig = plt.figure(**kwargs)
 
         for idx, scores in enumerate(attention_tensor):
             scores_np = Visualiser._adjust_tensors_to_plot(scores)
             ax = fig.add_subplot(4, 3, idx + 1)
             # append the attention weights
-            im = ax.imshow(scores_np, cmap='viridis')
+            im = ax.imshow(scores_np, cmap="viridis")
 
-            fontdict = {'fontsize': 10}
+            fontdict = {"fontsize": 10}
             if tokens_x:
                 ax.set_xticks(range(len(tokens_x)))
                 ax.set_xticklabels(tokens_x, fontdict=fontdict, rotation=90)
@@ -517,7 +552,7 @@ class Visualiser:
                 ax.set_yticks(range(len(tokens_y)))
                 ax.set_yticklabels(tokens_y, fontdict=fontdict)
 
-            ax.set_xlabel('Head {}'.format(idx + 1))
+            ax.set_xlabel("Head {}".format(idx + 1))
 
             fig.colorbar(im, fraction=0.046, pad=0.04)
         plt.show()
@@ -525,7 +560,9 @@ class Visualiser:
         self.pipe.writer.flush()  # type: ignore
         return fig
 
-    def plot_attributions_persistence_diagrams(self, interpreter: Interpreter, **kwargs) -> plt.Figure:
+    def plot_attributions_persistence_diagrams(
+        self, interpreter: Interpreter, **kwargs
+    ) -> plt.Figure:
         """this method allows the plot, on top of the persistence
         diagram, of the attribution values. For example, this would
         be the method to call when you run saliency maps on the
@@ -551,7 +588,7 @@ class Visualiser:
         fig = plt.figure(figsize=(10, 10))
         plt.scatter(x=pd_x.T[0], y=pd_x.T[1], c=yy, **kwargs)
         line = np.arange(0, max(pd_x.T[1]) * 1.1, 0.01)
-        plt.plot(line, line, '--', color="black")
+        plt.plot(line, line, "--", color="black")
         plt.xlabel("Birth")
         plt.ylabel("Death")
 
@@ -561,10 +598,12 @@ class Visualiser:
         return fig
 
     def plot_betti_numbers_layers(
-            self, homology_dimensions: Optional[List[int]] = None,
-            filtration_value: float = 1.,
-            batch: Optional[Tensor] = None,
-            **kwargs) -> plt.Figure:  # type: ignore
+        self,
+        homology_dimensions: Optional[List[int]] = None,
+        filtration_value: float = 1.0,
+        batch: Optional[Tensor] = None,
+        **kwargs
+    ) -> plt.Figure:  # type: ignore
         """
         Args:
             homology_dimensions :
@@ -592,16 +631,19 @@ class Visualiser:
         else:
             inputs = next(iter(self.pipe.dataloaders[0]))  # type: ignore
 
-        simplified_persistence_diagrams = _simplified_persistence_of_activations(me.get_activations(inputs),
-                                                                                 homology_dimensions,
-                                                                                 filtration_value, ** kwargs)
+        simplified_persistence_diagrams = _simplified_persistence_of_activations(
+            me.get_activations(inputs), homology_dimensions, filtration_value, **kwargs
+        )
 
         betti_numbers = []
 
         for dgm in simplified_persistence_diagrams:
             xx = dgm[:, 2]
             betti_numbers.append(
-                [len(xx[(dgm[:, 2] == dim) * (dgm[:, 1] == 1.)]) for dim in homology_dimensions]
+                [
+                    len(xx[(dgm[:, 2] == dim) * (dgm[:, 1] == 1.0)])
+                    for dim in homology_dimensions
+                ]
             )
         betti_array = np.array(betti_numbers).T
 

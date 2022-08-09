@@ -69,16 +69,19 @@ class PersistenceGradient:
         pg.sgd(X, n_epochs=4, lr=0.4)
 
     """
+
     dist_mat: Tensor
 
-    def __init__(self,
-                 homology_dimensions: Optional[List[int]],
-                 zeta: float = 0.5,
-                 collapse_edges: bool = False,
-                 max_edge_length: float = np.inf,
-                 approx_digits: int = 6,
-                 metric: str = "euclidean",
-                 directed: bool = False) -> None:
+    def __init__(
+        self,
+        homology_dimensions: Optional[List[int]],
+        zeta: float = 0.5,
+        collapse_edges: bool = False,
+        max_edge_length: float = np.inf,
+        approx_digits: int = 6,
+        metric: str = "euclidean",
+        directed: bool = False,
+    ) -> None:
 
         self.collapse_edges = collapse_edges
         self.max_edge_length = max_edge_length
@@ -92,20 +95,16 @@ class PersistenceGradient:
             self.homology_dimensions = [0, 1]
 
     @staticmethod
-    def powerset(iterable: Iterator,
-                 max_length: int) -> Iterator:
+    def powerset(iterable: Iterator, max_length: int) -> Iterator:
         """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
         up to `max_length`."""
         s = list(iterable)
-        return chain.from_iterable(combinations(s, r) for
-                                   r in range(0, max_length + 1))
+        return chain.from_iterable(combinations(s, r) for r in range(0, max_length + 1))
 
     @staticmethod
-    def _parallel_apply_along_axis(func1d: Callable,
-                                   axis: int,
-                                   arr: Array,
-                                   *args: Any,
-                                   **kwargs: Any) -> Array:
+    def _parallel_apply_along_axis(
+        func1d: Callable, axis: int, arr: Array, *args: Any, **kwargs: Any
+    ) -> Array:
         """
         Like ``numpy.apply_along_axis()``, but takes advantage of multiple
         cores.
@@ -116,10 +115,12 @@ class PersistenceGradient:
         effective_axis = 1 if axis == 0 else axis
         if effective_axis != axis:
             arr = arr.swapaxes(axis, effective_axis)
-        n_processes = min(len(arr)//2, multiprocessing.cpu_count())
+        n_processes = min(len(arr) // 2, multiprocessing.cpu_count())
         # Chunks for the mapping (only a few chunks):
-        chunks = [(func1d, effective_axis, sub_arr, args, kwargs)
-                  for sub_arr in np.array_split(arr, n_processes)]
+        chunks = [
+            (func1d, effective_axis, sub_arr, args, kwargs)
+            for sub_arr in np.array_split(arr, n_processes)
+        ]
         pool = multiprocessing.Pool(n_processes)
         individual_results = pool.map(unpacking_apply_along_axis, chunks)  # type: ignore
         # Freeing the workers:
@@ -131,20 +132,23 @@ class PersistenceGradient:
         """Private function to compute the pair of indices in X to
         matching the simplices.
         """
-        simplices = list(self.powerset(list(range(0, len(x))),  # type: ignore
-                         max(self.homology_dimensions) + 2))[1:]
+        simplices = list(
+            self.powerset(
+                list(range(0, len(x))),  # type: ignore
+                max(self.homology_dimensions) + 2,
+            )
+        )[1:]
         simplices_array = np.array(simplices, dtype=object).reshape(-1, 1)
         comb_number = comb(max(self.homology_dimensions) + 2, 2)
         # the current computation bottleneck
         if len(simplices_array) > 10000000:
             pairs_of_indices = self._parallel_apply_along_axis(
-                                    _combinations_with_single, 1,
-                                    simplices_array, comb_number)
+                _combinations_with_single, 1, simplices_array, comb_number
+            )
         else:
-            pairs_of_indices = np.apply_along_axis(_combinations_with_single,
-                                                   1,
-                                                   simplices_array,
-                                                   comb_number)
+            pairs_of_indices = np.apply_along_axis(
+                _combinations_with_single, 1, simplices_array, comb_number
+            )
         return torch.tensor(pairs_of_indices, dtype=torch.int64)
 
     def phi(self, x: Tensor) -> Tensor:
@@ -174,10 +178,14 @@ class PersistenceGradient:
         # lista = [max([dist_mat[pair] for pair in pairs]) for pairs in
         #    simplicial_pairs if max([dist_mat[pair] for pair in pairs])
         #    <= self.max_edge_length]
-        lista = torch.max((torch.gather(torch.index_select(self.dist_mat,
-                                                           0, ks),
-                          1, js.reshape(-1, 1))).reshape(-1,
-                                                         comb_number), 1)[0]
+        lista = torch.max(
+            (
+                torch.gather(
+                    torch.index_select(self.dist_mat, 0, ks), 1, js.reshape(-1, 1)
+                )
+            ).reshape(-1, comb_number),
+            1,
+        )[0]
         lista = torch.sort(lista)[0]
         return lista
 
@@ -232,27 +240,27 @@ class PersistenceGradient:
         pairs, homology_dims = self._compute_pairs(x)
         approx_pairs: List[float] = list(np.around(pairs, self.approx_digits).flatten())
         num_approx = 10**self.approx_digits
-        inv_num_approx = 10**(-self.approx_digits)
-        phi_approx: Tensor = torch.round(phi*num_approx)*inv_num_approx
+        inv_num_approx = 10 ** (-self.approx_digits)
+        phi_approx: Tensor = torch.round(phi * num_approx) * inv_num_approx
         # find the indices of phi_approx elements that are in approx_pairs
         indices_in_phi_of_pairs_ls: List = []
         for i in approx_pairs:
-            indices_in_phi_of_pairs_ls += \
+            indices_in_phi_of_pairs_ls += (
                 torch.nonzero(phi_approx == i).flatten().detach().tolist()
+            )
         indices_in_phi_of_pairs: Set = set(indices_in_phi_of_pairs_ls)
-        persistence_pairs_array = -np.ones((len(approx_pairs), 2),
-                                           dtype=np.int32)
+        persistence_pairs_array = -np.ones((len(approx_pairs), 2), dtype=np.int32)
         for i in indices_in_phi_of_pairs:
             try:
-                temp_index: int = approx_pairs.index(round(phi[i].item(),  # type: ignore
-                                                     self.approx_digits))
-                approx_pairs[temp_index] = float('inf')
-                persistence_pairs_array[temp_index//2,
-                                        temp_index % 2] = int(i)
+                temp_index: int = approx_pairs.index(
+                    round(phi[i].item(), self.approx_digits)  # type: ignore
+                )
+                approx_pairs[temp_index] = float("inf")
+                persistence_pairs_array[temp_index // 2, temp_index % 2] = int(i)
             except ValueError:
                 pass
         return persistence_pairs_array, phi, homology_dims
-    
+
     def _computing_persistence_with_gph(self, xx: Tensor) -> List:
         """This method accepts the pointcloud and returns the
         persistence diagram in the following form
@@ -270,28 +278,36 @@ class PersistenceGradient:
         Returns:
             list of shape (n, 3):
                 Persistence pairs (corresponding to the
-                first 2 dimensions) where the last dimension 
+                first 2 dimensions) where the last dimension
                 contains the homology dimension
         """
-        output = ripser_parallel(xx.detach().numpy(),
-                                 maxdim=max(self.homology_dimensions),
-                                 thresh=self.max_edge_length,
-                                 coeff=2,
-                                 metric=self.metric,
-                                 collapse_edges=self.collapse_edges,
-                                 n_threads=-1,
-                                 return_generators=True)
-        
+        output = ripser_parallel(
+            xx.detach().numpy(),
+            maxdim=max(self.homology_dimensions),
+            thresh=self.max_edge_length,
+            coeff=2,
+            metric=self.metric,
+            collapse_edges=self.collapse_edges,
+            n_threads=-1,
+            return_generators=True,
+        )
+
         persistence_pairs = []
 
         for dim in self.homology_dimensions:
             if dim == 0:
-                persistence_pairs += [(0, torch.norm(xx[x[1]]-xx[x[2]]),
-                                      0) for x in output["gens"][dim]]
+                persistence_pairs += [
+                    (0, torch.norm(xx[x[1]] - xx[x[2]]), 0) for x in output["gens"][dim]
+                ]
             else:
-                persistence_pairs += [(torch.norm(xx[x[1]]-xx[x[0]]),
-                                      torch.norm(xx[x[3]]-xx[x[2]]),
-                                      dim) for x in output["gens"][1][dim-1]]
+                persistence_pairs += [
+                    (
+                        torch.norm(xx[x[1]] - xx[x[0]]),
+                        torch.norm(xx[x[3]] - xx[x[2]]),
+                        dim,
+                    )
+                    for x in output["gens"][1][dim - 1]
+                ]
         return persistence_pairs
 
     def persistence_function(self, xx: Tensor) -> Tensor:
@@ -318,17 +334,17 @@ class PersistenceGradient:
             persistence_array, phi, _ = self._persistence(xx)
             for item in persistence_array:
                 if item[1] != -1:
-                    out += (phi[item[1]]-phi[item[0]])
+                    out += phi[item[1]] - phi[item[0]]
         else:
             persistence_array = self._computing_persistence_with_gph(xx)
             for item in persistence_array:
-                out += item[1]-item[0]
+                out += item[1] - item[0]
         reg = (xx**2).sum()  # regularisation term
-        return -out + self.zeta*reg  # maximise persistence
+        return -out + self.zeta * reg  # maximise persistence
 
-    def sgd(self, xx: Tensor,
-            lr: float = 0.01,
-            n_epochs: int = 5) -> Tuple[Figure, Figure, List[float]]:
+    def sgd(
+        self, xx: Tensor, lr: float = 0.01, n_epochs: int = 5
+    ) -> Tuple[Figure, Figure, List[float]]:
         """This function is the core function of this class and uses the
         SGD method to move points around in order to optimise
         ``persistence_function``
@@ -368,30 +384,29 @@ class PersistenceGradient:
             y = np.concatenate((y, xx.detach().numpy()[:, 1]))
             loss.backward()  # compute gradients and store them in Xp.grad
             grads = -xx.grad.detach()
-            u = np.concatenate((u, 1/grads.norm(2,
-                                1).mean()*grads.numpy()[:, 0]))
-            v = np.concatenate((v, 1/grads.norm(2,
-                                1).mean()*grads.numpy()[:, 1]))
+            u = np.concatenate((u, 1 / grads.norm(2, 1).mean() * grads.numpy()[:, 0]))
+            v = np.concatenate((v, 1 / grads.norm(2, 1).mean() * grads.numpy()[:, 1]))
             try:
                 z = np.concatenate((z, xx.detach().numpy()[:, 2]))
-                w = np.concatenate((w,
-                                    1/grads.norm(2) *
-                                    grads.numpy()[:, 2]))
+                w = np.concatenate((w, 1 / grads.norm(2) * grads.numpy()[:, 2]))
             except IndexError:
-                z = np.concatenate((z, 0*xx.detach().numpy()[:, 1]))
-                w = np.concatenate((w, 0*grads.numpy()[:, 1]))
+                z = np.concatenate((z, 0 * xx.detach().numpy()[:, 1]))
+                w = np.concatenate((w, 0 * grads.numpy()[:, 1]))
             optimizer.step()
         fig = ff.create_quiver(x, y, u, v)
-        fig3d = Figure(data=go.Cone(
-            x=x,
-            y=y,
-            z=z,
-            u=u,
-            v=v,
-            w=w,
-            sizemode="absolute",
-            sizeref=2,
-            anchor="tip"))
+        fig3d = Figure(
+            data=go.Cone(
+                x=x,
+                y=y,
+                z=z,
+                u=u,
+                v=v,
+                w=w,
+                sizemode="absolute",
+                sizeref=2,
+                anchor="tip",
+            )
+        )
         return fig, fig3d, loss_val
 
 
@@ -429,17 +444,18 @@ def _combinations_with_single(tupl, max_length: int) -> Array:
             within a given simplex."""
     tupl = tupl[0]  # the slice dimension will always contain 1 element
     if len(tupl) == 1:
-        list1 = list(((tupl[0], tupl[0]), )) + \
-            list((max_length-1)*[(tupl[0], tupl[0])])
+        list1 = list(((tupl[0], tupl[0]),)) + list(
+            (max_length - 1) * [(tupl[0], tupl[0])]
+        )
         return np.array(list1)
     temp_list = list(combinations(tupl, 2))
-    list2 = temp_list+((max_length-len(temp_list))*[(tupl[0], tupl[1])])
+    list2 = temp_list + ((max_length - len(temp_list)) * [(tupl[0], tupl[1])])
     return np.array(list2)
 
 
 def comb(nnn: int, kkk: int) -> int:
     """this function computes :math:`\\frac{n!}{(k!*(n-k)!)}` efficiently"""
-    kkk = min(kkk, nnn-kkk)
-    numer = reduce(op.mul, range(nnn, nnn-kkk, -1), 1)
-    denom = reduce(op.mul, range(1, kkk+1), 1)
+    kkk = min(kkk, nnn - kkk)
+    numer = reduce(op.mul, range(nnn, nnn - kkk, -1), 1)
+    denom = reduce(op.mul, range(1, kkk + 1), 1)
     return numer // denom

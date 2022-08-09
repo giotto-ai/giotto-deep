@@ -36,14 +36,15 @@ class ModelExtractor:
     """
 
     def __init__(
-            self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor]
+        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor]
     ) -> None:
         # self.model = model
         self.model = model.to(DEVICE)
         self.loss_fn = loss_fn
 
-    def _send_to_device(self, x: Union[Tensor, List[Tensor]], y: Tensor) \
-            -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
+    def _send_to_device(
+        self, x: Union[Tensor, List[Tensor]], y: Tensor
+    ) -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
         """use this private method to send the
         ``x`` and ``y`` to the ``DEVICE``.
 
@@ -84,7 +85,7 @@ class ModelExtractor:
         return prediction, x, y
 
     def get_decision_boundary(
-            self, input_example: Tensor, n_epochs: int = 100, precision: float = 0.1
+        self, input_example: Tensor, n_epochs: int = 100, precision: float = 0.1
     ) -> Tensor:
         """Compute the decision boundary for self.model
         with self.loss_fn
@@ -148,7 +149,9 @@ class ModelExtractor:
             handle = layer.register_forward_hook(saved_output_layers)
             hook_handles.append(handle)
         self.model.eval()
-        _, x, _ = self._send_to_device(x, torch.rand((1, 1)))  # here we also run the model(x)
+        _, x, _ = self._send_to_device(
+            x, torch.rand((1, 1))
+        )  # here we also run the model(x)
 
         for handle in hook_handles:
             handle.remove()
@@ -189,8 +192,9 @@ class ModelExtractor:
             output.append(v.grad)
         return output
 
-    def get_gradients(self, batch: Tuple[Union[Tensor, List[Tensor]], Tensor],
-                      **kwargs) -> Tuple[List[Tensor], List[Tensor]]:
+    def get_gradients(
+        self, batch: Tuple[Union[Tensor, List[Tensor]], Tensor], **kwargs
+    ) -> Tuple[List[Tensor], List[Tensor]]:
         """Returns the **averaged gradient** of the self.loss_fn.
         To specify the target variable (e.g. the true class),
         use the keywords argument `target=`

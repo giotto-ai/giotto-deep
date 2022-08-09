@@ -1,8 +1,6 @@
-
 import os
 import shutil
-from typing import Any, Callable, Dict, Optional, \
-    Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import torch
@@ -26,9 +24,8 @@ class FromArray(Dataset[Tuple[Tensor, Tensor]]):
             with the data
 
     """
-    def __init__(self, x: Union[Tensor, Array],
-                 y: Union[Tensor, Array]
-                 ) -> None:
+
+    def __init__(self, x: Union[Tensor, Array], y: Union[Tensor, Array]) -> None:
         self.x = self._from_numpy(x)
         y = self._from_numpy(y)
         self.y = self._long_or_float(y)
@@ -48,13 +45,13 @@ class FromArray(Dataset[Tuple[Tensor, Tensor]]):
         a long tensor of a float tensor"""
         if isinstance(y, torch.Tensor):
             return y
-        if y.dtype in [np.float16, np.float32, np.float64]:
+        if y.dtype in [np.float16, np.float32, np.float64]:  # type: ignore
             return torch.tensor(y).float()
         return torch.tensor(y).long()
 
     def __len__(self):
         return self.y.shape[0]
 
-    def __getitem__(self, idx:int) -> Tuple[Tensor, Tensor]:
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         x, y = (self.x[idx], self.y[idx])
         return x, y

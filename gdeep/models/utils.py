@@ -8,7 +8,7 @@ Tensor = torch.Tensor
 
 
 class SaveOutput(ABC):
-    """ General class for saving outputs of
+    """General class for saving outputs of
     neural networks.
     Outputs will be stored in a list 'outputs'
     """
@@ -32,7 +32,7 @@ class SaveOutput(ABC):
 
 
 class SaveNodeOutput(SaveOutput):
-    """ Class for saving activations of a node in
+    """Class for saving activations of a node in
     a neural network.
 
     Args:

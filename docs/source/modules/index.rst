@@ -7,13 +7,13 @@ This pages contains a list of available features in the library.
    :maxdepth: 3
 
    analysis
-   
+
    data
-   
+
    models
-   
+
    trainer
-   
+
    search
 
    topology_layers

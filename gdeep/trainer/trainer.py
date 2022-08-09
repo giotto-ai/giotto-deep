@@ -125,9 +125,12 @@ class Trainer:
         pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=5)
 
     """
+
     scheduler: Optional[_LRScheduler]
     writer: Optional[SummaryWriter]
-    registered_hook: Optional[Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]] = None
+    registered_hook: Optional[
+        Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]
+    ] = None
 
     def __init__(
         self,
@@ -145,7 +148,7 @@ class Trainer:
         self.train_epoch = 0
         self.val_epoch = 0
         self.best_val_loss = np.inf
-        self.best_val_acc = 0.
+        self.best_val_acc = 0.0
         self.loss_fn = loss_fn
         if training_metric:
             self.training_metric = training_metric
@@ -240,8 +243,9 @@ class Trainer:
             )
         return epoch_loss
 
-    def _send_to_device(self, x: Union[Tensor, List[Tensor]], y: Tensor) \
-            -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
+    def _send_to_device(
+        self, x: Union[Tensor, List[Tensor]], y: Tensor
+    ) -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
         """use this private method to send the
         ``x`` and ``y`` to the ``DEVICE``.
 
@@ -289,6 +293,7 @@ class Trainer:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
                 return loss2
+
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
@@ -334,7 +339,9 @@ class Trainer:
         return epoch_metric, epoch_loss
 
     def _train_loop(
-        self, dl_tr: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]], writer_tag: str = ""
+        self,
+        dl_tr: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
+        writer_tag: str = "",
     ) -> Tuple[float, float]:
         """private method to run a single training
         loop
@@ -369,7 +376,9 @@ class Trainer:
         return epoch_metric, epoch_loss
 
     def _val_loop(
-        self, dl_val: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]], writer_tag: str = ""
+        self,
+        dl_val: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]],
+        writer_tag: str = "",
     ) -> Tuple[float, float]:
         """private method to run a single validation
         loop
@@ -531,7 +540,7 @@ class Trainer:
         lr_scheduler: Optional[Type[_LRScheduler]] = None,
         scheduler_params: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Reset or maintain the LR scheduler and the 
+        """Reset or maintain the LR scheduler and the
         optimizer depending on the training"""
         if not (self.check_has_trained and keep_training):
             # reset the model weights
@@ -890,7 +899,7 @@ class Trainer:
         writer_tag: str = "",
     ) -> Tuple[float, float]:
         """private method to run the trainign loops
-        
+
         Args:
             n_epochs:
                 number of training epochs
@@ -1103,9 +1112,13 @@ class Trainer:
                     # Compute prediction and loss
                     pred = model2(X)
                     try:
-                        correct += (pred.argmax(1) == y).to(torch.float).sum().item()  # noqa
+                        correct += (
+                            (pred.argmax(1) == y).to(torch.float).sum().item()
+                        )  # noqa
                     except RuntimeError:
-                        correct += (pred.argmax(2) == y).to(torch.float).sum().item()  # noqa
+                        correct += (
+                            (pred.argmax(2) == y).to(torch.float).sum().item()
+                        )  # noqa
                     loss = self.loss_fn(pred, y)
                     # Save to tensorboard
                     # self.writer.add_scalar("Parallel" + "/Loss/train",
@@ -1183,17 +1196,19 @@ class Trainer:
         return self.val_loss, self.val_acc
 
     def evaluate_classification(
-        self, num_class: int = None, dl: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]] = None
+        self,
+        num_class: int = None,
+        dl: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]] = None,
     ) -> Tuple[float, float, np.ndarray]:
         """Method to evaluate the performance of the model.
-        
+
         Args:
             num_class:
                 number of classes
             dl :
                 the Dataloader to evaluate. If ``None``,
                 we use the training dataloader in ``self``
-                
+
         Returns:
             (float, float, 2darray):
                 the accuracy, loss and confusion matrix.
@@ -1223,7 +1238,10 @@ class Trainer:
         return epoch_metric, epoch_loss, confusion_matrix
 
     def register_pipe_hook(
-        self, callable: Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]
+        self,
+        callable: Callable[
+            [int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any
+        ],
     ) -> None:
         """This method registers a function that
         will be called after each trainign step.
@@ -1240,7 +1258,11 @@ class Trainer:
         self.registered_hook = callable
 
     def _run_pipe_hook(
-        self, epoch: int, optim: Optimizer, me: ModelExtractor, writer: Optional[SummaryWriter] = None
+        self,
+        epoch: int,
+        optim: Optimizer,
+        me: ModelExtractor,
+        writer: Optional[SummaryWriter] = None,
     ) -> None:
         """private method that runs the hooked
         function at every epoch, after the single training loop"""

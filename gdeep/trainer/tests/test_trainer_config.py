@@ -1,4 +1,3 @@
-
 from gdeep.trainer import TrainerConfig
 from torch.optim import SGD
 

@@ -22,7 +22,7 @@ sections will explain the most important ones.
 DatasetBuilder and DataLoaderBuilder
 ====================================
 
-You can easily create or load datasets using the ``DatasetBuilder`` class, apply preprocessing and 
+You can easily create or load datasets using the ``DatasetBuilder`` class, apply preprocessing and
 then get them ready to train using the ``DataLoaderBuilder`` class.
 
 .. code-block:: python
@@ -39,7 +39,7 @@ then get them ready to train using the ``DataLoaderBuilder`` class.
 Model
 ======
 
-Models are vanilla ``torch.nn.Module`` and subclasses of it. You have all the freedom of PyTorch to 
+Models are vanilla ``torch.nn.Module`` and subclasses of it. You have all the freedom of PyTorch to
 Build your custom model.
 
 Trainer
@@ -47,7 +47,7 @@ Trainer
 
 Once you have setup your data, your model, your loss function (and maybe a performance metric), you
 can put all these ingredients together into the  ``Trainer`` class. Then, with the ``train`` method
-you can run the training and validation of your models, specifying all the parameters the you need. 
+you can run the training and validation of your models, specifying all the parameters the you need.
 
 .. code-block:: python
 
@@ -60,8 +60,8 @@ you can run the training and validation of your models, specifying all the param
 HyperPatameterOptimisation
 ==========================
 
-Instead of a single training, you may also want to search the space of hyper parameters to find the 
-Best model possible. In ``giotto-deep`` this step can be done in a few lines using the class 
+Instead of a single training, you may also want to search the space of hyper parameters to find the
+Best model possible. In ``giotto-deep`` this step can be done in a few lines using the class
 ``HyperPatameterOptimisation``:
 
 .. code-block:: python
@@ -91,8 +91,8 @@ of the ``Interpreter`` class.
 .. code-block:: python
 
    inter = Interpreter(pipe.model, method="LayerIntegratedGradients")
-   inter.interpret_text("I am writing about money and business", 
-       0, 
+   inter.interpret_text("I am writing about money and business",
+       0,
        ptd.vocabulary,
        ptd.tokenizer,
        layer=pipe.model.embedding,
@@ -112,4 +112,3 @@ or the heat maps resulting form the `Interpreter``: you need the ``Visualiser`` 
    vs = Visualiser(pipe)
    vs.plot_interpreter_text(inter)
    vs.plot_data_model()
-

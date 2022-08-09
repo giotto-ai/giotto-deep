@@ -13,13 +13,13 @@ class AttentionBase(Module, ABC):
     """Base class for attention layers. This class
     can be used in generic transformer models.
     """
+
     def __init__(self, config: PersformerConfig):
         super().__init__()
         self.config = config
-    
+
     @abstractmethod
-    def forward(self,  # type: ignore
-                input: Tensor,
-                attention_mask: Optional[Tensor] = None
-                ) -> Tensor:
+    def forward(
+        self, input: Tensor, attention_mask: Optional[Tensor] = None  # type: ignore
+    ) -> Tensor:
         raise NotImplementedError

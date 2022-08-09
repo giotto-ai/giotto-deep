@@ -22,9 +22,12 @@ Tensor = torch.Tensor
 class Model2(nn.Module):
     def __init__(self, n_nodes="100"):
         super(Model2, self).__init__()
-        self.md = nn.Sequential(nn.Sequential(models.resnet18(pretrained=True),
-                                              nn.Linear(1000, eval(n_nodes))),
-                                nn.Linear(eval(n_nodes), 10))
+        self.md = nn.Sequential(
+            nn.Sequential(
+                models.resnet18(pretrained=True), nn.Linear(1000, eval(n_nodes))
+            ),
+            nn.Linear(eval(n_nodes), 10),
+        )
 
     def forward(self, x):
         return self.md(x)
@@ -32,7 +35,6 @@ class Model2(nn.Module):
 
 # model
 class Model1(nn.Module):
-
     def __init__(self):
         super(Model1, self).__init__()
         self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[4, 5, 4]))
@@ -56,7 +58,8 @@ transformed_ds_tr = transformation.attach_transform_to_dataset(ds_tr)
 # use only 32*7 images from CIFAR10
 train_indices = list(range(32 * 7))
 dl_tr, *_ = DataLoaderBuilder([transformed_ds_tr]).build(  # type: ignore
-    [{"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)}])
+    [{"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)}]
+)
 
 
 def test_hpo_failure():
@@ -67,8 +70,13 @@ def test_hpo_failure():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer,
-                   k_fold_class=StratifiedKFold(2, shuffle=True))
+    pipe = Trainer(
+        model,
+        [dl_tr, None],
+        loss_fn,
+        writer,
+        k_fold_class=StratifiedKFold(2, shuffle=True),
+    )
 
     # initialise gridsearch
     try:
@@ -85,8 +93,13 @@ def test_hpo_cross_val():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer,
-                   k_fold_class=StratifiedKFold(2, shuffle=True))
+    pipe = Trainer(
+        model,
+        [dl_tr, None],
+        loss_fn,
+        writer,
+        k_fold_class=StratifiedKFold(2, shuffle=True),
+    )
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
@@ -100,8 +113,15 @@ def test_hpo_cross_val():
     models_hyperparams = {"n_nodes": ["200"]}
 
     # starting the gridsearch
-    search.start([SGD, Adam], 3, False, optimizers_params, dataloaders_params,
-                 models_hyperparams, n_accumulated_grads=2)
+    search.start(
+        [SGD, Adam],
+        3,
+        False,
+        optimizers_params,
+        dataloaders_params,
+        models_hyperparams,
+        n_accumulated_grads=2,
+    )
 
 
 def test_hpo_accumulated_grads():
@@ -126,8 +146,15 @@ def test_hpo_accumulated_grads():
     models_hyperparams = {"n_nodes": ["200"]}
 
     # starting the gridsearch
-    search.start([SGD, Adam], 2, False, optimizers_params, dataloaders_params,
-                 models_hyperparams, n_accumulated_grads=2)
+    search.start(
+        [SGD, Adam],
+        2,
+        False,
+        optimizers_params,
+        dataloaders_params,
+        models_hyperparams,
+        n_accumulated_grads=2,
+    )
 
 
 def test_hpo_loss():
@@ -149,7 +176,9 @@ def test_hpo_loss():
     models_hyperparams = {"n_nodes": ["200"]}
 
     # starting the gridsearch
-    search.start([SGD, Adam], 2, False, optimizers_params, dataloaders_params, models_hyperparams)
+    search.start(
+        [SGD, Adam], 2, False, optimizers_params, dataloaders_params, models_hyperparams
+    )
 
 
 def test_hpo_string_parameters():
@@ -174,7 +203,9 @@ def test_hpo_string_parameters():
     models_hyperparams = {"n_nodes": ["200", "256"]}
 
     # starting the gridsearch
-    search.start([SGD], 1, False, optimizers_params, dataloaders_params, models_hyperparams)
+    search.start(
+        [SGD], 1, False, optimizers_params, dataloaders_params, models_hyperparams
+    )
 
 
 def test_hpo_collate():
@@ -183,7 +214,9 @@ def test_hpo_collate():
             self.x = []
             for _ in range(100):
                 self.x.append((torch.rand(1, np.random.randint(2, 4))).to(torch.float))
-            self.y = np.array(np.random.randint(2, size=100 * 2).reshape(-1, 2), dtype=np.int64)
+            self.y = np.array(
+                np.random.randint(2, size=100 * 2).reshape(-1, 2), dtype=np.int64
+            )
 
         def __len__(self):
             return 100
@@ -197,21 +230,19 @@ def test_hpo_collate():
         label = torch.zeros(len(batch_tuple), 2).to(torch.long)
         for i, batch in enumerate(batch_tuple):
             source = batch[0]
-            target[i, :len(source[-1])] = source
+            target[i, : len(source[-1])] = source
             label[i] = torch.tensor(batch[1]).to(torch.long)
         return target, label
 
     model = Model1()
     # dataloaders
     ds = MyDataset()
-    dl_train = DataLoader(ds, batch_size=6,
-                       collate_fn=collate_fn)
+    dl_train = DataLoader(ds, batch_size=6, collate_fn=collate_fn)
 
     # loss function
     loss_fn = nn.CrossEntropyLoss()
     # pipeline
-    pipe = Trainer(model, [dl_train, None],
-                   loss_fn, writer)
+    pipe = Trainer(model, [dl_train, None], loss_fn, writer)
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)
 

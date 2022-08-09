@@ -21,12 +21,12 @@ def plotly2tensor(fig) -> torch.Tensor:
     """
     now = str(time.time()).replace(".", "-")
     try:
-        write_image(fig, "deleteme"+now+".jpeg", format="jpeg", engine="orca")
+        write_image(fig, "deleteme" + now + ".jpeg", format="jpeg", engine="orca")
     except ValueError:
-        write_image(fig, "deleteme"+now+".jpeg", format="jpeg")
-    with Image.open("deleteme"+now+".jpeg") as img:
+        write_image(fig, "deleteme" + now + ".jpeg", format="jpeg")
+    with Image.open("deleteme" + now + ".jpeg") as img:
         arr = np.asarray(img).copy()
-    os.remove("deleteme"+now+".jpeg")
+    os.remove("deleteme" + now + ".jpeg")
     return torch.from_numpy(arr)
 
 
