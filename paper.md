@@ -39,15 +39,13 @@ pipeline, with significant success in many fields [@hensel2021survey].
 
 `giotto-deep` is an deep-learning Python package that seamlessly integrate topological
 data analysis models and data structures. The library is founded on a PyTorch core
-due to the extensive use of such library in the machine-learning community.
-The API for `giotto-deep` was designed to provide a class-based and user-friendly 
-interface to fast implementations of common machine learning tasks, 
-such as data preprocessing, model building,
+due to the extensive use of such library in the machine learning community.
+The `giotto-deep` package was designed with usability in mind and provides a class-based interface
+to fast implementations of common machine learning tasks, such as data preprocessing, model building,
 model training and validation, reporting and logging, as well as image classification, 
-Q&A, translation, persistence diagram vectorization (via Persformer [@reinauer2021persformer]), 
-but also more advanced tasks such as hyper parameter optimization. 
-`giotto-deep` also relies heavily on optuna [@akiba2019optuna] for (distributed, multi pod) 
-hyper parameter searches.
+Q&A, translation, persistence diagram vectorization (via Persformer [@reinauer2021persformer]).
+Additionally, giotto-deep supports more advanced tasks such as (distributed, multi-pod) hyper parameter
+optimization through its seamless integration with optuna [@akiba2019optuna]. 
 
 `giotto-deep` has been designed to be used by both mathematics researchers and by
 machine learning engineers. The combination of speed, versatility, design, and 
@@ -55,6 +53,8 @@ support for TDA data structures in `giotto-deep` will enable exciting
 scientific explorations of the behavior of deep learning models, hopefully shedding 
 new lights on the generalisability and robustness of such complex and powerful
 models.
+In summary, `giotto-deep` is a powerful, easy-to-use tool that will help to incorporate topological 
+data into machine learning models with little effort.
 
 ![Architecture UML diagram.\label{fig:arch}](gdeep_arch.png)
 
