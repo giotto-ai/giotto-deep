@@ -18,7 +18,7 @@ from torch.optim import *  # noqa
 import plotly.express as px
 from optuna.pruners import MedianPruner, BasePruner
 from optuna.trial._base import BaseTrial  # noqa
-from optuna.study import BaseStudy as Study
+from optuna.study import Study
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
