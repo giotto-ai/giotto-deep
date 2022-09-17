@@ -52,7 +52,7 @@ From `minikube` us the same command as point 5.
 
  7.  (Optional) scale up or down the workers (*change the number of replicas*):
 ```
-kubectl scale deployment gdeep-rq-worker-deployment --replicas=0
+kubectl scale deployment gdeep-rq-worker-deployment --replicas=0 -n main
 ```
 
  8. Access the jupyter lab service and in the giotto-deep folder (the volume!) you can `git clone https://github.com/giotto-ai/giotto-deep.git` and also `pip install giotto-deep`.
