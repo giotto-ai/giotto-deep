@@ -1,6 +1,6 @@
-resource "kubernetes_namespace" "main2" {
+resource "kubernetes_namespace" var.namespace {
   metadata {
-    name = "main2"
+    name = var.namespace
   }
 }
 
@@ -13,7 +13,7 @@ resource "kubernetes_manifest" "deployment_mysql_deployment" {
         "app" = "mysql"
       }
       "name" = "mysql-deployment"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "replicas" = 1
@@ -63,7 +63,7 @@ resource "kubernetes_manifest" "service_mysql_service" {
     "kind" = "Service"
     "metadata" = {
       "name" = "mysql-service"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "ports" = [
@@ -90,7 +90,7 @@ resource "kubernetes_manifest" "secret_mysql_secret" {
     "kind" = "Secret"
     "metadata" = {
       "name" = "mysql-secret"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "type" = "Opaque"
   }
@@ -102,7 +102,7 @@ resource "kubernetes_manifest" "persistentvolumeclaim_task_pv_claim" {
     "kind" = "PersistentVolumeClaim"
     "metadata" = {
       "name" = "task-pv-claim-tf"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "accessModes" = [
@@ -152,7 +152,7 @@ resource "kubernetes_manifest" "deployment_redis_deployment" {
         "app" = "redis"
       }
       "name" = "redis-deployment"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "replicas" = 1
@@ -194,7 +194,7 @@ resource "kubernetes_manifest" "service_redis_service" {
     "kind" = "Service"
     "metadata" = {
       "name" = "redis-service"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "ports" = [
@@ -220,7 +220,7 @@ resource "kubernetes_manifest" "deployment_gdeep_rq_worker_deployment" {
         "app" = "gdeep-rq-worker"
       }
       "name" = "gdeep-rq-worker-deployment"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "replicas" = 2
@@ -281,7 +281,7 @@ resource "kubernetes_manifest" "service_gdeep_rq_worker_service" {
     "kind" = "Service"
     "metadata" = {
       "name" = "gdeep-rq-worker-service"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "ports" = [
@@ -308,7 +308,7 @@ resource "kubernetes_manifest" "deployment_tensorboard_deployment" {
         "app" = "gdeep-tensorboard"
       }
       "name" = "tensorboard-deployment"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "replicas" = 1
@@ -368,7 +368,7 @@ resource "kubernetes_manifest" "service_gdeep_tensorboard_service" {
     "kind" = "Service"
     "metadata" = {
       "name" = "gdeep-tensorboard-service"
-      "namespace" = "main2"
+      "namespace" = var.namespace
     }
     "spec" = {
       "ports" = [
