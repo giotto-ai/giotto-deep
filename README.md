@@ -93,4 +93,4 @@ I order to run your analysis on TPU cores, you ca use the following lines:
 ```
 Once you have run the lines above, please make sure to restart the runtime.
 
-The code will automatically detect the TPU core and use it as deffault to run the experiments. GPUs are also automatically supported.
+The code will automatically detect the TPU core and use it as default to run the experiments. GPUs are also automatically supported.
