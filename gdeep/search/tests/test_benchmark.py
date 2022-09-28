@@ -70,10 +70,10 @@ test_indices = [64 * 5 + x for x in range(32 * 3)]
 train_indices = [x for x in range(32 * 2)]
 
 dl = DataLoaderBuilder([transformed_ds_tr, transformed_ds_tr])
-dl_tr, dl_val, _ = dl.build(
+dl_tr, dl_val, _ = dl.build(  # type: ignore
     [
         {"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},  # type: ignore
-        {"batch_size": 32, "sampler": SubsetRandomSampler(test_indices)},
+        {"batch_size": 32, "sampler": SubsetRandomSampler(test_indices)},  # type: ignore
     ]
 )
 

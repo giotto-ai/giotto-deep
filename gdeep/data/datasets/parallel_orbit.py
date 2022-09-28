@@ -347,7 +347,7 @@ class OrbitsGenerator(object):
         return self._get_data_loaders(
             [
                 self._orbits.astype(self._dtype),  # type: ignore
-                self._labels,
+                self._labels,  # type: ignore
             ],  # type: ignore
             dataloaders_kwargs,
         )
@@ -387,7 +387,7 @@ class OrbitsGenerator(object):
             [
                 self._orbits,  # type: ignore
                 self._persistence_diagrams,  # type: ignore
-                self._labels,
+                self._labels,  # type: ignore
             ],  # type: ignore
             dataloaders_kwargs,
         )

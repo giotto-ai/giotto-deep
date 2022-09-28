@@ -371,9 +371,9 @@ class DatasetCloud:
         """
         self._check_public_access()
         self._data_cloud.upload_file(
-            path,
+            path,  # type: ignore
             str(self.metadata["name"]) + "/" + "metadata.json",  # type: ignore
-            make_public=self.make_public,
+            make_public=self.make_public,  # type: ignore
         )
 
     def _add_metadata(

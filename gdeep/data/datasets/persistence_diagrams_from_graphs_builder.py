@@ -144,7 +144,7 @@ class GraphDataset(Dataset):
         self.dataset_name = dataset_name
         self.root = root
         self.url = url
-        self.dataset = []  # where to store the adj matrices in memory
+        self.dataset: List[Tuple[np.ndarray, int]] = []  # where to store the adj matrices in memory
         self.build_dataset()
 
     def _download_url(self, url: str, folder: str) -> str:
@@ -207,7 +207,7 @@ class GraphDataset(Dataset):
             offset = min(min(row), min(col))
             # print(row, col, offset, shape_x)
             adj_mat = coo_matrix((data, (row-offset, col-offset)), shape=(shape_x, shape_x)).toarray()
-
+            # print(adj_mat, idx)
             self.dataset.append((adj_mat, labels[idx]))
 
     def __len__(self) -> int:
