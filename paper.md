@@ -58,7 +58,7 @@ data into machine learning models with little effort.
 
 ![Architecture UML diagram.\label{fig:arch}](gdeep_arch.png)
 
-`giotto-deep` architecture is schematized, using UML, in picture \autoref{fig:arch}.
+`giotto-deep` architecture is schematized in figure \autoref{fig:arch}.
 
 The hyper parameter searches (HPO) can also be distributed on a `kubernetes` cluster
 using [python RQ](https://python-rq.org), speeding up the computation: this is an 
