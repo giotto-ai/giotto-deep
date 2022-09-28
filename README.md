@@ -45,6 +45,16 @@ The first step to install the developer version of the package is to `git clone`
 git clone https://github.com/giotto-ai/giotto-deep.git
 ```
 The change the current working directory to the Repository root folder, e.g. `cd giotto-deep`.
+It is best practice to create a virtual environment for the project, e.g. using `virtualenv`:
+```
+virtualenv -p python3.9 venv
+```
+Activate the virtual environment (e.g. `source venv/bin/activate` on Linux or `venv\Scripts\activate` on Windows).
+
+First make sure you have upgraded to the last version of `pip` with
+```
+python -m pip install --upgrade pip
+```
 Make sure you have the latest version of pytorch installed.
 You can do this by running the following command (if you have a GPU):
 ```
@@ -53,10 +63,6 @@ pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 Once you are in the root folder, install the package dynamically with:
 ```
 pip install -e .
-```
-Make sure you have upgraded to the last version of `pip` with
-```
-python -m pip install --upgrade pip
 ```
 
 
@@ -87,4 +93,4 @@ I order to run your analysis on TPU cores, you ca use the following lines:
 ```
 Once you have run the lines above, please make sure to restart the runtime.
 
-The code will automatically detect the TPU core and use it as deffault to run the experiments. GPUs are also automatically supported.
+The code will automatically detect the TPU core and use it as default to run the experiments. GPUs are also automatically supported.

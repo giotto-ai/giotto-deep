@@ -57,5 +57,5 @@ def test_mutag_load_and_save():
         os.path.join(file_path, f"{graph_idx}.npy")
     )
     assert pd_gudhi.all_close(
-        pd, atol=1e-6
+        pd, atol=1e-2
     ), "Generated persistence diagram is not equal to the one from GUDHI"
