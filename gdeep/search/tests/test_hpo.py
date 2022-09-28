@@ -178,7 +178,7 @@ def test_hpo_loss():
     # starting the gridsearch
     search.start(
         [SGD, Adam], 2, False, optimizers_params, dataloaders_params, models_hyperparams
-    )
+    );
 
 
 def test_hpo_string_parameters():
@@ -205,7 +205,7 @@ def test_hpo_string_parameters():
     # starting the gridsearch
     search.start(
         [SGD], 1, False, optimizers_params, dataloaders_params, models_hyperparams
-    )
+    );
 
 
 def test_hpo_collate():
@@ -248,7 +248,7 @@ def test_hpo_collate():
 
     # dictionaries of hyperparameters
     optimizers_params = {"lr": [0.001, 0.01]}
-    dataloaders_params = {"batch_size": [32, 64, 16], "collate_fn": [collate_fn]}
+    dataloaders_params = {"batch_size": [3, 9, 2], "collate_fn": [collate_fn]}
 
     # starting the gridsearch
-    search.start([SGD, Adam], 2, False, optimizers_params, dataloaders_params)
+    search.start([SGD, Adam], 1, False, optimizers_params, dataloaders_params);
