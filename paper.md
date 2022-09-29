@@ -16,10 +16,9 @@ authors:
 affiliations:
  - name: L2F SA, Rue du Centre 9, Saint-Sulpice, 1025, CH
    index: 1
- - name: Ecole Polytechnique Fédérale de Lausanne (EPFL), Laboratory for topology and neuroscience,
-Lausanne, 1015, CH
+ - name: Ecole Polytechnique Fédérale de Lausanne (EPFL), Laboratory for topology and neuroscience, Lausanne, 1015, CH
    index: 2
-date: 01 July 2022
+date: 30 September 2022
 bibliography: paper.bib
 
 ---
@@ -57,7 +56,7 @@ models.
 In summary, `giotto-deep` is a powerful, easy-to-use tool that will help to incorporate topological 
 data into machine learning models with little effort.
 
-![Architecture UML diagram.\label{fig:arch}](arch_dgm.png)
+![Simplified architecture diagram.\label{fig:arch}](arch_dgm.png)
 
 `giotto-deep` architecture is schematized in figure \autoref{fig:arch}.
 
