@@ -75,6 +75,10 @@ We are using pre-commit hooks to ensure that the code is formatted correctly. To
 ```
 pre-commit install
 ```
+The pre-commit hooks will run automatically before each commit. If you want to run the pre-commit hooks manually, run the following command from the root folder:
+```
+pre-commit run --all-files
+```
 
 To run both unit and integration tests on *macOS* or *Linux*, simply run the following command from the root folder:
 ```
