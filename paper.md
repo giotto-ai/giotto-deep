@@ -81,6 +81,8 @@ the dataset from the cloud fully automated from the `giotto-deep`.
 
 The current most relevant scientific application of this software is the Persformer: 
 a novel algorithm to automatize the persistence diagrams vectorization [@reinauer2021persformer].
+We also showcased in Jupyter notebook how to apply the library to get the results of [@perez2022topological] 
+to extract topological information from the attention scores of the BERT-Transformer model.
 
 # Acknowledgments
 
