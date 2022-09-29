@@ -56,7 +56,7 @@ models.
 In summary, `giotto-deep` is a powerful, easy-to-use tool that will help to incorporate topological 
 data into machine learning models with little effort.
 
-![Architecture UML diagram.\label{fig:arch}](gdeep_arch.png)
+![Architecture UML diagram.\label{fig:arch}](arch_dgm.png)
 
 `giotto-deep` architecture is schematized in figure \autoref{fig:arch}.
 
