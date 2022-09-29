@@ -14,17 +14,21 @@ class FFNet(nn.Module):
             the last one which has ``sigmoid`` as activation function.
             The first number is the dimension of the input! The final
             of the output
-        
+
         activation (callable, default = torch.nn.functional.relu):
             this is the activation function that will be applied between
             each layer of the fully connected network
     """
-    
-    def __init__(self, arch=(2, 3, 3, 2), activation = F.relu):        
+
+    def __init__(self, arch=(2, 3, 3, 2), activation=None):
         super(FFNet, self).__init__()
-        self.activation = activation
-        self.linears = nn.ModuleList([nn.Linear(arch[i], arch[i+1]) for i in range(len(arch)-1)])
-        
+        if activation is None:
+            self.activation = F.relu
+        else:
+            self.activation = activation
+        self.linears = nn.ModuleList(
+            [nn.Linear(arch[i], arch[i + 1]) for i in range(len(arch) - 1)]
+        )
 
     def forward(self, x):
         for i, l in enumerate(self.linears[:-1]):

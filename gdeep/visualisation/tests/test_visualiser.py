@@ -21,20 +21,19 @@ transformed_textds = ptd.attach_transform_to_dataset(ds_tr_str)  # type: ignore
 transformed_textts = ptd.attach_transform_to_dataset(ds_val_str)  # type: ignore
 
 # the only part of the training/test set we are interested in
-train_indices = list(range(64*10))
-test_indices = list(range(64*5))
+train_indices = list(range(64 * 10))
+test_indices = list(range(64 * 5))
 
-dl_tr2, dl_ts2, _ = DataLoaderBuilder([transformed_textds,
-                                      transformed_textts]).build([{"batch_size": 16,
-                                                                   "sampler": SubsetRandomSampler(train_indices)},
-                                                                  {"batch_size": 16,
-                                                                   "sampler": SubsetRandomSampler(test_indices)}
-                                                                  ])
+dl_tr2, dl_ts2, _ = DataLoaderBuilder([transformed_textds, transformed_textts]).build(
+    [
+        {"batch_size": 16, "sampler": SubsetRandomSampler(train_indices)},
+        {"batch_size": 16, "sampler": SubsetRandomSampler(test_indices)},
+    ]
+)
 writer = SummaryWriter()
 
 
 class TextClassificationModel(nn.Module):
-
     def __init__(self, vocab_size, embed_dim, num_class):
         super(TextClassificationModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embed_dim, sparse=True)

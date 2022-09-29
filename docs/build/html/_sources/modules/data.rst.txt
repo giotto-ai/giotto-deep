@@ -3,7 +3,7 @@ Data
 
 .. automodule:: gdeep.data
    :members:
-   
+
 Preprocessors
 -------------
 

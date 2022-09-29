@@ -16,6 +16,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -48,7 +49,30 @@
 <li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="trainer.html">Trainer</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Search</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Search</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.search.Benchmark"><code class="docutils literal notranslate"><span class="pre">Benchmark</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.search.Benchmark.start"><code class="docutils literal notranslate"><span class="pre">Benchmark.start()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.search.GiottoSummaryWriter"><code class="docutils literal notranslate"><span class="pre">GiottoSummaryWriter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.search.GiottoSummaryWriter.add_hparams"><code class="docutils literal notranslate"><span class="pre">GiottoSummaryWriter.add_hparams()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.search.HPOConfig"><code class="docutils literal notranslate"><span class="pre">HPOConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.search.HPOConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">HPOConfig.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.search.HyperParameterOptimization"><code class="docutils literal notranslate"><span class="pre">HyperParameterOptimization</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.search.HyperParameterOptimization.start"><code class="docutils literal notranslate"><span class="pre">HyperParameterOptimization.start()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.search.TrainerConfig"><code class="docutils literal notranslate"><span class="pre">TrainerConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.search.TrainerConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">TrainerConfig.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.search.clean_up_files"><code class="docutils literal notranslate"><span class="pre">clean_up_files()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html">Utility</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
@@ -368,7 +392,7 @@ over the epochs averaged over the folds</p>
 </dd>
 <dt>pruner :</dt><dd><p>Instance of an optuna pruner, can be user-defined</p>
 </dd>
-<dt>sampler :</dt><dd><p>If left unspecified, <code class="docutils literal notranslate"><span class="pre">TPESample</span></code> is used during single-objective 
+<dt>sampler :</dt><dd><p>If left unspecified, <code class="docutils literal notranslate"><span class="pre">TPESample</span></code> is used during single-objective
 optimization and <code class="docutils literal notranslate"><span class="pre">NSGAIISampler</span></code> during multi-objective optimization</p>
 </dd>
 <dt>db_url:</dt><dd><p>name of the database to connect to. For example

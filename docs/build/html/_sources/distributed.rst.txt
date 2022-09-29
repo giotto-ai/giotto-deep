@@ -21,5 +21,3 @@ Starting distributed computations
 *********************************
 
 The distribution of computations is done automatically, you just to wrap all your HPO details inside a single file. In particular, in the ``/kubernetes/examples/`` folder you will find a notebook and a ``.py`` file. The ``.py`` file contains all the HPO relevant code, which you will have to customise following your needs. The notebook simply launches the enqueueing (and hence the jobs will run on the workers pods).
-
-

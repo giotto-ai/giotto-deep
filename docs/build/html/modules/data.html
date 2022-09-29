@@ -16,6 +16,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -46,9 +47,52 @@
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Data</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.preprocessors">Preprocessors</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.datasets">Datasets</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.persistence_diagrams">Persistence Diagrams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.data.AbstractPreprocessing"><code class="docutils literal notranslate"><span class="pre">AbstractPreprocessing</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.data.DatasetFactory"><code class="docutils literal notranslate"><span class="pre">DatasetFactory</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.DatasetFactory.build"><code class="docutils literal notranslate"><span class="pre">DatasetFactory.build()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.DatasetFactory.register_builder"><code class="docutils literal notranslate"><span class="pre">DatasetFactory.register_builder()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.data.MissingVocabularyError"><code class="docutils literal notranslate"><span class="pre">MissingVocabularyError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.data.PreprocessingPipeline"><code class="docutils literal notranslate"><span class="pre">PreprocessingPipeline</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.data.TransformingDataset"><code class="docutils literal notranslate"><span class="pre">TransformingDataset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.preprocessors">Preprocessors</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension"><code class="docutils literal notranslate"><span class="pre">FilterPersistenceDiagramByHomologyDimension</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime"><code class="docutils literal notranslate"><span class="pre">FilterPersistenceDiagramByLifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.MinMaxScalarPersistenceDiagram"><code class="docutils literal notranslate"><span class="pre">MinMaxScalarPersistenceDiagram</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.Normalization"><code class="docutils literal notranslate"><span class="pre">Normalization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.NormalizationPersistenceDiagram"><code class="docutils literal notranslate"><span class="pre">NormalizationPersistenceDiagram</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.ToTensorImage"><code class="docutils literal notranslate"><span class="pre">ToTensorImage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.TokenizerQA"><code class="docutils literal notranslate"><span class="pre">TokenizerQA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.TokenizerTextClassification"><code class="docutils literal notranslate"><span class="pre">TokenizerTextClassification</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.preprocessors.TokenizerTranslation"><code class="docutils literal notranslate"><span class="pre">TokenizerTranslation</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.datasets">Datasets</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.AbstractDataLoaderBuilder"><code class="docutils literal notranslate"><span class="pre">AbstractDataLoaderBuilder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderBuilder"><code class="docutils literal notranslate"><span class="pre">DataLoaderBuilder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderKwargs"><code class="docutils literal notranslate"><span class="pre">DataLoaderKwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.DatasetBuilder"><code class="docutils literal notranslate"><span class="pre">DatasetBuilder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.DatasetCloud"><code class="docutils literal notranslate"><span class="pre">DatasetCloud</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.DlBuilderFromDataCloud"><code class="docutils literal notranslate"><span class="pre">DlBuilderFromDataCloud</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.FromArray"><code class="docutils literal notranslate"><span class="pre">FromArray</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.ImageClassificationFromFiles"><code class="docutils literal notranslate"><span class="pre">ImageClassificationFromFiles</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.OrbitsGenerator"><code class="docutils literal notranslate"><span class="pre">OrbitsGenerator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.PersistenceDiagramFromFiles"><code class="docutils literal notranslate"><span class="pre">PersistenceDiagramFromFiles</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.Rotation"><code class="docutils literal notranslate"><span class="pre">Rotation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.ToriDataset"><code class="docutils literal notranslate"><span class="pre">ToriDataset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.create_pd_orbits"><code class="docutils literal notranslate"><span class="pre">create_pd_orbits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.generate_orbit_parallel"><code class="docutils literal notranslate"><span class="pre">generate_orbit_parallel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.datasets.get_dataset"><code class="docutils literal notranslate"><span class="pre">get_dataset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.data.persistence_diagrams">Persistence Diagrams</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram"><code class="docutils literal notranslate"><span class="pre">OneHotEncodedPersistenceDiagram</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.persistence_diagrams.collate_fn_persistence_diagrams"><code class="docutils literal notranslate"><span class="pre">collate_fn_persistence_diagrams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gtda"><code class="docutils literal notranslate"><span class="pre">get_one_hot_encoded_persistence_diagram_from_gtda()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gudhi_extended"><code class="docutils literal notranslate"><span class="pre">get_one_hot_encoded_persistence_diagram_from_gudhi_extended()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
@@ -235,7 +279,7 @@ in a way that breaks this invariant.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.data.preprocessors.MinMaxScalarPersistenceDiagram">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.preprocessors.</span></span><span class="sig-name descname"><span class="pre">MinMaxScalarPersistenceDiagram</span></span><a class="headerlink" href="#gdeep.data.preprocessors.MinMaxScalarPersistenceDiagram" title="Permalink to this definition"></a></dt>
-<dd><p>This class runs the standard min-max normalisation on the birth and death times 
+<dd><p>This class runs the standard min-max normalisation on the birth and death times
 of the persistence diagrams. For example. The transformation is:
 X_scaled = X_std * (max - min) + min</p>
 </dd></dl>
@@ -672,25 +716,25 @@ By default r is chosen from (2.5, 3.5, 4.0, 4.1, 4.3).
 Args:</p>
 <blockquote>
 <div><dl class="simple">
-<dt>parameters (Tuple[float]): </dt><dd><p>Hyperparameter of the dynamical systems.</p>
+<dt>parameters (Tuple[float]):</dt><dd><p>Hyperparameter of the dynamical systems.</p>
 </dd>
-<dt>num_orbits_per_class (int): </dt><dd><p>number of orbits per class.</p>
+<dt>num_orbits_per_class (int):</dt><dd><p>number of orbits per class.</p>
 </dd>
-<dt>num_pts_per_orbit (int): </dt><dd><p>number of points per orbit.</p>
+<dt>num_pts_per_orbit (int):</dt><dd><p>number of points per orbit.</p>
 </dd>
-<dt>homology_dimensions (Sequence[int]): </dt><dd><p>homology dimension of the persistence
+<dt>homology_dimensions (Sequence[int]):</dt><dd><p>homology dimension of the persistence
 diagrams.</p>
 </dd>
-<dt>validation_percentage (float, optional): </dt><dd><p>Percentage of the validation dataset.
+<dt>validation_percentage (float, optional):</dt><dd><p>Percentage of the validation dataset.
 Defaults to 0.0.</p>
 </dd>
-<dt>test_percentage (float, optional): </dt><dd><p>Percentage of the test dataset. Defaults to 0.0.</p>
+<dt>test_percentage (float, optional):</dt><dd><p>Percentage of the test dataset. Defaults to 0.0.</p>
 </dd>
-<dt>dynamical_system (str, optional): </dt><dd><p>either use persistence paths
+<dt>dynamical_system (str, optional):</dt><dd><p>either use persistence paths
 convention ´pp_convention´ or the classical convention
 ´classical_convention´. Defaults to ‘´classical_convention´’.</p>
 </dd>
-<dt>n_jobs (int, optional): </dt><dd><p>number of cpus to run the computation on. Defaults to 1.</p>
+<dt>n_jobs (int, optional):</dt><dd><p>number of cpus to run the computation on. Defaults to 1.</p>
 </dd>
 </dl>
 </div></blockquote>
@@ -701,7 +745,7 @@ convention ´pp_convention´ or the classical convention
 Returns:</p>
 <blockquote>
 <div><dl class="simple">
-<dt>DataLoader: </dt><dd><p>Dataloader of orbits and persistence diagrams</p>
+<dt>DataLoader:</dt><dd><p>Dataloader of orbits and persistence diagrams</p>
 </dd>
 </dl>
 </div></blockquote>
@@ -710,11 +754,11 @@ Returns:</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_dataloader_orbits">
 <span class="sig-name descname"><span class="pre">get_dataloader_orbits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderKwargs" title="gdeep.data.datasets.parallel_orbit.DataLoaderKwargs"><span class="pre">DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_dataloader_orbits" title="Permalink to this definition"></a></dt>
-<dd><p>Generates a Dataloader from the orbits dataset 
+<dd><p>Generates a Dataloader from the orbits dataset
 Returns:</p>
 <blockquote>
 <div><dl class="simple">
-<dt>DataLoader: </dt><dd><p>Dataloader of orbits</p>
+<dt>DataLoader:</dt><dd><p>Dataloader of orbits</p>
 </dd>
 </dl>
 </div></blockquote>
@@ -723,7 +767,7 @@ Returns:</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.data.datasets.OrbitsGenerator.get_dataloader_persistence_diagrams">
 <span class="sig-name descname"><span class="pre">get_dataloader_persistence_diagrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataloaders_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gdeep.data.datasets.DataLoaderKwargs" title="gdeep.data.datasets.parallel_orbit.DataLoaderKwargs"><span class="pre">DataLoaderKwargs</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">DataLoader</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#gdeep.data.datasets.OrbitsGenerator.get_dataloader_persistence_diagrams" title="Permalink to this definition"></a></dt>
-<dd><p>Generates a Dataloader from the persistence diagrams dataset 
+<dd><p>Generates a Dataloader from the persistence diagrams dataset
 Returns:</p>
 <blockquote>
 <div><dl class="simple">
@@ -741,7 +785,7 @@ Returns:</p>
 Returns:</p>
 <blockquote>
 <div><dl class="simple">
-<dt>np.ndarray: </dt><dd><p>Orbits</p>
+<dt>np.ndarray:</dt><dd><p>Orbits</p>
 </dd>
 </dl>
 </div></blockquote>
@@ -755,7 +799,7 @@ Returns:</p>
 Returns:</p>
 <blockquote>
 <div><dl class="simple">
-<dt>np.ndarray: </dt><dd><p>Persistence diagrams</p>
+<dt>np.ndarray:</dt><dd><p>Persistence diagrams</p>
 </dd>
 </dl>
 </div></blockquote>
@@ -794,19 +838,19 @@ family of tori-datasets</p>
 <dd><p>Computes the weak alpha persistence of the orbit data clouds.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>orbits (np.array): </dt><dd><p>Orbits of shape [n_points, 2]</p>
+<dt>orbits (np.array):</dt><dd><p>Orbits of shape [n_points, 2]</p>
 </dd>
-<dt>homology_dimensions (tuple, optional): </dt><dd><p>Dimensions to compute the
+<dt>homology_dimensions (tuple, optional):</dt><dd><p>Dimensions to compute the
 persistence diagrams.
 Defaults to (0, 1).</p>
 </dd>
-<dt>n_jobs (int, optional): </dt><dd><p>Number of cpus to use for parallel computation.
+<dt>n_jobs (int, optional):</dt><dd><p>Number of cpus to use for parallel computation.
 Defaults to multiprocessing.cpu_count().</p>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>np.array: </dt><dd><p>Array of persistence diagrams of shape
+<dt>np.array:</dt><dd><p>Array of persistence diagrams of shape
 [num_classes, num_orbits, num_persistence_points, 3].
 In the last dimension the first two values are the coordinates of
 the points in the persistence diagrams and the third is the
@@ -824,21 +868,21 @@ homology dimension.</p>
 in a parallel manner.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>num_classes (int): </dt><dd><p>number of classes of dynamical systems.</p>
+<dt>num_classes (int):</dt><dd><p>number of classes of dynamical systems.</p>
 </dd>
-<dt>num_orbits (int): </dt><dd><p>number of orbits of dynamical system per class.</p>
+<dt>num_orbits (int):</dt><dd><p>number of orbits of dynamical system per class.</p>
 </dd>
-<dt>num_pts_per_orbit (int, optional): </dt><dd><p>Number of points to generate.
+<dt>num_pts_per_orbit (int, optional):</dt><dd><p>Number of points to generate.
 Defaults to 100.</p>
 </dd>
-<dt>parameter (List[float], optional): </dt><dd><p>List of parameters of the dynamical
+<dt>parameter (List[float], optional):</dt><dd><p>List of parameters of the dynamical
 system.
 Defaults to [1.0].</p>
 </dd>
 </dl>
 </dd>
 <dt>Returns:</dt><dd><dl class="simple">
-<dt>np.ndarray: </dt><dd><p>Array of sampled points of the dynamical system.</p>
+<dt>np.ndarray:</dt><dd><p>Array of sampled points of the dynamical system.</p>
 </dd>
 </dl>
 </dd>
@@ -873,11 +917,35 @@ to the key in the list of builders</p>
 <dt class="sig sig-object py" id="gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.data.persistence_diagrams.</span></span><span class="sig-name descname"><span class="pre">OneHotEncodedPersistenceDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homology_dimension_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram" title="Permalink to this definition"></a></dt>
 <dd><p>This class represents a single one-hot encoded persistence diagram.</p>
-<dl class="simple">
+<dl>
 <dt>Args:</dt><dd><dl class="simple">
-<dt>data:</dt><dd><p>The data of the persistence diagram.</p>
+<dt>data:</dt><dd><p>The data of the persistence diagram. The data must be a tensor of shape
+(num_points, 2 + num_homology_dimensions) and the last dimension must be
+the concatenation of the birth-death-coordinates and the one-hot encoded homology 
+dimension.
+The invariants of the persistence diagram are checked in the constructor.</p>
+</dd>
+<dt>homology_dimension_names:</dt><dd><p>The names of the homology dimensions. If None, the names are set to H_0, H_1, …</p>
 </dd>
 </dl>
+</dd>
+<dt>Example::</dt><dd><dl class="simple">
+<dt>pd =  torch.tensor                      ([[0.0928, 0.0995, 0.0000, 0.0000, 1.0000, 0.0000],</dt><dd><p>[0.0916, 0.1025, 1.0000, 0.0000, 0.0000, 0.0000],
+[0.0978, 0.1147, 1.0000, 0.0000, 0.0000, 0.0000],
+[0.0978, 0.1147, 0.0000, 0.0000, 1.0000, 0.0000],
+[0.0916, 0.1162, 0.0000, 0.0000, 0.0000, 1.0000],
+[0.0740, 0.0995, 1.0000, 0.0000, 0.0000, 0.0000],
+[0.0728, 0.0995, 1.0000, 0.0000, 0.0000, 0.0000],
+[0.0740, 0.1162, 0.0000, 0.0000, 0.0000, 1.0000],
+[0.0728, 0.1162, 0.0000, 0.0000, 1.0000, 0.0000],
+[0.0719, 0.1343, 0.0000, 0.0000, 0.0000, 1.0000],
+[0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
+[0.0830, 0.2194, 1.0000, 0.0000, 0.0000, 0.0000],
+[0.0719, 0.2194, 0.0000, 1.0000, 0.0000, 0.0000]])</p>
+</dd>
+</dl>
+<p>names = [“Ord0”, “Ext0”, “Rel1”, “Ext1”]
+pd = OneHotEncodedPersistenceDiagram(pd, names)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -956,7 +1024,7 @@ This function should not be used to change the data.</p>
 <dd><p>This method plots the persistence diagram.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><dl class="simple">
-<dt>names: </dt><dd><p>The names of the homology dimensions.</p>
+<dt>names:</dt><dd><p>The names of the homology dimensions.</p>
 </dd>
 </dl>
 </dd>

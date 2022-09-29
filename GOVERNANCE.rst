@@ -18,4 +18,3 @@ Giotto-deep Project Team:
 
 Former Project Team Members:
 ----------------------------
-

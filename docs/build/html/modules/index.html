@@ -16,6 +16,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -87,30 +88,200 @@
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-gdeep.analysis.interpretability">Interpretability</a></li>
-<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-gdeep.analysis.decision_boundary">Decision Boundary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-gdeep.analysis.interpretability">Interpretability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.AttributionFactory"><code class="docutils literal notranslate"><span class="pre">AttributionFactory</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.Interpreter"><code class="docutils literal notranslate"><span class="pre">Interpreter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.interpretability.get_attr"><code class="docutils literal notranslate"><span class="pre">get_attr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-gdeep.analysis.decision_boundary">Decision Boundary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.decision_boundary.DecisionBoundaryCalculator"><code class="docutils literal notranslate"><span class="pre">DecisionBoundaryCalculator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.decision_boundary.GradientFlowDecisionBoundaryCalculator"><code class="docutils literal notranslate"><span class="pre">GradientFlowDecisionBoundaryCalculator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.decision_boundary.QuasihyperbolicDecisionBoundaryCalculator"><code class="docutils literal notranslate"><span class="pre">QuasihyperbolicDecisionBoundaryCalculator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="analysis.html#gdeep.analysis.decision_boundary.UniformlySampledPoint"><code class="docutils literal notranslate"><span class="pre">UniformlySampledPoint</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data.html#module-gdeep.data.preprocessors">Preprocessors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html#module-gdeep.data.datasets">Datasets</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html#module-gdeep.data.persistence_diagrams">Persistence Diagrams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#gdeep.data.AbstractPreprocessing"><code class="docutils literal notranslate"><span class="pre">AbstractPreprocessing</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#gdeep.data.DatasetFactory"><code class="docutils literal notranslate"><span class="pre">DatasetFactory</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.DatasetFactory.build"><code class="docutils literal notranslate"><span class="pre">DatasetFactory.build()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.DatasetFactory.register_builder"><code class="docutils literal notranslate"><span class="pre">DatasetFactory.register_builder()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a></li>
-<li class="toctree-l1"><a class="reference internal" href="search.html">Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#gdeep.data.MissingVocabularyError"><code class="docutils literal notranslate"><span class="pre">MissingVocabularyError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#gdeep.data.PreprocessingPipeline"><code class="docutils literal notranslate"><span class="pre">PreprocessingPipeline</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#gdeep.data.TransformingDataset"><code class="docutils literal notranslate"><span class="pre">TransformingDataset</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#module-gdeep.data.preprocessors">Preprocessors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.FilterPersistenceDiagramByHomologyDimension"><code class="docutils literal notranslate"><span class="pre">FilterPersistenceDiagramByHomologyDimension</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.FilterPersistenceDiagramByLifetime"><code class="docutils literal notranslate"><span class="pre">FilterPersistenceDiagramByLifetime</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.MinMaxScalarPersistenceDiagram"><code class="docutils literal notranslate"><span class="pre">MinMaxScalarPersistenceDiagram</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.Normalization"><code class="docutils literal notranslate"><span class="pre">Normalization</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.NormalizationPersistenceDiagram"><code class="docutils literal notranslate"><span class="pre">NormalizationPersistenceDiagram</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.ToTensorImage"><code class="docutils literal notranslate"><span class="pre">ToTensorImage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.TokenizerQA"><code class="docutils literal notranslate"><span class="pre">TokenizerQA</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.TokenizerTextClassification"><code class="docutils literal notranslate"><span class="pre">TokenizerTextClassification</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.preprocessors.TokenizerTranslation"><code class="docutils literal notranslate"><span class="pre">TokenizerTranslation</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#module-gdeep.data.datasets">Datasets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.AbstractDataLoaderBuilder"><code class="docutils literal notranslate"><span class="pre">AbstractDataLoaderBuilder</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.DataLoaderBuilder"><code class="docutils literal notranslate"><span class="pre">DataLoaderBuilder</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.DataLoaderKwargs"><code class="docutils literal notranslate"><span class="pre">DataLoaderKwargs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.DatasetBuilder"><code class="docutils literal notranslate"><span class="pre">DatasetBuilder</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.DatasetCloud"><code class="docutils literal notranslate"><span class="pre">DatasetCloud</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.DlBuilderFromDataCloud"><code class="docutils literal notranslate"><span class="pre">DlBuilderFromDataCloud</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.FromArray"><code class="docutils literal notranslate"><span class="pre">FromArray</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.ImageClassificationFromFiles"><code class="docutils literal notranslate"><span class="pre">ImageClassificationFromFiles</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.OrbitsGenerator"><code class="docutils literal notranslate"><span class="pre">OrbitsGenerator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.PersistenceDiagramFromFiles"><code class="docutils literal notranslate"><span class="pre">PersistenceDiagramFromFiles</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.Rotation"><code class="docutils literal notranslate"><span class="pre">Rotation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.ToriDataset"><code class="docutils literal notranslate"><span class="pre">ToriDataset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.create_pd_orbits"><code class="docutils literal notranslate"><span class="pre">create_pd_orbits()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.generate_orbit_parallel"><code class="docutils literal notranslate"><span class="pre">generate_orbit_parallel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.datasets.get_dataset"><code class="docutils literal notranslate"><span class="pre">get_dataset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#module-gdeep.data.persistence_diagrams">Persistence Diagrams</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.persistence_diagrams.OneHotEncodedPersistenceDiagram"><code class="docutils literal notranslate"><span class="pre">OneHotEncodedPersistenceDiagram</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.persistence_diagrams.collate_fn_persistence_diagrams"><code class="docutils literal notranslate"><span class="pre">collate_fn_persistence_diagrams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gtda"><code class="docutils literal notranslate"><span class="pre">get_one_hot_encoded_persistence_diagram_from_gtda()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html#gdeep.data.persistence_diagrams.get_one_hot_encoded_persistence_diagram_from_gudhi_extended"><code class="docutils literal notranslate"><span class="pre">get_one_hot_encoded_persistence_diagram_from_gudhi_extended()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#gdeep.models.FFNet"><code class="docutils literal notranslate"><span class="pre">FFNet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.FFNet.forward"><code class="docutils literal notranslate"><span class="pre">FFNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#gdeep.models.ModelExtractor"><code class="docutils literal notranslate"><span class="pre">ModelExtractor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.ModelExtractor.get_activations"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_activations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.ModelExtractor.get_decision_boundary"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_decision_boundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.ModelExtractor.get_gradients"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_gradients()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.ModelExtractor.get_layers_grads"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_layers_grads()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.ModelExtractor.get_layers_param"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_layers_param()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#gdeep.models.PeriodicNeuralNetwork"><code class="docutils literal notranslate"><span class="pre">PeriodicNeuralNetwork</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="models.html#gdeep.models.PeriodicNeuralNetwork.forward"><code class="docutils literal notranslate"><span class="pre">PeriodicNeuralNetwork.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#gdeep.models.SaveLayerOutput"><code class="docutils literal notranslate"><span class="pre">SaveLayerOutput</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#gdeep.models.SaveNodeOutput"><code class="docutils literal notranslate"><span class="pre">SaveNodeOutput</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#gdeep.models.SaveOutput"><code class="docutils literal notranslate"><span class="pre">SaveOutput</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="trainer.html">Trainer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer"><code class="docutils literal notranslate"><span class="pre">Trainer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer.copy_dataloader_params"><code class="docutils literal notranslate"><span class="pre">Trainer.copy_dataloader_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer.evaluate_classification"><code class="docutils literal notranslate"><span class="pre">Trainer.evaluate_classification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer.parallel_tpu_training_loops"><code class="docutils literal notranslate"><span class="pre">Trainer.parallel_tpu_training_loops()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer.register_pipe_hook"><code class="docutils literal notranslate"><span class="pre">Trainer.register_pipe_hook()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trainer.html#gdeep.trainer.Trainer.train"><code class="docutils literal notranslate"><span class="pre">Trainer.train()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="trainer.html#gdeep.trainer.TrainerConfig"><code class="docutils literal notranslate"><span class="pre">TrainerConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="trainer.html#gdeep.trainer.TrainerConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">TrainerConfig.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="trainer.html#gdeep.trainer.accuracy"><code class="docutils literal notranslate"><span class="pre">accuracy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="search.html">Search</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="search.html#gdeep.search.Benchmark"><code class="docutils literal notranslate"><span class="pre">Benchmark</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="search.html#gdeep.search.Benchmark.start"><code class="docutils literal notranslate"><span class="pre">Benchmark.start()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="search.html#gdeep.search.GiottoSummaryWriter"><code class="docutils literal notranslate"><span class="pre">GiottoSummaryWriter</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="search.html#gdeep.search.GiottoSummaryWriter.add_hparams"><code class="docutils literal notranslate"><span class="pre">GiottoSummaryWriter.add_hparams()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="search.html#gdeep.search.HPOConfig"><code class="docutils literal notranslate"><span class="pre">HPOConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="search.html#gdeep.search.HPOConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">HPOConfig.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="search.html#gdeep.search.HyperParameterOptimization"><code class="docutils literal notranslate"><span class="pre">HyperParameterOptimization</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="search.html#gdeep.search.HyperParameterOptimization.start"><code class="docutils literal notranslate"><span class="pre">HyperParameterOptimization.start()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="search.html#gdeep.search.TrainerConfig"><code class="docutils literal notranslate"><span class="pre">TrainerConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="search.html#gdeep.search.TrainerConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">TrainerConfig.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="search.html#gdeep.search.clean_up_files"><code class="docutils literal notranslate"><span class="pre">clean_up_files()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="topology_layers.html">Topology Layers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topology_layers.html#gdeep.topology_layers.Persformer"><code class="docutils literal notranslate"><span class="pre">Persformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topology_layers.html#gdeep.topology_layers.Persformer.build_model"><code class="docutils literal notranslate"><span class="pre">Persformer.build_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topology_layers.html#gdeep.topology_layers.Persformer.forward"><code class="docutils literal notranslate"><span class="pre">Persformer.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topology_layers.html#gdeep.topology_layers.PersformerConfig"><code class="docutils literal notranslate"><span class="pre">PersformerConfig</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology_layers.html#gdeep.topology_layers.PersformerWrapper"><code class="docutils literal notranslate"><span class="pre">PersformerWrapper</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topology_layers.html#gdeep.topology_layers.PersformerWrapper.forward"><code class="docutils literal notranslate"><span class="pre">PersformerWrapper.forward()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html#attention">Attention</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html#pooling-layers">Pooling Layers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="utility.html#module-gdeep.utility.optimisation">Persistence Gradient</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utility.html#module-gdeep.utility.extended_persistence">Extended Persistence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.ActivationFunction"><code class="docutils literal notranslate"><span class="pre">ActivationFunction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.AttentionType"><code class="docutils literal notranslate"><span class="pre">AttentionType</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.KnownWarningSilencer"><code class="docutils literal notranslate"><span class="pre">KnownWarningSilencer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.LayerNormStyle"><code class="docutils literal notranslate"><span class="pre">LayerNormStyle</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.PoolerType"><code class="docutils literal notranslate"><span class="pre">PoolerType</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.autoreload_if_notebook"><code class="docutils literal notranslate"><span class="pre">autoreload_if_notebook()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.ensemble_wrapper"><code class="docutils literal notranslate"><span class="pre">ensemble_wrapper()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.get_parameter_types"><code class="docutils literal notranslate"><span class="pre">get_parameter_types()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.get_return_type"><code class="docutils literal notranslate"><span class="pre">get_return_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.is_notebook"><code class="docutils literal notranslate"><span class="pre">is_notebook()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.save_model_and_optimizer"><code class="docutils literal notranslate"><span class="pre">save_model_and_optimizer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#gdeep.utility.torch_transform"><code class="docutils literal notranslate"><span class="pre">torch_transform()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#module-gdeep.utility.optimisation">Persistence Gradient</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="utility.html#gdeep.utility.optimisation.MissingClosureError"><code class="docutils literal notranslate"><span class="pre">MissingClosureError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utility.html#gdeep.utility.optimisation.PersistenceGradient"><code class="docutils literal notranslate"><span class="pre">PersistenceGradient</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utility.html#gdeep.utility.optimisation.SAM"><code class="docutils literal notranslate"><span class="pre">SAM</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utility.html#gdeep.utility.optimisation.SAMOptimizer"><code class="docutils literal notranslate"><span class="pre">SAMOptimizer</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#module-gdeep.utility.extended_persistence">Extended Persistence</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="utility.html#gdeep.utility.extended_persistence.graph_extended_persistence_hks"><code class="docutils literal notranslate"><span class="pre">graph_extended_persistence_hks()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualisation.html">Visualisation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Compactification"><code class="docutils literal notranslate"><span class="pre">Compactification</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Compactification.create_final_distance_matrix"><code class="docutils literal notranslate"><span class="pre">Compactification.create_final_distance_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Compactification.plot_chart"><code class="docutils literal notranslate"><span class="pre">Compactification.plot_chart()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser"><code class="docutils literal notranslate"><span class="pre">Visualiser</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_3d_dataset"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_3d_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_activations"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_activations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_attribution"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_attribution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_attributions_persistence_diagrams"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_attributions_persistence_diagrams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_betti_curves_layers"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_betti_curves_layers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_betti_numbers_layers"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_betti_numbers_layers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_betti_surface_layers"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_betti_surface_layers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_decision_boundary"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_decision_boundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_feature_importance"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_feature_importance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_interactive_model"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_interactive_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_interpreter_image"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_interpreter_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_interpreter_text"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_interpreter_text()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_persistence_diagrams"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_persistence_diagrams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualisation.html#gdeep.visualisation.Visualiser.plot_self_attention"><code class="docutils literal notranslate"><span class="pre">Visualiser.plot_self_attention()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="visualisation.html#gdeep.visualisation.persistence_diagrams_of_activations"><code class="docutils literal notranslate"><span class="pre">persistence_diagrams_of_activations()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualisation.html#gdeep.visualisation.plotly2tensor"><code class="docutils literal notranslate"><span class="pre">plotly2tensor()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div>
 <section id="references">

@@ -39,4 +39,3 @@ jobs:
         git add -f docs/build
         git commit -m "push sphinx build"
         git push origin gh-pages
-

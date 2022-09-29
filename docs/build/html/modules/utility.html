@@ -16,6 +16,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -52,8 +53,29 @@
 <li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Utility</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.utility.optimisation">Persistence Gradient</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.utility.extended_persistence">Extended Persistence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.ActivationFunction"><code class="docutils literal notranslate"><span class="pre">ActivationFunction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.AttentionType"><code class="docutils literal notranslate"><span class="pre">AttentionType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.KnownWarningSilencer"><code class="docutils literal notranslate"><span class="pre">KnownWarningSilencer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.LayerNormStyle"><code class="docutils literal notranslate"><span class="pre">LayerNormStyle</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.PoolerType"><code class="docutils literal notranslate"><span class="pre">PoolerType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.autoreload_if_notebook"><code class="docutils literal notranslate"><span class="pre">autoreload_if_notebook()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.ensemble_wrapper"><code class="docutils literal notranslate"><span class="pre">ensemble_wrapper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.get_parameter_types"><code class="docutils literal notranslate"><span class="pre">get_parameter_types()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.get_return_type"><code class="docutils literal notranslate"><span class="pre">get_return_type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.is_notebook"><code class="docutils literal notranslate"><span class="pre">is_notebook()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.save_model_and_optimizer"><code class="docutils literal notranslate"><span class="pre">save_model_and_optimizer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.utility.torch_transform"><code class="docutils literal notranslate"><span class="pre">torch_transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.utility.optimisation">Persistence Gradient</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.utility.optimisation.MissingClosureError"><code class="docutils literal notranslate"><span class="pre">MissingClosureError</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.utility.optimisation.PersistenceGradient"><code class="docutils literal notranslate"><span class="pre">PersistenceGradient</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.utility.optimisation.SAM"><code class="docutils literal notranslate"><span class="pre">SAM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.utility.optimisation.SAMOptimizer"><code class="docutils literal notranslate"><span class="pre">SAMOptimizer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-gdeep.utility.extended_persistence">Extended Persistence</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.utility.extended_persistence.graph_extended_persistence_hks"><code class="docutils literal notranslate"><span class="pre">graph_extended_persistence_hks()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="visualisation.html">Visualisation</a></li>

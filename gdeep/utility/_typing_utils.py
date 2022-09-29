@@ -10,12 +10,12 @@ Tensor = torch.Tensor
 def torch_transform(
     transform: Union[Callable[[Tensor], Tensor], Callable[[ndarray], ndarray]]
 ) -> Callable[[Tensor], Tensor]:
-    """ Transforms a numpy array transform to a torch transform. 
-    
+    """Transforms a numpy array transform to a torch transform.
+
     Args:
         transform: Either a callable that takes a numpy array and returns a
             numpy array or a callable that takes a tensor and returns a tensor.
-        
+
     Returns:
         The torch transform.
     """
@@ -38,8 +38,8 @@ def torch_transform(
 
 
 def get_parameter_types(func: Callable) -> List[Any]:
-    """ Returns a list of the types of the parameters of a function. 
-    
+    """Returns a list of the types of the parameters of a function.
+
     Args:
         func: The function to get the types of the parameters of.
     Returns:
@@ -49,11 +49,11 @@ def get_parameter_types(func: Callable) -> List[Any]:
 
 
 def get_return_type(func: Callable) -> Any:
-    """ Returns the type of the return value of a function.
-     
+    """Returns the type of the return value of a function.
+
     Args:
         func: The function to get the type of the return value of.
-        
+
     Returns:
         The type of the return value of the function.
     """

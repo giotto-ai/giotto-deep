@@ -20,14 +20,14 @@ docker push matteocao/giotto-deep:gdeep-lab
 All the config files should work out of the blue, just follow these steps:
  1. Move all the files to the kubernetes master server
  2. Set up a persistent machine for volume (no need if using `minikube` on local for testing):
- 
+
 ```
 gcloud compute disks create --size=200GB my-data-disk --region us-central1 --replica-zones us-central1-a,us-central1-b
 ```
 
  3. Create namespace `kubectl create namespace main`
  4. Run the following commands, in this order:
- 
+
 ```
 kubectl create -f namespace-main.json
 kubectl apply -f pv-volume.yaml  # or kubectl apply -f pv-volume-gcp.yaml if on GCP
@@ -38,12 +38,12 @@ kubectl apply -f tensorboard.yaml
 kubectl apply -f gdeep-lab.yaml
 kubectl apply -f redis.yaml
 kubectl apply -f rq-worker.yaml  # to run the workers; if you change the location of the parallel_hpo.py file, make sure to change the --path here!
-kubectl apply -f lab-ingress.yaml 
+kubectl apply -f lab-ingress.yaml
 ```
- 
+
  5. Connect to  `<ingress_external_ip>/one:8888` to access jupyter lab. The token is `abcd`. Alternatively, on minikube, please run `minikube service gdeep-lab-service --url -n main` and you will see the URL at the terminal
  6. Connect to `<ingress_external_ip>/ssh_one` if you want to access via ssh. For ssh:
- 
+
 ```
 user: matteo
 psw: i_like_giotto
@@ -52,11 +52,11 @@ From `minikube` us the same command as point 5.
 
  7.  (Optional) scale up or down the workers (*change the number of replicas*):
 ```
-kubectl scale deployment gdeep-rq-worker-deployment --replicas=0
+kubectl scale deployment gdeep-rq-worker-deployment --replicas=0 -n main
 ```
 
  8. Access the jupyter lab service and in the giotto-deep folder (the volume!) you can `git clone https://github.com/giotto-ai/giotto-deep.git` and also `pip install giotto-deep`.
- 9. Run the `giotto-deep/kubernetes/examples/parallel_hpo.ipynb` notebook and see the parallelisation happening! 
+ 9. Run the `giotto-deep/kubernetes/examples/parallel_hpo.ipynb` notebook and see the parallelisation happening!
  10. To check the results, use the tensorboard service: on minikube you can do `minikube service gdeep-tensorboard-service --url -n main`, while on K8 you can simply go to `<ingress_external_ip>/one:8080`
 
 # Set-up Minikube
@@ -82,7 +82,7 @@ or
 kubectl delete service gdeep-lab-service-1 --namespace main
 ```
 
-Afterwards, the cluster is up and running, except for the ingress, which `minikube` does not support. 
+Afterwards, the cluster is up and running, except for the ingress, which `minikube` does not support.
 To check the cluster status simply run:
 
 ```
@@ -136,9 +136,9 @@ minikube delete --all
 ```
 
 ## Working on different machines
- 
+
 You can scale-up workers by changing the number of replicas of the RQ workers deployment (see point 7 above). You can add, to each worker, GPUs or other computing hardware.
- 
+
 # Distributing HPO
 
 To run hyperparameters optimisations in parallel, we need the support of a `mysql` database. To connect to such database, you need to run the python script follow the instruction on `parallel_hpo.ipynb` from the jupyter-lab instance. The script connects optuna to the database. You will need to set up:
@@ -148,9 +148,9 @@ To run hyperparameters optimisations in parallel, we need the support of a `mysq
 You can find the parameters `<mysql_internal_ip>` and `<redis_internal_ip>` by looking at your cluster with `kubectl get all --namespace main` and checking the `ClusterIP` of the `service/mysql-service` and `service/redis-service`.
 Finally, to parallelise the optuna computations, recall to set the parameters in the `HyperParameterOptimisation.__init__`:
  ```
-study_name="distributed-example", 
+study_name="distributed-example",
 db_url="mysql+mysqldb://root:password@<mysql_internal_ip>:3306/example",
  ```
- 
+
 Note that such parameters are already set up in the functions provided: you just need to initialise the variables `USER` and `PSW`
 where you have only to change `<mysql_internal_ip>` with the ClusterIP found before.

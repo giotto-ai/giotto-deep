@@ -16,6 +16,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -46,7 +47,28 @@
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data.html">Data</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.models.FFNet"><code class="docutils literal notranslate"><span class="pre">FFNet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.FFNet.forward"><code class="docutils literal notranslate"><span class="pre">FFNet.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.models.ModelExtractor"><code class="docutils literal notranslate"><span class="pre">ModelExtractor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.ModelExtractor.get_activations"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_activations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.ModelExtractor.get_decision_boundary"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_decision_boundary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.ModelExtractor.get_gradients"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_gradients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.ModelExtractor.get_layers_grads"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_layers_grads()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.ModelExtractor.get_layers_param"><code class="docutils literal notranslate"><span class="pre">ModelExtractor.get_layers_param()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.models.PeriodicNeuralNetwork"><code class="docutils literal notranslate"><span class="pre">PeriodicNeuralNetwork</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gdeep.models.PeriodicNeuralNetwork.forward"><code class="docutils literal notranslate"><span class="pre">PeriodicNeuralNetwork.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.models.SaveLayerOutput"><code class="docutils literal notranslate"><span class="pre">SaveLayerOutput</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.models.SaveNodeOutput"><code class="docutils literal notranslate"><span class="pre">SaveNodeOutput</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gdeep.models.SaveOutput"><code class="docutils literal notranslate"><span class="pre">SaveOutput</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="trainer.html">Trainer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
@@ -86,7 +108,7 @@
 <span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.FFNet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch=(2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation=&lt;function</span> <span class="pre">relu&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
 <dd><p>This is the class to build a custom feed
 forward network that is easily built from an array,
 in which the number and dimensions of the layers is specified.

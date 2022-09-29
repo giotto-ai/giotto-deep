@@ -30,8 +30,12 @@ def knn_distance_matrix(x: List, k: int = 3):
 
 
 def persistence_diagrams_of_activations(
-        activations_list: List[Tensor], homology_dimensions: Optional[List[int]] = None, k: int = 5,
-        mode: str = "VR", max_edge_length: int = 10) -> List[Any]:
+    activations_list: List[Tensor],
+    homology_dimensions: Optional[List[int]] = None,
+    k: int = 5,
+    mode: str = "VR",
+    max_edge_length: int = 10,
+) -> List[Any]:
     """Returns list of persistence diagrams of the activations of all
     layers of type layer_types
 
@@ -102,20 +106,26 @@ def persistence_diagrams_of_activations(
     return persistence_diagrams
 
 
-def _simplified_persistence_of_activations(inputs: List[Tensor], homology_dimensions: List[int],
-                                           filtration_value: float, **kwargs):
+def _simplified_persistence_of_activations(
+    inputs: List[Tensor],
+    homology_dimensions: List[int],
+    filtration_value: float,
+    **kwargs
+):
     """this method filters out the distances between the input points that are below the
     filtration value and sets to 1 those that are above it. This is useful for a simplified
     computation of homology"""
     vr = VietorisRipsPersistence(
-        homology_dimensions=homology_dimensions,
-        metric="precomputed",
-        **kwargs
+        homology_dimensions=homology_dimensions, metric="precomputed", **kwargs
     )
 
     activations_list_array = _convert_list_of_tensor_to_numpy(inputs)
-    activations_distances = [pairwise_distances(x.reshape((x.shape[0], -1))) for x in activations_list_array]
-    activations_filtered_distances = [(array > filtration_value) * 1. for array in activations_distances]
+    activations_distances = [
+        pairwise_distances(x.reshape((x.shape[0], -1))) for x in activations_list_array
+    ]
+    activations_filtered_distances = [
+        (array > filtration_value) * 1.0 for array in activations_distances
+    ]
 
     simplified_persistence_diagrams = vr.fit_transform(activations_filtered_distances)
     return simplified_persistence_diagrams

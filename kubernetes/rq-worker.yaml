@@ -25,7 +25,7 @@ spec:
         volumeMounts:
         - mountPath: "/giotto-deep"
           name: task-pv-storage
-        command: ["rq"] 
+        command: ["rq"]
         args: ["worker", "--url", "redis://redis-service", "--path", "/giotto-deep/giotto-deep/kubernetes/examples", "high", "default", "low"]
 ---
 apiVersion: v1

@@ -20,8 +20,7 @@ class DecisionBoundaryCalculator(ABC):
 
     @abstractmethod
     def step(self, number_of_steps=1):
-        """ Performs a single step towards the decision boundary
-        """
+        """Performs a single step towards the decision boundary"""
         pass
 
     @abstractmethod
@@ -49,6 +48,7 @@ class DecisionBoundaryCalculator(ABC):
         elif output_shape[-1] == 2:
             new_model = lambda x: torch.abs(model(x)[:, 0] - 0.5)
         else:
+
             def new_model(x):
                 y = torch.topk(model(x), 2).values
                 return y[:, 0] - y[:, 1]
@@ -72,9 +72,13 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
             Function returning an optimizer for the params given as an
             argument.
     """
-    def __init__(self, model: Callable[[torch.Tensor], torch.Tensor],
-                 initial_points: torch.Tensor,
-                 optimizer: Callable[[list], torch.optim.Optimizer]):
+
+    def __init__(
+        self,
+        model: Callable[[torch.Tensor], torch.Tensor],
+        initial_points: torch.Tensor,
+        optimizer: Callable[[list], torch.optim.Optimizer],
+    ):
 
         self.sample_points = initial_points.to(DEVICE)
         self.sample_points.requires_grad = True
@@ -82,30 +86,29 @@ class GradientFlowDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         output_shape = output.size()
 
         if not len(output_shape) in [1, 2]:
-            raise RuntimeError('Output of model has wrong size!')
+            raise RuntimeError("Output of model has wrong size!")
         # Convert `model` to `self.model` with squared generalized distance
         # to the decision boundary as output.
         new_model = self._convert_to_distance_to_boundary(model, output_shape)
-        self.model = lambda x: new_model(x)**2
+        self.model = lambda x: new_model(x) ** 2
         # Check if self.model has the right output shape
-        assert len(self.model(self.sample_points).size()) == 1, \
-            f'Output shape is {self.model(self.sample_points).size()}'
+        assert (
+            len(self.model(self.sample_points).size()) == 1
+        ), f"Output shape is {self.model(self.sample_points).size()}"
 
         self.optimizer = optimizer([self.sample_points])
 
     def step(self, number_of_steps=1):
-        """Performs the indicated number of steps towards the decision boundary
-        """
+        """Performs the indicated number of steps towards the decision boundary"""
         print("Executing the decision boundary computations:")
         for j in range(number_of_steps):
-            print("Step: " + str(j) + "/" + str(number_of_steps),
-                  end ='\r')
+            print("Step: " + str(j) + "/" + str(number_of_steps), end="\r")
             self.optimizer.zero_grad()
             loss = torch.sum(self.model(self.sample_points)).to(DEVICE)
             loss.backward()
-            #if DEVICE.type == "xla":
+            # if DEVICE.type == "xla":
             #    xm.optimizer_step(self.optimizer, barrier=True)  # Note: Cloud TPU-specific code!
-            #else:
+            # else:
             self.optimizer.step()
 
     def get_decision_boundary(self) -> torch.Tensor:
@@ -120,10 +123,14 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
     """
     Computes Decision Boundary by emanating quasihyperbolic geodesics
     """
-    def __init__(self, model: Callable[[torch.Tensor], torch.Tensor],
-                 initial_points: torch.Tensor,
-                 initial_vectors: torch.Tensor,
-                 integrator=None):
+
+    def __init__(
+        self,
+        model: Callable[[torch.Tensor], torch.Tensor],
+        initial_points: torch.Tensor,
+        initial_vectors: torch.Tensor,
+        integrator=None,
+    ):
         """
         Args:
             model (Callable[[torch.Tensor], torch.Tensor]):
@@ -150,19 +157,18 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         output_shape = output.size()
 
         if not len(output_shape) in [1, 2]:
-            raise RuntimeError('Output of model has wrong size!')
+            raise RuntimeError("Output of model has wrong size!")
         # Convert `model` to `self.model` with generalized distance
         # to the decision boundary as output.
-        self.model = self._convert_to_distance_to_boundary(model,
-                                                           output_shape)
+        self.model = self._convert_to_distance_to_boundary(model, output_shape)
 
         # Check if `self.model` has the right output shape
         distance_function = self.model(self.points)
-        assert len(distance_function.size()) == 1, \
-            f'Output shape is {distance_function.size()}'
+        assert (
+            len(distance_function.size()) == 1
+        ), f"Output shape is {distance_function.size()}"
         # Normalize tangent vectors in quasihyperbolic metric
-        self.vectors = initial_vectors * \
-            distance_function.unsqueeze(-1)
+        self.vectors = initial_vectors * distance_function.unsqueeze(-1)
 
         self.integrator = integrator
 
@@ -190,11 +196,9 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
             gradient_log_delta = gradient(y)
 
             # quasi-hyperbolic geodesic equation see markdown comment
-            ddy = 2*torch.einsum('bi,bi,bj->bj',
-                                 gradient_log_delta,
-                                 dy, dy) - \
-                torch.einsum('bi,bj,bj->bi', gradient_log_delta,
-                             dy, dy)
+            ddy = 2 * torch.einsum(
+                "bi,bi,bj->bj", gradient_log_delta, dy, dy
+            ) - torch.einsum("bi,bj,bj->bi", gradient_log_delta, dy, dy)
             return torch.stack((dy, ddy))
 
         ode_initial_conditions = torch.stack((self.points, self.vectors))
@@ -202,14 +206,17 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
         step_size = 1e-1
         # t = torch.arange(0, 3e0, 2e-3)
 
-        ode_solver_output = odeint(odes, ode_initial_conditions,
-                                   torch.tensor([0,
-                                                 number_of_steps
-                                                 * step_size],
-                                   dtype=self.points.dtype,
-                                   device=self.points.device),
-                                   method='rk4',
-                                   options=dict(step_size=step_size))
+        ode_solver_output = odeint(
+            odes,
+            ode_initial_conditions,
+            torch.tensor(
+                [0, number_of_steps * step_size],
+                dtype=self.points.dtype,
+                device=self.points.device,
+            ),
+            method="rk4",
+            options=dict(step_size=step_size),
+        )
         self.points = ode_solver_output[1, 0]
         self.vectors = ode_solver_output[1, 1]
 

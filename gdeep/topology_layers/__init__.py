@@ -5,9 +5,9 @@ from .persformer import Persformer
 from .persformer_wrapper import PersformerWrapper
 
 __all__ = [
-    'PersformerConfig',
-    'Persformer',
-    'PersformerWrapper',
+    "PersformerConfig",
+    "Persformer",
+    "PersformerWrapper",
     "attention",
-    "pooling_layers"
+    "pooling_layers",
 ]

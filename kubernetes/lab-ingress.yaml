@@ -22,7 +22,7 @@ spec:
             backend:
               service:
                 name: gdeep-lab-service
-                port: 
+                port:
                   number: 22
           - path: /plot
             pathType: Prefix

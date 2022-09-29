@@ -10,12 +10,12 @@ from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 from ..dataset_factory import DatasetFactory
 
 Tensor = torch.Tensor
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class TorchvisionDatasetBuilder(object):
     """Builder class for the torchvision dataset
-        and all its variations"""
+    and all its variations"""
 
     def __init__(self, dataset_name: str):
         self.dataset_name = dataset_name
@@ -28,7 +28,7 @@ class TorchvisionDatasetBuilder(object):
 
 class TorchtextDatasetBuilder(object):
     """Builder class for the torchtext dataset
-        and all its variations"""
+    and all its variations"""
 
     def __init__(self, dataset_name: str):
         self.dataset_name = dataset_name
@@ -51,7 +51,7 @@ class ToriDatasetBuilder(object):
 
 
 def get_dataset(key: str, **kwargs) -> Tuple[Dataset[Any]]:
-    """ Get a dataset from the factory
+    """Get a dataset from the factory
 
     Args:
         key :
@@ -94,17 +94,20 @@ class DatasetBuilder:
             IterableDataset
 
     """
+
     train_ds: Dataset[Any]
     valid_ds: Optional[Dataset[Any]]
     test_ds: Optional[Dataset[Any]]
 
-    def __init__(self, name: str = "MNIST", convert_to_map_dataset: bool = False) -> None:
+    def __init__(
+        self, name: str = "MNIST", convert_to_map_dataset: bool = False
+    ) -> None:
         self.convert_to_map_dataset = convert_to_map_dataset
         self.name = name
 
-    def build(self, **kwargs) -> Tuple[Dataset[Any],
-                                       Optional[Dataset[Any]],
-                                       Optional[Dataset[Any]]]:
+    def build(
+        self, **kwargs
+    ) -> Tuple[Dataset[Any], Optional[Dataset[Any]], Optional[Dataset[Any]]]:
         """Method that returns the dataset.
 
         Args:
@@ -133,16 +136,17 @@ class DatasetBuilder:
             self.test_ds = None
 
         if self.convert_to_map_dataset:
-            self.train_ds, self.valid_ds, self.test_ds = self._convert(self.train_ds,
-                                                                       self.valid_ds,
-                                                                       self.test_ds)
+            self.train_ds, self.valid_ds, self.test_ds = self._convert(
+                self.train_ds, self.valid_ds, self.test_ds
+            )
         return self.train_ds, self.valid_ds, self.test_ds
 
-    def _convert(self, training_data: Dataset[Any],
-                 validation_data: Optional[Dataset[Any]] = None,
-                 test_data: Optional[Dataset[Any]] = None) -> Tuple[Dataset[Any],
-                                                                    Optional[Dataset[Any]],
-                                                                    Optional[Dataset[Any]]]:
+    def _convert(
+        self,
+        training_data: Dataset[Any],
+        validation_data: Optional[Dataset[Any]] = None,
+        test_data: Optional[Dataset[Any]] = None,
+    ) -> Tuple[Dataset[Any], Optional[Dataset[Any]], Optional[Dataset[Any]]]:
         """This private method converts and IterableDataset
         to a MapDataset"""
         if isinstance(training_data, torch.utils.data.IterableDataset):
@@ -156,7 +160,9 @@ class DatasetBuilder:
         return training_data, validation_data, test_data
 
     @staticmethod
-    def _to_map_style_dataset(dataset: Union[Dataset, IterDataPipe]) -> Union[Dataset, MapDataPipe]:
+    def _to_map_style_dataset(
+        dataset: Union[Dataset, IterDataPipe]
+    ) -> Union[Dataset, MapDataPipe]:
         """our version of to_map_style_dataset, with the
         possibility to handle DataPipe and Dataset as well
         """

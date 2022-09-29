@@ -32,7 +32,7 @@ The simplest way to install ``giotto-deep`` is using ``pip``   ::
 
     python -m pip install -U giotto-deep
 
-If necessary, this command will also automatically install all the above dependencies. 
+If necessary, this command will also automatically install all the above dependencies.
 Note: we recommend upgrading ``pip`` to a recent version as the above may fail on very old versions.
 
 **********************
@@ -69,7 +69,7 @@ After installation, you can launch the test suite from inside the
 ``/gdeep`` directory::
 
     pytest .
-    
+
 You can also run the typing checks from ``/gdeep`` using::
 
    mypy --ignore-missing-imports .
@@ -77,6 +77,3 @@ You can also run the typing checks from ``/gdeep`` using::
 You can also run the bash script for local tests (from the root folder!) like this::
 
    bash local_test.bh
-
-
-

@@ -17,11 +17,8 @@ def connect_to_mysql(usr: str, psw: str, host: str) -> None:
             IP of the host. Port is 3306
     """
     import mysql.connector
-    mydb = mysql.connector.connect(
-        host=host,
-        user=usr,
-        password=psw
-    )
+
+    mydb = mysql.connector.connect(host=host, user=usr, password=psw)
 
     print(mydb)
     mycursor = mydb.cursor()
@@ -64,4 +61,3 @@ def run_hpo_in_parallel(q: Queue, fnc: Callable, args: List[Any], number: int) -
     """
     for _ in range(number):
         q.enqueue(fnc, args=args, retry=Retry(max=3))
-

@@ -43,6 +43,7 @@ class Compactification:
             the trained network of which to compute
             the boundary
     """
+
     patches: List
     list_of_pts_in_patches: List
     label_final: List
@@ -75,9 +76,7 @@ class Compactification:
         self.check_compute_charts = False
 
     @staticmethod
-    def _transition_to_patch(
-        sample_points_tensor: Tensor, i: int
-    ) -> Tensor:
+    def _transition_to_patch(sample_points_tensor: Tensor, i: int) -> Tensor:
         stacking_list = []
         if i == -1:
             points = sample_points_tensor

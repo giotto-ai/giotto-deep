@@ -3,18 +3,31 @@ from typing import Callable, Dict, Optional
 from transformers.configuration_utils import PretrainedConfig
 import torch
 import torch.nn as nn
-from torch.nn import Module, MultiheadAttention, Linear, Sequential, LayerNorm, Dropout, ModuleList
+from torch.nn import (
+    Module,
+    MultiheadAttention,
+    Linear,
+    Sequential,
+    LayerNorm,
+    Dropout,
+    ModuleList,
+)
 
-from gdeep.utility.enum_types import ActivationFunction, PoolerType, AttentionType, LayerNormStyle
+from gdeep.utility.enum_types import (
+    ActivationFunction,
+    PoolerType,
+    AttentionType,
+    LayerNormStyle,
+)
 
 # Type aliases
 Tensor = torch.Tensor
-    
+
 
 class PersformerConfig(PretrainedConfig):
     """
     Configuration class to define a persformer model.
-    
+
     Examples::
 
         from gdeep.topological_layers import PersformerConfig, PersformerModel
@@ -26,8 +39,8 @@ class PersformerConfig(PretrainedConfig):
         config = model.config
 
     """
-    
-    input_size: int # input size of the model
+
+    input_size: int  # input size of the model
     output_size: int
     hidden_size: int
     num_attention_layers: int
@@ -44,29 +57,27 @@ class PersformerConfig(PretrainedConfig):
     pooler_type: PoolerType
     use_attention_only: bool
     use_skip_connections_for_persformer_blocks: bool
-         
-    
-    def __init__(self,
-                 input_size: int = 2 + 4,
-                 output_size: int = 2,
-                 hidden_size: int = 32,
-                 num_attention_layers: int = 2,
-                 num_attention_heads: int = 4,
-                 intermediate_size: int = 32,
-                 hidden_act: ActivationFunction = ActivationFunction.GELU,
-                 hidden_dropout_prob: float = 0.1,
-                 attention_probs_dropout_prob: float = 0.1,
-                 layer_norm_eps: float = 1e-12,
-                 classifier_dropout_prob: float = 0.1,
-                 use_layer_norm: LayerNormStyle = \
-                     LayerNormStyle.NO_LAYER_NORMALIZATION,
-                 attention_type: AttentionType = \
-                     AttentionType.DOT_PRODUCT,
-                 pooler_type: PoolerType = PoolerType.ATTENTION,
-                 use_attention_only: bool = False,
-                 use_skip_connections_for_persformer_blocks=False,
-                 **kwargs
-                 ):
+
+    def __init__(
+        self,
+        input_size: int = 2 + 4,
+        output_size: int = 2,
+        hidden_size: int = 32,
+        num_attention_layers: int = 2,
+        num_attention_heads: int = 4,
+        intermediate_size: int = 32,
+        hidden_act: ActivationFunction = ActivationFunction.GELU,
+        hidden_dropout_prob: float = 0.1,
+        attention_probs_dropout_prob: float = 0.1,
+        layer_norm_eps: float = 1e-12,
+        classifier_dropout_prob: float = 0.1,
+        use_layer_norm: LayerNormStyle = LayerNormStyle.NO_LAYER_NORMALIZATION,
+        attention_type: AttentionType = AttentionType.DOT_PRODUCT,
+        pooler_type: PoolerType = PoolerType.ATTENTION,
+        use_attention_only: bool = False,
+        use_skip_connections_for_persformer_blocks=False,
+        **kwargs
+    ):
         super().__init__(**kwargs)  # type: ignore
         self.input_size = input_size
         self.output_size = output_size
@@ -83,6 +94,6 @@ class PersformerConfig(PretrainedConfig):
         self.attention_type = attention_type
         self.pooler_type = pooler_type
         self.use_attention_only = use_attention_only
-        self.use_skip_connections_for_persformer_blocks = use_skip_connections_for_persformer_blocks
-
-
+        self.use_skip_connections_for_persformer_blocks = (
+            use_skip_connections_for_persformer_blocks
+        )

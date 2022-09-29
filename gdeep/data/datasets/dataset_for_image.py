@@ -19,15 +19,14 @@ from torchvision.transforms import Resize, ToTensor
 from tqdm import tqdm
 
 
-
 Tensor = torch.Tensor
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ImageClassificationFromFiles(Dataset[Any]):
     """This class is useful to build a dataset
     directly from image files
-    
+
     Args:
         img_folder (string):
             The path to the folder where the training
@@ -49,19 +48,20 @@ class ImageClassificationFromFiles(Dataset[Any]):
     img_folder: str
     labels_file: str
     img_labels: pd.DataFrame
-    
-    def __init__(self, img_folder: str=".",
-                 labels_file:str="labels.csv",
-                 ) -> None:
+
+    def __init__(
+        self,
+        img_folder: str = ".",
+        labels_file: str = "labels.csv",
+    ) -> None:
 
         self.img_folder = img_folder
         self.img_labels = pd.read_csv(labels_file)
 
-
     def __len__(self) -> int:
         return len(self.img_labels)
 
-    def __getitem__(self, idx:int) -> Tuple[Any, Union[str, int]]:
+    def __getitem__(self, idx: int) -> Tuple[Any, Union[str, int]]:
         image = self._get_image(idx)
         image_out = deepcopy(image)
         label = self.img_labels.iloc[idx, 1]
@@ -79,4 +79,3 @@ class ImageClassificationFromFiles(Dataset[Any]):
             warnings.warn(f"The image {img_path} canot be loaded. Skipping it.")
             return None
         return image
-

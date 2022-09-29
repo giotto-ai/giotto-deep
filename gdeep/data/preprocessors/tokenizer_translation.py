@@ -1,6 +1,5 @@
 from collections import Counter, OrderedDict
-from typing import Callable, Tuple, \
-    Optional, List, Dict, Union
+from typing import Callable, Tuple, Optional, List, Dict, Union
 
 import torch
 from torchtext.data.utils import get_tokenizer  # type: ignore
@@ -14,9 +13,9 @@ from .._utils import MissingVocabularyError
 Tensor = torch.Tensor
 
 
-class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
-                                                 Tuple[Union[Tensor, List[Tensor]], Tensor]
-                           ]):
+class TokenizerTranslation(
+    AbstractPreprocessing[Tuple[str, str], Tuple[Union[Tensor, List[Tensor]], Tensor]]
+):
     """Class to preprocess text dataloaders for translation
     tasks. The Dataset type is supposed to be ``(string, string)``.
     The padding item is supposed to be of index 0.
@@ -47,7 +46,8 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
         textds = TransformingDataset(ds_tr,
             TokenizerTranslation())
 
-        """
+    """
+
     if_fitted: bool
     vocabulary: Optional[Dict[str, int]]
     vocabulary_target: Optional[Dict[str, int]]
@@ -56,17 +56,20 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
     ordered_dict: Dict[str, int]
     ordered_dict_target: Dict[str, int]
 
-    def __init__(self, vocabulary: Optional[Dict[str, int]] = None,
-                 vocabulary_target: Optional[Dict[str, int]] = None,
-                 tokenizer: Optional[Callable[[str], List[str]]] = None,
-                 tokenizer_target: Optional[Callable[[str], List[str]]] = None):
+    def __init__(
+        self,
+        vocabulary: Optional[Dict[str, int]] = None,
+        vocabulary_target: Optional[Dict[str, int]] = None,
+        tokenizer: Optional[Callable[[str], List[str]]] = None,
+        tokenizer_target: Optional[Callable[[str], List[str]]] = None,
+    ):
 
         if tokenizer is None:
-            self.tokenizer = get_tokenizer('basic_english')
+            self.tokenizer = get_tokenizer("basic_english")
         else:
             self.tokenizer = tokenizer
         if tokenizer_target is None:
-            self.tokenizer_target = get_tokenizer('basic_english')
+            self.tokenizer_target = get_tokenizer("basic_english")
         else:
             self.tokenizer_target = tokenizer_target
         self.vocabulary = vocabulary
@@ -83,30 +86,38 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
         for text in data:
             self.counter.update(self.tokenizer(text[0]))
             self.counter_target.update(self.tokenizer_target(text[1]))
-            self.max_length_source = max(self.max_length_source, len(self.tokenizer(text[0])))
-            self.max_length_target = max(self.max_length_target, len(self.tokenizer_target(text[1])))
+            self.max_length_source = max(
+                self.max_length_source, len(self.tokenizer(text[0]))
+            )
+            self.max_length_target = max(
+                self.max_length_target, len(self.tokenizer_target(text[1]))
+            )
         # self.vocabulary = Vocab(counter, min_freq=1)
         if self.vocabulary is None:
-            self.ordered_dict = OrderedDict(sorted(self.counter.items(),
-                                                   key=lambda x: x[1],
-                                                   reverse=True))
+            self.ordered_dict = OrderedDict(
+                sorted(self.counter.items(), key=lambda x: x[1], reverse=True)
+            )
             self.vocabulary = vocab(self.ordered_dict)
-            unk_token = '<unk>'  # type: ignore
-            if unk_token not in self.vocabulary: self.vocabulary.insert_token(unk_token, 0)
+            unk_token = "<unk>"  # type: ignore
+            if unk_token not in self.vocabulary:
+                self.vocabulary.insert_token(unk_token, 0)
             self.vocabulary.set_default_index(self.vocabulary[unk_token])
         if self.vocabulary_target is None:
-            self.ordered_dict_target = OrderedDict(sorted(self.counter_target.items(),
-                                                          key=lambda x: x[1],
-                                                          reverse=True))
+            self.ordered_dict_target = OrderedDict(
+                sorted(self.counter_target.items(), key=lambda x: x[1], reverse=True)
+            )
             self.vocabulary_target = vocab(self.ordered_dict_target)
-            unk_token = '<unk>'  # type: ignore
-            if unk_token not in self.vocabulary_target: self.vocabulary_target.insert_token(unk_token, 0)
+            unk_token = "<unk>"  # type: ignore
+            if unk_token not in self.vocabulary_target:
+                self.vocabulary_target.insert_token(unk_token, 0)
             self.vocabulary_target.set_default_index(self.vocabulary_target[unk_token])
             # self.vocabulary_target = Vocab(self.counter_target)
         self.is_fitted = True
         # self.save_pretrained(".")
 
-    def __call__(self, datum: Tuple[str, str]) -> Tuple[Union[List[Tensor], Tensor], Tensor]:
+    def __call__(
+        self, datum: Tuple[str, str]
+    ) -> Tuple[Union[List[Tensor], Tensor], Tensor]:
         """This method is applied to each item of
         the dataset and
         transforms it following the rule described
@@ -120,31 +131,51 @@ class TokenizerTranslation(AbstractPreprocessing[Tuple[str, str],
         # if not self.is_fitted:
         #    self.load_pretrained(".")
         if self.vocabulary:
-            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token] for token in  # type: ignore
-                                                                   self.tokenizer(x)]  # type: ignore
+            text_pipeline: Callable[[str], List[int]] = lambda x: [
+                self.vocabulary[token] for token in self.tokenizer(x)  # type: ignore
+            ]  # type: ignore
         else:
-            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
+            raise MissingVocabularyError(
+                "Please fit this preprocessor to initialise the vocabulary"
+            )
 
         if self.vocabulary_target:
-            text_pipeline_target: Callable[[str], List[int]] = \
-                lambda xx: [self.vocabulary_target[token] for token in self.tokenizer_target(xx)]  # type: ignore
+            text_pipeline_target: Callable[[str], List[int]] = lambda xx: [
+                self.vocabulary_target[token] for token in self.tokenizer_target(xx)  # type: ignore
+            ]  # type: ignore
         else:
-            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
+            raise MissingVocabularyError(
+                "Please fit this preprocessor to initialise the vocabulary"
+            )
 
         pad_item: int = 0
         pad_item_target: int = 0
 
-        processed_text = torch.tensor(text_pipeline(datum[0]),
-                                      dtype=torch.long).to(DEVICE)
-        processed_text_target = torch.tensor(text_pipeline_target(datum[1]),
-                                             dtype=torch.long).to(DEVICE)
+        processed_text = torch.tensor(text_pipeline(datum[0]), dtype=torch.long).to(
+            DEVICE
+        )
+        processed_text_target = torch.tensor(
+            text_pipeline_target(datum[1]), dtype=torch.long
+        ).to(DEVICE)
         # convert to tensors (padded)
-        out_source = torch.cat([processed_text,
-                                pad_item * torch.ones(self.max_length_source - processed_text.shape[0]
-                                                      ).to(DEVICE)]).to(torch.long)
-        out_target = torch.cat([processed_text_target,
-                                pad_item_target * torch.ones(self.max_length_target - processed_text_target.shape[0]
-                                                             ).to(DEVICE)]).to(torch.long)
+        out_source = torch.cat(
+            [
+                processed_text,
+                pad_item
+                * torch.ones(self.max_length_source - processed_text.shape[0]).to(
+                    DEVICE
+                ),
+            ]
+        ).to(torch.long)
+        out_target = torch.cat(
+            [
+                processed_text_target,
+                pad_item_target
+                * torch.ones(
+                    self.max_length_target - processed_text_target.shape[0]
+                ).to(DEVICE),
+            ]
+        ).to(torch.long)
         x = [out_source.to(torch.long), out_target.to(torch.long)]
         y = out_target.to(torch.long)  # .clone().detach()
         return x, y

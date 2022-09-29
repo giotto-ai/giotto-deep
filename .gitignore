@@ -22,6 +22,9 @@ examples/data/*
 examples/.*
 examples/*.json
 
+# terraform
+*.terraform*
+
 # Html files
 examples/*.html
 

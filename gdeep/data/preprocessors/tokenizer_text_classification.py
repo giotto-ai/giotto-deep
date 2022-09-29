@@ -1,6 +1,5 @@
 from collections import Counter, OrderedDict
-from typing import Callable, Tuple, \
-    Union, Any, Optional, List, Dict
+from typing import Callable, Tuple, Union, Any, Optional, List, Dict
 from functools import partial as Partial  # noqa
 
 import torch
@@ -17,8 +16,9 @@ from .._utils import MissingVocabularyError
 Tensor = torch.Tensor
 
 
-class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
-                                                        Tuple[Tensor, Tensor]]):
+class TokenizerTextClassification(
+    AbstractPreprocessing[Tuple[Any, str], Tuple[Tensor, Tensor]]
+):
     """Preprocessing class. This class is useful to convert the data format
     ``(label, text)`` into the proper tensor format ``( word_embedding, label)``.
     The labels shouzld be interagers; f they ar string, they will be converted.
@@ -39,10 +39,11 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
     counter: Dict[str, int]
     counter_label: Dict[str, int]
 
-    def __init__(self, tokenizer: Optional[Partial] = None,
-                 vocabulary: Optional[Vocab] = None):
+    def __init__(
+        self, tokenizer: Optional[Partial] = None, vocabulary: Optional[Vocab] = None
+    ):
         if tokenizer is None:
-            self.tokenizer = get_tokenizer('basic_english')
+            self.tokenizer = get_tokenizer("basic_english")
         else:
             self.tokenizer = tokenizer
 
@@ -72,12 +73,12 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
             self.max_length = max(self.max_length, len(self.tokenizer(text)))  # type: ignore
         # build the vocabulary
         if not self.vocabulary:
-            self.ordered_dict = OrderedDict(sorted(self.counter.items(),
-                                                   key=lambda x: x[1],
-                                                   reverse=True))
+            self.ordered_dict = OrderedDict(
+                sorted(self.counter.items(), key=lambda x: x[1], reverse=True)
+            )
             self.list_of_possible_labels = list(self.counter_label.keys())
             self.vocabulary = vocab(self.ordered_dict)
-            unk_token = '<unk>'  # type: ignore
+            unk_token = "<unk>"  # type: ignore
             if unk_token not in self.vocabulary:
                 self.vocabulary.insert_token(unk_token, 0)
             self.vocabulary.set_default_index(self.vocabulary[unk_token])
@@ -96,24 +97,32 @@ class TokenizerTextClassification(AbstractPreprocessing[Tuple[Any, str],
         # if not self.is_fitted:
         #    self.load_pretrained(".")
         if self.vocabulary:
-            text_pipeline: Callable[[str], List[int]] = lambda x: [self.vocabulary[token]  # type: ignore
-                                                                   for token in self.tokenizer(x)]  # type: ignore
+            text_pipeline: Callable[[str], List[int]] = lambda x: [
+                self.vocabulary[token] for token in self.tokenizer(x)  # type: ignore
+            ]  # type: ignore
         else:
-            raise MissingVocabularyError("Please fit this preprocessor to initialise the vocabulary")
+            raise MissingVocabularyError(
+                "Please fit this preprocessor to initialise the vocabulary"
+            )
         pad_item: int = 0
 
         _text = datum[1]
         # if isinstance(_text, tuple) or isinstance(_text, list):
         #    _text = _text[1]
-        processed_text = torch.tensor(text_pipeline(_text),
-                                      dtype=torch.long).to(DEVICE)
+        processed_text = torch.tensor(text_pipeline(_text), dtype=torch.long).to(DEVICE)
         # convert to tensors (padded)
-        out_text = torch.cat([processed_text,
-                              pad_item * torch.ones(self.max_length - processed_text.shape[0]
-                                                    ).to(DEVICE)]).to(torch.long)
+        out_text = torch.cat(
+            [
+                processed_text,
+                pad_item
+                * torch.ones(self.max_length - processed_text.shape[0]).to(DEVICE),
+            ]
+        ).to(torch.long)
         # preprocess labels
         label_pipeline = lambda x: torch.tensor(x, dtype=torch.long)
 
         _label = datum[0]
-        out_label = label_pipeline(self.list_of_possible_labels.index(_label)).to(DEVICE)
+        out_label = label_pipeline(self.list_of_possible_labels.index(_label)).to(
+            DEVICE
+        )
         return out_text, out_label

@@ -1,4 +1,3 @@
-
 from typing import Dict, Any
 
 from captum import attr
@@ -9,7 +8,7 @@ from captum import attr
 
 
 class AttributionFactory(object):
-    """ Attribution factory class for the Captum integration.
+    """Attribution factory class for the Captum integration.
     This factory will contain the attributions techniques of captum.
     """
 
@@ -17,13 +16,13 @@ class AttributionFactory(object):
 
     def __init__(self):
         pass
-        
+
     def register_builder(self, key: str, builder: Any):
         """this method adds to the internal builders dictionary
         new dataloader builders
         """
-        self._builders[key] = builder    # type: ignore
-        
+        self._builders[key] = builder  # type: ignore
+
     def build(self, key: str, *args, **kwargs) -> Any:  # type: ignore
         """This method returns the DataLoader builder
         corresponding to the input key.
@@ -32,7 +31,7 @@ class AttributionFactory(object):
             key:
                 the name of the dataset
         """
-        builder = self._builders.get(key)    # type: ignore
+        builder = self._builders.get(key)  # type: ignore
         if builder is None:
             raise ValueError(f"No builder registered for key {key}")
         return builder(*args, **kwargs)  # type: ignore
@@ -40,7 +39,7 @@ class AttributionFactory(object):
 
 class AttributionBuilder(object):
     """Builder class for the torchvision dataset
-        and all its variations"""
+    and all its variations"""
 
     def __init__(self, attr_name: str):
         self.attr_name = attr_name
