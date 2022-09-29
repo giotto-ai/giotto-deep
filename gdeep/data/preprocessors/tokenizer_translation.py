@@ -141,7 +141,7 @@ class TokenizerTranslation(
 
         if self.vocabulary_target:
             text_pipeline_target: Callable[[str], List[int]] = lambda xx: [
-                self.vocabulary_target[token] for token in self.tokenizer_target(xx)
+                self.vocabulary_target[token] for token in self.tokenizer_target(xx)  # type: ignore
             ]  # type: ignore
         else:
             raise MissingVocabularyError(

@@ -20,9 +20,12 @@ class FFNet(nn.Module):
             each layer of the fully connected network
     """
 
-    def __init__(self, arch=(2, 3, 3, 2), activation=F.relu):
+    def __init__(self, arch=(2, 3, 3, 2), activation=None):
         super(FFNet, self).__init__()
-        self.activation = activation
+        if activation is None:
+            self.activation = F.relu
+        else:
+            self.activation = activation
         self.linears = nn.ModuleList(
             [nn.Linear(arch[i], arch[i + 1]) for i in range(len(arch) - 1)]
         )
