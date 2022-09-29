@@ -751,7 +751,7 @@ class HyperParameterOptimization(Trainer):
                     y=labels,
                 )
                 fig2.update_xaxes(side="top")
-                fig2.show()
+                # fig2.show()
                 img2 = plotly2tensor(fig2)
 
                 self.writer.add_images(  # type: ignore
