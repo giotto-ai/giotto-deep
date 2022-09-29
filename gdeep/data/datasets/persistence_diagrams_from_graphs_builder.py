@@ -140,14 +140,28 @@ class PersistenceDiagramFromGraphBuilder:
 
 
 class GraphDataset(Dataset):
+    """This class i a light weight built-i class to retrieve
+     data from the TUDatasets https://chrsmrrs.github.io/datasets/docs/datasets/.
+
+     Args:
+         dataset_name:
+             name of the dataset appearing in the TUDataset webpage
+         root:
+             the root folder where to store the .zip file
+         url:
+             the url at which to fetch the dataset, most likely of the form
+             https://www.chrsmrrs.com/graphkerneldatasets/<datasetname.zip>
+         """
     def __init__(self, dataset_name: str, root: str, url: str):
         self.dataset_name = dataset_name
         self.root = root
         self.url = url
         self.dataset: List[Tuple[np.ndarray, int]] = []  # where to store the adj matrices in memory
-        self.build_dataset()
+        self._build_dataset()
 
     def _download_url(self, url: str, folder: str) -> str:
+        """private method to download the .zip file of
+        the dataset"""
         context = ssl._create_unverified_context()  # noqa
         data = urllib.request.urlopen(url, context=context)  # noqa
         if not os.path.exists(folder):
@@ -164,21 +178,25 @@ class GraphDataset(Dataset):
         return path_to_zip
 
     @staticmethod
-    def extract_zip(path_to_zip: str, folder: str) -> None:
+    def _extract_zip(path_to_zip: str, folder: str) -> None:
+        """Private method to extract the zip file of the dataset"""
         with zipfile.ZipFile(path_to_zip, 'r') as f:
             f.extractall(folder)
 
-    def download(self) -> str:
+    def _download(self) -> str:
+        """private method to download and extract the dataset"""
         folder = os.path.join(self.root, self.dataset_name)
         path_to_zip = self._download_url(f'{self.url}/{self.dataset_name}.zip', folder)
-        self.extract_zip(path_to_zip, folder)
+        self._extract_zip(path_to_zip, folder)
         os.unlink(path_to_zip)
         return path_to_zip[:-4]
         # shutil.rmtree(self.raw_dir)
         # os.rename(os.path.join(folder, self.name), self.raw_dir)
 
-    def build_dataset(self):
-        path = self.download()  # location of the files
+    def _build_dataset(self) -> None:
+        """private method to put the dataset in memory. The data is
+        stored in ``self.dataset``"""
+        path = self._download()  # location of the files
 
         idx_file = os.path.join(path, self.dataset_name+"_graph_indicator.txt")
         indices = np.loadtxt(idx_file, delimiter=",", dtype=np.int32).T - 1
