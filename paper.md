@@ -62,7 +62,7 @@ data into machine learning models with little effort.
 
 The hyperparameter searches (HPO) can also be distributed on a `kubernetes` cluster
 using [python RQ](https://python-rq.org), speeding up the computation: this is an 
-essential aspect when dealing with large models and large hyperparameters searches. 
+essential aspect when dealing with large models and large hyperparameter searches. 
 Many topological computations in `giotto-deep` 
 are performed by `giotto-tda` [@tauzin2021giotto].
 
@@ -72,16 +72,16 @@ We provide various preprocessing and training pipelines already implemented, but
 we invite users to extend and improve them. The eventual goal is to create a 
 readable code base that is easy to learn and simple to implement so that the 
 contribution of new features would be naturally encouraged.
-Additionally, we provide classical TDA datasets in a dedicated dataset cloud
-where all the classic TDA datasets will be stored; any user can access and download the dataset 
-from the cloud in a fully automated way from the `giotto-deep`.
+Additionally, we provide classical TDA datasets in a dedicated dataset cloud where all the classic
+TDA datasets will be stored; any user can access and download
+the dataset from the cloud fully automated from the `giotto-deep`.
 
 # Research projects using `giotto-deep`
 
 The current most relevant scientific application of this software is the Persformer: 
 a novel algorithm to automatize the persistence diagrams vectorization [@reinauer2021persformer].
 
-# Acknowledgements
+# Acknowledgments
 
 The authors would like to acknowledge the financial support of the Swiss federation:
 Innosuisse project 41665.1 IP-ICT.
