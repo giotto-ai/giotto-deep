@@ -70,6 +70,6 @@ class SaveLayerOutput(SaveOutput):
                 the output tensor of the module
         """
         if isinstance(module_out, tuple):
-            self.outputs.append(module_out[0].detach())
+            self.outputs.append(module_out[0])#.detach())
         else:
-            self.outputs.append(module_out.detach())
+            self.outputs.append(module_out)#.detach())
