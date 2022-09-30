@@ -1,5 +1,5 @@
 import torch
-from ...optimisation import PersistenceGradient
+from ...optimization import PersistenceGradient
 
 
 def test_persistence_gradient_2d():

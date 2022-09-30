@@ -20,7 +20,7 @@ from datetime import datetime
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
 
-from ..utility.optimisation import MissingClosureError
+from ..utility.optimization import MissingClosureError
 from gdeep.models import ModelExtractor
 from gdeep.utility import _inner_refactor_scalars
 from gdeep.utility import DEVICE
