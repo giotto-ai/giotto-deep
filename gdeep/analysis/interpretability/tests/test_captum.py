@@ -4,7 +4,7 @@ import torch
 
 from gdeep.data.datasets import DatasetBuilder
 from gdeep.analysis.interpretability import Interpreter
-from gdeep.visualisation import Visualiser
+from gdeep.visualization import Visualiser
 from gdeep.data import PreprocessingPipeline
 from gdeep.data import TransformingDataset
 from gdeep.data.preprocessors import Normalization, TokenizerTextClassification

@@ -8,8 +8,8 @@ import torch
 from sympy import false
 from torch.utils.data import DataLoader, Dataset
 
-from gdeep.utility.custome_types import Array
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Array
+from gdeep.utility.custom_types import Tensor
 
 
 class FromArray(Dataset[Tuple[Tensor, Tensor]]):

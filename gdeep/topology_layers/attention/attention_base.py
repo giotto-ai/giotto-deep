@@ -6,7 +6,7 @@ from gdeep.topology_layers.persformer_config import PersformerConfig
 from torch.nn import Module
 
 # Type aliases
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class AttentionBase(Module, ABC):

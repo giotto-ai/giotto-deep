@@ -8,7 +8,7 @@ from ..analysis.decision_boundary import UniformlySampledPoint
 from . import SaveLayerOutput
 from gdeep.utility import DEVICE
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class ModelExtractor:

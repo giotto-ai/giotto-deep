@@ -13,7 +13,7 @@ from ..abstract_preprocessing import AbstractPreprocessing
 from .._utils import MissingVocabularyError
 
 # type definition
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class TokenizerTextClassification(

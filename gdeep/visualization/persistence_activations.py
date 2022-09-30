@@ -7,7 +7,7 @@ from gtda.homology import VietorisRipsPersistence, WeakAlphaPersistence
 from gtda.graphs import KNeighborsGraph, GraphGeodesicDistance
 
 
-from gdeep.utility.custome_types import Tensor, Array
+from gdeep.utility.custom_types import Tensor, Array
 
 
 def knn_distance_matrix(x: List, k: int = 3):

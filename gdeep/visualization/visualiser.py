@@ -27,9 +27,9 @@ from . import (
 )
 
 FONT_SIZE = 16
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
-from gdeep.utility.custome_types import Array
+from gdeep.utility.custom_types import Array
 
 
 class Visualiser:
@@ -43,8 +43,8 @@ class Visualiser:
 
     Examples::
 
-        from gdeep.visualisation import Visualiser
-        # you must have an initialised `trainer`
+        from gdeep.visualization import Visualiser
+        # you must have an initialized `trainer`
         vs = Visualiser(trainer)
         vs.plot_data_model()
 
@@ -58,11 +58,11 @@ class Visualiser:
     def plot_interactive_model(self) -> None:
         """This function has no arguments: its purpose
         is to store the model to tensorboard for an
-        interactive visualisation.
+        interactive visualization.
         """
 
-        dataiter = iter(self.pipe.dataloaders[0])
-        x, labels = next(dataiter)
+        data_iter = iter(self.pipe.dataloaders[0])
+        x, _ = next(data_iter)
         new_x: List[Tensor] = []
         if isinstance(x, tuple) or isinstance(x, list):
             for i, xi in enumerate(x):
@@ -77,18 +77,18 @@ class Visualiser:
     def plot_3d_dataset(self, n_pts: int = 100) -> None:
         """This function has no arguments: its purpose
         is to store data to the tensorboard for
-        visualisation. Note that we are expecting the
+        visualization. Note that we are expecting the
         dataset item to be of type Tuple[Tensor, Tensor]
 
         Args:
             n_pts:
                 number of points to display
         """
-        dataiter = iter(self.pipe.dataloaders[0])
+        data_iter = iter(self.pipe.dataloaders[0])
         features_list: List[Tensor] = []
         labels_list: List[str] = []
 
-        for img, lab in dataiter:  # loop over batches
+        for img, lab in data_iter:  # loop over batches
             if isinstance(img, tuple) or isinstance(img, list):
                 features_list = features_list + [img[i][0] for i in range(len(img))]
             else:
@@ -190,9 +190,9 @@ class Visualiser:
             else:
                 inputs, _ = next(iter(self.pipe.dataloaders[0]))
 
-            activ = me.get_activations(inputs)
+            activation = me.get_activations(inputs)
             self.persistence_diagrams = persistence_diagrams_of_activations(
-                activ, homology_dimensions=homology_dimensions, **kwargs
+                activation, homology_dimensions=homology_dimensions, **kwargs
             )
         list_of_dgms = []
         for i, persistence_diagram in enumerate(self.persistence_diagrams):
@@ -234,7 +234,7 @@ class Visualiser:
         x = next(iter(self.pipe.dataloaders[0]))[0][0]
 
         if compact:
-            # initlaisation of the compactification
+            # initialization of the compactification
             cc = Compactification(
                 neural_net=self.pipe.model,
                 precision=0.1,
@@ -362,12 +362,12 @@ class Visualiser:
         Args:
             interpreter :
                 this is a ``gdeep.analysis.interpretability``
-                initilised ``Interpreter`` class
+                initialized ``Interpreter`` class
 
         Returns:
             matplotlib.figure
         """
-        viz = interpreter.stored_visualisations
+        viz = interpreter.stored_visualizations
         fig = visualization.visualize_text(viz)
         name = "out.png"
         hti = Html2Image()
@@ -383,7 +383,7 @@ class Visualiser:
         Args:
             interpreter:
                 this is a ``gdeep.analysis.interpretability``
-                initilised ``Interpreter`` class
+                initialized ``Interpreter`` class
 
         Returns:
             matplotlib.figure
@@ -435,7 +435,7 @@ class Visualiser:
         Args:
             interpreter :
                 this is a ``gdeep.analysis.interpretability``
-                initialised ``Interpreter`` class
+                initialized ``Interpreter`` class
 
         Returns:
             matplotlib.figure
@@ -496,7 +496,7 @@ class Visualiser:
         Args:
             interpreter :
                 this is a ``gdeep.analysis.interpretability``
-                initilised ``Interpreter`` class
+                initialized ``Interpreter`` class
             kwargs:
                 keywords arguments for the plot (visualize_image_attr of
                 captum)
@@ -523,7 +523,7 @@ class Visualiser:
 
         Args:
             attention_tensor:
-                list of the self-attetion tensors (i.e. the tensors
+                list of the self-attention tensors (i.e. the tensors
                 corresponding to the activations, given an input
             tokens_x:
                 The string tokens to be displayed along the
@@ -572,7 +572,7 @@ class Visualiser:
         Args:
             interpreter :
                 this is a ``gdeep.analysis.interpretability``
-                initilised ``Interpreter`` class
+                initialized ``Interpreter`` class
             kwargs:
                 keywords arguments for the plot (``matplotlib.pyplot``)
 

@@ -25,11 +25,11 @@ from torch.optim.lr_scheduler import _LRScheduler  # noqa
 from gdeep.utility import _inner_refactor_scalars, KnownWarningSilencer  # noqa
 from gdeep.trainer import Trainer
 from gdeep.search import Benchmark, _benchmarking_param
-from gdeep.visualisation import plotly2tensor
+from gdeep.visualization import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
 
-from gdeep.utility.custome_types import Tensor, Array
+from gdeep.utility.custom_types import Tensor, Array
 
 SEARCH_METRICS = ("loss", "accuracy")
 
@@ -70,7 +70,7 @@ class GiottoSummaryWriter(SummaryWriter):
                 Each one of the inner lists contain the
                 pairs (metric_value, epoch).
             best_not_last:
-                boolean flag to dcide what value to store in the
+                boolean flag to decide what value to store in the
                 tensorboard tables for the whole training cycle
         Examples::
             from torch.utils.tensorboard import SummaryWriter
@@ -115,11 +115,11 @@ class GiottoSummaryWriter(SummaryWriter):
 
 class HyperParameterOptimization(Trainer):
     """This is the generic class that allows
-    the user to perform gridsearch over several
+    the user to perform hyperparameter search over several
     parameters such as learning rate, optimizer.
     Args:
         obj :
-            either a Trainer or a Bechmark class
+            either a Trainer or a Benchmark class
             instance
         search_metric :
             either ``'loss'`` or ``'accuracy'``
@@ -256,11 +256,11 @@ class HyperParameterOptimization(Trainer):
             new_model = type(self.model)()
 
         if new_model is not None:
-            warnings.warn("Model cannot be re-initialised. Using existing one.")
+            warnings.warn("Model cannot be re-initialized. Using existing one.")
             new_model = self.model
         assert (
             new_model is not None
-        ), "There is a problem with the re-initialisation of the model"
+        ), "There is a problem with the re-initialization of the model"
         return new_model
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
@@ -382,7 +382,7 @@ class HyperParameterOptimization(Trainer):
             return accuracy
 
     def _extract_model_and_dataset_name(self, writer_tag: str) -> Tuple[str, str]:
-        """Extract the model and dataset anme from the writer_tag"""
+        """Extract the model and dataset from the writer_tag"""
         index_ds = writer_tag.find("Dataset:")
         if index_ds == -1:
             dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__
@@ -412,10 +412,10 @@ class HyperParameterOptimization(Trainer):
         n_accumulated_grads: int = 0,
         writer_tag: str = "",
     ) -> None:
-        """method to be called when starting the gridsearch
+        """method to be called when starting the hyperparameter optimization
         Args:
             optimizers:
-                list of torch optimizers classes, not isntances
+                list of torch optimizers classes, not instances
             n_epochs:
                 number of training epochs
             cross_validation:
@@ -427,7 +427,7 @@ class HyperParameterOptimization(Trainer):
             models_hyperparams:
                 dictionary of model parameters
             lr_scheduler:
-                torch learning rate schduler class
+                torch learning rate scheduler class
             schedulers_params:
                 learning rate scheduler parameters
             profiling :
@@ -443,10 +443,10 @@ class HyperParameterOptimization(Trainer):
                 bool flag to decide whether to continue
                 training or not
             store_grad_layer_hist:
-                flag to store the gradents of the layers in the
+                flag to store the gradients of the layers in the
                 tensorboard histograms
             writer_tag:
-                tag to prepend to the ouput
+                tag to prepend to the output
                 on tensorboard
         """
         if self.search_metric == "loss":
@@ -496,18 +496,18 @@ class HyperParameterOptimization(Trainer):
 
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
-            # already initialised. So they exist also in _objective()
-            self._inner_optimisat_fun(self.model, self.dataloaders, config)
+            # already initialized. So they exist also in _objective()
+            self._inner_optimization_fun(self.model, self.dataloaders, config)
 
         else:
             _benchmarking_param(
-                self._inner_optimisat_fun,
+                self._inner_optimization_fun,
                 (self.bench.models_dicts, self.bench.dataloaders_dicts),
                 config,
             )
         # self._store_to_tensorboard()
 
-    def _inner_optimisat_fun(
+    def _inner_optimization_fun(
         self,
         model: Union[torch.nn.Module, Dict[str, torch.nn.Module]],
         dataloaders: Union[
@@ -562,7 +562,7 @@ class HyperParameterOptimization(Trainer):
                 self._results()
 
     def _print_output(self) -> None:
-        """Printing the results of an optimisation"""
+        """Printing the results of an optimization"""
         results_string_to_print = (
             ("\nBest Validation loss: " + str(self.pipe.best_val_loss))
             if self.search_metric == "loss"
@@ -673,14 +673,14 @@ class HyperParameterOptimization(Trainer):
         # average over the scalars_dict
         scalars_dict_avg = self._refactor_scalars(scalars_dict_value)
         # dict of parameters
-        dictio = {
+        dictionary_ = {
             k: (int(v) if isinstance(v, np.int64) or isinstance(v, np.int32) else v)  # type: ignore
             for k, v in zip(keys, list_res[0][1:-2])
         }
 
         try:
             self.writer.add_hparams(  # type: ignore
-                dictio,
+                dictionary_,
                 {"loss": list_res[0][-2], "accuracy": list_res[0][-1]},
                 run_name=scalar_dict_key,
                 scalars_lists=scalars_dict_avg,  # type: ignore
@@ -695,15 +695,15 @@ class HyperParameterOptimization(Trainer):
         self, model_name: str = "model", dataset_name: str = "dataset"
     ) -> pd.DataFrame:
         """This method returns the dataframe with all the results of
-        the hyperparameters optimisaton.
+        the hyperparameters optimization.
         It also saves the figures in the writer.
         Args:
             model_name:
                 the model name for the
-                tensorboard gridsearch table
+                tensorboard hpo table
             dataset_name:
                 the dataset name for the
-                tensorboard gridsearch table
+                tensorboard hpo table
         Returns:
             pd.DataFrame:
                 the hyperparameter table
@@ -730,9 +730,9 @@ class HyperParameterOptimization(Trainer):
             warnings.warn("No best trial found. Using the first trial")
             trial_best = self.study.trials[0]
 
-        for tria in trials:
+        for trial in trials:
             self._store_to_list_each_step(
-                tria, model_name, dataset_name, tria.value, tria.value, self.list_res
+                trial, model_name, dataset_name, trial.value, trial.value, self.list_res
             )
 
         self.df_res = pd.DataFrame(
@@ -741,7 +741,7 @@ class HyperParameterOptimization(Trainer):
             + list(trial_best.params.keys())
             + ["loss", "accuracy"],
         )
-        # compute hyperparams correlaton
+        # compute hyperparams correlation
         corr, labels = self._correlation_of_hyperparams()
         if self.n_trials > 1:
             try:
@@ -791,28 +791,6 @@ class HyperParameterOptimization(Trainer):
             corr = np.corrcoef(np.array(list_of_arrays))
         return corr, labels
 
-    # def _store_to_tensorboard(self):
-    #    """Store the hyperparameters to tensorboard"""
-    #    # average over the scalars_dict
-    #    scalars_dict_avg = dict()
-    #    for k, l1l2 in self.scalars_dict.items():
-    #        scalars_dict_avg[k] = self._refactor_scalars(l1l2)
-    #    for i in range(len(self.df_res)):
-    #        dictio = {k:(int(v) if isinstance(v, np.int64) else v) for k,v in dict(self.df_res.iloc[i][1:-2]).items()}
-    #        try:
-    #            self.writer.add_hparams(dictio,
-    #                                    {self.df_res.columns[-2]: self.df_res.iloc[i][-2],
-    #                                     self.df_res.columns[-1]: self.df_res.iloc[i][-1]},
-    #                                    run_name=self.df_res.iloc[i][0],
-    #                                    scalars_lists=scalars_dict_avg[self.df_res.iloc[i][0]],
-    #                                    best_not_last=self.best_not_last_gs)
-    #        except KeyError:  # this happens when trials have been pruned
-    #            pass
-    #
-    #    self.writer.flush()
-    #
-    #    return self.df_res
-
     def _refactor_scalars(
         self, two_lists: List[List[List[float]]]
     ) -> Tuple[List[Any], List[Any]]:
@@ -841,7 +819,7 @@ class HyperParameterOptimization(Trainer):
         trial: BaseTrial, params: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """Utility function to generate the parameters
-        for the gridsearch. It is based on optuna `suggest_<type>`.
+        for the hyperparameter search. It is based on optuna `suggest_<type>`.
         Args:
             trial (optuna.trial):
                 optuna trial variable

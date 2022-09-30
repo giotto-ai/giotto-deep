@@ -10,7 +10,7 @@ from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 from ..dataset_factory import DatasetFactory
 from torch.utils.data import IterableDataset
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 T = TypeVar("T")
 

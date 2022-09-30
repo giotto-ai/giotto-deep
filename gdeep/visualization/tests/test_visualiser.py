@@ -3,11 +3,11 @@ import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from gdeep.visualisation import Visualiser
 from gdeep.data.preprocessors import TokenizerTextClassification
 from gdeep.data.datasets import DataLoaderBuilder, DatasetBuilder
 from gdeep.trainer import Trainer
 from gdeep.utility import DEVICE
+from gdeep.visualization import Visualiser
 
 
 bd = DatasetBuilder(name="AG_NEWS", convert_to_map_dataset=True)
@@ -41,9 +41,9 @@ class TextClassificationModel(nn.Module):
         self.init_weights()
 
     def init_weights(self):
-        initrange = 0.5
-        self.embedding.weight.data.uniform_(-initrange, initrange)
-        self.fc.weight.data.uniform_(-initrange, initrange)
+        init_range = 0.5
+        self.embedding.weight.data.uniform_(-init_range, init_range)
+        self.fc.weight.data.uniform_(-init_range, init_range)
         self.fc.bias.data.zero_()
 
     def forward(self, text):
@@ -55,9 +55,9 @@ class TextClassificationModel(nn.Module):
 def test_visualiser():
     assert ptd.vocabulary is not None, "vocabulary is None"
     vocab_size = len(ptd.vocabulary)
-    emsize = 64
+    embedding_size = 64
     loss_fn = nn.CrossEntropyLoss()
-    model = TextClassificationModel(vocab_size, emsize, 4).to(DEVICE)
+    model = TextClassificationModel(vocab_size, embedding_size, 4).to(DEVICE)
     pipe = Trainer(model, [dl_tr2, dl_ts2], loss_fn, writer)
 
     vs = Visualiser(pipe)

@@ -19,7 +19,7 @@ from torchvision.transforms import Resize, ToTensor
 from tqdm import tqdm
 
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 T = TypeVar("T")
 

@@ -20,13 +20,13 @@ hyperparameter optimization in a few lines of code.
 
 You can find the documentation of this repository here: https://giotto-ai.github.io/giotto-deep/
 
-## Run tensorboard for visualisation
+## Run tensorboard for visualization
 
 In order to analyse the results of your models, you need to start **tensorboard**. On the terminal, move inside the `/examples` folder. There, run the following command:
 ```
 tensorboard --logdir=runs
 ```
-Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualisation results that you stored in the `writer = SummaryWriter()`.
+Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualization results that you stored in the `writer = SummaryWriter()`.
 
 ## Install user version
 
