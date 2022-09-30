@@ -171,14 +171,27 @@ class DataLoaderParamsTuples:
 class DataLoaderBuilder(AbstractDataLoaderBuilder):
     """This class builds, out of a tuple of datasets, the
     corresponding dataloaders. Note that this class would
-    use the same parameters for all the datasets
+    use the same parameters for all the datasets. You can
+    use different parameters for each dataset by passing
+    a list of dictionaries to the build method
 
     Args:
         tuple_of_datasets :
-            the tuple eith the traing, validation and test
-            datasets. Also one or two elemennts are acceptable:
+            Tuple consisting of the training, validation and test
+            datasets. Also one or two elements are acceptable:
             they will be considered as training first and
             validation afterwards.
+
+    Example:
+        >>> import torch
+        >>> from gdeep.data.dataloaders import DataLoaderBuilder
+        >>> x, y = torch.rand(10, 3, 32, 32), torch.randint(0, 1, (10,))
+        >>> x_train, y_train = x[:8], y[:8]
+        >>> x_val, y_val = x[8:], y[8:]
+        >>> train_dataset = gdeep.data.datasets.FromArray(x_train, y_train)
+        >>> val_dataset = gdeep.data.datasets.FromArray(x_val, y_val)
+        >>> dataloader_builder = DataLoaderBuilder(train_dataset, val_dataset)
+        >>> train_loader, val_loader = dataloader_builder.build()
     """
 
     def __init__(self, tuple_of_datasets: List[Dataset[Any]]) -> None:
@@ -193,12 +206,19 @@ class DataLoaderBuilder(AbstractDataLoaderBuilder):
     ) -> List[DataLoader[Any]]:
         """This method accepts the arguments of the torch
         Dataloader and applies them when creating the
-        tuple
+        tuple. If the tuple of kwargs is a list of dictionaries,
+        then the first dictionary will be applied to the
+        training dataset, the second to the validation dataset
+        and the third to the test dataset. If the tuple of
+        kwargs is a DataLoaderParamsTuples, then the parameters
+        will be applied to the corresponding dataset.
 
         Args:
             tuple_of_kwargs:
-                List of dictionaries, each one being the
-                kwargs for the corresponding DataLoader
+                Tuple consisting of the training, validation and test
+                dataloaders. Also one or two elements are acceptable:
+                they will be considered as training first and
+                validation afterwards.
         """
         out: List = []
         if tuple_of_kwargs is None:
