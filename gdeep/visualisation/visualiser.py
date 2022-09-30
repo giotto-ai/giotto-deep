@@ -302,7 +302,7 @@ class Visualiser:
             dgms, samplings=bc.samplings_, homology_dimensions=homology_dimensions
         )
 
-        for i in range(len(plots)):
+        for i in range(len(plots)):  # type: ignore
             plots[i].show()
 
     def plot_betti_curves_layers(
@@ -490,7 +490,7 @@ class Visualiser:
 
     def plot_attribution(
         self, interpreter: Interpreter, **kwargs
-    ) -> Tuple[plt.Figure, plt.Figure]:
+    ) -> Tuple[plt.Figure, plt.Figure]:  # type: ignore
         """this method generically plots the attribution of
         the interpreter
 
@@ -519,7 +519,7 @@ class Visualiser:
         tokens_x: Optional[List[str]] = None,
         tokens_y: Optional[List[str]] = None,
         **kwargs
-    ) -> plt.Figure:
+    ) -> plt.Figure:  # type: ignore
         """This functions plots the self-attention layer of a transformer.
 
         Args:
@@ -563,7 +563,7 @@ class Visualiser:
 
     def plot_attributions_persistence_diagrams(
         self, interpreter: Interpreter, **kwargs
-    ) -> plt.Figure:
+    ) -> plt.Figure:  # type: ignore
         """this method allows the plot, on top of the persistence
         diagram, of the attribution values. For example, this would
         be the method to call when you run saliency maps on the

@@ -226,7 +226,7 @@ class ModelExtractor:
         grads: List[Tensor] = []
         if isinstance(x, tuple) or isinstance(x, list):
             for xi in x:
-                grads.append(xi.grad)
+                grads.append(xi.grad)  # type: ignore
         else:
-            grads.append(x.grad)
+            grads.append(x.grad)  # type: ignore
         return grads, output_grads

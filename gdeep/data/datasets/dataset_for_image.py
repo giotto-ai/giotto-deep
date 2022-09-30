@@ -67,13 +67,13 @@ class ImageClassificationFromFiles(Dataset[Any]):
         image_out = deepcopy(image)
         label = self.img_labels.iloc[idx, 1]
         image.close()
-        return image_out, label
+        return image_out, label  # type: ignore
 
     def _get_image(self, idx: int) -> Any:
         """this method gets the i-th image in the labels.csv
         file.
         """
-        img_path: str = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])
+        img_path: str = os.path.join(self.img_folder, self.img_labels.iloc[idx, 0])  # type: ignore
         try:
             image = Image.open(img_path)
         except UnidentifiedImageError:

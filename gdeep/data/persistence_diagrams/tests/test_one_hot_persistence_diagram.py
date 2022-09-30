@@ -64,7 +64,7 @@ def test_get_one_hot_encoded_persistence_diagram_from_gtda():
     # set ranom seed
     np.random.seed(0)
 
-    points = np.random.rand(100, 2)
+    points = np.random.rand(100, 2)  # type: ignore
 
     diagrams = vr.fit_transform([points])
 

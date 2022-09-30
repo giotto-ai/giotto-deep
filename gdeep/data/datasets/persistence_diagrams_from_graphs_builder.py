@@ -200,13 +200,13 @@ class GraphDataset(Dataset):
         path = self._download()  # location of the files
 
         idx_file = os.path.join(path, self.dataset_name + "_graph_indicator.txt")
-        indices = np.loadtxt(idx_file, delimiter=",", dtype=np.int32).T - 1
+        indices = np.loadtxt(idx_file, delimiter=",", dtype=np.int32).T - 1  # type: ignore
 
         graph_labels = os.path.join(path, self.dataset_name + "_graph_labels.txt")
-        labels = (np.loadtxt(graph_labels, delimiter=",", dtype=np.int32).T + 1) // 2
+        labels = (np.loadtxt(graph_labels, delimiter=",", dtype=np.int32).T + 1) // 2  # type: ignore
 
         adj_file = os.path.join(path, self.dataset_name + "_A.txt")
-        sparse_array = np.loadtxt(adj_file, delimiter=",", dtype=np.int32).T - 1
+        sparse_array = np.loadtxt(adj_file, delimiter=",", dtype=np.int32).T - 1  # type: ignore
 
         rows = defaultdict(list)  # type: ignore
         cols = defaultdict(list)  # type: ignore

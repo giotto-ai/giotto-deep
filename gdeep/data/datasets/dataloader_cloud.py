@@ -105,7 +105,7 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
                 )
                 self.dl_builder = DataLoaderBuilder(
                     [
-                        FromArray(data, labels),
+                        FromArray(data, labels),  # type: ignore
                     ]
                 )
             else:

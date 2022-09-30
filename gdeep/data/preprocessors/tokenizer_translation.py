@@ -83,6 +83,8 @@ class TokenizerTranslation(
         self.counter_target = Counter()
         self.ordered_dict = OrderedDict()
         self.ordered_dict_target = OrderedDict()
+        assert self.tokenizer is not None, "Tokenizer is None"
+        assert self.tokenizer_target is not None, "Target Tokenizer is None"
         for text in data:
             self.counter.update(self.tokenizer(text[0]))
             self.counter_target.update(self.tokenizer_target(text[1]))
@@ -97,7 +99,7 @@ class TokenizerTranslation(
             self.ordered_dict = OrderedDict(
                 sorted(self.counter.items(), key=lambda x: x[1], reverse=True)
             )
-            self.vocabulary = vocab(self.ordered_dict)
+            self.vocabulary = vocab(self.ordered_dict)  # type: ignore
             unk_token = "<unk>"  # type: ignore
             if unk_token not in self.vocabulary:
                 self.vocabulary.insert_token(unk_token, 0)
@@ -106,7 +108,7 @@ class TokenizerTranslation(
             self.ordered_dict_target = OrderedDict(
                 sorted(self.counter_target.items(), key=lambda x: x[1], reverse=True)
             )
-            self.vocabulary_target = vocab(self.ordered_dict_target)
+            self.vocabulary_target = vocab(self.ordered_dict_target)  # type: ignore
             unk_token = "<unk>"  # type: ignore
             if unk_token not in self.vocabulary_target:
                 self.vocabulary_target.insert_token(unk_token, 0)

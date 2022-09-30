@@ -10,7 +10,7 @@ from gdeep.data import TransformingDataset
 from gdeep.data.preprocessors import Normalization, TokenizerTextClassification
 from gdeep.data.datasets import DataLoaderBuilder
 from gdeep.trainer import Trainer
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 writer = SummaryWriter()
 

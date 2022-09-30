@@ -17,7 +17,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 import optuna
 from datetime import datetime
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
 
 from ..utility.optimisation import MissingClosureError
@@ -29,10 +29,9 @@ from .metrics import accuracy
 from gdeep.utility.custome_types import Tensor
 
 try:
-    import torch_xla
-    import torch_xla.core.xla_model as xm
-    import torch_xla.distributed.xla_multiprocessing as xmp
-    import torch_xla.distributed.parallel_loader as pl
+    import torch_xla.core.xla_model as xm  # type: ignore
+    import torch_xla.distributed.xla_multiprocessing as xmp  # type: ignore
+    import torch_xla.distributed.parallel_loader as pl  # type: ignore
 
     try:
         DEVICE = xm.xla_device()
@@ -205,7 +204,7 @@ class Trainer:
                 )  # Note: Cloud TPU-specific code!
             else:
                 try:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)  # type: ignore
                     self.optimizer.step()
                 except (MissingClosureError,):
                     self.optimizer.step(closure)  # type: ignore
@@ -221,7 +220,7 @@ class Trainer:
                     )  # Note: Cloud TPU-specific code!
                 else:
                     try:
-                        torch.nn.utils.clip_grad_norm_(
+                        torch.nn.utils.clip_grad_norm_(  # type: ignore
                             self.model.parameters(), self.clip
                         )
                         self.optimizer.step()
@@ -506,15 +505,15 @@ class Trainer:
 
         if profiling:
             try:
-                self.prof = torch.profiler.profile(
+                self.prof = torch.profiler.profile(  # type: ignore
                     activities=[
-                        torch.profiler.ProfilerActivity.CPU,
-                        torch.profiler.ProfilerActivity.CUDA,
+                        torch.profiler.ProfilerActivity.CPU,  # type: ignore
+                        torch.profiler.ProfilerActivity.CUDA,  # type: ignore
                     ],
-                    schedule=torch.profiler.schedule(
+                    schedule=torch.profiler.schedule(  # type: ignore
                         wait=1, warmup=1, active=active, repeat=1
                     ),
-                    on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                    on_trace_ready=torch.profiler.tensorboard_trace_handler(  # type: ignore
                         os.path.join(
                             ".",
                             "runs",
@@ -677,7 +676,7 @@ class Trainer:
 
         # profiling
         self._init_profiler(
-            profiling, cross_validation, n_epochs, self.k_fold_class.n_splits
+            profiling, cross_validation, n_epochs, self.k_fold_class.n_splits  # type: ignore
         )
 
         # remove sampler to avoid conflicts with indexing
@@ -700,7 +699,7 @@ class Trainer:
             except AttributeError:
                 val_idx = list(range(len(self.dataloaders[1].dataset)))  # type: ignore
             # print(val_idx)
-            dl_val = torch.utils.data.DataLoader(
+            dl_val = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[1].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
@@ -711,7 +710,7 @@ class Trainer:
             except AttributeError:
                 tr_idx = list(range(len(self.dataloaders[0].dataset)))  # type: ignore
             # print(tr_idx)
-            dl_tr = torch.utils.data.DataLoader(
+            dl_tr = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
@@ -724,13 +723,13 @@ class Trainer:
                 data_idx = list(range(len(self.dataloaders[0].dataset)))  # type: ignore
             # print(data_idx)
             tr_idx, val_idx = train_test_split(data_idx, test_size=0.2)
-            dl_val = torch.utils.data.DataLoader(
+            dl_val = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
                 sampler=SubsetRandomSampler(val_idx),
             )
-            dl_tr = torch.utils.data.DataLoader(
+            dl_tr = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
@@ -774,13 +773,13 @@ class Trainer:
                     warnings.warn(
                         "Validation set is ignored in automatic Cross Validation"
                     )
-                dl_tr = torch.utils.data.DataLoader(
+                dl_tr = torch.utils.data.DataLoader(  # type: ignore
                     self.dataloaders[0].dataset,
                     # pin_memory=True,
                     **dataloaders_param_tr,
                     sampler=SubsetRandomSampler(tr_idx),
                 )
-                dl_val = torch.utils.data.DataLoader(
+                dl_val = torch.utils.data.DataLoader(  # type: ignore
                     self.dataloaders[0].dataset,
                     # pin_memory=True,
                     **dataloaders_param_val,
@@ -823,14 +822,14 @@ class Trainer:
                 valloss = min(
                     np.array(
                         _inner_refactor_scalars(
-                            self.val_loss_list_hparam, True, self.k_fold_class.n_splits
+                            self.val_loss_list_hparam, True, self.k_fold_class.n_splits  # type: ignore
                         )
                     )[:, 0]
                 )
                 valacc = max(
                     np.array(
                         _inner_refactor_scalars(
-                            self.val_acc_list_hparam, True, self.k_fold_class.n_splits
+                            self.val_acc_list_hparam, True, self.k_fold_class.n_splits  # type: ignore
                         )
                     )[:, 0]
                 )
@@ -1063,14 +1062,14 @@ class Trainer:
             # define training and validation
             # distributed samplers and update
             # the dataloaders
-            train_sampler = torch.utils.data.distributed.DistributedSampler(
+            train_sampler = torch.utils.data.distributed.DistributedSampler(  # type: ignore
                 dl_tr_old.dataset,
                 num_replicas=xm.xrt_world_size(),
                 rank=xm.get_ordinal(),
                 shuffle=True,
             )
 
-            dl_tr = torch.utils.data.DataLoader(
+            dl_tr = torch.utils.data.DataLoader(  # type: ignore
                 dl_tr_old.dataset,
                 num_workers=dl_tr_old.num_workers,
                 batch_size=dl_tr_old.batch_size,
@@ -1078,14 +1077,14 @@ class Trainer:
                 drop_last=dl_tr_old.drop_last,
             )
 
-            val_sampler = torch.utils.data.distributed.DistributedSampler(
+            val_sampler = torch.utils.data.distributed.DistributedSampler(  # type: ignore
                 dl_val_old.dataset,
                 num_replicas=xm.xrt_world_size(),
                 rank=xm.get_ordinal(),
                 shuffle=False,
             )
 
-            dl_val = torch.utils.data.DataLoader(
+            dl_val = torch.utils.data.DataLoader(  # type: ignore
                 dl_val_old.dataset,
                 num_workers=dl_val_old.num_workers,
                 batch_size=dl_val_old.batch_size,
@@ -1174,20 +1173,23 @@ class Trainer:
                 # self.writer.flush()
 
                 if lr_scheduler is not None:
+                    assert scheduler is not None, "scheduler is None"
                     scheduler.step()
                 if self.prof is not None:
                     self.prof.step()
 
                 if check_optuna and not cross_validation:
                     if search_metric == "loss":
+                        assert trial is not None, "trial is None"
                         trial.report(loss, t)
                     else:
+                        assert trial is not None, "trial is None"
                         trial.report(correct, t)
                     # Handle pruning based on the intermediate value.
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
-            self.val_loss += loss
-            self.val_acc += correct * 100
+            self.val_loss += loss  # type: ignore
+            self.val_acc += correct * 100  # type: ignore
 
         flags: Dict[Any, Any] = {}
         self.val_acc /= len(dl_val_old) * dl_val_old.batch_size  # type: ignore
@@ -1197,8 +1199,8 @@ class Trainer:
 
     def evaluate_classification(
         self,
-        num_class: int = None,
-        dl: DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]] = None,
+        num_class: Optional[int] = None,
+        dl: Optional[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]] = None,
     ) -> Tuple[float, float, np.ndarray]:
         """Method to evaluate the performance of the model.
 

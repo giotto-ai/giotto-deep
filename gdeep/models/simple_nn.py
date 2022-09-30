@@ -31,7 +31,7 @@ class FFNet(nn.Module):
         )
 
     def forward(self, x):
-        for i, l in enumerate(self.linears[:-1]):
+        for i, l in enumerate(self.linears[:-1]):  # type: ignore
             x = self.activation(l(x))
         x = self.linears[-1](x)
         return x
