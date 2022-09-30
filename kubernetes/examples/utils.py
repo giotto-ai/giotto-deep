@@ -27,7 +27,7 @@ def connect_to_mysql(usr: str, psw: str, host: str) -> None:
 
     mycursor.execute("SHOW DATABASES")
 
-    for x in mycursor:
+    for x in mycursor:  # type: ignore
         print(x)
 
 

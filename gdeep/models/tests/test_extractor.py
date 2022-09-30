@@ -32,8 +32,8 @@ def test_extractor_get_layers_param():
 
     lista = me.get_layers_param()
 
-    for k, item in lista.items():
-        k, item.shape  # noqa
+    # for k, item in lista.items():
+    #     k, item.shape  # noqa
 
 
 def test_extractor_get_decision_boundary():

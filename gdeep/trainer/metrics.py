@@ -1,6 +1,6 @@
 import torch
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 def accuracy(prediction: Tensor, y: Tensor) -> float:

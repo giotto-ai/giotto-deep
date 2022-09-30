@@ -10,7 +10,7 @@ from gdeep.data import TransformingDataset
 from gdeep.data.preprocessors import Normalization, TokenizerTextClassification
 from gdeep.data.datasets import DataLoaderBuilder
 from gdeep.trainer import Trainer
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 writer = SummaryWriter()
 
@@ -31,13 +31,13 @@ test_indices = list(range(64 * 5))
 dl_tr2, dl_ts2, _ = DataLoaderBuilder(
     (transformed_textds, transformed_textts)  # type: ignore
 ).build(
-    (
+    [
         {
             "batch_size": 16,  # type: ignore
             "sampler": SubsetRandomSampler(train_indices),
         },
         {"batch_size": 16, "sampler": SubsetRandomSampler(test_indices)},
-    )
+    ]
 )
 
 

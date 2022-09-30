@@ -28,7 +28,7 @@ class PersistenceDiagramFromGraphBuilder:
     are supported.
     """
 
-    url: str = 'https://www.chrsmrrs.com/graphkerneldatasets'
+    url: str = "https://www.chrsmrrs.com/graphkerneldatasets"
 
     def __init__(
         self,
@@ -93,9 +93,7 @@ class PersistenceDiagramFromGraphBuilder:
         """
         # Load the dataset
         self.graph_dataset = GraphDataset(
-            root=DEFAULT_GRAPH_DIR,
-            dataset_name=self.dataset_name,
-            url=self.url
+            root=DEFAULT_GRAPH_DIR, dataset_name=self.dataset_name, url=self.url
         )
 
         # Create the directory for PDs if it does not exist
@@ -141,33 +139,36 @@ class PersistenceDiagramFromGraphBuilder:
 
 class GraphDataset(Dataset):
     """This class i a light weight built-i class to retrieve
-     data from the TUDatasets https://chrsmrrs.github.io/datasets/docs/datasets/.
+    data from the TUDatasets https://chrsmrrs.github.io/datasets/docs/datasets/.
 
-     Args:
-         dataset_name:
-             name of the dataset appearing in the TUDataset webpage
-         root:
-             the root folder where to store the .zip file
-         url:
-             the url at which to fetch the dataset, most likely of the form
-             https://www.chrsmrrs.com/graphkerneldatasets/<datasetname.zip>
-         """
+    Args:
+        dataset_name:
+            name of the dataset appearing in the TUDataset webpage
+        root:
+            the root folder where to store the .zip file
+        url:
+            the url at which to fetch the dataset, most likely of the form
+            https://www.chrsmrrs.com/graphkerneldatasets/<datasetname.zip>
+    """
+
     def __init__(self, dataset_name: str, root: str, url: str):
         self.dataset_name = dataset_name
         self.root = root
         self.url = url
-        self.dataset: List[Tuple[np.ndarray, int]] = []  # where to store the adj matrices in memory
+        self.dataset: List[
+            Tuple[np.ndarray, int]
+        ] = []  # where to store the adj matrices in memory
         self._build_dataset()
 
     def _download_url(self, url: str, folder: str) -> str:
         """private method to download the .zip file of
         the dataset"""
         context = ssl._create_unverified_context()  # noqa
-        data = urllib.request.urlopen(url, context=context)  # noqa
+        data = urllib.request.urlopen(url, context=context)  # type: ignore # noqa
         if not os.path.exists(folder):
             os.makedirs(folder)
         path_to_zip = os.path.join(folder, self.dataset_name + ".zip")
-        with open(path_to_zip, 'wb') as f:
+        with open(path_to_zip, "wb") as f:
             # workaround for https://bugs.python.org/issue42853
             while True:
                 chunk = data.read(10 * 1024 * 1024)
@@ -180,13 +181,13 @@ class GraphDataset(Dataset):
     @staticmethod
     def _extract_zip(path_to_zip: str, folder: str) -> None:
         """Private method to extract the zip file of the dataset"""
-        with zipfile.ZipFile(path_to_zip, 'r') as f:
+        with zipfile.ZipFile(path_to_zip, "r") as f:
             f.extractall(folder)
 
     def _download(self) -> str:
         """private method to download and extract the dataset"""
         folder = os.path.join(self.root, self.dataset_name)
-        path_to_zip = self._download_url(f'{self.url}/{self.dataset_name}.zip', folder)
+        path_to_zip = self._download_url(f"{self.url}/{self.dataset_name}.zip", folder)
         self._extract_zip(path_to_zip, folder)
         os.unlink(path_to_zip)
         return path_to_zip[:-4]
@@ -198,14 +199,14 @@ class GraphDataset(Dataset):
         stored in ``self.dataset``"""
         path = self._download()  # location of the files
 
-        idx_file = os.path.join(path, self.dataset_name+"_graph_indicator.txt")
-        indices = np.loadtxt(idx_file, delimiter=",", dtype=np.int32).T - 1
+        idx_file = os.path.join(path, self.dataset_name + "_graph_indicator.txt")
+        indices = np.loadtxt(idx_file, delimiter=",", dtype=np.int32).T - 1  # type: ignore
 
         graph_labels = os.path.join(path, self.dataset_name + "_graph_labels.txt")
-        labels = (np.loadtxt(graph_labels, delimiter=",", dtype=np.int32).T + 1)//2
+        labels = (np.loadtxt(graph_labels, delimiter=",", dtype=np.int32).T + 1) // 2  # type: ignore
 
         adj_file = os.path.join(path, self.dataset_name + "_A.txt")
-        sparse_array = np.loadtxt(adj_file, delimiter=",", dtype=np.int32).T - 1
+        sparse_array = np.loadtxt(adj_file, delimiter=",", dtype=np.int32).T - 1  # type: ignore
 
         rows: defaultdict = defaultdict(list)
         cols: defaultdict = defaultdict(list)
@@ -221,10 +222,12 @@ class GraphDataset(Dataset):
             col = np.array(cols[idx])  # np.array([0, 3, 1, 2])
             data = np.ones(len(row))  # np.array([4, 5, 7, 9])
             assert len(col) == len(row)
-            shape_x = max(max(row)-min(row), max(col)-min(col)) + 1
+            shape_x = max(max(row) - min(row), max(col) - min(col)) + 1
             offset = min(min(row), min(col))
             # print(row, col, offset, shape_x)
-            adj_mat = coo_matrix((data, (row-offset, col-offset)), shape=(shape_x, shape_x)).toarray()
+            adj_mat = coo_matrix(
+                (data, (row - offset, col - offset)), shape=(shape_x, shape_x)
+            ).toarray()
             # print(adj_mat, idx)
             self.dataset.append((adj_mat, labels[idx]))
 

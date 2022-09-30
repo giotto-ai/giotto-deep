@@ -15,7 +15,7 @@ from gdeep.data.preprocessors import ToTensorImage
 from gdeep.search import HyperParameterOptimization, GiottoSummaryWriter
 from gdeep.models import FFNet
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 # parametric model with string value
@@ -72,7 +72,7 @@ def test_hpo_failure():
     # initialise pipeline class
     pipe = Trainer(
         model,
-        [dl_tr, None],
+        [dl_tr, None],  # type: ignore
         loss_fn,
         writer,
         k_fold_class=StratifiedKFold(2, shuffle=True),
@@ -80,7 +80,7 @@ def test_hpo_failure():
 
     # initialise gridsearch
     try:
-        HyperParameterOptimization(pipe, "accu", 2, best_not_last=True)
+        HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
     except AssertionError:
         pass
 
@@ -95,7 +95,7 @@ def test_hpo_cross_val():
     # initialise pipeline class
     pipe = Trainer(
         model,
-        [dl_tr, None],
+        [dl_tr, None],  # type: ignore
         loss_fn,
         writer,
         k_fold_class=StratifiedKFold(2, shuffle=True),
@@ -132,7 +132,7 @@ def test_hpo_accumulated_grads():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
@@ -165,7 +165,7 @@ def test_hpo_loss():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)
@@ -178,7 +178,7 @@ def test_hpo_loss():
     # starting the gridsearch
     search.start(
         [SGD, Adam], 2, False, optimizers_params, dataloaders_params, models_hyperparams
-    );
+    )
 
 
 def test_hpo_string_parameters():
@@ -189,7 +189,7 @@ def test_hpo_string_parameters():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2)
@@ -205,7 +205,7 @@ def test_hpo_string_parameters():
     # starting the gridsearch
     search.start(
         [SGD], 1, False, optimizers_params, dataloaders_params, models_hyperparams
-    );
+    )
 
 
 def test_hpo_collate():
@@ -242,7 +242,7 @@ def test_hpo_collate():
     # loss function
     loss_fn = nn.CrossEntropyLoss()
     # pipeline
-    pipe = Trainer(model, [dl_train, None], loss_fn, writer)
+    pipe = Trainer(model, [dl_train, None], loss_fn, writer)  # type: ignore
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)
 
@@ -251,4 +251,4 @@ def test_hpo_collate():
     dataloaders_params = {"batch_size": [3, 9, 2], "collate_fn": [collate_fn]}
 
     # starting the gridsearch
-    search.start([SGD, Adam], 1, False, optimizers_params, dataloaders_params);
+    search.start([SGD, Adam], 1, False, optimizers_params, dataloaders_params)

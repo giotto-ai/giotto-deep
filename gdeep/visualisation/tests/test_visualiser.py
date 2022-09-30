@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 from gdeep.visualisation import Visualiser
 from gdeep.data.preprocessors import TokenizerTextClassification
@@ -53,6 +53,7 @@ class TextClassificationModel(nn.Module):
 
 
 def test_visualiser():
+    assert ptd.vocabulary is not None, "vocabulary is None"
     vocab_size = len(ptd.vocabulary)
     emsize = 64
     loss_fn = nn.CrossEntropyLoss()

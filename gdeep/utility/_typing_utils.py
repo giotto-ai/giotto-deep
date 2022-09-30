@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Tuple, Union
 import torch
 from numpy import ndarray
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 def torch_transform(

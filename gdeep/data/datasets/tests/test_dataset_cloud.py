@@ -92,7 +92,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                 torch.save(data, data_filename)
                 torch.save(labels, labels_filename)
             elif data_format == "numpy_array":
-                data = np.random.rand(size_dataset, input_dim)
+                data = np.random.rand(size_dataset, input_dim)  # type: ignore
                 labels = np.random.randint(
                     0, num_labels, (size_dataset,), dtype=np.long
                 )
@@ -137,6 +137,8 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
                 downloaded_files = ["data.pt", "labels.pt", "metadata.json"]
             elif data_format == "numpy_array":
                 downloaded_files = ["data.npy", "labels.npy", "metadata.json"]
+            else:
+                raise ValueError(f"Unknown data format: {data_format}")
             for file in downloaded_files:
                 hash_original = get_checksum("tmp_" + file)
                 path_downloaded_file = join(download_directory, dataset_name, file)

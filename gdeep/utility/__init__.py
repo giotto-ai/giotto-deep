@@ -26,9 +26,12 @@ from .enum_types import (
     ActivationFunction,
 )
 
+from . import optimization
+from . import extended_persistence
+
 __all__ = [
     "save_model_and_optimizer",
-    "optimisation",
+    "optimization",
     "extended_persistence",
     "ensemble_wrapper",
     "is_notebook",

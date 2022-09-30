@@ -12,9 +12,8 @@ import optuna
 from optuna.trial import TrialState
 import pandas as pd
 import numpy as np
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
-from torch.optim import *  # noqa
 import plotly.express as px
 from optuna.pruners import MedianPruner, BasePruner
 from optuna.trial._base import BaseTrial  # noqa
@@ -30,8 +29,8 @@ from gdeep.visualisation import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
 
-Tensor = torch.Tensor
-Array = np.ndarray
+from gdeep.utility.custome_types import Tensor, Array
+
 SEARCH_METRICS = ("loss", "accuracy")
 
 
@@ -41,7 +40,7 @@ class GiottoSummaryWriter(SummaryWriter):
         hparam_dict: Dict[str, Any],
         metric_dict: Dict[str, Any],
         hparam_domain_discrete: Optional[Dict[str, List[Any]]] = None,
-        run_name: str = None,
+        run_name: Optional[str] = None,
         scalars_lists: Optional[List[List[Tuple[Any, int]]]] = None,
         best_not_last: bool = False,
     ):
@@ -88,9 +87,9 @@ class GiottoSummaryWriter(SummaryWriter):
             run_name = str(time.time()).replace(":", "-")
         logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
         with SummaryWriter(log_dir=logdir) as w_hp:
-            w_hp.file_writer.add_summary(exp)
-            w_hp.file_writer.add_summary(ssi)
-            w_hp.file_writer.add_summary(sei)
+            w_hp.file_writer.add_summary(exp)  # type: ignore
+            w_hp.file_writer.add_summary(ssi)  # type: ignore
+            w_hp.file_writer.add_summary(sei)  # type: ignore
             if isinstance(scalars_lists, list) or isinstance(scalars_lists, tuple):
                 scalars_list_loss = scalars_lists[0]
                 if best_not_last:
@@ -232,6 +231,7 @@ class HyperParameterOptimization(Trainer):
             nn.Module
                 torch nn.Module
         """
+        new_model = None
         if models_hyperparam:
             list_of_params_keys = HyperParameterOptimization._powerset(
                 list(models_hyperparam.keys())
@@ -255,11 +255,12 @@ class HyperParameterOptimization(Trainer):
         else:
             new_model = type(self.model)()
 
-        try:
-            new_model  # noqa
-        except NameError:
+        if new_model is not None:
             warnings.warn("Model cannot be re-initialised. Using existing one.")
             new_model = self.model
+        assert (
+            new_model is not None
+        ), "There is a problem with the re-initialisation of the model"
         return new_model
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
@@ -278,7 +279,7 @@ class HyperParameterOptimization(Trainer):
 
         # for proper storing of data
         self._cross_validation = config.cross_validation
-        self._k_folds = self.k_fold_class.n_splits
+        self._k_folds = self.k_fold_class.n_splits  # type: ignore
         # generate optimizer
         optimizer = HyperParameterOptimization._new_suggest_categorical(
             trial, "optimizer", config.optimizers
@@ -402,7 +403,7 @@ class HyperParameterOptimization(Trainer):
         optimizers_params: Optional[Dict[str, Any]] = None,
         dataloaders_params: Optional[Dict[str, Any]] = None,
         models_hyperparams: Optional[Dict[str, Any]] = None,
-        lr_scheduler: Type[_LRScheduler] = None,
+        lr_scheduler: Optional[Type[_LRScheduler]] = None,
         schedulers_params: Optional[Dict[str, Any]] = None,
         profiling: bool = False,
         parallel_tpu: bool = False,
@@ -673,7 +674,7 @@ class HyperParameterOptimization(Trainer):
         scalars_dict_avg = self._refactor_scalars(scalars_dict_value)
         # dict of parameters
         dictio = {
-            k: (int(v) if isinstance(v, np.int64) or isinstance(v, np.int32) else v)
+            k: (int(v) if isinstance(v, np.int64) or isinstance(v, np.int32) else v)  # type: ignore
             for k, v in zip(keys, list_res[0][1:-2])
         }
 
@@ -682,8 +683,8 @@ class HyperParameterOptimization(Trainer):
                 dictio,
                 {"loss": list_res[0][-2], "accuracy": list_res[0][-1]},
                 run_name=scalar_dict_key,
-                scalars_lists=scalars_dict_avg,
-                best_not_last=self.best_not_last_gs,
+                scalars_lists=scalars_dict_avg,  # type: ignore
+                best_not_last=self.best_not_last_gs,  # type: ignore
             )
         except KeyError:  # this happens when trials have been pruned
             pass

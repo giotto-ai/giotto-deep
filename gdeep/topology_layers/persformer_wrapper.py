@@ -12,7 +12,7 @@ from torch.nn import Module
 from .persformer import Persformer
 from .persformer_config import PersformerConfig
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class PersformerWrapper(Module):

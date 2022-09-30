@@ -217,8 +217,8 @@ class QuasihyperbolicDecisionBoundaryCalculator(DecisionBoundaryCalculator):
             method="rk4",
             options=dict(step_size=step_size),
         )
-        self.points = ode_solver_output[1, 0]
-        self.vectors = ode_solver_output[1, 1]
+        self.points = ode_solver_output[1, 0]  # type: ignore
+        self.vectors = ode_solver_output[1, 1]  # type: ignore
 
     def get_decision_boundary(self) -> torch.Tensor:
         return self.points

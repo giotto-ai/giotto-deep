@@ -4,7 +4,7 @@ from typing import List, Any, Union
 import torch
 from torch import nn
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class SaveOutput(ABC):

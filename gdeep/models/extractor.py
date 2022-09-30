@@ -8,7 +8,7 @@ from ..analysis.decision_boundary import UniformlySampledPoint
 from . import SaveLayerOutput
 from gdeep.utility import DEVICE
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class ModelExtractor:
@@ -226,7 +226,7 @@ class ModelExtractor:
         grads: List[Tensor] = []
         if isinstance(x, tuple) or isinstance(x, list):
             for xi in x:
-                grads.append(xi.grad)
+                grads.append(xi.grad)  # type: ignore
         else:
-            grads.append(x.grad)
+            grads.append(x.grad)  # type: ignore
         return grads, output_grads

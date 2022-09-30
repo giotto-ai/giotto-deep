@@ -8,8 +8,10 @@ from torchtext import datasets as textdatasets
 from .tori import ToriDataset
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 from ..dataset_factory import DatasetFactory
+from torch.utils.data import IterableDataset
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
+
 T = TypeVar("T")
 
 
@@ -149,13 +151,13 @@ class DatasetBuilder:
     ) -> Tuple[Dataset[Any], Optional[Dataset[Any]], Optional[Dataset[Any]]]:
         """This private method converts and IterableDataset
         to a MapDataset"""
-        if isinstance(training_data, torch.utils.data.IterableDataset):
+        if isinstance(training_data, IterableDataset):
             training_data = self._to_map_style_dataset(training_data)
         if validation_data is not None:
-            if isinstance(validation_data, torch.utils.data.IterableDataset):
+            if isinstance(validation_data, IterableDataset):
                 validation_data = self._to_map_style_dataset(validation_data)
         if test_data is not None:
-            if isinstance(test_data, torch.utils.data.IterableDataset):
+            if isinstance(test_data, IterableDataset):
                 test_data = self._to_map_style_dataset(test_data)
         return training_data, validation_data, test_data
 
