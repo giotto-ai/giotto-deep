@@ -31,13 +31,13 @@ test_indices = list(range(64 * 5))
 dl_tr2, dl_ts2, _ = DataLoaderBuilder(
     (transformed_textds, transformed_textts)  # type: ignore
 ).build(
-    (
+    [
         {
             "batch_size": 16,  # type: ignore
             "sampler": SubsetRandomSampler(train_indices),
         },
         {"batch_size": 16, "sampler": SubsetRandomSampler(test_indices)},
-    )
+    ]
 )
 
 
