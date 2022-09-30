@@ -1,4 +1,3 @@
-from imp import new_module
 import os
 import time
 import warnings
@@ -30,9 +29,7 @@ from gdeep.visualisation import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
 
-from gdeep.utility.custome_types import Tensor
-
-from gdeep.utility.custome_types import Array
+from gdeep.utility.custome_types import Tensor, Array
 
 SEARCH_METRICS = ("loss", "accuracy")
 
@@ -90,12 +87,9 @@ class GiottoSummaryWriter(SummaryWriter):
             run_name = str(time.time()).replace(":", "-")
         logdir = os.path.join(self._get_file_writer().get_logdir(), run_name)
         with SummaryWriter(log_dir=logdir) as w_hp:
-            assert (
-                w_hp.file_writer is not None
-            ), "Summary writer must have a file writer"
-            w_hp.file_writer.add_summary(exp)
-            w_hp.file_writer.add_summary(ssi)
-            w_hp.file_writer.add_summary(sei)
+            w_hp.file_writer.add_summary(exp)  # type: ignore
+            w_hp.file_writer.add_summary(ssi)  # type: ignore
+            w_hp.file_writer.add_summary(sei)  # type: ignore
             if isinstance(scalars_lists, list) or isinstance(scalars_lists, tuple):
                 scalars_list_loss = scalars_lists[0]
                 if best_not_last:
@@ -237,6 +231,7 @@ class HyperParameterOptimization(Trainer):
             nn.Module
                 torch nn.Module
         """
+        new_model = None
         if models_hyperparam:
             list_of_params_keys = HyperParameterOptimization._powerset(
                 list(models_hyperparam.keys())
@@ -260,12 +255,13 @@ class HyperParameterOptimization(Trainer):
         else:
             new_model = type(self.model)()
 
-        try:
-            new_model  # type: ignore
-        except NameError:
+        if new_model is not None:
             warnings.warn("Model cannot be re-initialised. Using existing one.")
             new_model = self.model
-        return new_module  # type: ignore
+        assert (
+            new_model is not None
+        ), "There is a problem with the re-initialisation of the model"
+        return new_model
 
     def _objective(self, trial: BaseTrial, config: HPOConfig):
         """default callback function for optuna's study
