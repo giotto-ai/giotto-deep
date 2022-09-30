@@ -4,8 +4,7 @@ from .persformer import Persformer
 
 from .persformer_wrapper import PersformerWrapper
 
-import attention
-import pooling_layers
+from . import attention, pooling_layers
 
 __all__ = [
     "PersformerConfig",
