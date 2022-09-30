@@ -170,4 +170,6 @@ class Compactification:
 
         elif self.list_of_pts_in_patches[i].shape[1] >= 3:
             fig = px.scatter_3d(df_plot, x="x0", y="x1", z="x2", color="label")
-        return fig  # noqa
+        else:
+            raise ValueError("Need at least 2 features to plot.")
+        return fig
