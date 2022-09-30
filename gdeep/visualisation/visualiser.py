@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Union, Tuple, Any
 import random
 from copy import copy
 import warnings
@@ -265,7 +265,7 @@ class Visualiser:
         homology_dimensions: Optional[List[int]] = None,
         batch: Optional[Tensor] = None,
         **kwargs
-    ) -> None:  # type: ignore
+    ) -> List[Any]:  # type: ignore
         """
         Args:
             homology_dimensions :
@@ -301,8 +301,7 @@ class Visualiser:
             dgms, samplings=bc.samplings_, homology_dimensions=homology_dimensions
         )
 
-        for i in range(len(plots)):
-            plots[i].show()
+        return plots
 
     def plot_betti_curves_layers(
         self,
@@ -555,7 +554,7 @@ class Visualiser:
             ax.set_xlabel("Head {}".format(idx + 1))
 
             fig.colorbar(im, fraction=0.046, pad=0.04)
-        plt.show()
+        # plt.show()
         self.pipe.writer.add_figure("Self attention map", fig)  # type: ignore
         self.pipe.writer.flush()  # type: ignore
         return fig
