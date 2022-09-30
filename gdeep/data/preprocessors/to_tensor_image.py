@@ -7,7 +7,7 @@ from torchvision.transforms import Resize, ToTensor
 from ..abstract_preprocessing import AbstractPreprocessing
 
 # type definition
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class ToTensorImage(AbstractPreprocessing[Tuple[Any, Any], Tuple[Tensor, Tensor]]):

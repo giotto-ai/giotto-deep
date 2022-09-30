@@ -9,7 +9,8 @@ from .tori import ToriDataset
 from gdeep.utility import DEFAULT_DOWNLOAD_DIR
 from ..dataset_factory import DatasetFactory
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
+
 T = TypeVar("T")
 
 

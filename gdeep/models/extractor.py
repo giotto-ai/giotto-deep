@@ -8,7 +8,7 @@ from ..analysis.decision_boundary import UniformlySampledPoint
 from . import SaveLayerOutput
 from gdeep.utility import DEVICE
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class ModelExtractor:

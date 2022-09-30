@@ -7,7 +7,7 @@ from ..persformer_config import PersformerConfig
 from .attention_base import AttentionBase
 
 # Type aliases
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class ScaledDotProductAttention(AttentionBase):

@@ -12,7 +12,7 @@ from gdeep.search import GiottoSummaryWriter
 from gdeep.data.datasets import FromArray, DataLoaderBuilder
 from gdeep.search import clean_up_files
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class MyDataset(Dataset):

@@ -26,7 +26,7 @@ from gdeep.utility import _inner_refactor_scalars
 from gdeep.utility import DEVICE
 from .metrics import accuracy
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 try:
     import torch_xla

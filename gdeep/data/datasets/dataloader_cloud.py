@@ -13,7 +13,8 @@ from .dataset_cloud import DatasetCloud
 from .base_dataloaders import DataLoaderBuilder
 from .base_dataloaders import AbstractDataLoaderBuilder
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
+
 T = TypeVar("T")
 
 

@@ -11,7 +11,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 def _are_compatible(

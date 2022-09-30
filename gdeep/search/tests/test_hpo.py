@@ -15,7 +15,7 @@ from gdeep.data.preprocessors import ToTensorImage
 from gdeep.search import HyperParameterOptimization, GiottoSummaryWriter
 from gdeep.models import FFNet
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 # parametric model with string value
@@ -178,7 +178,7 @@ def test_hpo_loss():
     # starting the gridsearch
     search.start(
         [SGD, Adam], 2, False, optimizers_params, dataloaders_params, models_hyperparams
-    );
+    )
 
 
 def test_hpo_string_parameters():
@@ -205,7 +205,7 @@ def test_hpo_string_parameters():
     # starting the gridsearch
     search.start(
         [SGD], 1, False, optimizers_params, dataloaders_params, models_hyperparams
-    );
+    )
 
 
 def test_hpo_collate():
@@ -251,4 +251,4 @@ def test_hpo_collate():
     dataloaders_params = {"batch_size": [3, 9, 2], "collate_fn": [collate_fn]}
 
     # starting the gridsearch
-    search.start([SGD, Adam], 1, False, optimizers_params, dataloaders_params);
+    search.start([SGD, Adam], 1, False, optimizers_params, dataloaders_params)

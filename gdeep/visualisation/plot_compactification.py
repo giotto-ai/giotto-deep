@@ -17,8 +17,9 @@ from ..analysis.decision_boundary import (
     GradientFlowDecisionBoundaryCalculator,
 )
 
-Tensor = torch.Tensor
-Array = np.ndarray
+from gdeep.utility.custome_types import Tensor
+
+from gdeep.utility.custome_types import Array
 
 
 class Compactification:

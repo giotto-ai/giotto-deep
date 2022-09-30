@@ -21,7 +21,7 @@ from gdeep.utility.enum_types import (
 )
 
 # Type aliases
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class PersformerConfig(PretrainedConfig):

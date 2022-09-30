@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class PeriodicNeuralNetwork(nn.Module):

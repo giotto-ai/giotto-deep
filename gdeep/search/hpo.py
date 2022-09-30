@@ -30,8 +30,10 @@ from gdeep.visualisation import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
 
-Tensor = torch.Tensor
-Array = np.ndarray
+from gdeep.utility.custome_types import Tensor
+
+from gdeep.utility.custome_types import Array
+
 SEARCH_METRICS = ("loss", "accuracy")
 
 

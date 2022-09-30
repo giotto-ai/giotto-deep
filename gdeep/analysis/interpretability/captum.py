@@ -9,7 +9,7 @@ from .attribution_factory import get_attr
 
 from gdeep.utility import DEVICE
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
 
 
 class Interpreter:

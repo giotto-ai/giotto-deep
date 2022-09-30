@@ -30,7 +30,8 @@ from .dataset_cloud import DatasetCloud
 from ..transforming_dataset import TransformingDataset
 
 
-Tensor = torch.Tensor
+from gdeep.utility.custome_types import Tensor
+
 T = TypeVar("T")
 
 
