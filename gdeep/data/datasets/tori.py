@@ -98,9 +98,9 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
             [
                 [
                     (2 + radius * np.cos(s)) * np.cos(t)  # type: ignore
-                    + noise * (np.random.rand()[0] - 0.5),
+                    + noise * (np.random.rand() - 0.5),
                     (2 + radius * np.cos(s)) * np.sin(t)  # type: ignore
-                    + noise * (np.random.rand()[0] - 0.5),
+                    + noise * (np.random.rand() - 0.5),
                     radius * np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),  # type: ignore
                 ]
                 for t in range(n_points)
@@ -156,10 +156,10 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
             [
                 [
                     (radius1 + radius2 * np.cos(s)) * np.cos(t)  # type: ignore
-                    + noise * (np.random.rand()[0] - 0.5),
+                    + noise * (np.random.rand() - 0.5),
                     (radius1 + radius2 * np.cos(s)) * np.sin(t)  # type: ignore
-                    + noise * (np.random.rand()[0] - 0.5),
-                    radius2 * np.sin(s) + noise * (np.random.rand()[0] - 0.5),  # type: ignore
+                    + noise * (np.random.rand() - 0.5),
+                    radius2 * np.sin(s) + noise * (np.random.rand() - 0.5),  # type: ignore
                 ]
                 for t in range(n_points)
                 for s in range(n_points)
