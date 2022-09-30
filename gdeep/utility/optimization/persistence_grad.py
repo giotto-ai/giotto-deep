@@ -56,7 +56,7 @@ class PersistenceGradient:
 
     Examples::
 
-        from gdeep.utility.optimisation import PersistenceGradient
+        from gdeep.utility.optimization import PersistenceGradient
         # prepare the datum
         X = torch.tensor([[1, 0.], [0, 1.], [2, 2], [2, 1]])
         # select the homology dimensions
