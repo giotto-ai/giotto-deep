@@ -25,7 +25,7 @@ from torch.optim.lr_scheduler import _LRScheduler  # noqa
 from gdeep.utility import _inner_refactor_scalars, KnownWarningSilencer  # noqa
 from gdeep.trainer import Trainer
 from gdeep.search import Benchmark, _benchmarking_param
-from gdeep.visualisation import plotly2tensor
+from gdeep.visualization import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
 
@@ -70,7 +70,7 @@ class GiottoSummaryWriter(SummaryWriter):
                 Each one of the inner lists contain the
                 pairs (metric_value, epoch).
             best_not_last:
-                boolean flag to dcide what value to store in the
+                boolean flag to decide what value to store in the
                 tensorboard tables for the whole training cycle
         Examples::
             from torch.utils.tensorboard import SummaryWriter
@@ -119,7 +119,7 @@ class HyperParameterOptimization(Trainer):
     parameters such as learning rate, optimizer.
     Args:
         obj :
-            either a Trainer or a Bechmark class
+            either a Trainer or a Benchmark class
             instance
         search_metric :
             either ``'loss'`` or ``'accuracy'``
@@ -382,7 +382,7 @@ class HyperParameterOptimization(Trainer):
             return accuracy
 
     def _extract_model_and_dataset_name(self, writer_tag: str) -> Tuple[str, str]:
-        """Extract the model and dataset anme from the writer_tag"""
+        """Extract the model and dataset from the writer_tag"""
         index_ds = writer_tag.find("Dataset:")
         if index_ds == -1:
             dataset_name = self.pipe.dataloaders[0].dataset.__class__.__name__
@@ -427,7 +427,7 @@ class HyperParameterOptimization(Trainer):
             models_hyperparams:
                 dictionary of model parameters
             lr_scheduler:
-                torch learning rate schduler class
+                torch learning rate scheduler class
             schedulers_params:
                 learning rate scheduler parameters
             profiling :
@@ -443,10 +443,10 @@ class HyperParameterOptimization(Trainer):
                 bool flag to decide whether to continue
                 training or not
             store_grad_layer_hist:
-                flag to store the gradents of the layers in the
+                flag to store the gradients of the layers in the
                 tensorboard histograms
             writer_tag:
-                tag to prepend to the ouput
+                tag to prepend to the output
                 on tensorboard
         """
         if self.search_metric == "loss":
@@ -695,15 +695,15 @@ class HyperParameterOptimization(Trainer):
         self, model_name: str = "model", dataset_name: str = "dataset"
     ) -> pd.DataFrame:
         """This method returns the dataframe with all the results of
-        the hyperparameters optimisaton.
+        the hyperparameters optimization.
         It also saves the figures in the writer.
         Args:
             model_name:
                 the model name for the
-                tensorboard gridsearch table
+                tensorboard hpo table
             dataset_name:
                 the dataset name for the
-                tensorboard gridsearch table
+                tensorboard hpo table
         Returns:
             pd.DataFrame:
                 the hyperparameter table
@@ -741,7 +741,7 @@ class HyperParameterOptimization(Trainer):
             + list(trial_best.params.keys())
             + ["loss", "accuracy"],
         )
-        # compute hyperparams correlaton
+        # compute hyperparams correlation
         corr, labels = self._correlation_of_hyperparams()
         if self.n_trials > 1:
             try:
@@ -841,7 +841,7 @@ class HyperParameterOptimization(Trainer):
         trial: BaseTrial, params: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """Utility function to generate the parameters
-        for the gridsearch. It is based on optuna `suggest_<type>`.
+        for the hyperparameter search. It is based on optuna `suggest_<type>`.
         Args:
             trial (optuna.trial):
                 optuna trial variable

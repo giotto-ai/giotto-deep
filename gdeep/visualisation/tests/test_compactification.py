@@ -1,4 +1,4 @@
-from gdeep.visualisation import Compactification
+from gdeep.visualization import Compactification
 from gdeep.models import FFNet
 from gdeep.utility import DEVICE
 

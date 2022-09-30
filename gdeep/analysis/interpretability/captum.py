@@ -38,7 +38,7 @@ class Interpreter:
         # self.model = model
         self.model = model.to(DEVICE)
         self.method = method
-        self.stored_visualisations: List = []
+        self.stored_visualizations: List = []
 
     def interpret(
         self,
@@ -209,7 +209,7 @@ class Interpreter:
             pred_ind,
             label,
             delta.item(),
-            self.stored_visualisations,
+            self.stored_visualizations,
         )
         return sentence, self.attribution
 

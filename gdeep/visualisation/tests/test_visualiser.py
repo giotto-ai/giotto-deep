@@ -3,11 +3,11 @@ import torch.nn as nn
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from gdeep.visualisation import Visualiser
 from gdeep.data.preprocessors import TokenizerTextClassification
 from gdeep.data.datasets import DataLoaderBuilder, DatasetBuilder
 from gdeep.trainer import Trainer
 from gdeep.utility import DEVICE
+from gdeep.visualisation import Visualiser
 
 
 bd = DatasetBuilder(name="AG_NEWS", convert_to_map_dataset=True)

@@ -1,5 +1,5 @@
-Visualisation
+visualization
 ============
 
-.. automodule:: gdeep.visualisation
+.. automodule:: gdeep.visualization
    :members:

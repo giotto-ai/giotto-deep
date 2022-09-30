@@ -9,7 +9,7 @@ from . import (
     search,
     topology_layers,
     utility,
-    visualisation,
+    visualization,
 )
 
 __all__ = [
@@ -20,5 +20,5 @@ __all__ = [
     "search",
     "topology_layers",
     "utility",
-    "visualisation",
+    "visualization",
 ]

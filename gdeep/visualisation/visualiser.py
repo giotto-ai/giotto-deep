@@ -43,7 +43,7 @@ class Visualiser:
 
     Examples::
 
-        from gdeep.visualisation import Visualiser
+        from gdeep.visualization import Visualiser
         # you must have an initialised `trainer`
         vs = Visualiser(trainer)
         vs.plot_data_model()
@@ -58,7 +58,7 @@ class Visualiser:
     def plot_interactive_model(self) -> None:
         """This function has no arguments: its purpose
         is to store the model to tensorboard for an
-        interactive visualisation.
+        interactive visualization.
         """
 
         dataiter = iter(self.pipe.dataloaders[0])
@@ -77,7 +77,7 @@ class Visualiser:
     def plot_3d_dataset(self, n_pts: int = 100) -> None:
         """This function has no arguments: its purpose
         is to store data to the tensorboard for
-        visualisation. Note that we are expecting the
+        visualization. Note that we are expecting the
         dataset item to be of type Tuple[Tensor, Tensor]
 
         Args:
@@ -367,7 +367,7 @@ class Visualiser:
         Returns:
             matplotlib.figure
         """
-        viz = interpreter.stored_visualisations
+        viz = interpreter.stored_visualizations
         fig = visualization.visualize_text(viz)
         name = "out.png"
         hti = Html2Image()
