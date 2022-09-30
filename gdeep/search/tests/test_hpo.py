@@ -15,7 +15,7 @@ from gdeep.data.preprocessors import ToTensorImage
 from gdeep.search import HyperParameterOptimization, GiottoSummaryWriter
 from gdeep.models import FFNet
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 # parametric model with string value
@@ -37,7 +37,7 @@ class Model2(nn.Module):
 class Model1(nn.Module):
     def __init__(self):
         super(Model1, self).__init__()
-        self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[4, 5, 4]))
+        self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=(4, 5, 4)))
 
     def forward(self, x):
         return self.seqmodel(x).reshape(-1, 2, 2)

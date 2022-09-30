@@ -16,9 +16,9 @@ import operator as op
 
 from gdeep.utility import DEVICE
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
-from gdeep.utility.custome_types import Array
+from gdeep.utility.custom_types import Array
 
 
 class PersistenceGradient:

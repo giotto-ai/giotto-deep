@@ -12,7 +12,7 @@ from gdeep.search import GiottoSummaryWriter
 from gdeep.data.datasets import FromArray, DataLoaderBuilder
 from gdeep.search import clean_up_files
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class MyDataset(Dataset):
@@ -46,7 +46,7 @@ def collate_fn(batch_tuple: List):
 class Model1(nn.Module):
     def __init__(self):
         super(Model1, self).__init__()
-        self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[4, 5, 4]))
+        self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=(4, 5, 4)))
 
     def forward(self, x):
         return self.seqmodel(x).reshape(-1, 2, 2)

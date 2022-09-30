@@ -21,7 +21,7 @@ from gdeep.utility.enum_types import (
 )
 
 # Type aliases
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class PersformerConfig(PretrainedConfig):

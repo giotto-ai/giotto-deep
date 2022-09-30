@@ -18,9 +18,9 @@ from ..analysis.decision_boundary import (
     GradientFlowDecisionBoundaryCalculator,
 )
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
-from gdeep.utility.custome_types import Array
+from gdeep.utility.custom_types import Array
 
 
 class Compactification:

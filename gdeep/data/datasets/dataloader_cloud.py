@@ -13,7 +13,7 @@ from .dataset_cloud import DatasetCloud
 from .base_dataloaders import DataLoaderBuilder
 from .base_dataloaders import AbstractDataLoaderBuilder
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 T = TypeVar("T")
 

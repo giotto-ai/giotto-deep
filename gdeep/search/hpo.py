@@ -29,7 +29,7 @@ from gdeep.visualisation import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
 
-from gdeep.utility.custome_types import Tensor, Array
+from gdeep.utility.custom_types import Tensor, Array
 
 SEARCH_METRICS = ("loss", "accuracy")
 

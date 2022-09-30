@@ -6,7 +6,7 @@ from torch.nn import Module
 from ..persformer_config import PersformerConfig
 
 # Type aliases
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class MaxPoolingLayer(Module):

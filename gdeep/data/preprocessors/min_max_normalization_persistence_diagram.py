@@ -13,7 +13,7 @@ from ..abstract_preprocessing import AbstractPreprocessing
 from ..transforming_dataset import TransformingDataset
 from .min_max_scalar import _compute_min_max_of_dataset
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 PD = OneHotEncodedPersistenceDiagram
 

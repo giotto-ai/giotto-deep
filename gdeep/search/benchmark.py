@@ -15,7 +15,7 @@ from gdeep.utility import _are_compatible  # noqa
 from gdeep.trainer import accuracy, TrainerConfig
 from .hpo_config import HPOConfig
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class Benchmark:

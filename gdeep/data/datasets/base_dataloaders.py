@@ -30,7 +30,7 @@ from .dataset_cloud import DatasetCloud
 from ..transforming_dataset import TransformingDataset
 
 
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 T = TypeVar("T")
 

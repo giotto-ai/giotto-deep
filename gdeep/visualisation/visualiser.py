@@ -27,9 +27,9 @@ from . import (
 )
 
 FONT_SIZE = 16
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
-from gdeep.utility.custome_types import Array
+from gdeep.utility.custom_types import Array
 
 
 class Visualiser:

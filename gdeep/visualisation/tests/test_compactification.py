@@ -4,7 +4,7 @@ from gdeep.utility import DEVICE
 
 
 def test_compactification():
-    model = FFNet([2, 4, 2]).to(DEVICE)
+    model = FFNet((2, 4, 2)).to(DEVICE)
     c = Compactification(
         model,
         0.4,

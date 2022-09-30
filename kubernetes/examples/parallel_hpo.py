@@ -43,7 +43,7 @@ def hpo_parallel(usr: str, psw: str, host: str, study_name: str) -> None:
     class Model1(nn.Module):
         def __init__(self):
             super(Model1, self).__init__()
-            self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[3, 5, 10, 5, 2]))
+            self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=(3, 5, 10, 5, 2)))
 
         def forward(self, x):
             return self.seqmodel(x)

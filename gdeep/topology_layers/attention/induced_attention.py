@@ -6,7 +6,7 @@ from ..persformer_config import PersformerConfig
 from .attention_base import AttentionBase
 
 # Type aliases
-from gdeep.utility.custome_types import Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class InducedAttention(AttentionBase):
