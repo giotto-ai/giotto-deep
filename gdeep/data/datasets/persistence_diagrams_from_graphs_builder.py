@@ -208,8 +208,8 @@ class GraphDataset(Dataset):
         adj_file = os.path.join(path, self.dataset_name + "_A.txt")
         sparse_array = np.loadtxt(adj_file, delimiter=",", dtype=np.int32).T - 1  # type: ignore
 
-        rows = defaultdict(list)  # type: ignore
-        cols = defaultdict(list)  # type: ignore
+        rows: defaultdict = defaultdict(list)
+        cols: defaultdict = defaultdict(list)
 
         for node_id in sparse_array[0]:
             rows[indices[node_id]] += [node_id]

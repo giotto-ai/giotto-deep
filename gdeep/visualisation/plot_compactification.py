@@ -8,6 +8,7 @@ from torch import nn
 # plot
 import plotly.express as px
 import pandas as pd
+from plotly.graph_objs._figure import Figure  # noqa
 
 # ML
 from sklearn.metrics import pairwise_distances
@@ -36,7 +37,7 @@ class Compactification:
             number of samples per chart
         n_epochs:
             number of epochs needed to push points to the
-            decison boundary
+            decision boundary
         boundary_tuple :
             list of pairs (left,right).
             This list defines the boundaries in each coordinates
@@ -150,7 +151,7 @@ class Compactification:
             self.label_final += list(j * np.ones(len(patch)))
         return d_final, self.label_final
 
-    def plot_chart(self, i: int) -> None:
+    def plot_chart(self, i: int) -> Figure:
         """This functions plots the points in each chart.
 
         Args:
@@ -166,7 +167,7 @@ class Compactification:
         df_plot["label"] = self.label_final
         if self.list_of_pts_in_patches[i].shape[1] == 2:
             fig = px.scatter(df_plot, x="x0", y="x1", color="label")
-            fig.show()
+
         elif self.list_of_pts_in_patches[i].shape[1] >= 3:
             fig = px.scatter_3d(df_plot, x="x0", y="x1", z="x2", color="label")
-            fig.show()
+        return fig  # noqa
