@@ -36,7 +36,7 @@ T = TypeVar("T")
 
 
 class AbstractDataLoaderBuilder(ABC):
-    """The abstractr class to interface the
+    """The abstract class to interface the
     Giotto dataloaders"""
 
     @abstractmethod
