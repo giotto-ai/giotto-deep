@@ -70,4 +70,7 @@ def test_get_one_hot_encoded_persistence_diagram_from_gtda():
 
     diagram = diagrams[0]
 
-    get_one_hot_encoded_persistence_diagram_from_gtda(diagram)._data.shape == (123, 4)
+    assert get_one_hot_encoded_persistence_diagram_from_gtda(diagram)._data.shape == (
+        123,
+        4,
+    )

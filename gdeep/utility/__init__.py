@@ -26,6 +26,9 @@ from .enum_types import (
     ActivationFunction,
 )
 
+import optimisation
+import extended_persistence
+
 __all__ = [
     "save_model_and_optimizer",
     "optimisation",

@@ -9,6 +9,5 @@ __all__ = [
     "HPOConfig",
     "HyperParameterOptimization",
     "GiottoSummaryWriter",
-    "PersformerHyperparameterSearch",
     "clean_up_files",
 ]
