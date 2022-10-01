@@ -15,6 +15,7 @@ class SAM(torch.optim.Optimizer):
         super(SAM, self).__init__(params, defaults)
         if base_optimizer is not None:
             self.base_optimizer_cls = base_optimizer
+        assert self.base_optimizer_cls is not None, "Must provide base_optimizer_cls"
         self.base_optimizer = self.base_optimizer_cls(self.param_groups, **kwargs)
         self.param_groups = self.base_optimizer.param_groups
 
@@ -80,7 +81,7 @@ class SAM(torch.optim.Optimizer):
                     if p.grad is not None
                 ]
             ),
-            p=2,
+            p=2,  # type: ignore
         )
         return norm
 

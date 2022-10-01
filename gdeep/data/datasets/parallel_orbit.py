@@ -231,7 +231,9 @@ class OrbitsGenerator(object):
         # Convert persistence diagram to one-hot homological dimension encoding
         self._persistence_diagrams = self._persistence_diagrams_to_one_hot(
             persistence_diagrams_categorical
-        ).astype(self._dtype)
+        ).astype(  # type: ignore
+            self._dtype
+        )  # type: ignore
 
     def _persistence_diagrams_to_one_hot(self, persistence_diagrams):
         """Convert homology dimension to one-hot encoding

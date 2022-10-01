@@ -7,8 +7,9 @@ import torch
 from torch.utils.data import Dataset
 
 
-Tensor = torch.Tensor
-Array = np.ndarray
+from gdeep.utility.custom_types import Tensor
+
+from gdeep.utility.custom_types import Array
 
 
 class Rotation:
@@ -96,16 +97,16 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
         torus_point_clouds = np.asarray(
             [
                 [
-                    (2 + radius * np.cos(s)) * np.cos(t)
-                    + noise * (np.random.rand(1)[0] - 0.5),
-                    (2 + radius * np.cos(s)) * np.sin(t)
-                    + noise * (np.random.rand(1)[0] - 0.5),
-                    radius * np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
+                    (2 + radius * np.cos(s)) * np.cos(t)  # type: ignore
+                    + noise * (np.random.rand() - 0.5),
+                    (2 + radius * np.cos(s)) * np.sin(t)  # type: ignore
+                    + noise * (np.random.rand() - 0.5),
+                    radius * np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),  # type: ignore
                 ]
                 for t in range(n_points)
                 for s in range(n_points)
             ]
-        )
+        )  # type: ignore
 
         torus_point_clouds = np.einsum(
             "ij,kj->ki", rotation.rotation_matrix(), torus_point_clouds
@@ -154,16 +155,16 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
         torus_point_clouds = np.asarray(
             [
                 [
-                    (radius1 + radius2 * np.cos(s)) * np.cos(t)
-                    + noise * (np.random.rand(1)[0] - 0.5),
-                    (radius1 + radius2 * np.cos(s)) * np.sin(t)
-                    + noise * (np.random.rand(1)[0] - 0.5),
-                    radius2 * np.sin(s) + noise * (np.random.rand(1)[0] - 0.5),
+                    (radius1 + radius2 * np.cos(s)) * np.cos(t)  # type: ignore
+                    + noise * (np.random.rand() - 0.5),
+                    (radius1 + radius2 * np.cos(s)) * np.sin(t)  # type: ignore
+                    + noise * (np.random.rand() - 0.5),
+                    radius2 * np.sin(s) + noise * (np.random.rand() - 0.5),  # type: ignore
                 ]
                 for t in range(n_points)
                 for s in range(n_points)
             ]
-        )
+        )  # type: ignore
 
         torus_point_clouds = np.einsum(
             "ij,kj->ki", rotation.rotation_matrix(), torus_point_clouds
@@ -221,7 +222,7 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
             (torus_point_cloud[0], torus_point_cloud[1]), axis=0
         )
         tori_labels = np.concatenate((torus_labels[0], torus_labels[1]), axis=0)
-        return torch.from_numpy(tori_point_cloud).to(torch.float32), tori_labels
+        return torch.from_numpy(tori_point_cloud).to(torch.float32), tori_labels  # type: ignore
 
     def _make_entangled_tori_dataset(
         self, m: int = 2, n_pts: int = 10
@@ -260,9 +261,9 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
 
         for t in translations:
             if t != [0, 0, 0]:
-                data = np.append(data, np.add(tori_entangled, t), axis=0)
+                data = np.append(data, np.add(tori_entangled, t), axis=0)  # type: ignore
                 lab = np.append(lab, labels)
-        return torch.from_numpy(data).to(torch.float32), lab
+        return torch.from_numpy(data).to(torch.float32), lab  # type: ignore
 
     @staticmethod
     def _make_blobs(m: int = 3, n_pts: int = 200) -> Tuple[Tensor, Array]:
@@ -279,7 +280,7 @@ class ToriDataset(Dataset[Tuple[Tensor, Tensor]]):
             (tuple):
                 the tuple for data and labels
         """
-        data, lab = make_blobs(
+        data, lab = make_blobs(  # type: ignore
             n_samples=n_pts, centers=m, n_features=3, random_state=42
         )
         return torch.from_numpy(data).to(torch.float32), lab

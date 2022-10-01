@@ -11,7 +11,7 @@ from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
     get_one_hot_encoded_persistence_diagram_from_gudhi_extended,
 )
 
-Array = np.ndarray
+from gdeep.utility.custom_types import Array
 
 
 # Compute the heat kernel signature of a graph.
@@ -30,7 +30,7 @@ def _heat_kernel_signature(adj_mat: Array, diffusion_parameter: float = 1.0) -> 
             (num_vertices).
     """
     eigenvals, eigenvectors = _get_eigenvalues_eigenvectors(adj_mat)
-    hks = (np.square(eigenvectors) * np.exp(-diffusion_parameter * eigenvals)).sum(
+    hks = (np.square(eigenvectors) * np.exp(-diffusion_parameter * eigenvals)).sum(  # type: ignore
         axis=1
     )
     return hks
@@ -84,12 +84,12 @@ def graph_extended_persistence_gudhi(
 
     # TODO: Rewrite this function
     num_vertices = A.shape[0]
-    (xs, ys) = np.where(np.triu(A))
+    (xs, ys) = np.where(np.triu(A))  # type: ignore
     st = gd.SimplexTree()  # type: ignore
     for i in range(num_vertices):
         st.insert([i], filtration=-1e10)
     for idx, x in enumerate(xs):
-        st.insert([x, ys[idx]], filtration=-1e10)
+        st.insert([x, ys[idx]], filtration=-1e10)  # type: ignore
     for i in range(num_vertices):
         st.assign_filtration([i], filtration_val[i])
     st.make_filtration_non_decreasing()
@@ -145,4 +145,4 @@ def graph_extended_persistence_gudhi(
         if len(dgmExt1)
         else np.empty([0, 2])
     )
-    return dgmOrd0, dgmExt0, dgmRel1, dgmExt1
+    return dgmOrd0, dgmExt0, dgmRel1, dgmExt1  # type: ignore

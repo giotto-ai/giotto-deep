@@ -7,8 +7,7 @@ from gtda.homology import VietorisRipsPersistence, WeakAlphaPersistence
 from gtda.graphs import KNeighborsGraph, GraphGeodesicDistance
 
 
-Array = numpy.ndarray
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor, Array
 
 
 def knn_distance_matrix(x: List, k: int = 3):
@@ -121,7 +120,7 @@ def _simplified_persistence_of_activations(
 
     activations_list_array = _convert_list_of_tensor_to_numpy(inputs)
     activations_distances = [
-        pairwise_distances(x.reshape((x.shape[0], -1))) for x in activations_list_array
+        pairwise_distances(x.reshape((x.shape[0], -1))) for x in activations_list_array  # type: ignore
     ]
     activations_filtered_distances = [
         (array > filtration_value) * 1.0 for array in activations_distances

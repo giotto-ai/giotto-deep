@@ -22,7 +22,7 @@ class UniformlySampledPoint:
         scale = np.array([[right - left for (left, right) in tuple_list]])
         translation = np.array([[left for (left, _) in tuple_list]])
 
-        self._sample_points = np.random.rand(n_samples, self._dim) * scale + translation
+        self._sample_points = np.random.rand(n_samples, self._dim) * scale + translation  # type: ignore
 
     def __call__(self):
         return self._sample_points

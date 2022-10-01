@@ -11,7 +11,4 @@ __all__ = [
     "DatasetFactory",
     "AbstractPreprocessing",
     "MissingVocabularyError",
-    "datasets",
-    "persistence_diagrams",
-    "preprocessors",
 ]

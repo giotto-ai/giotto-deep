@@ -19,14 +19,14 @@ LOGGER = logging.getLogger(__name__)
 def test_images_from_file():
     """test DatasetImageClassificationFromFiles"""
     file_path = os.path.dirname(os.path.realpath(__file__))
-    transform = ToTensorImage((32, 32))  # this is already fitted
+    transform = ToTensorImage((32, 32))  # type: ignore # this is already fitted
     ds = ImageClassificationFromFiles(
         os.path.join(file_path, "img_data"),
         os.path.join(file_path, "img_data", "labels.csv"),
     )
 
     tds = TransformingDataset(ds, transform)
-    dl, *_ = DataLoaderBuilder((tds,)).build(({"batch_size": 2},))
+    dl, *_ = DataLoaderBuilder((tds,)).build(({"batch_size": 2},))  # type: ignore
     assert len(next(iter(dl))[0].shape) == 4
 
 
@@ -37,7 +37,7 @@ def test_dlbuilderfromdatacloud():
     dl_cloud_builder = DlBuilderFromDataCloud(dataset_name, download_directory)
 
     train_dataloader, val_dataloader, test_dataloader = dl_cloud_builder.build(
-        ({"batch_size": 10},)
+        ({"batch_size": 10},)  # type: ignore
     )
     x, y = next(iter(train_dataloader))
     assert x.shape == torch.Size([10, 5])
