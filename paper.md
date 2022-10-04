@@ -38,7 +38,9 @@ pipeline, with significant success in many fields [@hensel2021survey].
 # Statement of need
 
 `giotto-deep` is a deep-learning Python package that seamlessly integrates topological
-data analysis models and data structures. The library is founded on a PyTorch core
+data analysis models and data structures. Indeed, persistence diagrams (the core descriptors of 
+topological data analysis) are intrinsically sets, and therefore require specific methods to be 
+manipulated as tensors, and analyzed by neural networks. The library is founded on a PyTorch core
 due to the extensive use of the library in the machine learning community.
 The `giotto-deep` package was designed with usability in mind and provides a class-based interface
 to fast implementations of standard machine learning tasks, such as data preprocessing, model building,
@@ -72,8 +74,7 @@ We provide various preprocessing and training pipelines already implemented, but
 we invite users to extend and improve them. The eventual goal is to create a 
 readable code base that is easy to learn and simple to implement so that the 
 contribution of new features would be naturally encouraged.
-Additionally, we provide classical TDA datasets in a dedicated dataset cloud where all the classic
-TDA datasets will be stored; any user can access and download
+Additionally, we provide classical TDA datasets in a dedicated dataset cloud; any user can access and download
 the dataset from the cloud fully automated from the `giotto-deep`.
 
 # Research projects using `giotto-deep`
