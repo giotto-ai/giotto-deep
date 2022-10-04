@@ -20,13 +20,13 @@ hyperparameter optimization in a few lines of code.
 
 You can find the documentation of this repository here: https://giotto-ai.github.io/giotto-deep/
 
-## Run tensorboard for visualisation
+## Run tensorboard for visualization
 
 In order to analyse the results of your models, you need to start **tensorboard**. On the terminal, move inside the `/examples` folder. There, run the following command:
 ```
 tensorboard --logdir=runs
 ```
-Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualisation results that you stored in the `writer = SummaryWriter()`.
+Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualization results that you stored in the `writer = SummaryWriter()`.
 
 ## Install user version
 
@@ -74,6 +74,10 @@ The `giotto-deep` project welcomes contributions of all kinds. Please see our [c
 We are using pre-commit hooks to ensure that the code is formatted correctly. To install the pre-commit hooks, run the following command from the root folder:
 ```
 pre-commit install
+```
+The pre-commit hooks will run automatically before each commit. If you want to run the pre-commit hooks manually, run the following command from the root folder:
+```
+pre-commit run --all-files
 ```
 
 To run both unit and integration tests on *macOS* or *Linux*, simply run the following command from the root folder:

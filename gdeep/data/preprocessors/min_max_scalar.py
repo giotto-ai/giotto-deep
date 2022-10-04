@@ -12,7 +12,8 @@ from torch.utils.data import Dataset
 from ..abstract_preprocessing import AbstractPreprocessing
 from ..transforming_dataset import TransformingDataset
 
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
+
 PD = OneHotEncodedPersistenceDiagram
 
 T = TypeVar("T")

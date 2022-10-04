@@ -20,7 +20,7 @@ This pages contains a list of available features in the library.
 
    utility
 
-   visualisation
+   visualization
 
 References
 ----------

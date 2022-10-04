@@ -73,7 +73,6 @@
 <li class="toctree-l2"><a class="reference internal" href="search.html">Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="topology_layers.html">Topology Layers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html">Utility</a></li>
-<li class="toctree-l2"><a class="reference internal" href="visualisation.html">Visualisation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="index.html#references">References</a></li>
 </ul>
 </li>
@@ -108,27 +107,30 @@
 <span id="models"></span><h1>Models<a class="headerlink" href="#module-gdeep.models" title="Permalink to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="gdeep.models.FFNet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
-<dd><p>This is the class to build a custom feed
-forward network that is easily built from an array,
-in which the number and dimensions of the layers is specified.
-Args:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>arch (list of int or 1d array, default=[2,3,3,2]):</dt><dd><p>this is the list containing the dimension of the layers
-inside your network. all laysers have <code class="docutils literal notranslate"><span class="pre">relu</span></code> except for
-the last one which has <code class="docutils literal notranslate"><span class="pre">sigmoid</span></code> as activation function.
-The first number is the dimension of the input! The final
-of the output</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gdeep.models.</span></span><span class="sig-name descname"><span class="pre">FFNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(2,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet" title="Permalink to this definition"></a></dt>
+<dd><p>Custom network class to easily do experiments</p>
+<p>It is a simple feed-forward network with a variable number of layers and
+neurons. The activation function is ReLU by default, but it can be changed
+by passing a different function as argument.
+The last layer is not activated.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>arch (Tuple[int, …], optional):</dt><dd><p>The architecture of the network.
+Tuple containing the dimension of the layers
+inside your network. The default is (2, 3, 3, 2).
+The depth of the network is inferred from the length of the tuple.</p>
 </dd>
-<dt>activation (callable, default = torch.nn.functional.relu):</dt><dd><p>this is the activation function that will be applied between
-each layer of the fully connected network</p>
+<dt>activation (Optional[Callable], optional):</dt><dd><p>The activation function.
+Defaults to None. If None, ReLU is used.
+All the layers are activated with the same function. The last layer
+is not activated.</p>
 </dd>
 </dl>
-</div></blockquote>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gdeep.models.FFNet.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gdeep.models.FFNet.forward" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gdeep.models.FFNet.forward" title="Permalink to this definition"></a></dt>
 <dd><p>Defines the computation performed at every call.</p>
 <p>Should be overridden by all subclasses.</p>
 <div class="admonition note">

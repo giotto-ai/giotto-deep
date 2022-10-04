@@ -12,7 +12,8 @@ from ..transforming_dataset import TransformingDataset
 
 from .normalization import _compute_mean_of_dataset
 
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
+
 PD = OneHotEncodedPersistenceDiagram
 
 T = TypeVar("T")

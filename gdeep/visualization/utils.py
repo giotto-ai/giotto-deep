@@ -25,13 +25,13 @@ def plotly2tensor(fig) -> torch.Tensor:
     except ValueError:
         write_image(fig, "deleteme" + now + ".jpeg", format="jpeg")
     with Image.open("deleteme" + now + ".jpeg") as img:
-        arr = np.asarray(img).copy()
+        arr = np.asarray(img).copy()  # type: ignore
     os.remove("deleteme" + now + ".jpeg")
     return torch.from_numpy(arr)
 
 
 def png2tensor(file_name) -> torch.Tensor:
     img = Image.open(file_name)
-    arr = np.asarray(img).copy()
+    arr = np.asarray(img).copy()  # type: ignore
     os.remove(file_name)
     return torch.from_numpy(arr)

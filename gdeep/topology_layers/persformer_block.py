@@ -8,7 +8,7 @@ from .persformer_config import PersformerConfig
 from .utility import get_attention_layer, get_feed_forward_layer
 
 # Type aliases
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class PersformerBlock(Module):

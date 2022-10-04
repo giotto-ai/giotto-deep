@@ -7,7 +7,7 @@ from torch.nn import Module, MultiheadAttention
 from ..persformer_config import PersformerConfig
 
 # Type aliases
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class AttentionPoolingLayer(Module):

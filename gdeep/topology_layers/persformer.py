@@ -9,7 +9,7 @@ from .persformer_config import PersformerConfig
 from .utility import get_activation_function, get_pooling_layer
 
 # Type aliases
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class Persformer(Module):

@@ -9,7 +9,7 @@ from .attribution_factory import get_attr
 
 from gdeep.utility import DEVICE
 
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class Interpreter:
@@ -38,7 +38,7 @@ class Interpreter:
         # self.model = model
         self.model = model.to(DEVICE)
         self.method = method
-        self.stored_visualisations: List = []
+        self.stored_visualizations: List = []
 
     def interpret(
         self,
@@ -209,7 +209,7 @@ class Interpreter:
             pred_ind,
             label,
             delta.item(),
-            self.stored_visualisations,
+            self.stored_visualizations,
         )
         return sentence, self.attribution
 

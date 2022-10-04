@@ -39,7 +39,7 @@ models_dicts.append(temp_dict)
 class model_no_param(nn.Module):
     def __init__(self):
         super(model_no_param, self).__init__()
-        self.mod = FFNet([3, 5, 5, 2])
+        self.mod = FFNet((3, 5, 5, 2))
 
     def forward(self, x):
         return self.mod(x)

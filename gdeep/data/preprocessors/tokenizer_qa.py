@@ -13,7 +13,7 @@ from ..abstract_preprocessing import AbstractPreprocessing
 from .._utils import MissingVocabularyError
 
 # type definition
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class TokenizerQA(
