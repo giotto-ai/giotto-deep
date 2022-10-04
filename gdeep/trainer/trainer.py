@@ -265,9 +265,13 @@ class Trainer:
                 new_x.append(xi.to(DEVICE))
             x = new_x
             prediction = self.model(*x)
+            if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
+                prediction = prediction.logits  # unwrapper for HuggingFace BERT model
         else:
             x = x.to(DEVICE)
             prediction = self.model(x)
+            if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
+                prediction = prediction.logits  # unwrapper for HuggingFace BERT model
         y = y.to(DEVICE)
 
         return prediction, x, y
