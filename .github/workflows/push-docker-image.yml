@@ -17,7 +17,7 @@ jobs:
         docker build -f kubernetes/dockerfiles/jupyter-lab/Dockerfile -t matteocao/giotto-deep:gdeep-lab .
         docker push matteocao/giotto-deep:gdeep-lab
         docker build -f kubernetes/dockerfiles/tensorboard/Dockerfile -t matteocao/giotto-deep:gdeep-tensorboard .
-        docker puch matteocao/giotto-deep:gdeep-tensorboard
+        docker push matteocao/giotto-deep:gdeep-tensorboard
         docker build -f kubernetes/dockerfiles/rq-workers/Dockerfile -t matteocao/giotto-deep:gdeep-worker .
         docker push matteocao/giotto-deep:gdeep-worker
 
