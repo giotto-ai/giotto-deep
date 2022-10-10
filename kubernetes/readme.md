@@ -59,6 +59,14 @@ kubectl scale deployment gdeep-rq-worker-deployment --replicas=0 -n main
  9. Run the `giotto-deep/kubernetes/examples/parallel_hpo.ipynb` notebook and see the parallelisation happening!
  10. To check the results, use the tensorboard service: on minikube you can do `minikube service gdeep-tensorboard-service --url -n main`, while on K8 you can simply go to `<ingress_external_ip>/one:8080`
 
+# The general schematics
+
+In this picture we describe the general overview of the cluster:
+
+![img](https://raw.githubusercontent.com/giotto-ai/giotto-deep/master/kubernetes/k8-gdeep.png)
+
+In short, the user have direct access to the `gdeep-lab` and the `gdeep-tensorboard`, for experimenting and visualising. The distribution of HPOs is done in the backend via Redis: the job to be run is pickled and stored in a Redis DB. The workers that are idle will pick-up the job and store teh data on the shared volume. The tensorboard and the jupyter lab will both have access to the share volume.
+
 # Set-up Minikube
 
 From a terminal with administrator access (but not logged in as root), run:
