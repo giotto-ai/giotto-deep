@@ -60,7 +60,7 @@ data into machine learning models with little effort.
 
 ![Simplified architecture diagram.\label{fig:arch}](arch_dgm.png)
 
-`giotto-deep` architecture is schematized in figure \autoref{fig:arch}.
+The `giotto-deep` architecture is schematized in figure \autoref{fig:arch}.
 
 The hyperparameter searches (HPO) can also be distributed on a `kubernetes` cluster
 using [python RQ](https://python-rq.org), speeding up the computation: this is an 
@@ -68,7 +68,7 @@ essential aspect when dealing with large models and large hyperparameter searche
 Many topological computations in `giotto-deep` 
 are performed by `giotto-tda` [@tauzin2021giotto].
 
-Giotto-deep handles the whole pipeline: from data preprocessing up to the hyperparameter search, 
+`giotto-deep` handles the whole pipeline: from data preprocessing up to the hyperparameter search, 
 the `k-fold` cross-validation, and the deployment of the models. 
 We provide various preprocessing and training pipelines already implemented, but 
 we invite users to extend and improve them. The eventual goal is to create a 
