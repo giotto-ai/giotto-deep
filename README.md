@@ -3,6 +3,8 @@
 ![Python package](https://github.com/giotto-ai/giotto-deep/workflows/Python%20package/badge.svg)
 ![Deploy to gh-pages](https://github.com/giotto-ai/giotto-deep/workflows/Deploy%20to%20gh-pages/badge.svg)
 ![Upload Python Package](https://github.com/giotto-ai/giotto-deep/workflows/Upload%20Python%20Package/badge.svg)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.04846/status.svg)](https://doi.org/10.21105/joss.04846)
+
 # giotto-deep
 
 The first library to bring seamless integration between topological data
