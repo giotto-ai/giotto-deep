@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
-from torch.optim import *  # noqa
+#from torch.optim import *  # noqa
 import plotly.express as px
 from optuna.pruners import MedianPruner, BasePruner
 from optuna.trial._base import BaseTrial  # noqa
