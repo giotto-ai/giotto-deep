@@ -16,8 +16,9 @@ import operator as op
 
 from gdeep.utility import DEVICE
 
-Tensor = torch.Tensor
-Array = np.ndarray
+from gdeep.utility.custom_types import Tensor
+
+from gdeep.utility.custom_types import Array
 
 
 class PersistenceGradient:
@@ -55,7 +56,7 @@ class PersistenceGradient:
 
     Examples::
 
-        from gdeep.utility.optimisation import PersistenceGradient
+        from gdeep.utility.optimization import PersistenceGradient
         # prepare the datum
         X = torch.tensor([[1, 0.], [0, 1.], [2, 2], [2, 1]])
         # select the homology dimensions
@@ -126,7 +127,7 @@ class PersistenceGradient:
         # Freeing the workers:
         pool.close()
         pool.join()
-        return np.concatenate(individual_results)
+        return np.concatenate(individual_results)  # type: ignore
 
     def _simplicial_pairs_of_indices(self, x: Tensor) -> Tensor:
         """Private function to compute the pair of indices in X to
@@ -332,7 +333,7 @@ class PersistenceGradient:
         # this is much slower
         if self.directed and self.metric == "precomputed":
             persistence_array, phi, _ = self._persistence(xx)
-            for item in persistence_array:
+            for item in persistence_array:  # type: ignore
                 if item[1] != -1:
                     out += phi[item[1]] - phi[item[0]]
         else:
@@ -344,7 +345,7 @@ class PersistenceGradient:
 
     def sgd(
         self, xx: Tensor, lr: float = 0.01, n_epochs: int = 5
-    ) -> Tuple[Figure, Figure, List[float]]:
+    ) -> Tuple[Figure, Figure, List[float]]:  # type: ignore
         """This function is the core function of this class and uses the
         SGD method to move points around in order to optimise
         ``persistence_function``
@@ -380,18 +381,18 @@ class PersistenceGradient:
             optimizer.zero_grad()
             loss = self.persistence_function(xx)
             loss_val.append(loss.item())
-            x = np.concatenate((x, xx.detach().numpy()[:, 0]))
-            y = np.concatenate((y, xx.detach().numpy()[:, 1]))
+            x = np.concatenate((x, xx.detach().numpy()[:, 0]))  # type: ignore
+            y = np.concatenate((y, xx.detach().numpy()[:, 1]))  # type: ignore
             loss.backward()  # compute gradients and store them in Xp.grad
-            grads = -xx.grad.detach()
-            u = np.concatenate((u, 1 / grads.norm(2, 1).mean() * grads.numpy()[:, 0]))
-            v = np.concatenate((v, 1 / grads.norm(2, 1).mean() * grads.numpy()[:, 1]))
+            grads = -xx.grad.detach()  # type: ignore
+            u = np.concatenate((u, 1 / grads.norm(2, 1).mean() * grads.numpy()[:, 0]))  # type: ignore
+            v = np.concatenate((v, 1 / grads.norm(2, 1).mean() * grads.numpy()[:, 1]))  # type: ignore
             try:
-                z = np.concatenate((z, xx.detach().numpy()[:, 2]))
-                w = np.concatenate((w, 1 / grads.norm(2) * grads.numpy()[:, 2]))
+                z = np.concatenate((z, xx.detach().numpy()[:, 2]))  # type: ignore
+                w = np.concatenate((w, 1 / grads.norm(2) * grads.numpy()[:, 2]))  # type: ignore
             except IndexError:
-                z = np.concatenate((z, 0 * xx.detach().numpy()[:, 1]))
-                w = np.concatenate((w, 0 * grads.numpy()[:, 1]))
+                z = np.concatenate((z, 0 * xx.detach().numpy()[:, 1]))  # type: ignore
+                w = np.concatenate((w, 0 * grads.numpy()[:, 1]))  # type: ignore
             optimizer.step()
         fig = ff.create_quiver(x, y, u, v)
         fig3d = Figure(

@@ -3,7 +3,7 @@ from typing import Tuple, Any, Dict, Callable, Type, Optional, List, Union
 
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 from sklearn.model_selection._split import BaseCrossValidator  # noqa
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
@@ -15,7 +15,7 @@ from gdeep.utility import _are_compatible  # noqa
 from gdeep.trainer import accuracy, TrainerConfig
 from .hpo_config import HPOConfig
 
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class Benchmark:

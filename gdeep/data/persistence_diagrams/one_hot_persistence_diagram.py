@@ -6,8 +6,9 @@ import torch
 from gdeep.utility.utils import flatten_list_of_lists
 
 T = TypeVar("T")
-Tensor = torch.Tensor
-Array = np.ndarray
+from gdeep.utility.custom_types import Tensor
+
+from gdeep.utility.custom_types import Array
 
 
 class OneHotEncodedPersistenceDiagram:
@@ -17,12 +18,12 @@ class OneHotEncodedPersistenceDiagram:
         data:
             The data of the persistence diagram. The data must be a tensor of shape
             (num_points, 2 + num_homology_dimensions) and the last dimension must be
-            the concatenation of the birth-death-coordinates and the one-hot encoded homology 
+            the concatenation of the birth-death-coordinates and the one-hot encoded homology
             dimension.
             The invariants of the persistence diagram are checked in the constructor.
         homology_dimension_names:
             The names of the homology dimensions. If None, the names are set to H_0, H_1, ...
-    
+
     Example::
             pd =  torch.tensor\
                       ([[0.0928, 0.0995, 0.0000, 0.0000, 1.0000, 0.0000],
@@ -340,7 +341,7 @@ def get_one_hot_encoded_persistence_diagram_from_gudhi_extended(
     diagram_one_hot = np.concatenate([sub_diagram for sub_diagram in diagram], axis=0)
     diagram_one_hot = np.concatenate([diagram_one_hot, homology_type_one_hot], axis=1)
 
-    return OneHotEncodedPersistenceDiagram.from_numpy(diagram_one_hot)
+    return OneHotEncodedPersistenceDiagram.from_numpy(diagram_one_hot)  # type: ignore
 
 
 def _plot_diagram(
@@ -400,9 +401,9 @@ def _plot_diagram(
     )
 
     for dim in homology_dimensions:
-        name = names[int(dim)]
+        name = names[int(dim)]  # type: ignore
         subdiagram = diagram[diagram[:, 2] == dim]
-        unique, inverse, counts = np.unique(
+        unique, inverse, counts = np.unique(  # type: ignore
             subdiagram, axis=0, return_inverse=True, return_counts=True
         )
         hovertext = [

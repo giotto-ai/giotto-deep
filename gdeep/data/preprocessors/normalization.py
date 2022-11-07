@@ -1,5 +1,7 @@
 import warnings
 from typing import TypeVar, Tuple, Any
+
+# Check if python version is 3.10 or higher
 from matplotlib.pyplot import axis
 
 import torch
@@ -8,12 +10,12 @@ from torch.utils.data import Dataset
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
     OneHotEncodedPersistenceDiagram,
 )
+from gdeep.utility.custom_types import Tensor
 
 from ..abstract_preprocessing import AbstractPreprocessing
 from ..transforming_dataset import TransformingDataset
 
 
-Tensor = torch.Tensor
 PD = OneHotEncodedPersistenceDiagram
 
 T = TypeVar("T")

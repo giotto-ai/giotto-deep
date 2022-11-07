@@ -10,7 +10,7 @@ from gdeep.utility import DEVICE
 
 def test_gfdbc_2_dim():
 
-    circle_detect_nn = FFNet([2, 2]).to(DEVICE)
+    circle_detect_nn = FFNet((2, 2)).to(DEVICE)
 
     g = GradientFlowDecisionBoundaryCalculator(
         model=circle_detect_nn,
@@ -24,7 +24,7 @@ def test_gfdbc_2_dim():
 
 def test_gfdbc_multiclass():
 
-    circle_nn_3d = FFNet([3, 3]).to(DEVICE)
+    circle_nn_3d = FFNet((3, 3)).to(DEVICE)
 
     g = GradientFlowDecisionBoundaryCalculator(
         model=circle_nn_3d,

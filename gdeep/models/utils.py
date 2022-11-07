@@ -4,7 +4,7 @@ from typing import List, Any, Union
 import torch
 from torch import nn
 
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class SaveOutput(ABC):
@@ -70,6 +70,12 @@ class SaveLayerOutput(SaveOutput):
                 the output tensor of the module
         """
         if isinstance(module_out, tuple):
-            self.outputs.append(module_out[0].detach())
+            if hasattr(module_out[0], "detach"):
+                self.outputs.append(module_out[0].detach())
+            else:
+                self.outputs.append(module_out[0])  # .detach())
         else:
-            self.outputs.append(module_out.detach())
+            if hasattr(module_out, "detach"):
+                self.outputs.append(module_out.detach())
+            else:
+                self.outputs.append(module_out)  # .detach())

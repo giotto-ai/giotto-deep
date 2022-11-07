@@ -3,6 +3,8 @@
 ![Python package](https://github.com/giotto-ai/giotto-deep/workflows/Python%20package/badge.svg)
 ![Deploy to gh-pages](https://github.com/giotto-ai/giotto-deep/workflows/Deploy%20to%20gh-pages/badge.svg)
 ![Upload Python Package](https://github.com/giotto-ai/giotto-deep/workflows/Upload%20Python%20Package/badge.svg)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.04846/status.svg)](https://doi.org/10.21105/joss.04846)
+
 # giotto-deep
 
 The first library to bring seamless integration between topological data
@@ -20,13 +22,13 @@ hyperparameter optimization in a few lines of code.
 
 You can find the documentation of this repository here: https://giotto-ai.github.io/giotto-deep/
 
-## Run tensorboard for visualisation
+## Run tensorboard for visualization
 
 In order to analyse the results of your models, you need to start **tensorboard**. On the terminal, move inside the `/examples` folder. There, run the following command:
 ```
 tensorboard --logdir=runs
 ```
-Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualisation results that you stored in the `writer = SummaryWriter()`.
+Afterwards go [here](http://localhost:6006/) and, after running the notebooks of interest, you will see all the visualization results that you stored in the `writer = SummaryWriter()`.
 
 ## Install user version
 

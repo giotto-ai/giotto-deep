@@ -18,7 +18,7 @@ orbits = og.get_orbits()
 
 def test_size_of_orbits():
     """Tests if the size of the generator is correct"""
-
+    assert orbits is not None, "Orbits are None"
     assert orbits.shape == (
         len(parameters) * num_orbits_per_class,
         num_pts_per_orbit,
@@ -31,6 +31,7 @@ def test_size_of_persistence_diagrams():
 
     persistence_diagrams = og.get_persistence_diagrams()
 
+    assert persistence_diagrams is not None, "Persistence diagrams are None"
     assert [persistence_diagrams.shape[i] for i in (0, 2)] == [
         len(parameters) * num_orbits_per_class,
         2 + og._num_homology_dimensions,
@@ -39,6 +40,7 @@ def test_size_of_persistence_diagrams():
 
 def test_recursive_definition():
     """Tests if the recursively defined orbits are correct"""
+    assert orbits is not None, "Orbits are None"
     for p_idx, p in enumerate(parameters):
         for o in range(num_orbits_per_class):
             for i in range(1, num_pts_per_orbit - 1):

@@ -33,7 +33,7 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
             # check if correct extension is raised when trying to download
             # non-existing file
             non_existing_file_name: str = "giotto-deep-bigs.png"
-            with pytest.raises(google.api_core.exceptions.NotFound):
+            with pytest.raises(google.api_core.exceptions.NotFound):  # type: ignore
                 data_cloud.download_file(non_existing_file_name)
 
             # check if downloaded file exists

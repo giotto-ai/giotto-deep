@@ -12,7 +12,7 @@ from gdeep.search import GiottoSummaryWriter
 from gdeep.data.datasets import FromArray, DataLoaderBuilder
 from gdeep.search import clean_up_files
 
-Tensor = torch.Tensor
+from gdeep.utility.custom_types import Tensor
 
 
 class MyDataset(Dataset):
@@ -46,7 +46,7 @@ def collate_fn(batch_tuple: List):
 class Model1(nn.Module):
     def __init__(self):
         super(Model1, self).__init__()
-        self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=[4, 5, 4]))
+        self.seqmodel = nn.Sequential(nn.Flatten(), FFNet(arch=(4, 5, 4)))
 
     def forward(self, x):
         return self.seqmodel(x).reshape(-1, 2, 2)
@@ -57,7 +57,7 @@ def test_trainer_from_array():
 
     model = Model1()
     # dataloaders
-    X = np.array(np.random.rand(100, 4), dtype=np.float32)
+    X = np.array(np.random.rand(100, 4), dtype=np.float32)  # type: ignore
     y = np.array(np.random.randint(2, size=100 * 2).reshape(-1, 2), dtype=np.int64)
     dl_tr, *_ = DataLoaderBuilder([FromArray(X, y)]).build([{"batch_size": 23}])
 
@@ -66,7 +66,7 @@ def test_trainer_from_array():
     # tb writer
     writer = GiottoSummaryWriter()
     # pipeline
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
 
@@ -83,7 +83,7 @@ def test_trainer_collate():
     # tb writer
     writer = GiottoSummaryWriter()
     # pipeline
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
 

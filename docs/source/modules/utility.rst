@@ -7,7 +7,7 @@ Utility
 Persistence Gradient
 --------------------
 
-.. automodule:: gdeep.utility.optimisation
+.. automodule:: gdeep.utility.optimization
    :members:
 
 Extended Persistence

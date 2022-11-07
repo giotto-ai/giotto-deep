@@ -4,7 +4,7 @@ from os import listdir, makedirs
 from os.path import isfile, join, isdir, exists, getsize
 import requests  # type: ignore
 import sys
-from typing import Union, List
+from typing import Optional, Union, List
 import time
 
 import google
@@ -141,13 +141,14 @@ class _DataCloud:
         Returns:
             None
         """
+        url = ""
         if download_directory is None:
             download_directory = self.download_directory
         if self.use_public_access:
             url = self.public_url + blob_name
         # Check if blob exists
         if not self.blob_exists(blob_name):
-            raise google.api_core.exceptions.NotFound(
+            raise google.api_core.exceptions.NotFound(  # type: ignore
                 "Blob {} does not exist!".format(blob_name)
             )
 
@@ -288,7 +289,7 @@ class _DataCloud:
     def upload_folder(
         self,
         source_folder: str,
-        target_folder: str = None,
+        target_folder: Optional[str] = None,
         make_public: bool = False,
     ) -> None:
         """Upload a local folder with all it's subolders to Google
