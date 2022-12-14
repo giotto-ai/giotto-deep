@@ -1,13 +1,14 @@
 giotto-tda
+protobuf==3.19.6
 numpy
 pandas
 plotly
 matplotlib
 matplotlib_venn
 scikit-learn
-torch==1.12.1
+torch==1.13.0
 spacy
-scipy
+scipy<1.9.0,>=1.7.0
 networkx
 torch-tb-profiler
 torchdiffeq
@@ -38,6 +39,6 @@ google-cloud-storage
 wget
 ipython
 jsonpickle
-typing_extensions; python_version == '3.7'
+typing_extensions; python_version == '3.9'
 gudhi
 pre-commit
