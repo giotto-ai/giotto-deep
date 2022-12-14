@@ -23,9 +23,9 @@ class TorchvisionDatasetBuilder(object):
         self.dataset_name = dataset_name
 
     def __call__(self, **kwargs):  # type: ignore
-        return datasets.__getattribute__(self.dataset_name)(  # type: ignore
-            root=DEFAULT_DOWNLOAD_DIR, **kwargs  # type: ignore
-        )
+        if not 'root' in kwargs:
+            kwargs = dict(kwargs, root=DEFAULT_DOWNLOAD_DIR)
+        return datasets.__getattribute__(self.dataset_name)(**kwargs)
 
 
 class TorchtextDatasetBuilder(object):
@@ -36,9 +36,9 @@ class TorchtextDatasetBuilder(object):
         self.dataset_name = dataset_name
 
     def __call__(self, **kwargs):  # type: ignore
-        return textdatasets.__getattribute__(self.dataset_name)(  # type: ignore
-            root=DEFAULT_DOWNLOAD_DIR, **kwargs  # type: ignore
-        )
+        if not 'root' in kwargs:
+            kwargs = dict(kwargs, root=DEFAULT_DOWNLOAD_DIR)
+        return textdatasets.__getattribute__(self.dataset_name)(**kwargs)
 
 
 class ToriDatasetBuilder(object):
