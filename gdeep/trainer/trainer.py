@@ -227,7 +227,7 @@ class Trainer:
                     except (MissingClosureError,):
                         self.optimizer.step(closure)  # type: ignore
                 self.optimizer.zero_grad()
-        if batch % 1 == 0:
+        if batch % self.print_period == 0:
             epoch_loss += loss.item()
             print(
                 f"Batch training loss:  {epoch_loss / (batch + 1)}",
@@ -584,6 +584,7 @@ class Trainer:
         store_grad_layer_hist: bool = False,
         n_accumulated_grads: int = 0,
         writer_tag: str = "",
+        print_period: int = 1
     ) -> Tuple[float, float]:
         """Function to run all the training cycles.
 
@@ -629,6 +630,9 @@ class Trainer:
                 Only a positive number will be taken into account
             writer_tag:
                 the tensorboard writer tag
+            print_period:
+                The number of optimisation steps to perform before 
+                printing the current loss
 
         Returns:
             (float, float):
@@ -637,6 +641,7 @@ class Trainer:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
+        self.print_period = print_period
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
         # to start the training from where we left
