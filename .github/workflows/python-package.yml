@@ -40,6 +40,8 @@ jobs:
         mypy --ignore-missing-imports . || {
           status=$? echo "Type checking errors!"
         }
+      continue-on-error: true
+      timeout-minutes: 5
     - name: Test with pytest
       run: |
         pytest --cov=gdeep --cov-report=xml .
@@ -49,6 +51,7 @@ jobs:
       with:
         coverageFile: ./coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
+        thresholdAll: 0.7
     - name: Integration tests
       run: |
         set -e
