@@ -34,6 +34,7 @@ h5py
 mysql-connector-python
 dotmap
 sympy
+pytest-cov
 google-cloud-storage
 wget
 ipython
