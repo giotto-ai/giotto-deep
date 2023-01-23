@@ -43,10 +43,11 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov-report xml:coverage.xml
+        ls
     - name: Get Coverage 
       uses: orgoro/coverage@v3
       with:
-        coverageFile: coverage.xml
+        coverageFile: ./coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Integration tests
       run: |
