@@ -54,6 +54,7 @@ data/*
 
 # Pytest output files
 test-output.xml
+coverage.xml
 
 # Latex
 *.aux
