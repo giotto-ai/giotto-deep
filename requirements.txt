@@ -1,5 +1,5 @@
 giotto-tda
-numpy==1.21.6
+numpy<=1.23.3
 pandas
 plotly
 matplotlib
