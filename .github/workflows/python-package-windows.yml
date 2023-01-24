@@ -47,6 +47,7 @@ jobs:
       with:
         coverageFile: coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
+      if: github.event_name == 'pull_request'
     - name: Integration tests
       run: |
         set --exit
