@@ -52,6 +52,7 @@ jobs:
         coverageFile: ./coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
         thresholdAll: 0.7
+      if: github.event_name == 'pull_request'
     - name: Integration tests
       run: |
         set -e
