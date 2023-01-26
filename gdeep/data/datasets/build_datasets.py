@@ -61,7 +61,7 @@ def get_dataset(key: str, **kwargs) -> Tuple[Dataset[Any]]:
 
     Args:
         key :
-            The name of the dataset, correspondiong
+            The name of the dataset, corresponding
             to the key in the list of builders
         **kwargs:
             The keyword arguments to pass to the dataset builder

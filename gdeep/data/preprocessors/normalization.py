@@ -24,7 +24,7 @@ T = TypeVar("T")
 class Normalization(AbstractPreprocessing[Tuple[Tensor, T], Tuple[Tensor, T]]):
     """This class runs the standard normalisation on all the dimensions of
     the tensors of a dataset. For example, in case of images where each item is of
-    shape ``(C, H, W)``, the average will and the standard deviations
+    shape ``(C, H, W)``, the average and the standard deviations
     will be tensors of shape ``(C, H, W)``
     """
 

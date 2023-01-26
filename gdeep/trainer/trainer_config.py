@@ -47,10 +47,10 @@ class TrainerConfig:
             and the layer values in tensorboard for
             each epoch
         n_accumulated_grads:
-            this is the number of accumated grads. It
+            this is the number of accumulated grads. It
             is taken into account only for positive integers
         writer_tag:
-            tag to prepend to the ouput
+            tag to prepend to the output
             on tensorboard
     """
 

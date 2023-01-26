@@ -438,7 +438,7 @@ class HyperParameterOptimization(Trainer):
                 on multiple TPUs
             n_accumulated_grads (int, default=0):
                 number of accumulated gradients. It is
-                considered only if a positive integer
+                considered only if given a positive integer
             keep_training:
                 bool flag to decide whether to continue
                 training or not
@@ -615,7 +615,7 @@ class HyperParameterOptimization(Trainer):
             loss (float, default np.inf)
                 the value of the loss for the current trial
             accuracy (float, default -1):
-                the value of the accuracy for te current trial
+                the value of the accuracy for the current trial
             list_res (list):
                 list of results
         Returns:

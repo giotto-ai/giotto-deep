@@ -57,12 +57,12 @@ you can run the training and validation of your models, specifying all the param
    pipe.train(SGD, 7, False, {"lr": 0.01}, {"batch_size": 20})
 
 
-HyperPatameterOptimisation
+HyperParameterOptimisation
 ==========================
 
 Instead of a single training, you may also want to search the space of hyper parameters to find the
 Best model possible. In ``giotto-deep`` this step can be done in a few lines using the class
-``HyperPatameterOptimisation``:
+``HyperParameterOptimisation``:
 
 .. code-block:: python
 
@@ -105,7 +105,7 @@ Visualizer
 ==========
 
 You can visualise additional results, like persistence diagrams of the activations, the model graph
-or the heat maps resulting form the `Interpreter``: you need the ``Visualiser`` class.
+or the heat maps resulting from the `Interpreter``: you need the ``Visualiser`` class.
 
 .. code-block:: python
 

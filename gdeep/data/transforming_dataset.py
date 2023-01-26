@@ -8,7 +8,7 @@ T = TypeVar("T")
 
 
 class TransformingDataset(Dataset[S], Generic[R, S]):
-    """This class is the base class for the all
+    """This class is the base class for all the
     Datasets that need to be transformed via preprocessors.
     This base class expects to get data from Dataset.
 
@@ -55,7 +55,7 @@ def append_transform(
     dataset: TransformingDataset[R, S], transform: Callable[[S], T]
 ) -> TransformingDataset[R, T]:
     """This function allows to concatenate different preprocessors
-    that the usr may want to stack.
+    that the user may want to stack.
 
     Args:
         dataset :
