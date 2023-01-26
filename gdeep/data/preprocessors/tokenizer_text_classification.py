@@ -21,13 +21,13 @@ class TokenizerTextClassification(
 ):
     """Preprocessing class. This class is useful to convert the data format
     ``(label, text)`` into the proper tensor format ``( word_embedding, label)``.
-    The labels shouzld be interagers; f they ar string, they will be converted.
+    The labels should be integers; if they are string, they will be converted.
 
     Args:
         tokenizer :
             the tokenizer of the source text
         vocabulary :
-            the vocubulary; it can be built of it can be
+            the vocubulary; it can be built or it can be
             given.
 
     """

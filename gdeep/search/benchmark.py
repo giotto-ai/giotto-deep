@@ -207,7 +207,7 @@ class Benchmark:
                 each epoch
             n_accumulated_grads:
                 number of accumulated gradients. It is
-                considered only if a positive integer
+                considered only if given a positive integer
             writer_tag:
                 string to be added to the tensorboard items title
         """

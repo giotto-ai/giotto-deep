@@ -612,7 +612,7 @@ class Trainer:
                 learning rate scheduler parameters
             optuna_params :
                 the parameters `(trial, search_metric)`
-                used in the gridsearch. Saefly ignore for
+                used in the gridsearch. Safely ignore for
                 standard trainings
             profiling:
                 whether or not you want to activate the
