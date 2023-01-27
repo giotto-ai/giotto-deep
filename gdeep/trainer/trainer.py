@@ -141,7 +141,7 @@ class Trainer:
         writer: Optional[SummaryWriter] = None,
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
         k_fold_class: Optional[BaseCrossValidator] = None,
-        print_every: Optional[int] = 1,
+        print_every: int = 1,
     ) -> None:
         self.print_every = print_every if print_every > 0 else 1
         self.model = model
