@@ -87,6 +87,8 @@ class Trainer:
             the class instance to implement the KFold, can be
             any of the Splitter classes of sklearn. More
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
+        print_every:
+            The number of training steps performed between each information printout
 
     Examples::
 
@@ -139,7 +141,9 @@ class Trainer:
         writer: Optional[SummaryWriter] = None,
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
         k_fold_class: Optional[BaseCrossValidator] = None,
+        print_every: int = 1,
     ) -> None:
+        self.print_every = print_every if print_every > 0 else 1
         self.model = model
         self.initial_model = copy.deepcopy(self.model)
         assert 0 < len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
@@ -227,7 +231,7 @@ class Trainer:
                     except (MissingClosureError,):
                         self.optimizer.step(closure)  # type: ignore
                 self.optimizer.zero_grad()
-        if batch % 1 == 0:
+        if batch % self.print_every == 0:
             epoch_loss += loss.item()
             print(
                 f"Batch training loss:  {epoch_loss / (batch + 1)}",
