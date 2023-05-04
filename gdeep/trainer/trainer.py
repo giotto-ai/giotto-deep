@@ -28,6 +28,12 @@ from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
 
+from .pipeline_tool.giotto_ds_pipeline_utils import SkippableTracing
+from torch.distributed.pipeline.sync import Pipe 
+
+os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '29600'
+
 try:
     import torch_xla.core.xla_model as xm  # type: ignore
     import torch_xla.distributed.xla_multiprocessing as xmp  # type: ignore
@@ -264,19 +270,26 @@ class Trainer:
 
         """
         new_x: List[Tensor] = []
-        if isinstance(x, tuple) or isinstance(x, list):
-            for xi in x:
-                new_x.append(xi.to(DEVICE))
-            x = new_x
-            prediction = self.model(*x)
-            if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
-                prediction = prediction.logits  # unwrapper for HuggingFace BERT model
+
+        if self.pipeline_train: 
+            x = x.to(0)
+            y = y.to(self.nb_gpus -1)
+            prediction = self.model(x).local_value()
         else:
-            x = x.to(DEVICE)
-            prediction = self.model(x)
-            if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
-                prediction = prediction.logits  # unwrapper for HuggingFace BERT model
-        y = y.to(DEVICE)
+
+            if isinstance(x, tuple) or isinstance(x, list):
+                for xi in x:
+                    new_x.append(xi.to(DEVICE))
+                x = new_x
+                prediction = self.model(*x)
+                if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
+                    prediction = prediction.logits  # unwrapper for HuggingFace BERT model
+            else:
+                x = x.to(DEVICE)
+                prediction = self.model(x)
+                if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
+                    prediction = prediction.logits  # unwrapper for HuggingFace BERT model
+            y = y.to(DEVICE)
 
         return prediction, x, y
 
@@ -353,7 +366,8 @@ class Trainer:
         """private method to run a single training
         loop
         """
-        self.model = self.model.to(DEVICE)
+        if not self.pipeline_train: 
+            self.model = self.model.to(DEVICE)
         self.model.train()
         try:
             length: int = len(dl_tr.sampler.indices)  # type: ignore
@@ -390,7 +404,9 @@ class Trainer:
         """private method to run a single validation
         loop
         """
-        self.model = self.model.to(DEVICE)
+        if not self.pipeline_train:
+            self.model = self.model.to(DEVICE)
+
         try:
             size = len(dl_val.sampler.indices)  # type: ignore
         except AttributeError:
@@ -588,6 +604,11 @@ class Trainer:
         store_grad_layer_hist: bool = False,
         n_accumulated_grads: int = 0,
         writer_tag: str = "",
+        pipeline_train: bool = False,
+        nb_gpus: int = None,
+        nb_chunks: int = 4,
+        config_mha: List[Dict[str, Any]] = []
+
     ) -> Tuple[float, float]:
         """Function to run all the training cycles.
 
@@ -641,6 +662,17 @@ class Trainer:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
+        if parallel_tpu and pipeline_train:
+            print(f"Parallel TPU and Pipeline training cannot be enable at the same time. Choose only one of them.")
+            exit()
+
+        self.pipeline_train = pipeline_train
+        self.nb_gpus = nb_gpus if nb_gpus is not None else torch.cuda.device_count()
+
+        if pipeline_train:
+            torch.distributed.rpc.shutdown()
+            torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
+
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
         # to start the training from where we left
@@ -776,6 +808,9 @@ class Trainer:
                     scheduler_params,
                 )
 
+                if self.pipeline_train:
+                    self._pipelined_model(nb_chunks, config_mha)
+
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn(
@@ -855,6 +890,9 @@ class Trainer:
                 scheduler_params,
             )
 
+            if self.pipeline_train:
+                    self._pipelined_model(nb_chunks, config_mha)
+
             if not parallel_tpu:
                 valloss, valacc = self._training_loops(
                     n_epochs,
@@ -888,6 +926,17 @@ class Trainer:
             pass
         # check for training
         self.check_has_trained = True
+
+        if pipeline_train:
+            trained_weights = {}
+            for (_, value_src), (key, _) in zip(self.model.state_dict().items(), self.model_saved.state_dict().items()):
+                trained_weights[key] = value_src
+            # Load the new weights on the base model
+            self.model_saved.load_state_dict(trained_weights)
+            # Set the model back for next steps
+            self.model = self.model_saved
+
+            self.model_saved = None
 
         # put the mean of the cross_val
         return valloss, valacc
@@ -943,7 +992,7 @@ class Trainer:
             self.val_epoch = t
             self.train_epoch = t
             self._train_loop(dl_tr, writer_tag)
-            me = ModelExtractor(self.model, self.loss_fn)
+            me = ModelExtractor(self.model, self.loss_fn, self.pipeline_train)
             if self.store_grad_layer_hist:
                 try:
                     lista = me.get_layers_param()
@@ -1298,3 +1347,20 @@ class Trainer:
             "prefetch_factor": original_dataloader.prefetch_factor,
             "persistent_workers": original_dataloader.persistent_workers,
         }
+    
+    def _pipelined_model(self, nb_chunks, config_mha):
+
+        # Generate the piped model
+        trace = SkippableTracing(self.nb_gpus, self.model, config_mha)
+        model_pipe = trace.get_modules()
+        model_pipe = Pipe(model_pipe, nb_chunks)
+
+        # Get weights from the model and set them in the piped model
+        self.saved_weights = {}
+        for (_, value_src), (key, _) in zip(self.model.state_dict().items(), model_pipe.state_dict().items()):
+            self.saved_weights[key] = value_src
+        model_pipe.load_state_dict(self.saved_weights)
+
+        # Save the base model. We only use the piped model for training
+        self.model_saved = self.model
+        self.model = model_pipe
