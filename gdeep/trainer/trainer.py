@@ -171,6 +171,8 @@ class Trainer:
         self.best_not_last: bool = False
         # profiler
         self.prof: Any = None
+        #device
+        self.device = DEVICE
 
         if not k_fold_class:
             self.k_fold_class = KFold(5, shuffle=True)
@@ -202,7 +204,7 @@ class Trainer:
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
             loss.backward()
-            if DEVICE.type == "xla":
+            if self.device.type == "xla":
                 xm.optimizer_step(
                     self.optimizer, barrier=True
                 )  # Note: Cloud TPU-specific code!
@@ -218,7 +220,7 @@ class Trainer:
             if (
                 batch + 1
             ) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
-                if DEVICE.type == "xla":
+                if self.device.type == "xla":
                     xm.optimizer_step(
                         self.optimizer, barrier=True
                     )  # Note: Cloud TPU-specific code!
@@ -250,7 +252,7 @@ class Trainer:
         self, x: Union[Tensor, List[Tensor]], y: Tensor
     ) -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
         """use this private method to send the
-        ``x`` and ``y`` to the ``DEVICE``.
+        ``x`` and ``y`` to the ``self.device``.
 
         Args:
             x:
@@ -266,17 +268,17 @@ class Trainer:
         new_x: List[Tensor] = []
         if isinstance(x, tuple) or isinstance(x, list):
             for xi in x:
-                new_x.append(xi.to(DEVICE))
+                new_x.append(xi.to(self.device))
             x = new_x
             prediction = self.model(*x)
             if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
                 prediction = prediction.logits  # unwrapper for HuggingFace BERT model
         else:
-            x = x.to(DEVICE)
+            x = x.to(self.device)
             prediction = self.model(x)
             if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
                 prediction = prediction.logits  # unwrapper for HuggingFace BERT model
-        y = y.to(DEVICE)
+        y = y.to(self.device)
 
         return prediction, x, y
 
@@ -353,7 +355,7 @@ class Trainer:
         """private method to run a single training
         loop
         """
-        self.model = self.model.to(DEVICE)
+        self.model = self.model.to(self.device)
         self.model.train()
         try:
             length: int = len(dl_tr.sampler.indices)  # type: ignore
@@ -390,7 +392,7 @@ class Trainer:
         """private method to run a single validation
         loop
         """
-        self.model = self.model.to(DEVICE)
+        self.model = self.model.to(self.device)
         try:
             size = len(dl_val.sampler.indices)  # type: ignore
         except AttributeError:
