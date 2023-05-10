@@ -13,7 +13,7 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection._split import BaseCrossValidator
 from sklearn.model_selection import KFold, train_test_split
-from torch.utils.data.sampler import SubsetRandomSampler
+from gdeep.utility.sampler import GiottoSampler
 from torch.utils.data import DataLoader
 import optuna
 from datetime import datetime
@@ -711,7 +711,7 @@ class Trainer:
                 self.dataloaders[1].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
-                sampler=SubsetRandomSampler(val_idx),
+                sampler=GiottoSampler(val_idx),
             )
             try:
                 tr_idx = self.dataloaders[0].sampler.indices  # type: ignore
@@ -722,7 +722,7 @@ class Trainer:
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
-                sampler=SubsetRandomSampler(tr_idx),
+                sampler=GiottoSampler(tr_idx),
             )
         else:
             try:
@@ -735,13 +735,13 @@ class Trainer:
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
-                sampler=SubsetRandomSampler(val_idx),
+                sampler=GiottoSampler(val_idx),
             )
             dl_tr = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
-                sampler=SubsetRandomSampler(tr_idx),
+                sampler=GiottoSampler(tr_idx),
             )
 
         if cross_validation:
@@ -785,13 +785,13 @@ class Trainer:
                     self.dataloaders[0].dataset,
                     # pin_memory=True,
                     **dataloaders_param_tr,
-                    sampler=SubsetRandomSampler(tr_idx),
+                    sampler=GiottoSampler(tr_idx),
                 )
                 dl_val = torch.utils.data.DataLoader(  # type: ignore
                     self.dataloaders[0].dataset,
                     # pin_memory=True,
                     **dataloaders_param_val,
-                    sampler=SubsetRandomSampler(val_idx),
+                    sampler=GiottoSampler(val_idx),
                 )
                 # print n-th fold
                 print("\n\n********** Fold ", fold + 1, "**************")
