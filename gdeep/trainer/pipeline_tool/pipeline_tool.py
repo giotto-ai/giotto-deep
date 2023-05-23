@@ -2,7 +2,7 @@ from torch.fx import symbolic_trace
 import torch
 import math
 from pathlib import Path
-from .contant import TAB
+from .constant import TAB
 
 class SkippableTracing:
     """Create and sequence the model parallelism.
@@ -21,7 +21,7 @@ class SkippableTracing:
     :type model: a model extended of nn.Module.
     """
 
-    def __init__(self, nb_gpus, model, configs_mha):
+    def __init__(self, nb_gpus, model, configs_mha={}):
         """Constructor."""
         self.module_desc = {}
         self.file = ""
@@ -32,7 +32,7 @@ class SkippableTracing:
         self.file_name = "layered_model.py"
         self.directory_name = "pipelinecache"
         self.configs_mha = configs_mha
-        self.mha_number = len(self.configs_mha)
+        self.mha_number = len(self.configs_mha) 
         self.mha_count = 0
 
         self._verfiy_config_mha()
@@ -231,7 +231,7 @@ class SkippableTracing:
 
         # Calcul the split region for gpus.
         clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu) 
-        
+        print(clone_step)
         clone_layer = clone_step
         current_layer = 0
 

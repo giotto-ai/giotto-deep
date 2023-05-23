@@ -1,6 +1,6 @@
 # from LayerClass import Layer
 from .LayerClass import Layer
-from ..giotto_parser_func import _parse_func
+from ..function_parser import _parse_func
 
 
 class CallFunction(Layer):
