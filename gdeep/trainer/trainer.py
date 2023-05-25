@@ -139,7 +139,7 @@ def parallel_train(rank, args):
     print(f'From parallel_train {rank}: device= {train_args["parallel"].devices[0]}')
 
     # Train
-    trainer.train(
+    train_args['retvals']['valloss'], train_args['retvals']['valacc'] = trainer.train(
         train_args["optimizer"],
         train_args["n_epochs"],
         train_args["cross_validation"],
@@ -156,6 +156,11 @@ def parallel_train(rank, args):
         train_args["writer_tag"],
         train_args["parallel"],
     )
+
+    # if rank = 0, send valloss, valacc, and model parameters to super instance
+    if(rank == 0):
+        args['retvals'] = train_args['retvals']
+        args['model'].load_state_dict(model.state_dict())
 
     cleanup()
 
@@ -330,8 +335,8 @@ class Trainer:
                     except (MissingClosureError,):
                         self.optimizer.step(closure)  # type: ignore
                 self.optimizer.zero_grad()
+        epoch_loss += loss.item()
         if batch % self.print_every == 0:
-            epoch_loss += loss.item()
             print(
                 f"Batch training loss:  {epoch_loss / (batch + 1)}",
                 f" \tBatch training {self.training_metric.__name__}: ",
@@ -363,7 +368,7 @@ class Trainer:
 
         """
         new_x: List[Tensor] = []
-        print(f'PID={os.getpid()}: sending data to device {self.device}')
+
         if isinstance(x, tuple) or isinstance(x, list):
             for xi in x:
                 new_x.append(xi.to(self.device))
@@ -436,7 +441,8 @@ class Trainer:
 
             if self.prof is not None:
                 self.prof.step()
-
+        if self.parallel is not None:
+            dist.all_reduce((epoch_loss, batch * len(X)), op=dist.ReduceOp.SUM)
         if self.prof is not None:
             self.prof.stop()
 
@@ -598,6 +604,8 @@ class Trainer:
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
                 class_label.append(y)
+        if self.parallel is not None:
+            dist.all_reduce((epoch_loss, sum(batch_metric_list), len(pred_list)), op=dist.ReduceOp.SUM)
         epoch_metric = sum(batch_metric_list) / len(batch_metric_list)
         epoch_loss = loss / len(batch_metric_list)
         return pred_list, epoch_loss, epoch_metric
