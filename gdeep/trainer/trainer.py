@@ -102,6 +102,7 @@ def cleanup():
     dist.destroy_process_group()
 
 def parallel_train(rank, args):
+    print(f'from parallel_train {rank}: {os.getpid()}')
     train_args = copy.deepcopy(args)
     train_args["parallel"].p_type = ParallelismType._DP
     train_args["parallel"].devices = [args["parallel"].devices[rank]]
@@ -115,6 +116,7 @@ def parallel_train(rank, args):
         shardingStrategy = ShardingStrategy.FULL_SHARD
     else:
         shardingStrategy = ShardingStrategy.NO_SHARD
+    print(f'PID={os.getpid()}: sending model to device {train_args["parallel"].devices[0]}')
     model = train_args["model"].to(train_args["parallel"].devices[0])
     model = FSDP(
         model,
@@ -132,6 +134,8 @@ def parallel_train(rank, args):
             train_args["k_fold_class"],
             train_args["print_every"],
     )
+
+    print(f'From parallel_train {rank}: device= {train_args["parallel"].devices[0]}')
 
     # Train
     trainer.train(
@@ -358,6 +362,7 @@ class Trainer:
 
         """
         new_x: List[Tensor] = []
+        print(f'PID={os.getpid()}: sending data to device {self.device}')
         if isinstance(x, tuple) or isinstance(x, list):
             for xi in x:
                 new_x.append(xi.to(self.device))
@@ -986,6 +991,7 @@ class Trainer:
                 scheduler_params,
             )
 
+            print(f'from train: PID={os.getpid()}, self.device={self.device}')
             if not parallel_tpu:
                 valloss, valacc = self._training_loops(
                     n_epochs,
