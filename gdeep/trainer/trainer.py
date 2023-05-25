@@ -3,11 +3,21 @@ import copy
 import time
 from functools import wraps
 import warnings
+import torch.multiprocessing as mp
 from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
 
 import torch.nn.functional as f
 from torch.optim import Optimizer
 import torch
+import torch.distributed as dist
+from torch.distributed.fsdp import (
+    FullyShardedDataParallel as FSDP,
+    ShardingStrategy,
+    )
+from torch.distributed.fsdp.wrap import(
+    size_based_auto_wrap_policy,
+)
+import functools
 from optuna.trial._base import BaseTrial
 import numpy as np
 from tqdm import tqdm
@@ -19,6 +29,7 @@ import optuna
 from datetime import datetime
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
+from enum import Enum, auto
 
 from ..utility.optimization import MissingClosureError
 from gdeep.models import ModelExtractor
@@ -61,6 +72,87 @@ def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         return pred, val_loss, correct
 
     return wrapper
+
+class ParallelismType(Enum):
+    _DP = auto()
+    DDP = auto()
+    FSDP_ZERO2 = auto()
+    FSDP_ZERO3 = auto()
+
+class Parallelism:
+    def __init__(self,
+                p_type: ParallelismType,
+                devices: Tuple[int],
+                world_size: int = 1,
+                rank: int = 0) -> None:
+        self.p_type = p_type
+        self.world_size = world_size
+        self.rank = rank
+        self.devices = [torch.device('cuda', x) for x in devices]
+
+
+def setup(rank, world_size):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # initialize the process group
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+def cleanup():
+    dist.destroy_process_group()
+
+def parallel_train(rank, args):
+    train_args = copy.deepcopy(args)
+    train_args["parallel"].p_type = ParallelismType._DP
+    train_args["parallel"].devices = [args["parallel"].devices[rank]]
+    train_args["parallel"].rank = rank
+    setup(rank, len(args["parallel"].devices))
+
+    # Setup FSDP
+    if args["parallel"].p_type == ParallelismType.FSDP_ZERO2:
+        shardingStrategy = ShardingStrategy.SHARD_GRAD_OP
+    elif args["parallel"].p_type == ParallelismType.FSDP_ZERO3:
+        shardingStrategy = ShardingStrategy.FULL_SHARD
+    else:
+        shardingStrategy = ShardingStrategy.NO_SHARD
+    model = train_args["model"].to(train_args["parallel"].devices[0])
+    model = FSDP(
+        model,
+        auto_wrap_policy=functools.partial(size_based_auto_wrap_policy, min_num_params=100),
+        sharding_strategy=shardingStrategy
+    )
+
+    # Create Trainer subinstance
+    trainer = Trainer(
+            model,
+            train_args["dataloaders"],
+            train_args["loss_fn"],
+            train_args["writer"](),
+            train_args["training_metric"],
+            train_args["k_fold_class"],
+            train_args["print_every"],
+    )
+
+    # Train
+    trainer.train(
+        train_args["optimizer"],
+        train_args["n_epochs"],
+        train_args["cross_validation"],
+        train_args["optimizers_param"],
+        train_args["dataloaders_param"],
+        train_args["lr_scheduler"],
+        train_args["scheduler_params"],
+        train_args["optuna_params"],
+        train_args["profiling"],
+        train_args["parallel_tpu"],
+        train_args["keep_training"],
+        train_args["store_grad_layer_hist"],
+        train_args["n_accumulated_grads"],
+        train_args["writer_tag"],
+        train_args["parallel"],
+    )
+
+    cleanup()
 
 
 class Trainer:
@@ -355,7 +447,8 @@ class Trainer:
         """private method to run a single training
         loop
         """
-        self.model = self.model.to(self.device)
+        if self.parallel is None:
+            self.model = self.model.to(self.device)
         self.model.train()
         try:
             length: int = len(dl_tr.sampler.indices)  # type: ignore
@@ -392,7 +485,8 @@ class Trainer:
         """private method to run a single validation
         loop
         """
-        self.model = self.model.to(self.device)
+        if self.parallel is None:
+            self.model = self.model.to(self.device)
         try:
             size = len(dl_val.sampler.indices)  # type: ignore
         except AttributeError:
@@ -553,7 +647,8 @@ class Trainer:
         optimizer depending on the training"""
         if not (self.check_has_trained and keep_training):
             # reset the model weights
-            self._reset_model()
+            if self.parallel is None:
+                self._reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             if lr_scheduler is not None:
                 if scheduler_params:
@@ -562,7 +657,8 @@ class Trainer:
                     self.scheduler = lr_scheduler(self.optimizer)
         elif cross_validation:
             # reset the model weights
-            self._reset_model()
+            if self.parallel is None:
+                self._reset_model()
             # do not re-initialise the optimizer if keep-training
             dict_param = self.optimizer.param_groups[0]
             dict_param.pop("params", None)  # model.parameters()
@@ -590,6 +686,7 @@ class Trainer:
         store_grad_layer_hist: bool = False,
         n_accumulated_grads: int = 0,
         writer_tag: str = "",
+        parallel: Optional[Parallelism] = None
     ) -> Tuple[float, float]:
         """Function to run all the training cycles.
 
@@ -643,11 +740,13 @@ class Trainer:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
+        self.parallel = parallel
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
         # to start the training from where we left
-        if self.check_has_trained and keep_training:
-            self._set_initial_model()
+        if self.parallel is None:
+            if self.check_has_trained and keep_training:
+                self._set_initial_model()
 
         # train initialisation
         dl_tr = self.dataloaders[0]
@@ -701,6 +800,13 @@ class Trainer:
         except KeyError:
             pass
 
+        if self.parallel is None:
+            world_size = 1
+            rank = 0
+        else:
+            world_size = self.parallel.world_size
+            rank = self.parallel.rank
+
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
         if len(self.dataloaders) == 3:  # type: ignore
@@ -713,7 +819,7 @@ class Trainer:
                 self.dataloaders[1].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
-                sampler=GiottoSampler(val_idx),
+                sampler=GiottoSampler(val_idx, world_size=world_size, rank=rank),
             )
             try:
                 tr_idx = self.dataloaders[0].sampler.indices  # type: ignore
@@ -724,7 +830,7 @@ class Trainer:
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
-                sampler=GiottoSampler(tr_idx),
+                sampler=GiottoSampler(tr_idx, world_size=world_size, rank=rank),
             )
         else:
             try:
@@ -737,13 +843,13 @@ class Trainer:
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
-                sampler=GiottoSampler(val_idx),
+                sampler=GiottoSampler(val_idx, world_size=world_size, rank=rank),
             )
             dl_tr = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
-                sampler=GiottoSampler(tr_idx),
+                sampler=GiottoSampler(tr_idx, world_size=world_size, rank=rank),
             )
 
         if cross_validation:
@@ -848,6 +954,29 @@ class Trainer:
                 valacc = torch.mean(torch.tensor(mean_val_acc)).item()
 
         else:
+            if self.parallel is not None:
+                if self.parallel.p_type in (ParallelismType.FSDP_ZERO2, ParallelismType.FSDP_ZERO3, ParallelismType.DDP):
+                    child_ret_val = {"valloss": 0.,
+                                    "valacc": 0.}
+                    child_args = locals()
+                    child_args.pop("self")
+                    child_args.update({"model": self.model,
+                                    "dataloaders": self.dataloaders,
+                                    "loss_fn": self.loss_fn,
+                                    "writer": type(self.writer),
+                                    "training_metric": self.training_metric,
+                                    "k_fold_class": self.k_fold_class,
+                                    "print_every": self.print_every,
+                                    "retvals": child_ret_val,}
+                                    )
+                    mp.spawn(parallel_train,
+                            args= (child_args,),
+                            nprocs= self.parallel.world_size,
+                            join=True)
+                    return child_ret_val["valloss"], child_ret_val["valacc"]
+                if self.parallel.p_type == ParallelismType._DP:
+                    self.device = self.parallel.devices[0]
+
             self._init_optimizer_and_scheduler(
                 keep_training,
                 cross_validation,
