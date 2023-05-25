@@ -242,6 +242,7 @@ class Trainer:
     ) -> None:
         self.print_every = print_every if print_every > 0 else 1
         self.model = model
+        #self.initial_model = copy.deepcopy(self.model)
         assert 0 < len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
         self.dataloaders = dataloaders  # train and test
         self.train_epoch = 0
