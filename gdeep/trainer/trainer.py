@@ -108,6 +108,7 @@ def parallel_train(rank, args):
     train_args["parallel"].devices = [args["parallel"].devices[rank]]
     train_args["parallel"].rank = rank
     setup(rank, len(args["parallel"].devices))
+    torch.cuda.set_device(rank)
 
     # Setup FSDP
     if args["parallel"].p_type == ParallelismType.FSDP_ZERO2:
