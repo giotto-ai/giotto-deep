@@ -936,8 +936,11 @@ class Trainer:
             self.model_saved.load_state_dict(trained_weights)
             # Set the model back for next steps
             self.model = self.model_saved
-
             self.model_saved = None
+            self.pipeline_train = False
+            self.model.to(DEVICE)
+
+        
 
         # put the mean of the cross_val
         return valloss, valacc
@@ -1282,6 +1285,7 @@ class Trainer:
         correct = 0.0
         confusion_matrix = np.zeros((num_class, num_class))  # type: ignore
         self.model.eval()
+
         with torch.no_grad():
             for batch, (X, y) in tqdm(enumerate(dl)):
                 pred, X, y = self._send_to_device(X, y)
