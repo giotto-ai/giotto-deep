@@ -5,6 +5,7 @@ from functools import wraps
 import warnings
 import gdeep.utility.multiprocessing as gmp
 from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
+import tempfile
 
 import torch.nn.functional as f
 from torch.optim import Optimizer
@@ -102,6 +103,9 @@ def cleanup():
     dist.destroy_process_group()
 
 def parallel_train(rank, args, return_queue):
+    # model objects are not the same. Check model parameters buffer
+    # if same -> parameter retrieval possible
+    # if not same -> no need for deepcopy
     print(f'from parallel_train {rank}: {os.getpid()}')
     train_args = copy.deepcopy(args)
     train_args["parallel"].p_type = ParallelismType._DP
@@ -159,9 +163,11 @@ def parallel_train(rank, args, return_queue):
 
     # if rank = 0, send valloss, valacc, and model parameters to super instance
     if return_queue is not None:
-        return_queue.put((valloss, valacc))
-    #if(rank == 0):
-        #args['model'].load_state_dict(model.state_dict())
+        tmpf = tempfile.mkstemp()
+        torch.save(model.state_dict(), tmpf[1])
+        return_queue.put((valloss, valacc, tmpf[1]))
+        os.close(tmpf[0])
+        
 
     cleanup()
 
@@ -1006,7 +1012,10 @@ class Trainer:
                     return_vals = gmp.spawn(parallel_train,
                             args= (child_args,),
                             nprocs= self.parallel.world_size)
-                    return return_vals
+                    self.model.load_state_dict(torch.load(return_vals[2]))
+                    self.model.to(self.device)
+                    os.remove(return_vals[2])
+                    return return_vals[0], return_vals[1]
                 if self.parallel.p_type == ParallelismType._DP:
                     self.device = self.parallel.devices[0]
 
