@@ -30,9 +30,9 @@ if __name__ == '__main__':
     caltech_dl_bd = DataLoaderBuilder((caltech_ds, caltech_ds, caltech_ds))
 
     caltech_dl_tr, caltech_dl_ts, caltech_dl_val = caltech_dl_bd.build([
-        {"sampler": samplers[0], "batch_size": 4},
-        {"sampler": samplers[1], "batch_size": 1},
-        {"sampler": samplers[2], "batch_size": 1}])
+        {"sampler": samplers[0], "batch_size": 16},
+        {"sampler": samplers[1], "batch_size": 16},
+        {"sampler": samplers[2], "batch_size": 16}])
 
     # Create Resnet
 
