@@ -3,7 +3,7 @@ import copy
 import time
 from functools import wraps
 import warnings
-import torch.multiprocessing as mp
+import gdeep.utility.multiprocessing as gmp
 from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
 
 import torch.nn.functional as f
@@ -101,7 +101,7 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
-def parallel_train(rank, args):
+def parallel_train(rank, args, return_queue):
     print(f'from parallel_train {rank}: {os.getpid()}')
     train_args = copy.deepcopy(args)
     train_args["parallel"].p_type = ParallelismType._DP
@@ -139,7 +139,7 @@ def parallel_train(rank, args):
     print(f'From parallel_train {rank}: device= {train_args["parallel"].devices[0]}')
 
     # Train
-    train_args['retvals']['valloss'], train_args['retvals']['valacc'] = trainer.train(
+    valloss, valacc = trainer.train(
         train_args["optimizer"],
         train_args["n_epochs"],
         train_args["cross_validation"],
@@ -158,9 +158,10 @@ def parallel_train(rank, args):
     )
 
     # if rank = 0, send valloss, valacc, and model parameters to super instance
-    if(rank == 0):
-        args['retvals'] = train_args['retvals']
-        args['model'].load_state_dict(model.state_dict())
+    if return_queue is not None:
+        return_queue.put((valloss, valacc))
+    #if(rank == 0):
+        #args['model'].load_state_dict(model.state_dict())
 
     cleanup()
 
@@ -337,17 +338,18 @@ class Trainer:
                 self.optimizer.zero_grad()
         epoch_loss += loss.item()
         if batch % self.print_every == 0:
-            print(
-                f"Batch training loss:  {epoch_loss / (batch + 1)}",
-                f" \tBatch training {self.training_metric.__name__}: ",
-                batch_metric,
-                " \t[",
-                batch + 1,
-                "/",
-                steps,
-                "]                     ",
-                end="\r",
-            )
+            if self.parallel is None or self.parallel.rank == 0:
+                print(
+                    f"Batch training loss:  {epoch_loss / (batch + 1)}",
+                    f" \tBatch training {self.training_metric.__name__}: ",
+                    batch_metric,
+                    " \t[",
+                    batch + 1,
+                    "/",
+                    steps,
+                    "]                     ",
+                    end="\r",
+                )
         return epoch_loss
 
     def _send_to_device(
@@ -399,6 +401,7 @@ class Trainer:
             self.prof.start()
         metric_list = []
         epoch_loss = 0.0
+        ddp_loss = torch.zeros(2).to(self.device)
         for batch, (X, y) in enumerate(dl_tr):
 
             def closure() -> Tensor:
@@ -410,6 +413,8 @@ class Trainer:
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
             loss = self.loss_fn(pred, y)
+            ddp_loss[0] += loss.item()
+            ddp_loss[1] += len(X)
             # Save to tensorboard
             try:
                 self.writer.add_scalar(  # type: ignore
@@ -442,7 +447,7 @@ class Trainer:
             if self.prof is not None:
                 self.prof.step()
         if self.parallel is not None:
-            dist.all_reduce((epoch_loss, batch * len(X)), op=dist.ReduceOp.SUM)
+            dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
         if self.prof is not None:
             self.prof.stop()
 
@@ -594,6 +599,7 @@ class Trainer:
         pred_list = []
         batch_metric_list = []
         loss = 0.0
+        ddp_loss = torch.zeros(3).to(self.device)
         with torch.no_grad():
             for X, y in dl:
                 pred, X, y = self._send_to_device(X, y)
@@ -601,11 +607,15 @@ class Trainer:
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
+                ddp_loss[0] += loss
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
                 class_label.append(y)
+                pred = pred.argmax(dim=1, keepdim=True)
+                ddp_loss[1] = pred.eq(y.view_as(pred)).sum().item()
+                ddp_loss[2] += len(X)
         if self.parallel is not None:
-            dist.all_reduce((epoch_loss, sum(batch_metric_list), len(pred_list)), op=dist.ReduceOp.SUM)
+            dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
         epoch_metric = sum(batch_metric_list) / len(batch_metric_list)
         epoch_loss = loss / len(batch_metric_list)
         return pred_list, epoch_loss, epoch_metric
@@ -970,24 +980,33 @@ class Trainer:
         else:
             if self.parallel is not None:
                 if self.parallel.p_type in (ParallelismType.FSDP_ZERO2, ParallelismType.FSDP_ZERO3, ParallelismType.DDP):
-                    child_ret_val = {"valloss": 0.,
-                                    "valacc": 0.}
-                    child_args = locals()
-                    child_args.pop("self")
-                    child_args.update({"model": self.model,
+                    child_args = {"model": self.model,
                                     "dataloaders": self.dataloaders,
                                     "loss_fn": self.loss_fn,
                                     "writer": type(self.writer),
                                     "training_metric": self.training_metric,
                                     "k_fold_class": self.k_fold_class,
                                     "print_every": self.print_every,
-                                    "retvals": child_ret_val,}
-                                    )
-                    mp.spawn(parallel_train,
+                                    "parallel": self.parallel,
+                                    "optimizer": optimizer,
+                                    "n_epochs": n_epochs,
+                                    "cross_validation": cross_validation,
+                                    "optimizers_param": optimizers_param,
+                                    "dataloaders_param": dataloaders_param,
+                                    "lr_scheduler": lr_scheduler,
+                                    "scheduler_params": scheduler_params,
+                                    "optuna_params": optuna_params,
+                                    "profiling": profiling,
+                                    "parallel_tpu": parallel_tpu,
+                                    "keep_training": keep_training,
+                                    "store_grad_layer_hist": store_grad_layer_hist,
+                                    "n_accumulated_grads": n_accumulated_grads,
+                                    "writer_tag": writer_tag,}
+
+                    return_vals = gmp.spawn(parallel_train,
                             args= (child_args,),
-                            nprocs= self.parallel.world_size,
-                            join=True)
-                    return child_ret_val["valloss"], child_ret_val["valacc"]
+                            nprocs= self.parallel.world_size)
+                    return return_vals
                 if self.parallel.p_type == ParallelismType._DP:
                     self.device = self.parallel.devices[0]
 
