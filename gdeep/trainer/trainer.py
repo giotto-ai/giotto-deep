@@ -670,8 +670,8 @@ class Trainer:
         self.nb_gpus = nb_gpus if nb_gpus is not None else torch.cuda.device_count()
 
         if pipeline_train:
-            if not self.check_has_trained:
-                torch.distributed.rpc.shutdown()
+            # if not self.check_has_trained:
+            #     torch.distributed.rpc.shutdown()
             torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
 
         self.n_accumulated_grads = n_accumulated_grads
