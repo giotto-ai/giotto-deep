@@ -162,6 +162,39 @@ class SkippableTracing:
                 else:
                     self.module_desc[name] = module
 
+
+    def set_repartition(self, layer_per_gpu):
+        print(f"LayerList {len(self.LayerLists)} -> {layer_per_gpu}")
+        current_layer = 0
+        gpu_index = 0
+        separation_layer_index = layer_per_gpu[gpu_index] - 1
+
+        for _, layer in self.LayerLists.items():
+            print(f"Current layer {current_layer}, GPU {gpu_index}, Next separation {separation_layer_index}")
+            
+            print(f"{current_layer} -- {len(self.LayerLists.items()) - 1}")
+            if current_layer >= len(self.LayerLists.items()) - 1:
+                print("Salut")
+                self.file += layer.get_declaration()
+                break
+            
+            if separation_layer_index == current_layer:
+                layer.set_separation_layer()
+                gpu_index += 1
+
+                separation_layer_index += layer_per_gpu[gpu_index]
+
+            self.file += layer.get_declaration()
+            current_layer += 1
+
+        self._generate_end_class()
+
+    def evaluate_mem(self):
+        model = self.get_modules()
+        
+        pass
+
+
     # Trace model and declare dependencies between layers (stash and pop)
     def _tracer(self, net):
         """Trace and create all the composite needed to describe correctly the models given.
@@ -230,24 +263,16 @@ class SkippableTracing:
         self._init_file()
 
         # Calcul the split region for gpus.
-        clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu) 
-        print(clone_step)
-        clone_layer = clone_step
-        current_layer = 0
-
-        # At this point all the Layer obejct are ready to be written on the file.
-        # we iter through them and save their declaration in the file that will be written.
-        # TODO : Refactor
-        for _, layer in self.LayerLists.items():
-            if current_layer >= len(self.LayerLists.items()) - 1:
-                self.file += layer.get_declaration()
-                break
-            if current_layer == clone_layer:
-                clone_layer += clone_step
-                layer.set_separation_layer()
-            self.file += layer.get_declaration()
-
-            current_layer += 1
-
-        self._generate_end_class()
+        clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
+        
+        # First naive repartition.
+        layer_per_gpu = []
+        for i in range(self.nb_gpu):
+            layer_per_gpu.append(clone_step)
+        self.set_repartition(layer_per_gpu)
+        
         self._write_in_file()
+
+        # evaluate_mem()
+    
+
