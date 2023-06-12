@@ -21,7 +21,7 @@ class SkippableTracing:
     :type model: a model extended of nn.Module.
     """
 
-    def __init__(self, nb_gpus, model, configs_mha={}):
+    def __init__(self, nb_gpus, model, input_shape, output_shape, configs_mha={}):
         """Constructor."""
         self.module_desc = {}
         self.file = ""
@@ -34,6 +34,8 @@ class SkippableTracing:
         self.configs_mha = configs_mha
         self.mha_number = len(self.configs_mha) 
         self.mha_count = 0
+        self.input_shape = input_shape
+        self.output_shape = output_shape
 
         self._verfiy_config_mha()
 
@@ -162,19 +164,41 @@ class SkippableTracing:
                 else:
                     self.module_desc[name] = module
 
+    def allocate_layers(self, layers, values):
+        num_gpus = len(layers)
+        total_layers = sum(layers)
+        total_values = sum(values)
+        target_value = total_values / num_gpus
+
+        if abs(total_layers - total_values) < 0.1 * total_values:
+            # Les deux valeurs sont déjà proches
+            return layers
+
+        gpu_layers = [[] for _ in range(num_gpus)]
+        gpu_sums = [0] * num_gpus
+
+        # Parcours des valeurs entières et des layers par GPU dans l'ordre décroissant des valeurs entières
+        for layer, value in sorted(zip(layers, values), key=lambda x: -x[1]):
+            for i in range(num_gpus):
+                if gpu_sums[i] + value <= target_value:
+                    gpu_layers[i].append(layer)
+                    gpu_sums[i] += value
+                    break
+
+        # Allouer toutes les valeurs restantes aux autres GPUs
+        for i in range(num_gpus):
+            if len(gpu_layers[i]) < len(values) // num_gpus:
+                gpu_layers[i].extend(layers[len(gpu_layers[i]):])
+
+        return gpu_layers
 
     def set_repartition(self, layer_per_gpu):
-        print(f"LayerList {len(self.LayerLists)} -> {layer_per_gpu}")
         current_layer = 0
         gpu_index = 0
         separation_layer_index = layer_per_gpu[gpu_index] - 1
 
         for _, layer in self.LayerLists.items():
-            print(f"Current layer {current_layer}, GPU {gpu_index}, Next separation {separation_layer_index}")
-            
-            print(f"{current_layer} -- {len(self.LayerLists.items()) - 1}")
             if current_layer >= len(self.LayerLists.items()) - 1:
-                print("Salut")
                 self.file += layer.get_declaration()
                 break
             
@@ -190,9 +214,42 @@ class SkippableTracing:
         self._generate_end_class()
 
     def evaluate_mem(self):
+        from .dataset import PipelineDataset
         model = self.get_modules()
+        model = torch.distributed.pipeline.sync.Pipe(model, 2)
+
+        dataset = PipelineDataset(1024, self.input_shape[1:], [1] if len(self.output_shape) == 1 else self.output_shape[1:])
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.input_shape[0], shuffle=True)
         
-        pass
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+        
+        memory_peaks = [0] * self.nb_gpu
+
+        for epoch in range(1):
+            running_loss = 0.0
+            for i, (inputs, labels) in enumerate(dataloader):
+                optimizer.zero_grad()
+                inputs = inputs.to(0)
+                labels = labels.to(self.nb_gpu - 1)
+
+                current_memory = [torch.cuda.memory_allocated(i) for i in range(self.nb_gpu)]
+
+                outputs = model(inputs).local_value()
+
+                # Forward pass
+                loss = criterion(outputs, labels.squeeze())
+
+                # Backward pass et mise à jour des poids
+                loss.backward()
+                
+                memory_peak = [torch.cuda.memory_allocated(i) - current_memory[i] for i in range(self.nb_gpu)]
+                for i, peak in enumerate(memory_peak):
+                    if peak > memory_peaks[i]:
+                        memory_peaks[i] = peak
+                optimizer.step()
+
+        return memory_peaks
 
 
     # Trace model and declare dependencies between layers (stash and pop)
@@ -273,6 +330,6 @@ class SkippableTracing:
         
         self._write_in_file()
 
-        # evaluate_mem()
+        self.evaluate_mem()
     
 
