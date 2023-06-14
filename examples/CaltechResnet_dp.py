@@ -44,7 +44,7 @@ if __name__ == '__main__':
     loss_fn = nn.CrossEntropyLoss()
     train = Trainer(model, (caltech_dl_tr, caltech_dl_val, caltech_dl_ts), loss_fn, writer, print_every=20)
     devices = list(range(torch.cuda.device_count()))
-    valloss, valacc = train.train(SGD, 1, False, {"lr": 0.001, "momentum": 0.9}, parallel=Parallelism(ParallelismType.FSDP_ZERO2, devices, len(devices)))
+    valloss, valacc = train.train(SGD, 1, False, {"lr": 0.001, "momentum": 0.9}, profiling=True, parallel=Parallelism(ParallelismType.FSDP_ZERO2, devices, len(devices)))
 
     print(f'Training done: loss={valloss}, accuracy={valacc}')
 

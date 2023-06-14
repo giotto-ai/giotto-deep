@@ -23,9 +23,9 @@ samplers = CaltechResnet.caltechSamplers(
 caltech_dl_bd = DataLoaderBuilder((caltech_ds, caltech_ds, caltech_ds))
 
 caltech_dl_tr, caltech_dl_ts, caltech_dl_val = caltech_dl_bd.build([
-    {"sampler": samplers[0], "batch_size": 4},
-    {"sampler": samplers[1], "batch_size": 1},
-    {"sampler": samplers[2], "batch_size": 1}])
+    {"sampler": samplers[0], "batch_size": 32},
+    {"sampler": samplers[1], "batch_size": 16},
+    {"sampler": samplers[2], "batch_size": 16}])
 
 # Create Resnet
 
@@ -35,8 +35,8 @@ model = CaltechResnet.CaltechResnet()
 
 writer = SummaryWriter()
 loss_fn = nn.CrossEntropyLoss()
-train = Trainer(model, (caltech_dl_tr, caltech_dl_val, caltech_dl_ts), loss_fn, writer)
-train.train(SGD, 1, False, {"lr": 0.001, "momentum": 0.9})
+train = Trainer(model, (caltech_dl_tr, caltech_dl_val, caltech_dl_ts), loss_fn, writer, print_every=20)
+train.train(SGD, 1, False, {"lr": 0.001, "momentum": 0.9}, profiling=True)
 
 # Test resnet to check performance
 
