@@ -90,6 +90,7 @@ class Parallelism:
         self.world_size = world_size
         self.rank = rank
         self.devices = [torch.device('cuda', x) for x in devices]
+        self.sharding_strategy = ShardingStrategy.NO_SHARD
 
 
 def setup(rank, world_size):
@@ -114,24 +115,16 @@ def parallel_train(rank, args, return_queue):
     setup(rank, len(args["parallel"].devices))
     torch.cuda.set_device(rank)
 
-    # Setup FSDP
     if args["parallel"].p_type == ParallelismType.FSDP_ZERO2:
-        shardingStrategy = ShardingStrategy.SHARD_GRAD_OP
+        train_args["parallel"].sharding_strategy = ShardingStrategy.SHARD_GRAD_OP
     elif args["parallel"].p_type == ParallelismType.FSDP_ZERO3:
-        shardingStrategy = ShardingStrategy.FULL_SHARD
+        train_args["parallel"].sharding_strategy = ShardingStrategy.FULL_SHARD
     else:
-        shardingStrategy = ShardingStrategy.NO_SHARD
-    print(f'PID={os.getpid()}: sending model to device {train_args["parallel"].devices[0]}')
-    model = train_args["model"].to(train_args["parallel"].devices[0])
-    model = FSDP(
-        model,
-        auto_wrap_policy=functools.partial(size_based_auto_wrap_policy, min_num_params=100),
-        sharding_strategy=shardingStrategy
-    )
+        train_args["parallel"].sharding_strategy = ShardingStrategy.NO_SHARD
 
     # Create Trainer subinstance
     trainer = Trainer(
-            model,
+            train_args["model"],
             train_args["dataloaders"],
             train_args["loss_fn"],
             train_args["writer"](),
@@ -164,7 +157,7 @@ def parallel_train(rank, args, return_queue):
     # if rank = 0, send valloss, valacc, and model parameters to super instance
     if return_queue is not None:
         tmpf = tempfile.mkstemp()
-        torch.save(model.state_dict(), tmpf[1])
+        torch.save(train_args["model"].state_dict(), tmpf[1])
         return_queue.put((valloss, valacc, tmpf[1]))
         os.close(tmpf[0])
         
@@ -254,7 +247,7 @@ class Trainer:
     ) -> None:
         self.print_every = print_every if print_every > 0 else 1
         self.model = model
-        #self.initial_model = copy.deepcopy(self.model)
+        self.initial_model = copy.deepcopy(self.model)
         assert 0 < len(dataloaders) < 4, "Length of dataloaders must be 1, 2, or 3"
         self.dataloaders = dataloaders  # train and test
         self.train_epoch = 0
@@ -291,14 +284,16 @@ class Trainer:
     def _set_initial_model(self) -> None:
         """This private method is used to set
         the initial_model"""
-        self.initial_model = copy.deepcopy(self.model)
+        if self.parallel is None or self.parallel.p_type != ParallelismType._DP:
+            self.initial_model = copy.deepcopy(self.model)
 
     def _reset_model(self) -> None:
         """Private method to reset the initial model weights.
         This function is essential for the cross-validation
         procedure.
         """
-        self.model = copy.deepcopy(self.initial_model)
+        if self.parallel is None or self.parallel.p_type != ParallelismType._DP:
+            self.model = copy.deepcopy(self.initial_model)
 
     def _optimisation_step(
         self,
@@ -677,8 +672,7 @@ class Trainer:
         optimizer depending on the training"""
         if not (self.check_has_trained and keep_training):
             # reset the model weights
-            if self.parallel is None:
-                self._reset_model()
+            self._reset_model()
             self.optimizer = optimizer(self.model.parameters(), **optimizers_param)
             if lr_scheduler is not None:
                 if scheduler_params:
@@ -687,8 +681,7 @@ class Trainer:
                     self.scheduler = lr_scheduler(self.optimizer)
         elif cross_validation:
             # reset the model weights
-            if self.parallel is None:
-                self._reset_model()
+            self._reset_model()
             # do not re-initialise the optimizer if keep-training
             dict_param = self.optimizer.param_groups[0]
             dict_param.pop("params", None)  # model.parameters()
@@ -774,9 +767,8 @@ class Trainer:
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
         # to start the training from where we left
-        if self.parallel is None:
-            if self.check_has_trained and keep_training:
-                self._set_initial_model()
+        if self.check_has_trained and keep_training:
+            self._set_initial_model()
 
         # train initialisation
         dl_tr = self.dataloaders[0]
@@ -1015,9 +1007,18 @@ class Trainer:
                     self.model.load_state_dict(torch.load(return_vals[2]))
                     self.model.to(self.device)
                     os.remove(return_vals[2])
+                    self.check_has_trained = True
                     return return_vals[0], return_vals[1]
-                if self.parallel.p_type == ParallelismType._DP:
+                elif self.parallel.p_type == ParallelismType._DP:
                     self.device = self.parallel.devices[0]
+                    # Setup FSDP
+                    print(f'PID={os.getpid()}: sending model to device {self.device}')
+                    self.model = self.model.to(self.device)
+                    self.model = FSDP(
+                        self.model,
+                        auto_wrap_policy=functools.partial(size_based_auto_wrap_policy, min_num_params=100),
+                        sharding_strategy=self.parallel.sharding_strategy
+                    )
 
             self._init_optimizer_and_scheduler(
                 keep_training,
