@@ -3,6 +3,9 @@ import torch
 import math
 from pathlib import Path
 from .constant import TAB
+import os
+from .gpu_alloc import TraceMalloc
+import multiprocessing
 
 class SkippableTracing:
     """Create and sequence the model parallelism.
@@ -36,6 +39,25 @@ class SkippableTracing:
         self.mha_count = 0
         self.input_shape = input_shape
         self.output_shape = output_shape
+
+        self.trace_gpu_alloc = TraceMalloc(nb_gpus)
+
+        # self.prof = torch.profiler.profile(  # type: ignore
+        #             activities=[
+        #                 torch.profiler.ProfilerActivity.CPU,  # type: ignore
+        #                 torch.profiler.ProfilerActivity.CUDA,  # type: ignore
+        #             ],
+        #             on_trace_ready=torch.profiler.tensorboard_trace_handler(  # type: ignore
+        #                 os.path.join(
+        #                     ".",
+        #                     "runs",
+        #                     "bda_fdp"
+        #                 ),
+        #                 worker_name="worker",
+        #             ),
+        #             record_shapes=True,
+        #             profile_memory=True
+        #         )
 
         self._verfiy_config_mha()
 
@@ -164,33 +186,43 @@ class SkippableTracing:
                 else:
                     self.module_desc[name] = module
 
-    def allocate_layers(self, layers, values):
-        num_gpus = len(layers)
-        total_layers = sum(layers)
-        total_values = sum(values)
-        target_value = total_values / num_gpus
 
-        if abs(total_layers - total_values) < 0.1 * total_values:
-            # Les deux valeurs sont déjà proches
-            return layers
+    def _equilibration(self, layers, memory):
+        repartition = layers.copy()
 
-        gpu_layers = [[] for _ in range(num_gpus)]
-        gpu_sums = [0] * num_gpus
+        n = len(layers)
+        tot_size = sum(memory)
+        mean_size = tot_size / n
 
-        # Parcours des valeurs entières et des layers par GPU dans l'ordre décroissant des valeurs entières
-        for layer, value in sorted(zip(layers, values), key=lambda x: -x[1]):
-            for i in range(num_gpus):
-                if gpu_sums[i] + value <= target_value:
-                    gpu_layers[i].append(layer)
-                    gpu_sums[i] += value
-                    break
+        target_size = mean_size * 1.1
 
-        # Allouer toutes les valeurs restantes aux autres GPUs
-        for i in range(num_gpus):
-            if len(gpu_layers[i]) < len(values) // num_gpus:
-                gpu_layers[i].extend(layers[len(gpu_layers[i]):])
+        upper_idx = max(range(n), key=lambda i: memory[i])
+        lower_idx = min(range(n), key=lambda i: memory[i])
 
-        return gpu_layers
+        diff = memory[upper_idx] - memory[lower_idx]
+
+        quantity_swap = min(1, diff - (target_size * 0.1))
+
+        repartition[lower_idx] += quantity_swap
+        repartition[upper_idx] -= quantity_swap
+
+        return repartition
+
+    def reset_repartition(self, layer_per_gpu):
+        current_layer = 0
+        gpu_index = 0
+        separation_layer_index = layer_per_gpu[gpu_index] - 1
+
+        for _, layer in self.LayerLists.items():
+            if current_layer >= len(self.LayerLists.items()) - 1:
+                break
+            
+            if separation_layer_index == current_layer:
+                layer.reset_separation_layer()
+                gpu_index += 1
+                separation_layer_index += layer_per_gpu[gpu_index]
+
+            current_layer += 1
 
     def set_repartition(self, layer_per_gpu):
         current_layer = 0
@@ -215,42 +247,84 @@ class SkippableTracing:
 
     def evaluate_mem(self):
         from .dataset import PipelineDataset
-        model = self.get_modules()
-        model = torch.distributed.pipeline.sync.Pipe(model, 2)
+        
 
         dataset = PipelineDataset(1024, self.input_shape[1:], [1] if len(self.output_shape) == 1 else self.output_shape[1:])
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.input_shape[0], shuffle=True)
         
         criterion = torch.nn.CrossEntropyLoss()
+
+        model = self.get_modules()
+        model = torch.distributed.pipeline.sync.Pipe(model, 2)
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+
+        # self.prof.start()
+        # with torch.no_grad():
+        with self.trace_gpu_alloc:
+            for epoch in range(10):
+                running_loss = 0.0
+                for i, (inputs, labels) in enumerate(dataloader):
+
+                    # optimizer.zero_grad()
+                    inputs = inputs.to(0)
+                    labels = labels.to(self.nb_gpu - 1)
+                    
+                    outputs = model(inputs).local_value()
+
+                    # Forward pass
+                    loss = criterion(outputs, labels.squeeze())
+
+                    # Backward pass et mise à jour des poids
+                    loss.backward()
+                    # self.prof.step()
+                    optimizer.step()
+                   
+
+        torch.cuda.empty_cache()
+        print(f"Outer loop --------> {self.trace_gpu_alloc.peaked}")
+
+        # Retourner les pics de mémoire
+        return self.trace_gpu_alloc.peaked
+
+    def _repartition(self):
+        self._init_file()
+        # Save self var for remake
+        file = self.file
+
+        thread = multiprocessing.Process(target=self.evaluate_mem)
+
+        # Calculate first naive repartition on gpus
+        clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
+        layer_per_gpu = [11, 3]
+        # for i in range(self.nb_gpu):
+        #     layer_per_gpu.append(clone_step)
         
-        memory_peaks = [0] * self.nb_gpu
+        # Initialise cloned layers
+        self.set_repartition(layer_per_gpu)
 
-        for epoch in range(1):
-            running_loss = 0.0
-            for i, (inputs, labels) in enumerate(dataloader):
-                optimizer.zero_grad()
-                inputs = inputs.to(0)
-                labels = labels.to(self.nb_gpu - 1)
+        # Write in file the naive repartition
+        self._write_in_file()
 
-                current_memory = [torch.cuda.memory_allocated(i) for i in range(self.nb_gpu)]
+        print(f"First repartition : {layer_per_gpu}")
 
-                outputs = model(inputs).local_value()
+        while True:
+            # Test 
+            memory_peaks = self.evaluate_mem()
+            print(f"Memory peaks per GPU: {[peak for peak in memory_peaks]} MB")
 
-                # Forward pass
-                loss = criterion(outputs, labels.squeeze())
+            
+            new_layer_per_gpu = self._equilibration(layer_per_gpu, memory_peaks)
+            print(f"New repartition calculated : {new_layer_per_gpu}")
 
-                # Backward pass et mise à jour des poids
-                loss.backward()
-                
-                memory_peak = [torch.cuda.memory_allocated(i) - current_memory[i] for i in range(self.nb_gpu)]
-                for i, peak in enumerate(memory_peak):
-                    if peak > memory_peaks[i]:
-                        memory_peaks[i] = peak
-                optimizer.step()
-
-        return memory_peaks
-
+            if new_layer_per_gpu != layer_per_gpu:
+                self.file = file
+                self.reset_repartition(layer_per_gpu)
+                self.set_repartition(new_layer_per_gpu)
+                self._write_in_file()
+                layer_per_gpu = new_layer_per_gpu
+                input("Press Enter to continue...")
+            else:
+                break
 
     # Trace model and declare dependencies between layers (stash and pop)
     def _tracer(self, net):
@@ -317,19 +391,21 @@ class SkippableTracing:
             for pop_parent in layer.get_pop_parent():
                 self.LayerLists[pop_parent[0]].set_stash(layer.get_node())
 
-        self._init_file()
+        self._repartition()
 
-        # Calcul the split region for gpus.
-        clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
-        
-        # First naive repartition.
-        layer_per_gpu = []
-        for i in range(self.nb_gpu):
-            layer_per_gpu.append(clone_step)
-        self.set_repartition(layer_per_gpu)
-        
-        self._write_in_file()
+        # self._init_file()
 
-        self.evaluate_mem()
+        # # Calcul the split region for gpus.
+        # clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
+        
+        # # First naive repartition.
+        # layer_per_gpu = []
+        # for i in range(self.nb_gpu):
+        #     layer_per_gpu.append(clone_step)
+        # self.set_repartition(layer_per_gpu)
+        
+        # self._write_in_file()
+
+        # self.evaluate_mem()
     
 
