@@ -626,12 +626,11 @@ class Trainer:
     ) -> None:
         """initialise the profler for profiling"""
         # profiling
-        active: int = 10
-        if not cross_validation:
-            active = n_epochs - 2
-        else:
-            active = k_folds * (n_epochs - 2)
+        active: int = 2
+        if  cross_validation:
+            active *= k_folds
 
+        print(f'from _init_profiler: pid = {os.getpid()}, profiling = {profiling}')
         if profiling:
             try:
                 self.prof = torch.profiler.profile(  # type: ignore
@@ -640,7 +639,7 @@ class Trainer:
                         torch.profiler.ProfilerActivity.CUDA,  # type: ignore
                     ],
                     schedule=torch.profiler.schedule(  # type: ignore
-                        wait=1, warmup=1, active=active, repeat=1
+                        wait=1, warmup=3, active=active, repeat=2
                     ),
                     on_trace_ready=torch.profiler.tensorboard_trace_handler(  # type: ignore
                         os.path.join(
@@ -650,14 +649,14 @@ class Trainer:
                                 self.model.__class__.__name__ + str(datetime.today())
                             ).replace(":", "-"),
                         ),
-                        worker_name="worker",
+                        #worker_name="worker",
                     ),
                     record_shapes=True,
-                    profile_memory=True
-                    # with_stack=True
+                    profile_memory=True,
+                    with_stack=True
                 )
-            except AssertionError:
-                pass
+            except AssertionError as e:
+                print(f'PID({os.getpid()}) Error: {e}')
 
     def _init_optimizer_and_scheduler(
         self,
