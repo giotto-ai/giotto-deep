@@ -308,7 +308,6 @@ class Trainer:
         metric_list = []
         epoch_loss = 0.0
         for batch, (X, y) in enumerate(dl_tr):
-
             def closure() -> Tensor:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
@@ -682,6 +681,7 @@ class Trainer:
 
         # train initialisation
         dl_tr = self.dataloaders[0]
+
         if optimizers_param is None:
             optimizers_param = {"lr": 0.001}
 
@@ -810,7 +810,7 @@ class Trainer:
                 )
 
                 if self.pipeline_train:
-                    self._pipelined_model(nb_chunks, config_mha)
+                    self._pipelined_model(nb_chunks, config_mha, dl_tr)
 
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
@@ -892,7 +892,7 @@ class Trainer:
             )
 
             if self.pipeline_train:
-                    self._pipelined_model(nb_chunks, config_mha)
+                    self._pipelined_model(nb_chunks, config_mha, dl_tr)
 
             if not parallel_tpu:
                 valloss, valacc = self._training_loops(
@@ -1353,10 +1353,16 @@ class Trainer:
             "persistent_workers": original_dataloader.persistent_workers,
         }
     
-    def _pipelined_model(self, nb_chunks, config_mha):
+    def _pipelined_model(self, nb_chunks, config_mha, dl_tr):
+        input_shape = None
+        output_shape = None
+        for input, label in dl_tr:
+            input_shape = input.shape
+            output_shape = label.shape
+            break
 
         # Generate the piped model
-        trace = SkippableTracing(self.nb_gpus, self.model, config_mha)
+        trace = SkippableTracing(self.nb_gpus, self.model, input_shape, output_shape, config_mha)
         model_pipe = trace.get_modules()
         model_pipe = Pipe(model_pipe, nb_chunks)
 
