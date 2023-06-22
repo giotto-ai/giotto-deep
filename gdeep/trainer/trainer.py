@@ -156,11 +156,13 @@ def parallel_train(rank, args, return_queue):
 
     # if rank = 0, send valloss, valacc, and model parameters to super instance
     if return_queue is not None:
-        tmpf = tempfile.mkstemp()
-        torch.save(train_args["model"].state_dict(), tmpf[1])
-        return_queue.put((valloss, valacc, tmpf[1]))
-        os.close(tmpf[0])
-        
+        return_vals = [valloss, valacc]
+        if args["return_model"]:
+            tmpf = tempfile.mkstemp()
+            torch.save(train_args["model"].state_dict(), tmpf[1])
+            os.close(tmpf[0])
+            return_vals.append(tmpf[1])
+        return_queue.put(return_vals)
 
     cleanup()
 
@@ -776,7 +778,7 @@ class Trainer:
 
         # dataloaders_param initialisation
         if dataloaders_param is None:
-            if self.dataloaders[1] is not None:
+            if len(self.dataloaders) > 1:
                 dataloaders_param_val = Trainer.copy_dataloader_params(
                     self.dataloaders[1]
                 )
@@ -876,6 +878,7 @@ class Trainer:
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
+            print("Recovering targets...")
             try:
                 data_idx = self.dataloaders[0].sampler.indices  # type: ignore
                 labels_for_split = [
@@ -887,6 +890,7 @@ class Trainer:
                     self.dataloaders[0].dataset[i][-1] for i in data_idx
                 ]
 
+            print("Done")
             for fold, (tr_idx, val_idx) in enumerate(
                 self.k_fold_class.split(data_idx, labels_for_split)
             ):
@@ -922,10 +926,42 @@ class Trainer:
                     **dataloaders_param_val,
                     sampler=GiottoSampler(val_idx),
                 )
+
                 # print n-th fold
                 print("\n\n********** Fold ", fold + 1, "**************")
+
+                if self.parallel is not None: # Must only get there with parallelism type != _DP
+                    child_args = {"model": self.model,
+                                    "dataloaders": self.dataloaders,
+                                    "loss_fn": self.loss_fn,
+                                    "writer": type(self.writer),
+                                    "training_metric": self.training_metric,
+                                    "k_fold_class": self.k_fold_class,
+                                    "print_every": self.print_every,
+                                    "parallel": self.parallel,
+                                    "optimizer": optimizer,
+                                    "n_epochs": n_epochs,
+                                    "cross_validation": False,
+                                    "optimizers_param": optimizers_param,
+                                    "dataloaders_param": dataloaders_param,
+                                    "lr_scheduler": lr_scheduler,
+                                    "scheduler_params": scheduler_params,
+                                    "optuna_params": optuna_params,
+                                    "profiling": profiling,
+                                    "parallel_tpu": parallel_tpu,
+                                    "keep_training": keep_training,
+                                    "store_grad_layer_hist": store_grad_layer_hist,
+                                    "n_accumulated_grads": n_accumulated_grads,
+                                    "writer_tag": writer_tag,
+                                    "return_model": False}
+
+                    return_vals = gmp.spawn(parallel_train,
+                            args= (child_args,),
+                            nprocs= self.parallel.world_size)
+                    valloss, valacc = return_vals[0], return_vals[1]
+
                 # the training and validation loop
-                if parallel_tpu == False:
+                elif parallel_tpu == False:
                     valloss, valacc = self._training_loops(
                         n_epochs,
                         dl_tr,
@@ -998,13 +1034,13 @@ class Trainer:
                                     "keep_training": keep_training,
                                     "store_grad_layer_hist": store_grad_layer_hist,
                                     "n_accumulated_grads": n_accumulated_grads,
-                                    "writer_tag": writer_tag,}
+                                    "writer_tag": writer_tag,
+                                    "return_model": True}
 
                     return_vals = gmp.spawn(parallel_train,
                             args= (child_args,),
                             nprocs= self.parallel.world_size)
                     self.model.load_state_dict(torch.load(return_vals[2]))
-                    self.model.to(self.device)
                     os.remove(return_vals[2])
                     self.check_has_trained = True
                     return return_vals[0], return_vals[1]
@@ -1397,6 +1433,7 @@ class Trainer:
             (float, float, 2darray):
                 the accuracy, loss and confusion matrix.
         """
+        self.model.to(self.device)
         if dl is None:
             dl = self.dataloaders[0]
         class_probs: List[List[Tensor]] = []
