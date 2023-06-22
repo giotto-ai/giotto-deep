@@ -75,25 +75,41 @@ def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
     return wrapper
 
 class ParallelismType(Enum):
+    """Type of multi-GPU parallelism to use for training"""
     _DP = auto()
     DDP = auto()
     FSDP_ZERO2 = auto()
     FSDP_ZERO3 = auto()
 
 class Parallelism:
+    """Stores the necessary informations to perform parallel training using the Trainer class
+    Args:
+        p_type:
+            Type of parallelism training algorithm to use
+        devices:
+            Indices of the available GPUs to use for training
+        world_size:
+            Actual number of GPUs to use from the ones referenced in devices
+    """
     def __init__(self,
                 p_type: ParallelismType,
                 devices: Tuple[int],
-                world_size: int = 1,
-                rank: int = 0) -> None:
+                world_size: int = 1,) -> None:
         self.p_type = p_type
         self.world_size = world_size
-        self.rank = rank
+        self.rank = 0
         self.devices = [torch.device('cuda', x) for x in devices]
         self.sharding_strategy = ShardingStrategy.NO_SHARD
+        if self.p_type == ParallelismType.FSDP_ZERO2:
+            self.sharding_strategy = ShardingStrategy.SHARD_GRAD_OP
+        elif self.p_type == ParallelismType.FSDP_ZERO3:
+            self.sharding_strategy = ShardingStrategy.FULL_SHARD
+        else:
+            self.sharding_strategy = ShardingStrategy.NO_SHARD
 
 
 def setup(rank, world_size):
+    """Setup the environment necessary for parallel training"""
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
 
@@ -101,26 +117,26 @@ def setup(rank, world_size):
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
 def cleanup():
+    """Cleanup the parallel training environment"""
     dist.destroy_process_group()
 
 def parallel_train(rank, args, return_queue):
-    # model objects are not the same. Check model parameters buffer
-    # if same -> parameter retrieval possible
-    # if not same -> no need for deepcopy
+    """Creates, configures and uses a sub instance of the Trainer class to train a model using parallel training
+    Args:
+        rank:
+            Index of the process used to execute this function
+        args: 
+            Parameters to pass to the Trainer class
+        return_queue:
+            Multiprocessing queue to use to send return values back
+    """
     print(f'from parallel_train {rank}: {os.getpid()}')
-    train_args = copy.deepcopy(args)
-    train_args["parallel"].p_type = ParallelismType._DP
-    train_args["parallel"].devices = [args["parallel"].devices[rank]]
-    train_args["parallel"].rank = rank
-    setup(rank, len(args["parallel"].devices))
-    torch.cuda.set_device(rank)
-
-    if args["parallel"].p_type == ParallelismType.FSDP_ZERO2:
-        train_args["parallel"].sharding_strategy = ShardingStrategy.SHARD_GRAD_OP
-    elif args["parallel"].p_type == ParallelismType.FSDP_ZERO3:
-        train_args["parallel"].sharding_strategy = ShardingStrategy.FULL_SHARD
-    else:
-        train_args["parallel"].sharding_strategy = ShardingStrategy.NO_SHARD
+    train_args = copy.deepcopy(args) #Deepcopy arguments so they can be used independantly from those in other processes
+    train_args["parallel"].p_type = ParallelismType._DP #Signal that this is a subinstance of Trainer
+    train_args["parallel"].devices = [args["parallel"].devices[rank]] #Use the device corresponding to the process
+    train_args["parallel"].rank = rank #Memorise rank (for in-class log filtering)
+    setup(rank, len(args["parallel"].devices)) #Setup environment
+    torch.cuda.set_device(rank) #Inform pytorch of the device that will be used by this process
 
     # Create Trainer subinstance
     trainer = Trainer(
@@ -154,14 +170,14 @@ def parallel_train(rank, args, return_queue):
         train_args["parallel"],
     )
 
-    # if rank = 0, send valloss, valacc, and model parameters to super instance
+    # if rank = 0, send valloss, valacc, and model parameters (if requested) to super instance
     if return_queue is not None:
         return_vals = [valloss, valacc]
         if args["return_model"]:
-            tmpf = tempfile.mkstemp()
-            torch.save(train_args["model"].state_dict(), tmpf[1])
+            tmpf = tempfile.mkstemp() #Create temporary file
+            torch.save(train_args["model"].state_dict(), tmpf[1]) #Store Trainable parameters in the temporary file
             os.close(tmpf[0])
-            return_vals.append(tmpf[1])
+            return_vals.append(tmpf[1]) #Send temporary file path to super instance for recovery
         return_queue.put(return_vals)
 
     cleanup()
@@ -177,8 +193,7 @@ class Trainer:
         model :
             standard torch model
         dataloaders (list of utils.DataLoader):
-            list of standard torch DataLoaders, e.g.
-            `[dl_tr, dl_val, dl_ts]`
+            list of standard torch DataLoaders, e.g. `[dl_tr, dl_val, dl_ts]`. The list may contain 1, 2 or 3 dataloaders. In the case where 1 datalaoder is given, it will be automatically split into a training (80%) and a validation (20%) dataloader. When 3 dataloaders are given, the third dataloader is never used
         loss_fn :
             loss function to average over batches
         writer :
@@ -724,7 +739,7 @@ class Trainer:
             dataloaders_param:
                 dictionary of the dataloaders
                 parameters, e.g. `{'batch_size': 32}`. If ``None``, then
-                the parameters of the training and validation
+                the parameters of the validation (if any) or training
                 dataloaders will be used.
             optimizers_param:
                 dictionary of the optimizers
@@ -756,6 +771,8 @@ class Trainer:
                 Only a positive number will be taken into account
             writer_tag:
                 the tensorboard writer tag
+            parallel: 
+                The type of parallel training algorithm to use. If None, the default basic training will be used, else, the algorithm selected in the p_type member of the Parallelism object will be used. The Parallelism object must also contain a list of usable GPU indices as well as the number of those GPUs to actually use for the training
 
         Returns:
             (float, float):
