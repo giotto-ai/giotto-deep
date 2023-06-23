@@ -35,7 +35,7 @@ class SkippableTracing:
         self.net = None
         self.LayerLists = {}
         self.GetattrLists = {}
-        self.nb_gpu = nb_gpus
+        self.nb_gpu = nb_gpus if nb_gpus is not None else torch.cuda.device_count()
         self.file_name = "layered_model.py"
         self.directory_name = "pipelinecache"
         self.configs_mha = configs_mha
