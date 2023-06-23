@@ -1,4 +1,5 @@
 import torch
+
 def BToMb(x): return (x // (2*1024))
 
 class TraceMalloc():
@@ -11,25 +12,22 @@ class TraceMalloc():
 
     def __enter__(self):
         for device in range(self.nb_gpu):
-            torch.cuda.reset_accumulated_memory_stats(device)
             self.begin[device] = torch.cuda.memory_allocated(device)
             
-
         return self
     
     def __exit__(self, *exc):
+
         for device in range(self.nb_gpu):
             self.end[device]    = torch.cuda.memory_allocated(device)
             self.peak[device]   = torch.cuda.max_memory_allocated(device)
             self.peaked[device] = BToMb(self.peak[device] - self.begin[device])
-            torch.cuda.reset_accumulated_memory_stats(device)
+            torch.cuda.reset_peak_memory_stats(device)
 
-        for device in range(self.nb_gpu):
-            print(f"GPU n°{device}")
-            print(f"    Memory begin -> {BToMb(self.begin[device])} MB")
-            print(f"    Memory end   -> {BToMb(self.end[device])} MB")
-            # print(f"Memory used  -> {self.used[device]} MB")
-            print(f"    Memory peak  -> {self.peaked[device]} MB")
-
-    
+        # for device in range(self.nb_gpu):
+        #     print(f"GPU n°{device}")
+        #     print(f"    Memory begin -> {BToMb(self.begin[device])} MB")
+        #     print(f"    Memory end   -> {BToMb(self.end[device])} MB")
+        #     print(f"    Memory peak  -> {BToMb(self.peak[device])} MB")
+        #     print(f"    Memory peaked  -> {self.peaked[device]} MB")
        

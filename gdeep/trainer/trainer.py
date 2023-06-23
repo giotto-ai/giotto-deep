@@ -671,7 +671,8 @@ class Trainer:
         if pipeline_train:
             # if not self.check_has_trained:
                 # torch.distributed.rpc.shutdown()
-            torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
+            # torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
+            pass
 
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
@@ -1354,15 +1355,19 @@ class Trainer:
         }
     
     def _pipelined_model(self, nb_chunks, config_mha, dl_tr):
+
+
         input_shape = None
         output_shape = None
         for input, label in dl_tr:
             input_shape = input.shape
             output_shape = label.shape
             break
-
+        
+        # torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
         # Generate the piped model
         trace = SkippableTracing(self.nb_gpus, self.model, input_shape, output_shape, config_mha)
+        torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
         model_pipe = trace.get_modules()
         model_pipe = Pipe(model_pipe, nb_chunks)
 
