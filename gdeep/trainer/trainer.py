@@ -89,7 +89,7 @@ class Parallelism:
         devices:
             Indices of the available GPUs to use for training
         world_size:
-            Actual number of GPUs to use from the ones referenced in devices
+            Actual number of GPUs to use from the ones referenced in devices. Asking for more GPUs than referenced in devices will result in an exception
     """
     def __init__(self,
                 p_type: ParallelismType,
@@ -98,8 +98,12 @@ class Parallelism:
         self.p_type = p_type
         self.world_size = world_size
         self.rank = 0
-        self.devices = [torch.device('cuda', x) for x in devices]
-        self.sharding_strategy = ShardingStrategy.NO_SHARD
+        self.devices = [torch.device('cuda', x) for x in devices] # Convert device indices into torch devices
+
+        if self.world_size > len(self.devices):
+            raise ValueError("Cannot use more devices than those referenced in devices")
+
+        # Convert selected DP algorithm into FSDP supported sharding strategy
         if self.p_type == ParallelismType.FSDP_ZERO2:
             self.sharding_strategy = ShardingStrategy.SHARD_GRAD_OP
         elif self.p_type == ParallelismType.FSDP_ZERO3:
