@@ -8,12 +8,15 @@ from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
 import tempfile
 
 import torch.nn.functional as f
+import torch.cuda.nccl as nccl
 from torch.optim import Optimizer
 import torch
 import torch.distributed as dist
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
     ShardingStrategy,
+    MixedPrecision,
+    BackwardPrefetch
     )
 from torch.distributed.fsdp.wrap import(
     size_based_auto_wrap_policy,
@@ -90,16 +93,37 @@ class Parallelism:
             Indices of the available GPUs to use for training
         world_size:
             Actual number of GPUs to use from the ones referenced in devices. Asking for more GPUs than referenced in devices will result in an exception
+        mixed_precision:
+            Mixed precision configuration
     """
     def __init__(self,
                 p_type: ParallelismType,
                 devices: Tuple[int],
-                world_size: int = 1,) -> None:
+                world_size: int = 1,
+                mixed_precision: MixedPrecision = None,
+                fetch_type: BackwardPrefetch = None) -> None:
         self.p_type = p_type
         self.world_size = world_size
         self.rank = 0
+        self.fetch_type = fetch_type
         self.devices = [torch.device('cuda', x) for x in devices] # Convert device indices into torch devices
+        self.bf_supported = (torch.version.cuda and 
+                            torch.cuda.is_bf16_supported() and 
+                            float(torch.version.cuda) >= 11 and 
+                            nccl.version() >= (2, 10)) # Check if the device and torch version allow support for bf16 calculation
+        # Verify mixed precision strategy
+        if mixed_precision is None:
+            self.mixed_precision = None
+        elif self.bf_supported:
+            self.mixed_precision = mixed_precision
+        elif (mixed_precision.buffer_dtype == torch.bfloat16 or
+              mixed_precision.param_dtype == torch.bfloat16 or
+              mixed_precision.reduce_dtype == torch.bfloat16): # Using bfloat on unsupported environments results in poor performance
+            raise ValueError("Trying to use bfloat16 mixed precision on an unsupported environment/device")
+        else:
+            self.mixed_precision = mixed_precision
 
+        # Verify proper use of devices
         if self.world_size > len(self.devices):
             raise ValueError("Cannot use more devices than those referenced in devices")
 
@@ -486,7 +510,7 @@ class Trainer:
         """private method to run a single training
         loop
         """
-        if self.parallel is None:
+        if self.parallel is None: # Once setup, FSDP handles the model's device
             self.model = self.model.to(self.device)
         self.model.train()
         try:
@@ -524,7 +548,7 @@ class Trainer:
         """private method to run a single validation
         loop
         """
-        if self.parallel is None:
+        if self.parallel is None: # FSDP handles the model's device
             self.model = self.model.to(self.device)
         try:
             size = len(dl_val.sampler.indices)  # type: ignore
@@ -1073,7 +1097,9 @@ class Trainer:
                     self.model = FSDP(
                         self.model,
                         auto_wrap_policy=functools.partial(size_based_auto_wrap_policy, min_num_params=100),
-                        sharding_strategy=self.parallel.sharding_strategy
+                        sharding_strategy=self.parallel.sharding_strategy,
+                        mixed_precision=self.parallel.mixed_precision,
+                        backward_prefetch=self.parallel.fetch_type
                     )
 
             self._init_optimizer_and_scheduler(
@@ -1454,7 +1480,7 @@ class Trainer:
             (float, float, 2darray):
                 the accuracy, loss and confusion matrix.
         """
-        self.model.to(self.device)
+        self.model.to(self.device) # Send model to device in case it wasn't trained on it previously
         if dl is None:
             dl = self.dataloaders[0]
         class_probs: List[List[Tensor]] = []

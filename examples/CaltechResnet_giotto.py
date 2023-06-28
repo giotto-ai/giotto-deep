@@ -6,6 +6,7 @@ from gdeep.trainer.trainer import Trainer, Parallelism, ParallelismType
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim.sgd import SGD
 from torch import nn
+from torch.distributed.fsdp import MixedPrecision, BackwardPrefetch
 
 import os
 
@@ -20,8 +21,12 @@ if __name__ == '__main__':
                         help='Enable FSDP for training')
     parser.add_argument('--cv', action='store_true', default=False,
                         help='Enable cross-validation')
+    parser.add_argument('--mp', action='store_true', default=False,
+                        help='Enable mixed precision')
     parser.add_argument('--profiling', action='store_true', default=False,
                         help='Enable cross-validation')
+    parser.add_argument('--fetch', type=int, default=0, metavar='N',
+                        help='Type of tensor fetching to use: 0=none, 1=pre-fetching, 2=post_fetching (default: 0)')
     args = parser.parse_args()
 
     print(f'from base script: {os.getpid()}')
@@ -69,12 +74,28 @@ if __name__ == '__main__':
     dataloaders = (caltech_dl_tr,) if args.cv else (caltech_dl_tr, caltech_dl_val, caltech_dl_ts)
     train = Trainer(model, dataloaders, loss_fn, writer, print_every=20)
     devices = list(range(torch.cuda.device_count()))
+    mixed_precision = MixedPrecision( # Define tensors to use lower precision on
+        param_dtype=torch.bfloat16,
+        reduce_dtype=torch.bfloat16,
+        buffer_dtype=torch.bfloat16
+    ) if args.mp else None
+    if args.fetch == 1: # Define the prefetch strategy to use
+        fetch = BackwardPrefetch.BACKWARD_PRE
+    elif args.fetch == 2:
+        fetch = BackwardPrefetch.BACKWARD_POST
+    else :
+        fetch = None
+    parallelism = Parallelism(ParallelismType.FSDP_ZERO2,
+                                devices, 
+                                len(devices),
+                                mixed_precision,
+                                fetch_type=fetch)
     valloss, valacc = train.train(SGD, 
                                   args.n_epochs, 
                                   args.cv, 
                                   {"lr": 0.001, "momentum": 0.9}, 
                                   profiling=args.profiling, 
-                                  parallel=Parallelism(ParallelismType.FSDP_ZERO2, devices, len(devices)) if args.fsdp else None)
+                                  parallel=parallelism if args.fsdp else None)
 
     print(f'Training done: loss={valloss}, accuracy={valacc}')
 
