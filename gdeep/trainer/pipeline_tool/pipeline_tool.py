@@ -287,11 +287,6 @@ class SkippableTracing:
         # Distribuer les couches restantes entre les GPU
         for i in range(remainder):
             layer_per_gpu[i] += 1
-        # clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
-        # print(clone_step)
-        # layer_per_gpu = []
-        # for i in range(self.nb_gpu):
-        #     layer_per_gpu.append(clone_step)
         
         # Initialise cloned layers
         self.set_repartition(layer_per_gpu)
