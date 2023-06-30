@@ -251,6 +251,8 @@ class SkippableTracing:
         separation_layer_index = layer_per_gpu[gpu_index] - 1
 
         for _, layer in self.LayerLists.items():
+
+            print(f"{separation_layer_index} -- {current_layer} -- Nb tot : {len(self.LayerLists.items())}")
             if current_layer >= len(self.LayerLists.items()) - 1:
                 self.file += layer.get_declaration()
                 break
@@ -258,7 +260,7 @@ class SkippableTracing:
             if separation_layer_index == current_layer:
                 layer.set_separation_layer()
                 gpu_index += 1
-
+                print(gpu_index)
                 separation_layer_index += layer_per_gpu[gpu_index]
 
             self.file += layer.get_declaration()
@@ -278,10 +280,18 @@ class SkippableTracing:
         file = self.file
 
         # Calculate first naive repartition on gpus
-        clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
-        layer_per_gpu = []
-        for i in range(self.nb_gpu):
-            layer_per_gpu.append(clone_step)
+        clone_step = len(self.LayerLists.items()) // self.nb_gpu
+        remainder = len(self.LayerLists.items()) % self.nb_gpu
+        layer_per_gpu = [clone_step] * self.nb_gpu
+
+        # Distribuer les couches restantes entre les GPU
+        for i in range(remainder):
+            layer_per_gpu[i] += 1
+        # clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu)
+        # print(clone_step)
+        # layer_per_gpu = []
+        # for i in range(self.nb_gpu):
+        #     layer_per_gpu.append(clone_step)
         
         # Initialise cloned layers
         self.set_repartition(layer_per_gpu)
