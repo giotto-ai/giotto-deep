@@ -172,51 +172,16 @@ class SkippableTracing:
                 else:
                     self.module_desc[name] = module
 
-    # def _equilibration(self, layers, memory):
-    #     repartition = layers.copy()
-        
-    #     n = len(layers)
-    #     tot_size = sum(memory)
-    #     mean_size = tot_size / n
-        
-    #     target_size = mean_size * 1.1
-        
-    #     # Tri des indices des couches par ordre croissant de la mémoire
-    #     sorted_indices = sorted(range(n), key=lambda i: memory[i])
-        
-    #     left = 0
-    #     right = n - 1
-        
-    #     while left <= right:
-    #         # Calcul de la taille actuelle des couches gauche et droite
-    #         left_size = sum(repartition[i] for i in sorted_indices[left:right+1])
-    #         right_size = tot_size - left_size
-            
-    #         # Calcul de l'écart par rapport à la taille cible
-    #         left_diff = left_size - target_size
-    #         right_diff = right_size - target_size
-            
-    #         if left_diff > 0 and right_diff > 0:
-    #             # Si les deux côtés dépassent la taille cible, on réduit des deux côtés
-    #             repartition[sorted_indices[left]] -= 1
-    #             repartition[sorted_indices[right]] -= 1
-    #             left += 1
-    #             right -= 1
-    #         elif left_diff > 0:
-    #             # Si seulement le côté gauche dépasse la taille cible, on réduit à gauche
-    #             repartition[sorted_indices[left]] -= 1
-    #             left += 1
-    #         elif right_diff > 0:
-    #             # Si seulement le côté droit dépasse la taille cible, on réduit à droite
-    #             repartition[sorted_indices[right]] -= 1
-    #             right -= 1
-    #         else:
-    #             # Les deux côtés sont équilibrés, on sort de la boucle
-    #             break
-        
-    #     return repartition
-
     def _equilibration(self, layers, memory):
+        """Balance the distribution of layers across GPUs based on memory usage.
+    
+        :param layers: Current distribution of layers across GPUs.
+        :type layers: list
+        :param memory: Memory usage for each GPU.
+        :type memory: list
+        :return: New balanced distribution of layers across GPUs.
+        :rtype: list
+        """
         repartition = layers.copy()
         
         n = len(layers)
@@ -230,6 +195,11 @@ class SkippableTracing:
         return repartition
 
     def reset_repartition(self, layer_per_gpu):
+        """Reset the distribution of layers based on the number of layers per GPU.
+    
+        :param layer_per_gpu: Number of layers per GPU.
+        :type layer_per_gpu: list
+        """
         current_layer = 0
         gpu_index = 0
         separation_layer_index = layer_per_gpu[gpu_index] - 1
@@ -246,13 +216,17 @@ class SkippableTracing:
             current_layer += 1
 
     def set_repartition(self, layer_per_gpu):
+        """Set the distribution of layers across GPUs based on the number of layers per GPU.
+    
+        :param layer_per_gpu: Number of layers per GPU.
+        :type layer_per_gpu: list
+        """
         current_layer = 0
         gpu_index = 0
         separation_layer_index = layer_per_gpu[gpu_index] - 1
 
         for _, layer in self.LayerLists.items():
 
-            print(f"{separation_layer_index} -- {current_layer} -- Nb tot : {len(self.LayerLists.items())}")
             if current_layer >= len(self.LayerLists.items()) - 1:
                 self.file += layer.get_declaration()
                 break
@@ -260,7 +234,6 @@ class SkippableTracing:
             if separation_layer_index == current_layer:
                 layer.set_separation_layer()
                 gpu_index += 1
-                print(gpu_index)
                 separation_layer_index += layer_per_gpu[gpu_index]
 
             self.file += layer.get_declaration()
@@ -269,12 +242,20 @@ class SkippableTracing:
         self._generate_end_class()
 
     def _check_memory_peak(self, memory_peak):
+        """Check if the memory peaks are balanced across GPUs.
+    
+        :param memory_peak: Memory peaks for each GPU.
+        :type memory_peak: list
+        :return: True if memory peaks are balanced, False otherwise.
+        :rtype: bool
+        """
         threshold = 0.2  # 20% de tolérance
         reference_value = memory_peak[0]  # Sélection d'une valeur de référence aléatoire dans le tableau
         return all(abs(value - reference_value) <= reference_value * threshold for value in memory_peak[1:])
 
 
     def _repartition(self):
+        """Perform the distribution of layers across GPUs in a balanced manner based on memory usage."""
         self._init_file()
         # Save self var for remake
         file = self.file
@@ -321,7 +302,7 @@ class SkippableTracing:
                 self.set_repartition(new_layer_per_gpu)
                 self._write_in_file()
                 layer_per_gpu = new_layer_per_gpu
-                input("Press Enter to continue...")
+
             else:
                 break
 
