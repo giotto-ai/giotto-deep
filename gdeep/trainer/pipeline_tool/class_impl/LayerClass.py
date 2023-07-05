@@ -212,6 +212,9 @@ class Layer:
 
         return string
 
+    def reset_separation_layer(self):
+        self.separation_layer = False
+
     def set_separation_layer(self):
         """Set the layer as a separation layer.
         

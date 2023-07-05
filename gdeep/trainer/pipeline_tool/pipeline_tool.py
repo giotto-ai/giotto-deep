@@ -3,6 +3,13 @@ import torch
 import math
 from pathlib import Path
 from .constant import TAB
+import os
+from .gpu_alloc import TraceMalloc
+from .dataset import PipelineDataset
+import multiprocessing
+import torch.multiprocessing as tmp
+import subprocess
+from pytorch_memlab import MemReporter
 
 class SkippableTracing:
     """Create and sequence the model parallelism.
@@ -21,20 +28,23 @@ class SkippableTracing:
     :type model: a model extended of nn.Module.
     """
 
-    def __init__(self, nb_gpus, model, configs_mha={}):
+    def __init__(self, nb_gpus, model, input_shape, output_shape, configs_mha={}):
         """Constructor."""
         self.module_desc = {}
         self.file = ""
         self.net = None
         self.LayerLists = {}
         self.GetattrLists = {}
-        self.nb_gpu = nb_gpus
+        self.nb_gpu = nb_gpus if nb_gpus is not None else torch.cuda.device_count()
         self.file_name = "layered_model.py"
         self.directory_name = "pipelinecache"
         self.configs_mha = configs_mha
         self.mha_number = len(self.configs_mha) 
         self.mha_count = 0
+        self.input_shape = input_shape
+        self.output_shape = output_shape
 
+        # self.trace_gpu_alloc = TraceMalloc(nb_gpus)
         self._verfiy_config_mha()
 
         self._tracer(model)
@@ -162,6 +172,140 @@ class SkippableTracing:
                 else:
                     self.module_desc[name] = module
 
+    def _equilibration(self, layers, memory):
+        """Balance the distribution of layers across GPUs based on memory usage.
+    
+        :param layers: Current distribution of layers across GPUs.
+        :type layers: list
+        :param memory: Memory usage for each GPU.
+        :type memory: list
+        :return: New balanced distribution of layers across GPUs.
+        :rtype: list
+        """
+        repartition = layers.copy()
+        
+        n = len(layers)
+
+        upper_idx = max(range(n), key=lambda i: memory[i])
+        lower_idx = min(range(n), key=lambda i: memory[i])
+
+        repartition[lower_idx] += 1
+        repartition[upper_idx] -= 1
+
+        return repartition
+
+    def reset_repartition(self, layer_per_gpu):
+        """Reset the distribution of layers based on the number of layers per GPU.
+    
+        :param layer_per_gpu: Number of layers per GPU.
+        :type layer_per_gpu: list
+        """
+        current_layer = 0
+        gpu_index = 0
+        separation_layer_index = layer_per_gpu[gpu_index] - 1
+
+        for _, layer in self.LayerLists.items():
+            if current_layer >= len(self.LayerLists.items()) - 1:
+                break
+            
+            if separation_layer_index == current_layer:
+                layer.reset_separation_layer()
+                gpu_index += 1
+                separation_layer_index += layer_per_gpu[gpu_index]
+
+            current_layer += 1
+
+    def set_repartition(self, layer_per_gpu):
+        """Set the distribution of layers across GPUs based on the number of layers per GPU.
+    
+        :param layer_per_gpu: Number of layers per GPU.
+        :type layer_per_gpu: list
+        """
+        current_layer = 0
+        gpu_index = 0
+        separation_layer_index = layer_per_gpu[gpu_index] - 1
+
+        for _, layer in self.LayerLists.items():
+
+            if current_layer >= len(self.LayerLists.items()) - 1:
+                self.file += layer.get_declaration()
+                break
+            
+            if separation_layer_index == current_layer:
+                layer.set_separation_layer()
+                gpu_index += 1
+                separation_layer_index += layer_per_gpu[gpu_index]
+
+            self.file += layer.get_declaration()
+            current_layer += 1
+
+        self._generate_end_class()
+
+    def _check_memory_peak(self, memory_peak):
+        """Check if the memory peaks are balanced across GPUs.
+    
+        :param memory_peak: Memory peaks for each GPU.
+        :type memory_peak: list
+        :return: True if memory peaks are balanced, False otherwise.
+        :rtype: bool
+        """
+        threshold = 0.2  # 20% de tolérance
+        reference_value = memory_peak[0]  # Sélection d'une valeur de référence aléatoire dans le tableau
+        return all(abs(value - reference_value) <= reference_value * threshold for value in memory_peak[1:])
+
+
+    def _repartition(self):
+        """Perform the distribution of layers across GPUs in a balanced manner based on memory usage."""
+        self._init_file()
+        # Save self var for remake
+        file = self.file
+
+        # Calculate first naive repartition on gpus
+        clone_step = len(self.LayerLists.items()) // self.nb_gpu
+        remainder = len(self.LayerLists.items()) % self.nb_gpu
+        layer_per_gpu = [clone_step] * self.nb_gpu
+
+        # Distribuer les couches restantes entre les GPU
+        for i in range(remainder):
+            layer_per_gpu[i] += 1
+        
+        # Initialise cloned layers
+        self.set_repartition(layer_per_gpu)
+
+        # Write in file the naive repartition
+        self._write_in_file()
+
+        print(f"First repartition : {layer_per_gpu}")
+        dir_path = Path(__file__).resolve().parent / "evaluate_mem.py"
+
+        while True:     
+            p = subprocess.run(['python', dir_path,
+                           '--input_shape', str(list(self.input_shape)),
+                           '--output_shape', str(list(self.output_shape)),
+                           '--number_gpu', str(int(self.nb_gpu)),
+                           '--number_chunks', str(2)], capture_output=True, text=True)
+
+            result = p.stdout
+            result = result.replace("[", "").replace("]", "")
+            result = result.split(",")
+            memory_peak = [int(x.strip()) for x in result]
+
+            print(f"Memory peaks per GPU: {[peak for peak in memory_peak]} MB")
+
+            if not self._check_memory_peak(memory_peak):
+                print("GPU are not equilibrated!")
+                new_layer_per_gpu = self._equilibration(layer_per_gpu, memory_peak)
+                print(f"New repartition calculated : {new_layer_per_gpu}")
+
+                self.file = file
+                self.reset_repartition(layer_per_gpu)
+                self.set_repartition(new_layer_per_gpu)
+                self._write_in_file()
+                layer_per_gpu = new_layer_per_gpu
+
+            else:
+                break
+
     # Trace model and declare dependencies between layers (stash and pop)
     def _tracer(self, net):
         """Trace and create all the composite needed to describe correctly the models given.
@@ -227,27 +371,4 @@ class SkippableTracing:
             for pop_parent in layer.get_pop_parent():
                 self.LayerLists[pop_parent[0]].set_stash(layer.get_node())
 
-        self._init_file()
-
-        # Calcul the split region for gpus.
-        clone_step = math.floor((len(self.LayerLists.items())) / self.nb_gpu) 
-        print(clone_step)
-        clone_layer = clone_step
-        current_layer = 0
-
-        # At this point all the Layer obejct are ready to be written on the file.
-        # we iter through them and save their declaration in the file that will be written.
-        # TODO : Refactor
-        for _, layer in self.LayerLists.items():
-            if current_layer >= len(self.LayerLists.items()) - 1:
-                self.file += layer.get_declaration()
-                break
-            if current_layer == clone_layer:
-                clone_layer += clone_step
-                layer.set_separation_layer()
-            self.file += layer.get_declaration()
-
-            current_layer += 1
-
-        self._generate_end_class()
-        self._write_in_file()
+        self._repartition()
