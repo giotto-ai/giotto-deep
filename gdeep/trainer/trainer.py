@@ -20,6 +20,7 @@ from torch.distributed.fsdp import (
     )
 from torch.distributed.fsdp.wrap import(
     size_based_auto_wrap_policy,
+    transformer_auto_wrap_policy
 )
 import functools
 from optuna.trial._base import BaseTrial
@@ -91,41 +92,41 @@ class Parallelism:
             Type of parallelism training algorithm to use
         devices:
             Indices of the available GPUs to use for training
-        world_size:
+        nb_device:
             Actual number of GPUs to use from the ones referenced in devices. Asking for more GPUs than referenced in devices will result in an exception
-        mixed_precision:
-            Mixed precision configuration
+        fetch_type: 
+            Prefetcher policy to use. See pytorch's FSDP documentation for more details
+        transformer_layer_class:
+            Class containing the MHA and FF modules (if the model used is a transformer). See pytorch's FSDP documentation for more details
     """
     def __init__(self,
                 p_type: ParallelismType,
-                devices: Tuple[int],
-                world_size: int = 1,
-                mixed_precision: MixedPrecision = None,
-                fetch_type: BackwardPrefetch = None) -> None:
+                devices: Tuple[int] = None,
+                nb_device: int = -1,
+                fetch_type: BackwardPrefetch = None,
+                transformer_layer_class: torch.nn.Module = None) -> None:
         self.p_type = p_type
-        self.world_size = world_size
+        self.world_size = nb_device
         self.rank = 0
         self.fetch_type = fetch_type
-        self.devices = [torch.device('cuda', x) for x in devices] # Convert device indices into torch devices
-        self.bf_supported = (torch.version.cuda and 
-                            torch.cuda.is_bf16_supported() and 
-                            float(torch.version.cuda) >= 11 and 
-                            nccl.version() >= (2, 10)) # Check if the device and torch version allow support for bf16 calculation
-        # Verify mixed precision strategy
-        if mixed_precision is None:
-            self.mixed_precision = None
-        elif self.bf_supported:
-            self.mixed_precision = mixed_precision
-        elif (mixed_precision.buffer_dtype == torch.bfloat16 or
-              mixed_precision.param_dtype == torch.bfloat16 or
-              mixed_precision.reduce_dtype == torch.bfloat16): # Using bfloat on unsupported environments results in poor performance
-            raise ValueError("Trying to use bfloat16 mixed precision on an unsupported environment/device")
-        else:
-            self.mixed_precision = mixed_precision
+        self.devices = devices
+        self.wrap_policy = functools.partial(size_based_auto_wrap_policy, min_num_params=100)
 
+        if self.devices is None:
+            self.devices = list(range(torch.cuda.device_count()))
+        self.devices = [torch.device('cuda', x) for x in devices] # Convert device indices into torch devices
+        
         # Verify proper use of devices
+        if self.world_size == 0:
+            raise ValueError("Cannot use 0 device")
         if self.world_size > len(self.devices):
             raise ValueError("Cannot use more devices than those referenced in devices")
+        if self.world_size < 0:
+            self.world_size = len(self.devices)
+
+        if transformer_layer_class is not None:
+            self.wrap_policy = functools.partial(transformer_auto_wrap_policy,
+                                                 transformer_layer_cls={transformer_layer_class,})        
 
         # Convert selected DP algorithm into FSDP supported sharding strategy
         if self.p_type == ParallelismType.FSDP_ZERO2:
@@ -134,7 +135,6 @@ class Parallelism:
             self.sharding_strategy = ShardingStrategy.FULL_SHARD
         else:
             self.sharding_strategy = ShardingStrategy.NO_SHARD
-
 
 def setup(rank, world_size):
     """Setup the environment necessary for parallel training"""
@@ -1096,9 +1096,8 @@ class Trainer:
                     self.model = self.model.to(self.device)
                     self.model = FSDP(
                         self.model,
-                        auto_wrap_policy=functools.partial(size_based_auto_wrap_policy, min_num_params=100),
+                        auto_wrap_policy=self.parallel.wrap_policy,
                         sharding_strategy=self.parallel.sharding_strategy,
-                        mixed_precision=self.parallel.mixed_precision,
                         backward_prefetch=self.parallel.fetch_type
                     )
 
