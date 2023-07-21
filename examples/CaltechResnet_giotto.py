@@ -21,8 +21,6 @@ if __name__ == '__main__':
                         help='Enable FSDP for training')
     parser.add_argument('--cv', action='store_true', default=False,
                         help='Enable cross-validation')
-    parser.add_argument('--mp', action='store_true', default=False,
-                        help='Enable mixed precision')
     parser.add_argument('--profiling', action='store_true', default=False,
                         help='Enable cross-validation')
     parser.add_argument('--fetch', type=int, default=0, metavar='N',
@@ -74,11 +72,6 @@ if __name__ == '__main__':
     dataloaders = (caltech_dl_tr,) if args.cv else (caltech_dl_tr, caltech_dl_val, caltech_dl_ts)
     train = Trainer(model, dataloaders, loss_fn, writer, print_every=20)
     devices = list(range(torch.cuda.device_count()))
-    mixed_precision = MixedPrecision( # Define tensors to use lower precision on
-        param_dtype=torch.bfloat16,
-        reduce_dtype=torch.bfloat16,
-        buffer_dtype=torch.bfloat16
-    ) if args.mp else None
     if args.fetch == 1: # Define the prefetch strategy to use
         fetch = BackwardPrefetch.BACKWARD_PRE
     elif args.fetch == 2:
@@ -88,7 +81,6 @@ if __name__ == '__main__':
     parallelism = Parallelism(ParallelismType.FSDP_ZERO2,
                                 devices, 
                                 len(devices),
-                                mixed_precision,
                                 fetch_type=fetch)
     valloss, valacc = train.train(SGD, 
                                   args.n_epochs, 

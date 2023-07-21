@@ -1,0 +1,15 @@
+Orbit5k: no layer class, RTX 3090Ti(x2), 20 epochs
+model	batch size	FSDP	Epoch time	final accuracy
+small	4			no		~24s		53%
+small 	4			yes 	~18s		67%
+small 	8			no 		~21s		20%
+small 	8			yes		~17s		57%
+big		4			no		~312s		20%
+big 	4			yes		~240s		20%
+big 	8			no 		N.A.		N.A.
+big 	8			yes 	N.A.		N.A.
+
+Question answering: no layer class, RTX 3090Ti(x2), 1 epoch
+batch size	FSDP	Epoch time 	final accuracy
+16			no 		827s		7.5%
+16 			yes		N.A.		N.A.
