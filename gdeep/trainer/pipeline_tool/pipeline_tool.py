@@ -9,7 +9,6 @@ from .dataset import PipelineDataset
 import multiprocessing
 import torch.multiprocessing as tmp
 import subprocess
-from pytorch_memlab import MemReporter
 
 class SkippableTracing:
     """Create and sequence the model parallelism.
