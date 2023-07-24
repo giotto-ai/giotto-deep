@@ -36,10 +36,11 @@ class ModelExtractor:
     """
 
     def __init__(
-        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor]
+        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor], pipeline_train = False
     ) -> None:
         # self.model = model
-        self.model = model.to(DEVICE)
+        if not pipeline_train:
+            self.model = model.to(DEVICE)
         self.loss_fn = loss_fn
 
     def _send_to_device(
