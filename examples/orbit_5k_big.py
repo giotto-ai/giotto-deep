@@ -40,14 +40,18 @@ from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Giotto FSDP Example')
-    parser.add_argument('--fsdp', action='store_true', default=False,
-                            help='Enable FSDP for training')
+    parser.add_argument('--parallel', 
+                            type=ParallelismType.from_str, 
+                            default=ParallelismType._NONE,
+                            help='Parallelism type to use for training (default=NONE)')
     parser.add_argument('--layer_cls', action='store_true', default=False,
                             help='Use layer class')
     parser.add_argument('--batch_size', type=int, default=4, metavar='N',
                         help='input batch size for training (default: 16)')
     parser.add_argument('--n_epochs', type=int, default=1, metavar='N',
                         help='Number of epochs to train for (default: 1)')
+    parser.add_argument('--big_model', action='store_true', default=False,
+                            help='Use layer class')
     args = parser.parse_args()
 
     # Generate a configuration file with the parameters of the desired dataset
@@ -106,27 +110,28 @@ if __name__ == '__main__':
 
     # Define the model by using a Wrapper for the Persformer model
 
-    # Big model
-    # wrapped_model = PersformerWrapper(
-    #     num_attention_layers=8,
-    #     num_attention_heads=32,
-    #     input_size= 2 + 2,
-    #     output_size=5,
-    #     pooler_type=PoolerType.ATTENTION,
-    #     hidden_size=128,
-    #     intermediate_size=128,
-    # )
-
-    # Small model
-    wrapped_model = PersformerWrapper(
-        num_attention_layers=2,
-        num_attention_heads=8,
-        input_size= 2 + 2,
-        output_size=5,
-        pooler_type=PoolerType.ATTENTION,
-        hidden_size=16,
-        intermediate_size=16,
-    )
+    if args.big_model:
+        # Big model
+        wrapped_model = PersformerWrapper(
+            num_attention_layers=8,
+            num_attention_heads=32,
+            input_size= 2 + 2,
+            output_size=5,
+            pooler_type=PoolerType.ATTENTION,
+            hidden_size=128,
+            intermediate_size=128,
+        )
+    else:
+        # Small model
+        wrapped_model = PersformerWrapper(
+            num_attention_layers=2,
+            num_attention_heads=8,
+            input_size= 2 + 2,
+            output_size=5,
+            pooler_type=PoolerType.ATTENTION,
+            hidden_size=16,
+            intermediate_size=16,
+        )
 
     # Define the trainer 
 
@@ -138,16 +143,22 @@ if __name__ == '__main__':
 
     devices = list(range(torch.cuda.device_count()))
 
-    parallel = Parallelism(ParallelismType.FSDP_ZERO2, 
+    configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
+
+    parallel = Parallelism(args.parallel, 
                            devices, 
                            len(devices), 
-                           transformer_layer_class=persformer_block.PersformerBlock if args.layer_cls else None)
+                           transformer_layer_class=persformer_block.PersformerBlock if args.layer_cls else None,
+                           config_mha=configs,
+                           pipeline_chunks=2)
 
-    # train the model for one epoch
+    # train the model
 
-    n_epoch = args.n_epochs
-
-    trainer.train(Adam, n_epoch, parallel=parallel if args.fsdp else None)
+    trainer.train(Adam, args.n_epochs, parallel=parallel)
 
     exit()
 

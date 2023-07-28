@@ -25,7 +25,7 @@ from gdeep.data.preprocessors import (
 from gdeep.search.hpo import GiottoSummaryWriter
 from gdeep.topology_layers import Persformer, PersformerConfig, PersformerWrapper
 from gdeep.topology_layers.persformer_config import PoolerType
-from gdeep.trainer.trainer import Trainer
+from gdeep.trainer.trainer import Trainer, Parallelism, ParallelismType
 from gdeep.search import HyperParameterOptimization
 from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
 from gdeep.utility.utils import autoreload_if_notebook
@@ -134,8 +134,11 @@ if pipeline_enabling:
             {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
     
     n_epoch = 1
+
+    parallel = Parallelism(ParallelismType.PIPELINE, config_mha=configs, pipeline_chunks=2)
     
-    trainer.train(Adam, n_epoch, pipeline_train=True, config_mha=configs, nb_chunks=2)
+    #trainer.train(Adam, n_epoch, pipeline_train=True, config_mha=configs, nb_chunks=2)
+    trainer.train(Adam, n_epoch, parallel=parallel)
 
 
 else:

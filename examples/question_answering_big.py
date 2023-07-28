@@ -39,10 +39,10 @@ if __name__ == '__main__':
 
     writer = GiottoSummaryWriter()
 
-    bd = DatasetBuilder(name="SQuAD2", convert_to_map_dataset=True)
+    bd = DatasetBuilder(name="SQuAD2", convert_to_map_dataset=False)
     ds_tr_str, ds_val_str, ds_ts_str = bd.build()
 
-    print("Before preprocessing: \n", ds_tr_str[0])
+    #print("Before preprocessing: \n", ds_tr_str[0])
 
 
     tokenizer = TokenizerQA()
@@ -58,13 +58,13 @@ if __name__ == '__main__':
         ds_val_str
     )  # this has been fitted on the train set!
 
-    print("After the preprocessing: \n", transformed_textds[0])
+    #print("After the preprocessing: \n", transformed_textds[0])
 
     # the only part of the training/test set we are interested in
-    #train_indices = list(range(64 * 2))
-    #test_indices = list(range(64 * 1))
-    train_indices = list(range(int(len(transformed_textds)/10)))
-    test_indices = list(range(int(len(transformed_textts)/10)))
+    train_indices = list(range(64 * 2))
+    test_indices = list(range(64 * 1))
+    #train_indices = list(range(int(len(transformed_textds)/10)))
+    #test_indices = list(range(int(len(transformed_textts)/10)))
 
     dl_tr2, dl_ts2, _ = DataLoaderBuilder((transformed_textds, transformed_textts)).build(
         (
