@@ -843,9 +843,9 @@ class Trainer:
             print(f"Parallel TPU and parallel training cannot be enable at the same time. Choose only one of them.")
             exit()
 
-        self.parallel = parallel 
         if parallel is None:
             parallel = Parallelism(ParallelismType._NONE)
+        self.parallel = parallel 
         self.nb_gpus = self.parallel.world_size
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
