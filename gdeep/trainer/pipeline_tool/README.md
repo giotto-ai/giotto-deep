@@ -321,8 +321,13 @@ n_epoch = 1
 trainer.train(Adam, n_epoch, pipeline_train=True, config_mha=configs, nb_chunks=2)
 ```
 
-
-## Schema explaination
-
+### Example
+To experiment with Giotto Deep training using the Pipeline tool in your environment, two example scripts have been provided. Navigate to Giotto's examples folder and run either "pipeline_basic_image.py" or "pipeline_orbit5k.py" with the --pipeline argument to enable the pipeline mode, or without it for regular training.
 
 ## Profiling
+
+## Improvements
+1. Actually repartition is always done, but if the model fit in one GPU it should'nt have to be splitted theorically. The need of a first run in the biggest GPU is needed and an handler if case of error.
+2. Change the naive way of the repartition for something more efficient, as for example with dichotomous search.
+3. Add profiling result to the documentation.
+4. If possible, change the necessity of given a config_mha if the user use a default mha. Like if in most of the case all users use the same MHA we didn't want to keep anymore the config mandatory.
