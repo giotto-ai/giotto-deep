@@ -16,11 +16,11 @@ In this document, the operation of this tool will be examined in detail, along w
 
 ### First step
 
-The tool requires two main parameters:
+The tool requires some parameters:
 
 - PyTorch Model: The user must provide a PyTorch model that only uses functions and modules from the PyTorch API. In other words, the model should not incorporate custom functions unknown to the PyTorch API. However, it is entirely possible to create custom layers using various functions from the PyTorch API.
-
 - Number of GPUs: If the user does not specify the number of GPUs to use, the tool will automatically detect the available GPUs. In this case, the model will be trained using all detected GPUs to optimize performance.
+- Shapes of the input and output: This will be needed to profile [memory usage](#model-splitting).
 
 To use this tool, you must first perform the following imports in your project:
 
@@ -32,7 +32,7 @@ from pipeline_tool.pipeline_tool import SkippableTracing
 Once you have defined the desired model, you can use it by following these steps:
 
 ```python
-trace = SkippableTracing(2, model)
+trace = SkippableTracing(2, model, input_shape, output_shape)
 model = trace.get_modules()
 ```
 
@@ -301,6 +301,28 @@ Now that we are capable of creating a model that can be distributed across multi
 
 Initially, the tool divides the layers into two equal parts (in terms of the number of layers) and conducts these memory load measurements until achieving a result where the N GPUs are evenly loaded.
 
+
+## Pipeline Tool x Giotto Deep
+The Pipeline tool is seamlessly integrated into Giotto-Deep's trainer, requiring no changes to their API. To activate the pipeline mode and configure MultiHeadAttention if your model includes it, simply provide a boolean flag and the MHA configuration.
+
+Here's an example: 
+
+```python
+trainer = Trainer(wrapped_model, [dl_train, dl_train], loss_function, writer) 
+
+configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+        {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+        {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+        {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+        {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
+
+n_epoch = 1
+
+trainer.train(Adam, n_epoch, pipeline_train=True, config_mha=configs, nb_chunks=2)
+```
+
+
+## Schema explaination
 
 
 ## Profiling
