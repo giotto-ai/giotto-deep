@@ -327,7 +327,7 @@ To experiment with Giotto Deep training using the Pipeline tool in your environm
 ## Profiling
 
 ## Improvements
-1. Actually repartition is always done, but if the model fit in one GPU it should'nt have to be splitted theorically. The need of a first run in the biggest GPU is needed and an handler if case of error.
-2. Change the naive way of the repartition for something more efficient, as for example with dichotomous search.
-3. Add profiling result to the documentation.
-4. If possible, change the necessity of given a config_mha if the user use a default mha. Like if in most of the case all users use the same MHA we didn't want to keep anymore the config mandatory.
+1. Although repartition is currently performed, it is unnecessary when the model fits within a single GPU. The process should automatically avoid splitting when feasible, requiring an initial run on the largest GPU and an error-handling mechanism.
+2. Replace the rudimentary repartition method with a more efficient approach, such as employing a dichotomous search.
+3. Incorporate profiling results into the documentation for better performance analysis.
+4. Explore the possibility of eliminating the requirement for a config_mha when users opt for the default MHA. In cases where most users utilize the same MHA, removing the mandatory configuration can simplify the process.
