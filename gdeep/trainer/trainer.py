@@ -3,7 +3,17 @@ import copy
 import time
 from functools import wraps
 import warnings
-from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
+from typing import (
+    Tuple,
+    Optional,
+    Callable,
+    Any,
+    Dict,
+    List,
+    Type,
+    Union,
+    TYPE_CHECKING,
+)
 
 import torch.nn.functional as f
 from torch.optim import Optimizer
@@ -24,6 +34,9 @@ from ..utility.optimization import MissingClosureError
 from gdeep.models import ModelExtractor
 from gdeep.utility import _inner_refactor_scalars
 from gdeep.utility import DEVICE
+
+if TYPE_CHECKING:
+    from gdeep.trainer.regularizer import Regularizer
 from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
@@ -132,6 +145,8 @@ class Trainer:
     registered_hook: Optional[
         Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]
     ] = None
+    regularizer: "Regularizer"
+    lamda: float
 
     def __init__(
         self,
@@ -171,6 +186,7 @@ class Trainer:
         self.best_not_last: bool = False
         # profiler
         self.prof: Any = None
+        self.regularize = False
 
         if not k_fold_class:
             self.k_fold_class = KFold(5, shuffle=True)
@@ -304,7 +320,23 @@ class Trainer:
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
-            loss = self.loss_fn(pred, y)
+            if self.regularize == True:
+                loss = self.loss_fn(pred, y)
+                self.regularizer.regularizer_arguments["model"] = copy.deepcopy(
+                    self.model
+                )
+                self.regularizer.regularizer_arguments[
+                    "updated_reg_params"
+                ] = self.regularizer.update_params(
+                    self.regularizer.regularizer_arguments
+                )
+                penalty = self.lamda * self.regularizer.regularization_penalty(
+                    self.regularizer.regularizer_arguments["updated_reg_params"],
+                    self.model,
+                )
+                loss = loss + penalty
+            else:
+                loss = self.loss_fn(pred, y)
             # Save to tensorboard
             try:
                 self.writer.add_scalar(  # type: ignore

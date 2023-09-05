@@ -3,7 +3,7 @@ import time
 import warnings
 import random
 from itertools import chain, combinations
-from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence
+from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence, cast
 import string
 
 from typing_extensions import Literal
@@ -24,6 +24,7 @@ from torch.optim.lr_scheduler import _LRScheduler  # noqa
 
 from gdeep.utility import _inner_refactor_scalars, KnownWarningSilencer  # noqa
 from gdeep.trainer import Trainer
+from gdeep.trainer import RegularizedTrainer
 from gdeep.search import Benchmark, _benchmarking_param
 from gdeep.visualization import plotly2tensor
 from ..utility import save_model_and_optimizer
@@ -216,6 +217,7 @@ class HyperParameterOptimization(Trainer):
         self.scalars_dict: Dict[str, Any] = dict()
         # can be changed by changing this attribute
         self.store_pickle: bool = False
+        self.regularize = False
 
     def _initialise_new_model(
         self, models_hyperparam: Optional[Dict[str, Any]]
@@ -298,6 +300,9 @@ class HyperParameterOptimization(Trainer):
         self.schedulers_param = HyperParameterOptimization._suggest_params(
             trial, config.schedulers_params
         )
+        self.regularization_param = HyperParameterOptimization._suggest_params(
+            trial, config.regularization_params
+        )
         # tag for storing the results
         config.writer_tag += "/" + str(
             trial.datetime_start
@@ -306,14 +311,30 @@ class HyperParameterOptimization(Trainer):
         # str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        self.pipe = Trainer(
-            self.model,
-            self.dataloaders,
-            self.loss_fn,
-            self.writer,
-            self.training_metric,
-            self.k_fold_class,
-        )
+        if self.regularize == True:
+            self.regularization_param = cast(dict, self.regularization_param)
+            lamdatmp = self.regularization_param.pop("lamda")
+            reg = self.regularization_param["reg"]
+            self.pipe = RegularizedTrainer(
+                regularizer=reg,
+                reg_params=self.regularization_param,
+                model=self.model,
+                dataloaders=self.dataloaders,
+                loss_fn=self.loss_fn,
+                writer=self.writer,
+                training_metric=self.training_metric,
+                k_fold_class=self.k_fold_class,
+            )
+            self.pipe.lamda = lamdatmp  # self.regularization_param['lamda']
+        else:
+            self.pipe = Trainer(
+                self.model,
+                self.dataloaders,
+                self.loss_fn,
+                self.writer,
+                self.training_metric,
+                self.k_fold_class,
+            )
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
@@ -405,6 +426,7 @@ class HyperParameterOptimization(Trainer):
         models_hyperparams: Optional[Dict[str, Any]] = None,
         lr_scheduler: Optional[Type[_LRScheduler]] = None,
         schedulers_params: Optional[Dict[str, Any]] = None,
+        regularization_params: Optional[Dict[str, Any]] = None,
         profiling: bool = False,
         parallel_tpu: bool = False,
         keep_training: bool = False,
@@ -438,7 +460,7 @@ class HyperParameterOptimization(Trainer):
                 on multiple TPUs
             n_accumulated_grads (int, default=0):
                 number of accumulated gradients. It is
-                considered only if given a positive integer
+                considered only if a positive integer
             keep_training:
                 bool flag to decide whether to continue
                 training or not
@@ -486,6 +508,7 @@ class HyperParameterOptimization(Trainer):
             models_hyperparams,
             lr_scheduler,
             schedulers_params,
+            regularization_params,
             profiling,
             parallel_tpu,
             keep_training,
@@ -615,7 +638,7 @@ class HyperParameterOptimization(Trainer):
             loss (float, default np.inf)
                 the value of the loss for the current trial
             accuracy (float, default -1):
-                the value of the accuracy for the current trial
+                the value of the accuracy for te current trial
             list_res (list):
                 list of results
         Returns:
