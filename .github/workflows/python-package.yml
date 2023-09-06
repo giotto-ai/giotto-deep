@@ -9,18 +9,6 @@ on:
   pull_request:
     branches: [ master ]
 
-permissions:
-  actions: read
-  checks: read
-  contents: read
-  deployments: read
-  issues: read
-  packages: read
-  pull-requests: write
-  repository-projects: read
-  security-events: read
-  statuses: read
-
 jobs:
   build:
 
@@ -28,7 +16,17 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8, 3.9, '3.10']
-
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      deployments: read
+      issues: read
+      packages: read
+      pull-requests: write
+      repository-projects: read
+      security-events: read
+      statuses: read
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
