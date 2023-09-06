@@ -1,4 +1,4 @@
-giotto-tda
+giotto-tda>=0.6.0
 numpy<=1.23.3
 pandas
 plotly
