@@ -10,7 +10,16 @@ on:
     branches: [ master ]
 
 permissions:
-   pull-requests: write
+  actions: read
+  checks: read
+  contents: read
+  deployments: read
+  issues: read
+  packages: read
+  pull-requests: write
+  repository-projects: read
+  security-events: read
+  statuses: read
 
 jobs:
   build:
