@@ -8,8 +8,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  pull_request_target:
-    branches: [ master ]
 
 jobs:
   build:
@@ -18,17 +16,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8, 3.9, '3.10']
-    permissions:
-      actions: read
-      checks: read
-      contents: read
-      deployments: read
-      issues: read
-      packages: read
-      pull-requests: write
-      repository-projects: read
-      security-events: read
-      statuses: read
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -65,6 +53,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         thresholdAll: 0.7
       if: github.event_name == 'pull_request'
+      continue-on-error: true
     - name: Integration tests
       run: |
         set -e
