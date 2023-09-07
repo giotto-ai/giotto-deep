@@ -52,7 +52,6 @@ class pool_1_layer(nn.Module):
 
 class flatten_layer(nn.Module):
     def forward(self, input):
-        input = input.clone()
         ret = torch.flatten(input, 1)
         return ret
 
@@ -61,6 +60,7 @@ class fc1_layer(nn.Module):
         super().__init__()
         self.fc = nn.Linear(in_features=400, out_features=120, bias=True)
     def forward(self, input):
+        input = input.clone()
         ret = self.fc(input)
         return ret
 
@@ -98,8 +98,8 @@ class output_layer(nn.Module):
 class PipelinedModel(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.s0 = nn.Sequential(x_layer(), conv1_layer(), relu_layer(), pool_layer(), conv2_layer(), relu_1_layer(), pool_1_layer(), flatten_layer()).cuda(0)
-        self.s1 = nn.Sequential(fc1_layer(), relu_2_layer(), fc2_layer(), relu_3_layer(), fc3_layer(), output_layer()).cuda(1)
+        self.s0 = nn.Sequential(x_layer(), conv1_layer(), relu_layer(), pool_layer(), conv2_layer(), relu_1_layer(), pool_1_layer(), flatten_layer(), fc1_layer()).cuda(0)
+        self.s1 = nn.Sequential(relu_2_layer(), fc2_layer(), relu_3_layer(), fc3_layer(), output_layer()).cuda(1)
     def forward(self, input):
         ret = input
         ret = self.s0(ret.to(0))

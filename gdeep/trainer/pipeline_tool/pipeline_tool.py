@@ -279,10 +279,6 @@ class SkippableTracing:
 
         previous_repartitions = []
 
-        print(f"Input shape  : {self.input_shape}")
-        print(f"Output shape : {self.output_shape}")
-        print(f"Nb gpu : {self.nb_gpu}")
-
         while True:
             p = subprocess.run(['python', dir_path,
                             '--input_shape', str(list(self.input_shape)),

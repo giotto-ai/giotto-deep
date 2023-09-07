@@ -10,7 +10,11 @@ import torchvision
 
 import argparse
 import utils
+
 import os
+os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '29600'
+
 import sys
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
