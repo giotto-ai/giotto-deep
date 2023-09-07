@@ -1,6 +1,4 @@
-# from LayerClass import Layer
 from .LayerClass import Layer
-
 
 class CallModule(Layer):
     """Handle all the traced layer define as "call_module".

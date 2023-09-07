@@ -2,10 +2,10 @@ from torch.fx import symbolic_trace
 import torch
 import math
 from pathlib import Path
-from .constant import TAB
+from constant import TAB
 import os
-from .gpu_alloc import TraceMalloc
-from .dataset import PipelineDataset
+from gpu_alloc import TraceMalloc
+from dataset import PipelineDataset
 import multiprocessing
 import torch.multiprocessing as tmp
 import subprocess
@@ -81,7 +81,7 @@ class SkippableTracing:
 
     def get_modules(self) -> torch.nn.Sequential:
         """Allow the user to get the generated Sequential model for each GPU."""
-        from .pipelinecache.layered_model import PipelinedModel
+        from pipelinecache.layered_model import PipelinedModel
 
         model = PipelinedModel()
         return model.get_modules()
@@ -277,16 +277,23 @@ class SkippableTracing:
         print(f"First repartition : {layer_per_gpu}")
         dir_path = Path(__file__).resolve().parent / "evaluate_mem.py"
 
-        while True:     
+        previous_repartitions = []
+
+        print(f"Input shape  : {self.input_shape}")
+        print(f"Output shape : {self.output_shape}")
+        print(f"Nb gpu : {self.nb_gpu}")
+
+        while True:
             p = subprocess.run(['python', dir_path,
-                           '--input_shape', str(list(self.input_shape)),
-                           '--output_shape', str(list(self.output_shape)),
-                           '--number_gpu', str(int(self.nb_gpu)),
-                           '--number_chunks', str(2)], capture_output=True, text=True)
+                            '--input_shape', str(list(self.input_shape)),
+                            '--output_shape', str(list(self.output_shape)),
+                            '--number_gpu', str(int(self.nb_gpu)),
+                            '--number_chunks', str(2)], capture_output=True, text=True)
 
             result = p.stdout
             result = result.replace("[", "").replace("]", "")
             result = result.split(",")
+            print(result)
             memory_peak = [int(x.strip()) for x in result]
 
             print(f"Memory peaks per GPU: {[peak for peak in memory_peak]} MB")
@@ -295,6 +302,12 @@ class SkippableTracing:
                 print("GPU are not equilibrated!")
                 new_layer_per_gpu = self._equilibration(layer_per_gpu, memory_peak)
                 print(f"New repartition calculated : {new_layer_per_gpu}")
+
+                if new_layer_per_gpu in previous_repartitions:
+                    print("Oscillation detected, exiting the loop.")
+                    break
+
+                previous_repartitions.append(new_layer_per_gpu)
 
                 self.file = file
                 self.reset_repartition(layer_per_gpu)
@@ -319,11 +332,11 @@ class SkippableTracing:
 
         prev_node = None
 
-        from .class_impl.CallModule import CallModule
-        from .class_impl.CallFunction import CallFunction
-        from .class_impl.PropagationLayer import PropagationLayer
-        from .class_impl.GetAttr import GetAttr
-        from .class_impl.GetAttrModule import GetAttrModule
+        from class_impl.CallModule import CallModule
+        from class_impl.CallFunction import CallFunction
+        from class_impl.PropagationLayer import PropagationLayer
+        from class_impl.GetAttr import GetAttr
+        from class_impl.GetAttrModule import GetAttrModule
 
         # Iter through each node traced by torch.fx
         for node in trace.graph.nodes:
