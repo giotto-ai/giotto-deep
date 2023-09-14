@@ -24,7 +24,6 @@ from torch.optim.lr_scheduler import _LRScheduler  # noqa
 
 from gdeep.utility import _inner_refactor_scalars, KnownWarningSilencer  # noqa
 from gdeep.trainer import Trainer
-from gdeep.trainer import RegularizedTrainer
 from gdeep.search import Benchmark, _benchmarking_param
 from gdeep.visualization import plotly2tensor
 from ..utility import save_model_and_optimizer
@@ -217,7 +216,6 @@ class HyperParameterOptimization(Trainer):
         self.scalars_dict: Dict[str, Any] = dict()
         # can be changed by changing this attribute
         self.store_pickle: bool = False
-        self.regularize = False
 
     def _initialise_new_model(
         self, models_hyperparam: Optional[Dict[str, Any]]
@@ -311,21 +309,20 @@ class HyperParameterOptimization(Trainer):
         # str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        if self.regularize == True:
-            self.regularization_param = cast(dict, self.regularization_param)
-            lamdatmp = self.regularization_param.pop("lamda")
-            reg = self.regularization_param["reg"]
-            self.pipe = RegularizedTrainer(
-                regularizer=reg,
-                reg_params=self.regularization_param,
-                model=self.model,
-                dataloaders=self.dataloaders,
-                loss_fn=self.loss_fn,
-                writer=self.writer,
-                training_metric=self.training_metric,
-                k_fold_class=self.k_fold_class,
-            )
-            self.pipe.lamda = lamdatmp  # self.regularization_param['lamda']
+        if self.regularization_param is not None:
+            if "regularizer" in self.regularization_param:
+                reg = self.regularization_param.pop("regularizer")(
+                    **self.regularization_param
+                )
+                self.pipe = Trainer(
+                    self.model,
+                    self.dataloaders,
+                    self.loss_fn,
+                    self.writer,
+                    self.training_metric,
+                    self.k_fold_class,
+                    regularizer=reg,
+                )
         else:
             self.pipe = Trainer(
                 self.model,
@@ -638,7 +635,7 @@ class HyperParameterOptimization(Trainer):
             loss (float, default np.inf)
                 the value of the loss for the current trial
             accuracy (float, default -1):
-                the value of the accuracy for te current trial
+                the value of the accuracy for the current trial
             list_res (list):
                 list of results
         Returns:
