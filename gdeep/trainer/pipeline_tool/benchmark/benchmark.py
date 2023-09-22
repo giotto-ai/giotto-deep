@@ -8,6 +8,10 @@ import os
 import sys
 import time
 
+
+os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '29600'
+
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
 
@@ -55,7 +59,7 @@ class BenchmarkMode:
             [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                download=True, transform=transform)
+                                                download=False, transform=transform)
         self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                                       shuffle=True, num_workers=2)
 
@@ -73,9 +77,23 @@ class MemoryAllocMode(BenchmarkMode):
     #     super().__init__(args)
 
     def run(self):
-        print("Memory alloc")
-        
-        pass
+        for epoch in range(self.args.epochs):
+            start  = [0] * self.args.gpu
+            peaked = [0] * self.args.gpu
+
+            for gpu in range(self.args.gpu):
+                start[gpu] = torch.cuda.memory_allocated(gpu)
+
+            if self.args.framework == "Pipeline":
+                utils.training_pipeline(self.model, self.trainloader, self.args.gpu, self.optimizer, self.loss_fn)
+
+            elif self.args.framework == "API torch":    
+                utils.training_normal(self.model, self.trainloader, device, self.optimizer, self.loss_fn)
+            
+            for gpu in range(self.args.gpu):
+                peaked[gpu] = (torch.cuda.max_memory_allocated(gpu) - start[gpu]) // (2 * 1024)
+
+            print(peaked)
 
 class ExecTimeMode(BenchmarkMode):
     # def __init__(self, args):

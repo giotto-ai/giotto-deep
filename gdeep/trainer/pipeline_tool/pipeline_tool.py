@@ -274,7 +274,7 @@ class SkippableTracing:
         # Write in file the naive repartition
         self._write_in_file()
 
-        print(f"First repartition : {layer_per_gpu}")
+        # print(f"First repartition : {layer_per_gpu}")
         dir_path = Path(__file__).resolve().parent / "evaluate_mem.py"
 
         previous_repartitions = []
@@ -289,18 +289,18 @@ class SkippableTracing:
             result = p.stdout
             result = result.replace("[", "").replace("]", "")
             result = result.split(",")
-            print(result)
+            # print(result)
             memory_peak = [int(x.strip()) for x in result]
 
-            print(f"Memory peaks per GPU: {[peak for peak in memory_peak]} MB")
+            # print(f"Memory peaks per GPU: {[peak for peak in memory_peak]} MB")
 
             if not self._check_memory_peak(memory_peak):
-                print("GPU are not equilibrated!")
+                # print("GPU are not equilibrated!")
                 new_layer_per_gpu = self._equilibration(layer_per_gpu, memory_peak)
-                print(f"New repartition calculated : {new_layer_per_gpu}")
+                # print(f"New repartition calculated : {new_layer_per_gpu}")
 
                 if new_layer_per_gpu in previous_repartitions:
-                    print("Oscillation detected, exiting the loop.")
+                    # print("Oscillation detected, exiting the loop.")
                     break
 
                 previous_repartitions.append(new_layer_per_gpu)
