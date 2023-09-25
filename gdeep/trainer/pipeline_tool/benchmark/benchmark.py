@@ -73,9 +73,6 @@ class BenchmarkMode:
         raise NotImplementedError("Subclasses must implement the 'run' method.")
 
 class MemoryAllocMode(BenchmarkMode):
-    # def __init__(self, args):
-    #     super().__init__(args)
-
     def run(self):
         for epoch in range(self.args.epochs):
             start  = [0] * self.args.gpu
@@ -93,12 +90,9 @@ class MemoryAllocMode(BenchmarkMode):
             for gpu in range(self.args.gpu):
                 peaked[gpu] = (torch.cuda.max_memory_allocated(gpu) - start[gpu]) // (2 * 1024)
 
-            print(peaked)
+            print(peaked, end=";")
 
 class ExecTimeMode(BenchmarkMode):
-    # def __init__(self, args):
-    #     super().__init__(args)
-
     def run(self):
         for epoch in range(self.args.epochs):
             start_time = time.time()
@@ -113,12 +107,9 @@ class ExecTimeMode(BenchmarkMode):
 
             execution_time = end_time - start_time
 
-            print(execution_time)
+            print(execution_time, end=";")
 
 class AccuracyMode(BenchmarkMode):
-    # def __init__(self, args):
-    #     super().__init__(args)
-
     def run(self):
         # Add accuracy measurement logic here
         pass
