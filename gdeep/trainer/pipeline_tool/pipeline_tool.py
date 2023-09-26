@@ -281,7 +281,7 @@ class SkippableTracing:
         previous_repartitions = []
 
         while True:
-            p = subprocess.run(['python', dir_path,
+            p = subprocess.run(['python3', dir_path,
                             '--input_shape', str(list(self.input_shape)),
                             '--output_shape', str(list(self.output_shape)),
                             '--number_gpu', str(int(self.nb_gpu)),
