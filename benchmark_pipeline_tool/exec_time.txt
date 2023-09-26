@@ -1,0 +1,2 @@
+Framework;Model;Number of GPUs;Number of Chunks;Time 1
+API Torch;CNN;1;0;23.465278148651123;
