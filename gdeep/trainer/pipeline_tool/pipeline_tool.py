@@ -1,14 +1,15 @@
 from torch.fx import symbolic_trace
 import torch
-import math
+# import math
 from pathlib import Path
-from constant import TAB
-import os
-from gpu_alloc import TraceMalloc
-from dataset import PipelineDataset
-import multiprocessing
-import torch.multiprocessing as tmp
+from .constant import TAB
+# import os
+# from gpu_alloc import TraceMalloc
+# from dataset import PipelineDataset
+# import multiprocessing
+# import torch.multiprocessing as tmp
 import subprocess
+# from pytorch_memlab import MemReporter
 
 class SkippableTracing:
     """Create and sequence the model parallelism.
@@ -38,7 +39,7 @@ class SkippableTracing:
         self.file_name = "layered_model.py"
         self.directory_name = "pipelinecache"
         self.configs_mha = configs_mha
-        self.mha_number = len(self.configs_mha) 
+        self.mha_number = len(self.configs_mha)
         self.mha_count = 0
         self.input_shape = input_shape
         self.output_shape = output_shape
@@ -50,7 +51,7 @@ class SkippableTracing:
 
     def _verfiy_config_mha(self):
         """Verify if at least embed_dim and num_heads are present in the configuration given by the user.
-        
+
         This two parameters are mandatory to create a MHA.
         """
         for config in self.configs_mha:
@@ -59,7 +60,7 @@ class SkippableTracing:
             except KeyError as e:
                 print("You didn't provide embed_dim in one of your MHA config")
                 exit()
-            
+
             try:
                 config['num_heads']
             except KeyError as e:
@@ -67,7 +68,7 @@ class SkippableTracing:
                 exit()
 
     def _write_in_file(self):
-        """Write to the output file the generated Layers to use it from other files."""        
+        """Write to the output file the generated Layers to use it from other files."""
         dir_path = Path(__file__).resolve().parent / self.directory_name
 
         if not dir_path.exists():
@@ -81,7 +82,7 @@ class SkippableTracing:
 
     def get_modules(self) -> torch.nn.Sequential:
         """Allow the user to get the generated Sequential model for each GPU."""
-        from pipelinecache.layered_model import PipelinedModel
+        from .pipelinecache.layered_model import PipelinedModel
 
         model = PipelinedModel()
         return model.get_modules()
@@ -145,7 +146,7 @@ class SkippableTracing:
 
     def _catch_module_desc(self):
         """Create a look-up dictionary to match target names with their declaration.
-        
+
         We use the withelist.txt to know which module name we have to keep as "core" module.
         All the modules not present in the whitelist willbe digged to found their composition.
 
@@ -164,7 +165,7 @@ class SkippableTracing:
                         else:
                             raise UserWarning(f"You didn't specified any MHA config, but at least one exist.")
                     except UserWarning as e:
-                        print(f"Error : {e}") 
+                        print(f"Error : {e}")
                         exit()
                     # self.module_desc[
                     #     name] = f"MultiheadAttention(embed_dim={self.net.config.hidden_size}, num_heads={self.net.config.num_attention_heads}, dropout={self.net.config.attention_probs_dropout_prob}, batch_first=True)"
@@ -173,7 +174,7 @@ class SkippableTracing:
 
     def _equilibration(self, layers, memory):
         """Balance the distribution of layers across GPUs based on memory usage.
-    
+
         :param layers: Current distribution of layers across GPUs.
         :type layers: list
         :param memory: Memory usage for each GPU.
@@ -182,7 +183,7 @@ class SkippableTracing:
         :rtype: list
         """
         repartition = layers.copy()
-        
+
         n = len(layers)
 
         upper_idx = max(range(n), key=lambda i: memory[i])
@@ -195,7 +196,7 @@ class SkippableTracing:
 
     def reset_repartition(self, layer_per_gpu):
         """Reset the distribution of layers based on the number of layers per GPU.
-    
+
         :param layer_per_gpu: Number of layers per GPU.
         :type layer_per_gpu: list
         """
@@ -206,7 +207,7 @@ class SkippableTracing:
         for _, layer in self.LayerLists.items():
             if current_layer >= len(self.LayerLists.items()) - 1:
                 break
-            
+
             if separation_layer_index == current_layer:
                 layer.reset_separation_layer()
                 gpu_index += 1
@@ -216,7 +217,7 @@ class SkippableTracing:
 
     def set_repartition(self, layer_per_gpu):
         """Set the distribution of layers across GPUs based on the number of layers per GPU.
-    
+
         :param layer_per_gpu: Number of layers per GPU.
         :type layer_per_gpu: list
         """
@@ -229,7 +230,7 @@ class SkippableTracing:
             if current_layer >= len(self.LayerLists.items()) - 1:
                 self.file += layer.get_declaration()
                 break
-            
+
             if separation_layer_index == current_layer:
                 layer.set_separation_layer()
                 gpu_index += 1
@@ -242,7 +243,7 @@ class SkippableTracing:
 
     def _check_memory_peak(self, memory_peak):
         """Check if the memory peaks are balanced across GPUs.
-    
+
         :param memory_peak: Memory peaks for each GPU.
         :type memory_peak: list
         :return: True if memory peaks are balanced, False otherwise.
@@ -267,7 +268,7 @@ class SkippableTracing:
         # Distribuer les couches restantes entre les GPU
         for i in range(remainder):
             layer_per_gpu[i] += 1
-        
+
         # Initialise cloned layers
         self.set_repartition(layer_per_gpu)
 
@@ -317,7 +318,7 @@ class SkippableTracing:
     # Trace model and declare dependencies between layers (stash and pop)
     def _tracer(self, net):
         """Trace and create all the composite needed to describe correctly the models given.
-        
+
         It will call the class of class_impl folder to generate at the end the correct file of the model splited between GPUs.
         :param net: Model to trace.
         :type net: a model extended of nn.Module.
@@ -328,11 +329,11 @@ class SkippableTracing:
 
         prev_node = None
 
-        from class_impl.CallModule import CallModule
-        from class_impl.CallFunction import CallFunction
-        from class_impl.PropagationLayer import PropagationLayer
-        from class_impl.GetAttr import GetAttr
-        from class_impl.GetAttrModule import GetAttrModule
+        from .class_impl.CallModule import CallModule
+        from .class_impl.CallFunction import CallFunction
+        from .class_impl.PropagationLayer import PropagationLayer
+        from .class_impl.GetAttr import GetAttr
+        from .class_impl.GetAttrModule import GetAttrModule
 
         # Iter through each node traced by torch.fx
         for node in trace.graph.nodes:

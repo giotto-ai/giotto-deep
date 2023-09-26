@@ -1,5 +1,5 @@
 import torch
-from constant import TAB
+from ..constant import TAB
 
 class Layer:
     """Set up of the Layer to manage every thing for creating a layer with the init and forward functions.

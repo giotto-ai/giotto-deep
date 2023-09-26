@@ -1,6 +1,6 @@
 # from LayerClass import Layer
 from .LayerClass import Layer
-from function_parser import _parse_func
+from ..function_parser import _parse_func
 
 
 class CallFunction(Layer):
