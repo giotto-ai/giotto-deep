@@ -43,8 +43,7 @@ from gdeep.utility import DEVICE
 from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
-
-from pipeline_tool.pipeline_tool import SkippableTracing
+from .pipeline_tool.pipeline_tool import SkippableTracing
 from torch.distributed.pipeline.sync import Pipe 
 
 try:
