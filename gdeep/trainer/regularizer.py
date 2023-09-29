@@ -318,35 +318,35 @@ def _compute_critical_points(
     return coordinates
 
 
-class Regularizer:
-    """
-    An abstract class for handling various regularization schemes.
-    Args:
-        lamda:
-            float the regression penalty coefficient that is typically present in regularization
-    """
+# class Regularizer:
+#    """
+#    An abstract class for handling various regularization schemes.
+#    Args:
+#        lamda:
+#            float the regression penalty coefficient that is typically present in regularization
+#    """
 
-    def __init__(self, lamda: float = 1, **kwargs):
-        self.lamda = lamda
-        self.preprocess(**kwargs)
+#    def __init__(self, lamda: float = 1, **kwargs):
+#        self.lamda = lamda
+#        self.preprocess(**kwargs)
 
-    @abstractmethod
-    def preprocess(self):
-        """
-        performs preprocessing for the regularizer, if any is necessary
+#    @abstractmethod
+#    def preprocess(self):
+#        """
+#        performs preprocessing for the regularizer, if any is necessary
 
-        """
-        pass
+#        """
+#        pass
 
-    @abstractmethod
-    def regularization_penalty(
-        self, model: torch.nn.Module
-    ) -> Tensor:  # , pre_processed_arguments: Any) -> Any:
-        """
-        Any processing needed in a forward pass of the network
-        Anything that doesn't require gradients can go here
-        """
-        pass
+#    @abstractmethod
+#    def regularization_penalty(
+#        self, model: torch.nn.Module
+#    ) -> Tensor:  # , pre_processed_arguments: Any) -> Any:
+#        """
+#        Any processing needed in a forward pass of the network
+#        Anything that doesn't require gradients can go here
+#        """
+#        pass
 
 
 @dataclass
@@ -376,7 +376,15 @@ class TopologicalRegularizerData:
         )
 
 
-class TopologicalRegularizer(Regularizer):
+from typing import Protocol
+
+
+class Regularizer(Protocol):
+    def regularization_penalty(self, model) -> Tensor:
+        pass
+
+
+class TopologicalRegularizer:
     """
     A topological regularizer for a 2-class classifier
     """
@@ -411,7 +419,7 @@ class TopologicalRegularizer(Regularizer):
         return self.lamda * torch.sum((tmp.values) ** 2)
 
 
-class TihonovRegularizer(Regularizer):
+class TihonovRegularizer:
     """
     An example implementation of a p-norm regularizer
     This regularizer penalizes the p-norm (to the pth power) of the network weights.
@@ -419,9 +427,9 @@ class TihonovRegularizer(Regularizer):
     reg_params: p (int), (Optional)
     """
 
-    def preprocess(self, p=2):
+    def __init__(self, lamda: float, p: int):
+        self.lamda = lamda
         self.p = p
-        return True
 
     def regularization_penalty(self, model: torch.nn.Module) -> Tensor:
         """

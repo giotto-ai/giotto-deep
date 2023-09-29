@@ -28,7 +28,7 @@ from gdeep.search import Benchmark, _benchmarking_param
 from gdeep.visualization import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
-
+from gdeep.trainer.regularizer import Regularizer
 from gdeep.utility.custom_types import Tensor, Array
 
 SEARCH_METRICS = ("loss", "accuracy")
@@ -193,6 +193,7 @@ class HyperParameterOptimization(Trainer):
                 self.pipe.writer,
                 self.pipe.training_metric,
                 self.pipe.k_fold_class,
+                regularizer=self.pipe.regularizer,
             )
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
@@ -517,12 +518,18 @@ class HyperParameterOptimization(Trainer):
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
             # already initialized. So they exist also in _objective()
-            self._inner_optimization_fun(self.model, self.dataloaders, config)
+            self._inner_optimization_fun(
+                self.model, self.dataloaders, self.regularizer, config
+            )
 
         else:
             _benchmarking_param(
                 self._inner_optimization_fun,
-                (self.bench.models_dicts, self.bench.dataloaders_dicts),
+                (
+                    self.bench.models_dicts,
+                    self.bench.dataloaders_dicts,
+                    self.bench.regularizers_dicts,
+                ),
                 config,
             )
         # self._store_to_tensorboard()
@@ -534,6 +541,7 @@ class HyperParameterOptimization(Trainer):
             List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]],
             Dict[str, DataLoader],
         ],
+        regularizers: Union["Regularizer", None, Dict[str, Union["Regularizer", None]]],
         config: HPOConfig,
     ) -> None:
         """private method to be decorated with the
@@ -553,6 +561,7 @@ class HyperParameterOptimization(Trainer):
                 self.bench.writer,
                 self.bench.training_metric,
                 self.bench.k_fold_class,
+                # regularizers['regularizer']
             )
         except TypeError:
             pass
@@ -600,6 +609,8 @@ class HyperParameterOptimization(Trainer):
             + str(self.dataloaders_param)
             + "\nLR-scheduler parameters: "
             + str(self.schedulers_param)
+            + "\nRegularizer parameters: "
+            + str(self.regularization_param)
             + results_string_to_print
         )
         try:

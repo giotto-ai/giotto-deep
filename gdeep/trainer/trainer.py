@@ -189,7 +189,11 @@ class Trainer:
         # profiler
         self.prof: Any = None
         self.regularizer = regularizer
-
+        # self.train_loss_fn = loss_fn
+        # if self.regularizer:
+        # def tmploss(X,y):
+        #    return loss_fn(X,y) + self.regularizer.regularization_penalty(self.model)
+        # self.train_loss_fn = tmploss
         if not k_fold_class:
             self.k_fold_class = KFold(5, shuffle=True)
         else:
@@ -322,6 +326,7 @@ class Trainer:
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
+            # loss = self.loss_fn(pred,y)
             if self.regularizer is not None:
                 loss = self.loss_fn(pred, y)
                 penalty = self.regularizer.regularization_penalty(self.model)
