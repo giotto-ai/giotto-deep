@@ -184,11 +184,17 @@ class SkippableTracing:
         :rtype: list
         """
         repartition = layers.copy()
+        memory_tmp = memory.copy()
 
         n = len(layers)
 
-        upper_idx = max(range(n), key=lambda i: memory[i])
-        lower_idx = min(range(n), key=lambda i: memory[i])
+        lower_idx = min(range(n), key=lambda i: memory_tmp[i])
+
+        while True:
+            upper_idx = max(range(n), key=lambda i: memory_tmp[i])
+            memory_tmp[upper_idx] = 0
+            if repartition[upper_idx] > 1:
+                break
 
         repartition[lower_idx] += 1
         repartition[upper_idx] -= 1
