@@ -35,8 +35,10 @@ from gdeep.models import ModelExtractor
 from gdeep.utility import _inner_refactor_scalars
 from gdeep.utility import DEVICE
 
-if TYPE_CHECKING:
-    from gdeep.trainer.regularizer import Regularizer
+
+from gdeep.trainer.regularizer import Regularizer
+#if TYPE_CHECKING:
+#    from gdeep.trainer.regularizer import Regularizer
 from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
@@ -147,7 +149,7 @@ class Trainer:
     registered_hook: Optional[
         Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]
     ] = None
-    regularizer: Optional["Regularizer"] = None
+    regularizer: Optional[Regularizer] = None
 
     def __init__(
         self,
@@ -326,13 +328,11 @@ class Trainer:
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
-            # loss = self.loss_fn(pred,y)
+            loss = self.loss_fn(pred,y)
             if self.regularizer is not None:
-                loss = self.loss_fn(pred, y)
                 penalty = self.regularizer.regularization_penalty(self.model)
-                loss = loss + penalty
-            else:
-                loss = self.loss_fn(pred, y)
+                loss += penalty
+                
             # Save to tensorboard
             try:
                 self.writer.add_scalar(  # type: ignore
