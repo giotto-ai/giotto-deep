@@ -1,3 +1,4 @@
+urllib3<2.0
 giotto-tda
 numpy<=1.23.3
 pandas
@@ -31,7 +32,6 @@ giotto-ph
 tqdm
 Pillow
 h5py
-protobuf<=3.20.3,>=3.11.0
 mysql-connector-python
 dotmap
 sympy

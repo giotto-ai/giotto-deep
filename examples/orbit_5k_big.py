@@ -37,23 +37,7 @@ from torch.utils.data import Subset
 from gdeep.visualization import Visualiser
 from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Giotto FSDP Example')
-    parser.add_argument('--parallel', 
-                            type=ParallelismType.from_str, 
-                            default=ParallelismType._NONE,
-                            help='Parallelism type to use for training (default=NONE)')
-    parser.add_argument('--layer_cls', action='store_true', default=False,
-                            help='Use layer class')
-    parser.add_argument('--batch_size', type=int, default=4, metavar='N',
-                        help='input batch size for training (default: 16)')
-    parser.add_argument('--n_epochs', type=int, default=1, metavar='N',
-                        help='Number of epochs to train for (default: 1)')
-    parser.add_argument('--big_model', action='store_true', default=False,
-                            help='Use layer class')
-    args = parser.parse_args()
-
+def main(args):
     # Generate a configuration file with the parameters of the desired dataset
     @dataclass
     class Orbit5kConfig():
@@ -121,6 +105,7 @@ if __name__ == '__main__':
             hidden_size=128,
             intermediate_size=128,
         )
+        configs = [{'embed_dim': 128, 'num_heads': 32, 'dropout': 0.1, 'batch_first': True}] * 9
     else:
         # Small model
         wrapped_model = PersformerWrapper(
@@ -132,6 +117,7 @@ if __name__ == '__main__':
             hidden_size=16,
             intermediate_size=16,
         )
+        configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}] * 5
 
     # Define the trainer 
 
@@ -143,12 +129,6 @@ if __name__ == '__main__':
 
     devices = list(range(torch.cuda.device_count()))
 
-    configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
-
     parallel = Parallelism(args.parallel, 
                            devices, 
                            len(devices), 
@@ -158,9 +138,7 @@ if __name__ == '__main__':
 
     # train the model
 
-    trainer.train(Adam, args.n_epochs, parallel=parallel)
-
-    exit()
+    return trainer.train(Adam, args.n_epochs, parallel=parallel)
 
     # Initialize the Interpreter class in Saliency mode
 
@@ -178,3 +156,22 @@ if __name__ == '__main__':
     # visualise the results
     vs = Visualiser(trainer)
     vs.plot_attributions_persistence_diagrams(inter)
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Giotto FSDP Example')
+    parser.add_argument('--parallel',
+                            type=ParallelismType.from_str,
+                            default=ParallelismType._NONE,
+                            help='Parallelism type to use for training (default=NONE)')
+    parser.add_argument('--layer_cls', action='store_true', default=False,
+                            help='Use layer class')
+    parser.add_argument('--batch_size', type=int, default=4, metavar='N',
+                        help='input batch size for training (default: 16)')
+    parser.add_argument('--n_epochs', type=int, default=1, metavar='N',
+                        help='Number of epochs to train for (default: 1)')
+    parser.add_argument('--big_model', action='store_true', default=False,
+                            help='Use layer class')
+    args = parser.parse_args()
+    main(args)
