@@ -105,6 +105,12 @@ Another subcommand of `benchmark.py`, `plot`, allows to plot aggregated results 
 $ kubectl apply -f pod-plot.yml
 ```
 
+## Download data from storage bucket
+
+```console
+$ gsutil -m cp -R gs://$BUCKET /path/to/data
+```
+
 ## Create cluster
 
 Some docs:
