@@ -341,3 +341,13 @@ $ kubectl annotate serviceaccount ${SA_KUBE} \
     --namespace default \
     iam.gke.io/gcp-service-account=${SA_GCLOUD}@${PROJECT_ID}.iam.gserviceaccount.com
 ```
+
+## Debug pods
+
+Connect to a pod with the following command.
+Pods contain two containers, one running giotto-deep stuff, another running the sidecar for GKE fuse protocol.
+It is thus necessary to indicate which pod and which container to connect to.
+
+```console
+$ kubectl exec -it giotto-deep-plot -n default -c giotto-deep-plot -- /bin/bash
+```
