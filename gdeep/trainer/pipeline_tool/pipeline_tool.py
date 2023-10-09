@@ -175,7 +175,7 @@ class SkippableTracing:
 
     def _equilibration(self, layers, memory):
         """Balance the distribution of layers across GPUs based on memory usage.
-
+    
         :param layers: Current distribution of layers across GPUs.
         :type layers: list
         :param memory: Memory usage for each GPU.
@@ -186,6 +186,11 @@ class SkippableTracing:
         repartition = layers.copy()
         memory_tmp = memory.copy()
 
+        # We couldn't have only 1 layer on first or last GPU, so we remove it to avoid 
+        #   this case.
+        repartition[0]  -= 1
+        repartition[-1] -= 1
+        
         n = len(layers)
 
         lower_idx = min(range(n), key=lambda i: memory_tmp[i])
@@ -195,9 +200,14 @@ class SkippableTracing:
             memory_tmp[upper_idx] = 0
             if repartition[upper_idx] > 1:
                 break
-
+        
         repartition[lower_idx] += 1
         repartition[upper_idx] -= 1
+        
+        # We restablish the two deleted layers.
+        repartition[0]  += 1
+        repartition[-1] += 1
+
 
         return repartition
 
