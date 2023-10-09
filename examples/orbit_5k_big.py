@@ -132,12 +132,6 @@ def main(args):
 
     devices = list(range(torch.cuda.device_count()))
 
-    configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
-
     conf_fsdp={"sharding_strategy": ShardingStrategy.SHARD_GRAD_OP}
     wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,})
     conf_fsdp.update({"auto_wrap_policy": wrap_policy})
