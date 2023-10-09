@@ -4,6 +4,7 @@ from typing import Tuple
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import argparse
+import functools
 
 # Torch imports
 
@@ -36,6 +37,8 @@ from torch.optim import Adam
 from torch.utils.data import Subset
 from gdeep.visualization import Visualiser
 from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
+from torch.distributed.fsdp import ShardingStrategy
+from torch.distributed.fsdp.wrap import always_wrap_policy, transformer_auto_wrap_policy
 
 def main(args):
     # Generate a configuration file with the parameters of the desired dataset
@@ -129,10 +132,20 @@ def main(args):
 
     devices = list(range(torch.cuda.device_count()))
 
+    configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
+
+    conf_fsdp={"sharding_strategy": ShardingStrategy.SHARD_GRAD_OP}
+    wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,})
+    conf_fsdp.update({"auto_wrap_policy": wrap_policy})
+
     parallel = Parallelism(args.parallel, 
                            devices, 
                            len(devices), 
-                           transformer_layer_class=persformer_block.PersformerBlock if args.layer_cls else None,
+                           fsdp_config=conf_fsdp,
                            config_mha=configs,
                            pipeline_chunks=2)
 

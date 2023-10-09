@@ -84,18 +84,12 @@ class ParallelismType(Enum):
     """Type of multi-GPU parallelism to use for training"""
     _NONE = auto()
     _DP = auto()
-    DDP = auto()
-    FSDP_ZERO2 = auto()
-    FSDP_ZERO3 = auto()
+    FSDP = auto()
     PIPELINE = auto()
 
     def from_str(string):
-            if string.upper() == "DDP":
-                return ParallelismType.DDP
-            elif string.upper() == "FSDP_ZERO2":
-                return ParallelismType.FSDP_ZERO2
-            elif string.upper() == "FSDP_ZERO3":
-                return ParallelismType.FSDP_ZERO3
+            if string.upper() == "FSDP":
+                return ParallelismType.FSDP
             elif string.upper() == "PIPELINE":
                 return ParallelismType.PIPELINE
             else:
@@ -123,18 +117,17 @@ class Parallelism:
                 p_type: ParallelismType,
                 devices: Tuple[int] = None,
                 nb_device: int = 0,
-                fetch_type: BackwardPrefetch = None,
-                transformer_layer_class: torch.nn.Module = None,
+                fsdp_config: Dict[str, Any] = {},
                 config_mha: List[Dict[str, Any]] = [],
                 pipeline_chunks: int = 4) -> None:
         self.p_type = p_type
         self.world_size = nb_device
         self.rank = 0
-        self.fetch_type = fetch_type
-        self.devices = devices
-        self.wrap_policy = functools.partial(size_based_auto_wrap_policy, min_num_params=100)
         self.config_mha = config_mha
         self.pipeline_chunks = pipeline_chunks
+        self.fsdp_config = fsdp_config
+
+        # TODO?: Give FSDP a default config ?
 
         if devices is None:
             devices = list(range(torch.cuda.device_count()))
@@ -145,18 +138,7 @@ class Parallelism:
             raise ValueError("Cannot use more devices than those referenced in devices")
         if self.world_size < 1:
             self.world_size = len(self.devices)
-
-        if transformer_layer_class is not None:
-            self.wrap_policy = functools.partial(transformer_auto_wrap_policy,
-                                                 transformer_layer_cls={transformer_layer_class,})        
-
-        # Convert selected DP algorithm into FSDP supported sharding strategy
-        if self.p_type == ParallelismType.FSDP_ZERO2:
-            self.sharding_strategy = ShardingStrategy.SHARD_GRAD_OP
-        elif self.p_type == ParallelismType.FSDP_ZERO3:
-            self.sharding_strategy = ShardingStrategy.FULL_SHARD
-        else:
-            self.sharding_strategy = ShardingStrategy.NO_SHARD
+    
 
 def setup_env():
     """Setup the environment necessary for parallel training"""
@@ -521,7 +503,7 @@ class Trainer:
 
             if self.prof is not None:
                 self.prof.step()
-        if self.parallel.p_type in (ParallelismType.FSDP_ZERO2, ParallelismType.FSDP_ZERO3):
+        if self.parallel.p_type == ParallelismType._DP:
             dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
         if self.prof is not None:
             self.prof.stop()
@@ -689,7 +671,7 @@ class Trainer:
                 pred = pred.argmax(dim=1, keepdim=True)
                 ddp_loss[1] = pred.eq(y.view_as(pred)).sum().item()
                 ddp_loss[2] += len(X)
-        if self.parallel.p_type in (ParallelismType.FSDP_ZERO2, ParallelismType.FSDP_ZERO3):
+        if self.parallel.p_type == ParallelismType._DP:
             dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
         epoch_metric = sum(batch_metric_list) / len(batch_metric_list)
         epoch_loss = loss / len(batch_metric_list)
@@ -1016,7 +998,7 @@ class Trainer:
                 # print n-th fold
                 print("\n\n********** Fold ", fold + 1, "**************")
 
-                if self.parallel.p_type in (ParallelismType.DDP, ParallelismType.FSDP_ZERO2, ParallelismType.FSDP_ZERO3): # Must only get there with parallelism type != _DP
+                if self.parallel.p_type == ParallelismType.FSDP: # Must only get there with parallelism type != _DP
                     child_args = {"model": self.model,
                                     "dataloaders": self.dataloaders,
                                     "loss_fn": self.loss_fn,
@@ -1097,7 +1079,7 @@ class Trainer:
                 valacc = torch.mean(torch.tensor(mean_val_acc)).item()
 
         else:
-            if self.parallel.p_type in (ParallelismType.FSDP_ZERO2, ParallelismType.FSDP_ZERO3, ParallelismType.DDP):
+            if self.parallel.p_type == ParallelismType.FSDP:
                 child_args = {"model": self.model,
                                 "dataloaders": self.dataloaders,
                                 "loss_fn": self.loss_fn,
@@ -1133,12 +1115,11 @@ class Trainer:
                 self.device = self.parallel.devices[0]
                 # Setup FSDP
                 print(f'PID={os.getpid()}: sending model to device {self.device}')
-                self.model = self.model.to(self.device)
+                if not "device_id" in self.parallel.fsdp_config.keys():
+                    self.parallel.fsdp_config.update({"device_id": self.device})
                 self.model = FSDP(
                     self.model,
-                    auto_wrap_policy=self.parallel.wrap_policy,
-                    sharding_strategy=self.parallel.sharding_strategy,
-                    backward_prefetch=self.parallel.fetch_type
+                    **self.parallel.fsdp_config
                 )
                 
 
@@ -1538,7 +1519,7 @@ class Trainer:
             (float, float, 2darray):
                 the accuracy, loss and confusion matrix.
         """
-        self.model.to(self.device) # Send model to device in case it wasn't trained on it previously
+        self.model.to(self.device) # Send model to device in case it wasn't trained on it previously. WARNING: model does not fit on GPU -> OOM
         if dl is None:
             dl = self.dataloaders[0]
         class_probs: List[List[Tensor]] = []
