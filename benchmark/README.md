@@ -62,46 +62,35 @@ Execute this step from `benchmark/`.
 The pod `giotto-deep-benchmark` in `pod-run.yml` uses an [empty dir memory volume](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)
 to increase the *shared memory*.
 
-Adapt the args in file `pod-run.yml`.
-Run `benchmark.py` with subcommand `run` locally to see all options.
-Example for running *none* with *FSDP ZeRo2* and batch sizes 4 to 32:
-
-```text
-    args: ["run", "-m", "none", "-d", "/var/lib/data/", "-p", "fsdp2", "-b", "4", "32"]
-```
-
-Example for running *orbit5k* with all parallelism options with batch size ranging from 2 to 32:
-
-```text
-    args: ["run", "-m", "orbit5k", "-d", "/var/lib/data/", "-p", "none", "fsdp2", "pipeline", "-b", "2", "32"]
-```
-
-Example for running *orbit5kbig* with all parallelism options:
-
-```text
-    args: ["run", "-m", "orbit5kbig", "-d", "/var/lib/data/", "-p", "none", "fsdp2", "pipeline"]
-```
-
-Run the pod.
+Generate pod configurations with `genpods.py`.
+Example for running *orbit5k* with no parallelisation, *FSDP ZeRo2*, and *pipeline*, and batch sizes 4 to 32, on nodes with 2 and 4 Nvidia T4:
 
 ```console
-$ kubectl apply -f pod-run.yml
+python genpods.py -i $IMAGE_FULLPATH -b $BUCKET -s $SA_KUBE run -c 2 4 -g t4 -m orbit5k -p none fsdp pipeline -z 2 32
 ```
 
-Monitor the execution of the pod.
+Run the pod on a node with 2 GPUs.
+
+```console
+$ kubectl apply -f run-orbit5k-t4-2.yml
+```
+
+Monitor the execution of the pod, adapt `<model>`, `<gpu model>`, and `<gpu count>`.
 The correct termination status is *Succeeded* or *Completed*.
 When the benchmark is done, the script logs `BENCHMARK DONE. [...]`.
 
 ```console
 $ kubectl get pod
-$ gcloud logging read "resource.labels.cluster_name=${CLUSTER_NAME} AND resource.labels.namespace_name=default AND resource.labels.container_name=giotto-deep-benchmark" --limit=3 --format=json | jq '.[].textPayload'
+$ gcloud logging read "resource.labels.cluster_name=${CLUSTER_NAME} AND resource.labels.namespace_name=default AND resource.labels.container_name=giotto-deep-benchmark-<model>-<gpu model>-<gpu count>" --limit=3 --format=json | jq '.[].textPayload'
 ```
 
 Retrieve the results from the storage bucket.
 
 Another subcommand of `benchmark.py`, `plot`, allows to plot aggregated results of different runs.
+Generate the pod configuration with `genpods.py`.
 
 ```console
+$ python genpods.py -i $IMAGE_FULLPATH -b $BUCKET -s $SA_KUBE plot
 $ kubectl apply -f pod-plot.yml
 ```
 

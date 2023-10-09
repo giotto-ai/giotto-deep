@@ -19,9 +19,7 @@ from examples import orbit_5k_big
 
 class ParallelismChoices(enum.Enum):
     none = enum.auto()
-    ddp = enum.auto()
-    fsdp2 = enum.auto()
-    fsdp3 = enum.auto()
+    fsdp = enum.auto()
     pipeline = enum.auto()
 
     def __str__(self):
@@ -37,9 +35,7 @@ class ParallelismChoices(enum.Enum):
 
 PARALLEL_MAPPING = {
     ParallelismChoices.none: ParallelismType._NONE,
-    ParallelismChoices.ddp: ParallelismType.DDP,
-    ParallelismChoices.fsdp2: ParallelismType.FSDP_ZERO2,
-    ParallelismChoices.fsdp3: ParallelismType.FSDP_ZERO3,
+    ParallelismChoices.fsdp: ParallelismType.FSDP,
     ParallelismChoices.pipeline: ParallelismType.PIPELINE,
 }
 
