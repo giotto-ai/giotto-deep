@@ -1,5 +1,5 @@
 import warnings
-from typing import Tuple, Any, Dict, Callable, Type, Optional, List, Union
+from typing import Tuple, Any, Dict, Callable, Type, Optional, List, Union, Mapping
 
 import torch
 from torch.utils.data import DataLoader
@@ -16,6 +16,7 @@ from gdeep.trainer import accuracy, TrainerConfig
 from .hpo_config import HPOConfig
 
 from gdeep.utility.custom_types import Tensor
+from gdeep.trainer.regularizer import Regularizer
 
 
 class Benchmark:
@@ -132,9 +133,13 @@ class Benchmark:
         writer: SummaryWriter,
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
         k_fold_class: Optional[BaseCrossValidator] = None,
+        regularizers_dicts: Optional[
+            List[Mapping[str, Union["Regularizer", None, str]]]
+        ] = None,
     ) -> None:
         self.models_dicts = models_dicts
         self.dataloaders_dicts = dataloaders_dicts
+        self.regularizers_dicts: List[Mapping[str, Union["Regularizer", None, str]]] = regularizers_dicts  # type: ignore
         self.loss_fn = loss_fn
         self.writer = writer
         if not self.writer:
@@ -155,6 +160,14 @@ class Benchmark:
             raise TypeError(
                 "The provided datasets must be a Python list of dictionaries"
             )
+            # If you don't give a regularizer, one will be appointed for you
+            # this one doesn't do anything
+        if regularizers_dicts is None:
+            self.regularizers_dicts = []
+            tmp_dict = {}
+            tmp_dict["name"] = "None"
+            tmp_dict["regularizer"] = None  # type: ignore
+            self.regularizers_dicts.append(tmp_dict)
 
     def start(
         self,
@@ -207,7 +220,7 @@ class Benchmark:
                 each epoch
             n_accumulated_grads:
                 number of accumulated gradients. It is
-                considered only if a positive integer
+                considered only if given a positive integer
             writer_tag:
                 string to be added to the tensorboard items title
         """
@@ -231,13 +244,14 @@ class Benchmark:
         )
 
         _benchmarking_param(
-            self._inner_function, (self.models_dicts, self.dataloaders_dicts), config  # type: ignore
+            self._inner_function, (self.models_dicts, self.dataloaders_dicts, self.regularizers_dicts), config  # type: ignore
         )
 
     def _inner_function(
         self,
         model: Dict[str, Union[torch.nn.Module, str]],
         dataloaders: Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]],
+        regularizer: Dict[str, Union["Regularizer", str]],
         config: TrainerConfig,
     ) -> None:
         """private method to run the inner
@@ -261,16 +275,18 @@ class Benchmark:
             self.writer,
             self.training_metric,  # type: ignore
             self.k_fold_class,
+            regularizer=regularizer["regularizer"],  # type: ignore
         )
-        config.writer_tag += "Dataset:" + dataloaders["name"] + "|Model:" + model["name"]  # type: ignore
+        config.writer_tag += "Dataset:" + dataloaders["name"] + "|Model:" + model["name"] + "|regularizer:" + regularizer["name"]  # type: ignore
         pipe.train(**config.to_dict())
 
 
 def _benchmarking_param(
-    fun: Callable[[Any, Any, Any], Any],
+    fun: Callable[[Any, Any, Any, Any], Any],
     arguments: Tuple[
         List[Dict[str, Union[torch.nn.Module, str]]],
         List[Dict[str, Union[List[DataLoader[Tuple[Tensor, Tensor]]], str]]],
+        List[Mapping[str, Union["Regularizer", None, str]]],
     ],
     config: Union[HPOConfig, TrainerConfig],
 ) -> None:
@@ -289,13 +305,14 @@ def _benchmarking_param(
 
     """
 
-    models_dicts, dataloaders_dicts = arguments
+    models_dicts, dataloaders_dicts, regularizer_dicts = arguments
     for dataloaders in dataloaders_dicts:
         for model in models_dicts:
             if _are_compatible(model, dataloaders):
-                print("*" * 40)
-                print(
-                    f"Performing Gridsearch on Dataset: {dataloaders['name']}"
-                    f", Model: {model['name']}"
-                )
-                fun(model, dataloaders, config)
+                for regularizer in regularizer_dicts:
+                    print("*" * 40)
+                    print(
+                        f"Performing Gridsearch on Dataset: {dataloaders['name']}"
+                        f", Model: {model['name']}"
+                    )
+                    fun(model, dataloaders, regularizer, config)

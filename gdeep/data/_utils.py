@@ -1,5 +1,5 @@
 class MissingVocabularyError(Exception):
     """Class to raise the missing vocabulary
-    esception in the toknizers"""
+    exception in the tokenizers"""
 
     pass

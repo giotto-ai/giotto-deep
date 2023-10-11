@@ -1,11 +1,11 @@
-giotto-tda
-numpy
+giotto-tda>=0.6.0
+numpy<=1.23.3
 pandas
 plotly
-matplotlib
+matplotlib<=3.6.3
 matplotlib_venn
-scikit-learn
-torch
+scikit-learn==1.1.1
+torch==1.12.1
 spacy
 scipy
 networkx
@@ -29,7 +29,7 @@ optuna
 sphinx_rtd_theme
 giotto-ph
 tqdm
-Pillow
+Pillow<=9.5.0
 h5py
 mysql-connector-python
 dotmap

@@ -202,7 +202,7 @@ class ModelExtractor:
         Args:
             batch:
                 a data batch on which to compute the average
-                gradients. f the batch has one single item, then
+                gradients. If the batch has one single item, then
                 it will output the gradients for that single datum
 
         Returns:

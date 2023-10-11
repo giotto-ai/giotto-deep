@@ -11,7 +11,10 @@ from gdeep.models import FFNet
 from gdeep.search import GiottoSummaryWriter
 from gdeep.data.datasets import FromArray, DataLoaderBuilder
 from gdeep.search import clean_up_files
-
+from gdeep.trainer.regularizer import TihonovRegularizer
+from gdeep.trainer.regularizer import TopologicalRegularizer
+from gdeep.trainer.regularizer import TopologicalRegularizerData
+import random
 from gdeep.utility.custom_types import Tensor
 
 
@@ -89,3 +92,65 @@ def test_trainer_collate():
 
     # evaluation
     assert len(pipe.evaluate_classification(2)) == 3
+    
+def test_regularizer_params_get_populated():
+    """
+    Test to Verify that the regularizer parameters get assigned
+    """
+    model = Model1()
+    # dataloaders
+    X = np.array(np.random.rand(100, 4), dtype=np.float32)  # type: ignore
+    y = np.array(np.random.randint(2, size=100 * 2).reshape(-1, 2), dtype=np.int64)
+    dl_tr, *_ = DataLoaderBuilder([FromArray(X, y)]).build([{"batch_size": 23}])
+
+    # loss function
+    loss_fn = nn.CrossEntropyLoss()
+    # tb writer
+    writer = GiottoSummaryWriter()
+    # pipeline
+    lamda = np.random.rand(1)
+    p = np.random.randint(1, 10)
+    reg = TihonovRegularizer(lamda, p=p)
+    # pipeline
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer, regularizer=reg)
+    assert pipe.regularizer.lamda == lamda
+    assert pipe.regularizer.p == p
+
+
+def test_regularization_pipeline():
+    """
+    Test to Verify that the regularization pipeline works
+    """
+    model = Model1()
+    # dataloaders
+    X = np.array(np.random.rand(100, 4), dtype=np.float32)  # type: ignore
+    y = np.array(np.random.randint(2, size=100 * 2).reshape(-1, 2), dtype=np.int64)
+    dl_tr, *_ = DataLoaderBuilder([FromArray(X, y)]).build([{"batch_size": 23}])
+
+    # loss function
+    loss_fn = nn.CrossEntropyLoss()
+    # tb writer
+    writer = GiottoSummaryWriter()
+    # pipeline
+    reg = TihonovRegularizer(random.random(), p=random.randint(1, 10))
+    # pipeline
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer, regularizer=reg)
+    pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
+
+
+def test_topological_regularizer_data():
+    """
+    Test to verify the topological regularizer data class initializes properly
+    """
+    model = Model1()
+    # dataloaders
+    X = np.array(np.random.rand(100, 4), dtype=np.float32)  # type: ignore
+    # loss function
+    loss_fn = nn.CrossEntropyLoss()
+    # tb writer
+    writer = GiottoSummaryWriter()
+    # pipeline
+    X1 = torch.tensor(X)
+    topodata = TopologicalRegularizerData(X1)
+    reg = TopologicalRegularizer(random.random(), topodata)
+    reg.data.dummy_loader

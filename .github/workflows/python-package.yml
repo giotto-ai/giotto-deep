@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9, '3.10']
 
     steps:
     - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest nbconvert jupyter mypy torch
+        pip install flake8 pytest pytest-cov nbconvert jupyter mypy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install -e .
     - name: Lint with flake8
@@ -40,9 +40,20 @@ jobs:
         mypy --ignore-missing-imports . || {
           status=$? echo "Type checking errors!"
         }
+      continue-on-error: true
+      timeout-minutes: 5
     - name: Test with pytest
       run: |
-        pytest
+        pytest --cov=gdeep --cov-report=xml .
+        ls
+    - name: Get Coverage 
+      uses: orgoro/coverage@v3
+      with:
+        coverageFile: ./coverage.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        thresholdAll: 0.7
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
     - name: Integration tests
       run: |
         set -e

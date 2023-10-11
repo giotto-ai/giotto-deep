@@ -11,7 +11,7 @@ class HPOConfig:
 
     Args:
         optimizers:
-            list of torch optimizers classes, not isntances
+            list of torch optimizers classes, not instances
         n_epochs:
             number of training epochs
         cross_validation:
@@ -23,7 +23,7 @@ class HPOConfig:
         models_hyperparams:
             dictionary of model parameters
         lr_scheduler:
-            torch learning rate schduler class
+            torch learning rate scheduler class
         schedulers_params:
             learning rate scheduler parameters
         profiling :
@@ -39,10 +39,10 @@ class HPOConfig:
             bool flag to decide whether to continue
             training or not
         store_grad_layer_hist:
-            flag to store the gradents of the layers in the
+            flag to store the gradients of the layers in the
             tensorboard histograms
         writer_tag:
-            tag to prepend to the ouput
+            tag to prepend to the output
             on tensorboard"""
 
     optimizers: List[Type[Optimizer]]
@@ -53,6 +53,7 @@ class HPOConfig:
     models_hyperparams: Optional[Dict[str, Any]] = None
     lr_scheduler: Optional[Type[_LRScheduler]] = None
     schedulers_params: Optional[Dict[str, Any]] = None
+    regularization_params: Optional[Dict[str, Any]] = None
     profiling: bool = False
     parallel_tpu: bool = False
     keep_training: bool = False

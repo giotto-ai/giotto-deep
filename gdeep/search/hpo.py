@@ -3,7 +3,7 @@ import time
 import warnings
 import random
 from itertools import chain, combinations
-from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence
+from typing import Tuple, Any, Dict, Type, Optional, List, Union, Sequence, cast
 import string
 
 from typing_extensions import Literal
@@ -28,7 +28,7 @@ from gdeep.search import Benchmark, _benchmarking_param
 from gdeep.visualization import plotly2tensor
 from ..utility import save_model_and_optimizer
 from .hpo_config import HPOConfig
-
+from gdeep.trainer.regularizer import Regularizer
 from gdeep.utility.custom_types import Tensor, Array
 
 SEARCH_METRICS = ("loss", "accuracy")
@@ -193,6 +193,7 @@ class HyperParameterOptimization(Trainer):
                 self.pipe.writer,
                 self.pipe.training_metric,
                 self.pipe.k_fold_class,
+                regularizer=self.pipe.regularizer,
             )
             # Pipeline.__init__(self, obj.model, obj.dataloaders, obj.loss_fn, obj.writer)
             self.is_pipe = True
@@ -298,6 +299,9 @@ class HyperParameterOptimization(Trainer):
         self.schedulers_param = HyperParameterOptimization._suggest_params(
             trial, config.schedulers_params
         )
+        self.regularization_param = HyperParameterOptimization._suggest_params(
+            trial, config.regularization_params
+        )
         # tag for storing the results
         config.writer_tag += "/" + str(
             trial.datetime_start
@@ -306,14 +310,29 @@ class HyperParameterOptimization(Trainer):
         # str(self.schedulers_param)
         # create a new model instance
         self.model = self._initialise_new_model(self.models_hyperparam)
-        self.pipe = Trainer(
-            self.model,
-            self.dataloaders,
-            self.loss_fn,
-            self.writer,
-            self.training_metric,
-            self.k_fold_class,
-        )
+        if self.regularization_param is not None:
+            if "regularizer" in self.regularization_param:
+                reg = self.regularization_param.pop("regularizer")(
+                    **self.regularization_param
+                )
+                self.pipe = Trainer(
+                    self.model,
+                    self.dataloaders,
+                    self.loss_fn,
+                    self.writer,
+                    self.training_metric,
+                    self.k_fold_class,
+                    regularizer=reg,
+                )
+        else:
+            self.pipe = Trainer(
+                self.model,
+                self.dataloaders,
+                self.loss_fn,
+                self.writer,
+                self.training_metric,
+                self.k_fold_class,
+            )
         # set best_not_last
         self.pipe.best_not_last = self.best_not_last_gs
         # set the run_name
@@ -405,6 +424,7 @@ class HyperParameterOptimization(Trainer):
         models_hyperparams: Optional[Dict[str, Any]] = None,
         lr_scheduler: Optional[Type[_LRScheduler]] = None,
         schedulers_params: Optional[Dict[str, Any]] = None,
+        regularization_params: Optional[Dict[str, Any]] = None,
         profiling: bool = False,
         parallel_tpu: bool = False,
         keep_training: bool = False,
@@ -486,6 +506,7 @@ class HyperParameterOptimization(Trainer):
             models_hyperparams,
             lr_scheduler,
             schedulers_params,
+            regularization_params,
             profiling,
             parallel_tpu,
             keep_training,
@@ -497,12 +518,18 @@ class HyperParameterOptimization(Trainer):
         if self.is_pipe:
             # in the __init__, self.model and self.dataloaders are
             # already initialized. So they exist also in _objective()
-            self._inner_optimization_fun(self.model, self.dataloaders, config)
+            self._inner_optimization_fun(
+                self.model, self.dataloaders, self.regularizer, config
+            )
 
         else:
             _benchmarking_param(
                 self._inner_optimization_fun,
-                (self.bench.models_dicts, self.bench.dataloaders_dicts),
+                (
+                    self.bench.models_dicts,
+                    self.bench.dataloaders_dicts,
+                    self.bench.regularizers_dicts,
+                ),
                 config,
             )
         # self._store_to_tensorboard()
@@ -514,6 +541,7 @@ class HyperParameterOptimization(Trainer):
             List[DataLoader[Tuple[Union[Tensor, List[Tensor]], Tensor]]],
             Dict[str, DataLoader],
         ],
+        regularizers: Union["Regularizer", None, Dict[str, Union["Regularizer", None]]],
         config: HPOConfig,
     ) -> None:
         """private method to be decorated with the
@@ -533,6 +561,7 @@ class HyperParameterOptimization(Trainer):
                 self.bench.writer,
                 self.bench.training_metric,
                 self.bench.k_fold_class,
+                # regularizers['regularizer']
             )
         except TypeError:
             pass
@@ -580,6 +609,8 @@ class HyperParameterOptimization(Trainer):
             + str(self.dataloaders_param)
             + "\nLR-scheduler parameters: "
             + str(self.schedulers_param)
+            + "\nRegularizer parameters: "
+            + str(self.regularization_param)
             + results_string_to_print
         )
         try:
@@ -615,7 +646,7 @@ class HyperParameterOptimization(Trainer):
             loss (float, default np.inf)
                 the value of the loss for the current trial
             accuracy (float, default -1):
-                the value of the accuracy for te current trial
+                the value of the accuracy for the current trial
             list_res (list):
                 list of results
         Returns:

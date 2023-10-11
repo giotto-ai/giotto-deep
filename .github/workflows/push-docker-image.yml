@@ -1,0 +1,24 @@
+name: Docker Image CI
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+    - name: Build and push the Docker images
+      run: |
+        docker build -f kubernetes/dockerfiles/jupyter-lab/Dockerfile -t matteocao/giotto-deep:gdeep-lab .
+        docker push matteocao/giotto-deep:gdeep-lab
+        docker build -f kubernetes/dockerfiles/tensorboard/Dockerfile -t matteocao/giotto-deep:gdeep-tensorboard .
+        docker push matteocao/giotto-deep:gdeep-tensorboard
+        docker build -f kubernetes/dockerfiles/rq-workers/Dockerfile -t matteocao/giotto-deep:gdeep-worker .
+        docker push matteocao/giotto-deep:gdeep-worker
+
+      

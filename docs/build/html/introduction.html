@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Introduction &mdash; giotto-deep 0.0.1 documentation</title>
@@ -11,12 +11,11 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=f6245a2f"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -29,11 +28,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> giotto-deep
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            giotto-deep
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -47,7 +50,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#datasetbuilder-and-dataloaderbuilder">DatasetBuilder and DataLoaderBuilder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#model">Model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#trainer">Trainer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#hyperpatameteroptimisation">HyperPatameterOptimisation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hyperparameteroptimisation">HyperParameterOptimisation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#interpreter">Interpreter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#visualizer">Visualizer</a></li>
 </ul>
@@ -72,8 +75,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Introduction</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/introduction.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -126,11 +129,11 @@ you can run the training and validation of your models, specifying all the param
 </pre></div>
 </div>
 </section>
-<section id="hyperpatameteroptimisation">
-<h3>HyperPatameterOptimisation<a class="headerlink" href="#hyperpatameteroptimisation" title="Permalink to this heading"></a></h3>
+<section id="hyperparameteroptimisation">
+<h3>HyperParameterOptimisation<a class="headerlink" href="#hyperparameteroptimisation" title="Permalink to this heading"></a></h3>
 <p>Instead of a single training, you may also want to search the space of hyper parameters to find the
 Best model possible. In <code class="docutils literal notranslate"><span class="pre">giotto-deep</span></code> this step can be done in a few lines using the class
-<code class="docutils literal notranslate"><span class="pre">HyperPatameterOptimisation</span></code>:</p>
+<code class="docutils literal notranslate"><span class="pre">HyperParameterOptimisation</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">search</span> <span class="o">=</span> <span class="n">HyperParameterOptimization</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">best_not_last</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">optimizers_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">]}</span>
 <span class="n">dataloaders_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">16</span><span class="p">]}</span>
@@ -167,7 +170,7 @@ of the <code class="docutils literal notranslate"><span class="pre">Interpreter<
 <section id="visualizer">
 <h3>Visualizer<a class="headerlink" href="#visualizer" title="Permalink to this heading"></a></h3>
 <p>You can visualise additional results, like persistence diagrams of the activations, the model graph
-or the heat maps resulting form the <cite>Interpreter`</cite>: you need the <code class="docutils literal notranslate"><span class="pre">Visualiser</span></code> class.</p>
+or the heat maps resulting from the <cite>Interpreter`</cite>: you need the <code class="docutils literal notranslate"><span class="pre">Visualiser</span></code> class.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vs</span> <span class="o">=</span> <span class="n">Visualiser</span><span class="p">(</span><span class="n">pipe</span><span class="p">)</span>
 <span class="n">vs</span><span class="o">.</span><span class="n">plot_interpreter_text</span><span class="p">(</span><span class="n">inter</span><span class="p">)</span>
 <span class="n">vs</span><span class="o">.</span><span class="n">plot_data_model</span><span class="p">()</span>

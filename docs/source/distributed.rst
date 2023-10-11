@@ -8,13 +8,13 @@ Distributed computing
 Introduction
 ************
 
-Long hyper parameter searches my easily take days. Here, we provide a solution to distribute such computations over a Kubernetes cluster. Kubernetes is available on the major cloud platforms.
+Long hyper parameter searches might easily take days. Here, we provide a solution to distribute such computations over a Kubernetes cluster. Kubernetes is available on the major cloud platforms.
 
 ****************
 K8 configuration
 ****************
 
-In the folder ``/kubernetes/`` you will find a detailed ``readme.md``file with all the instructions and configuration files need to set-up the cluster. It is mostly a matter of running a couple of very standard command and the cluster will be up and running.
+In the folder ``/kubernetes/`` you will find a detailed ``readme.md``file with all the instructions and configuration files needed to set-up the cluster. It is mostly a matter of running a couple of very standard command and the cluster will be up and running.
 
 *********************************
 Starting distributed computations

@@ -363,7 +363,7 @@ class PersistenceGradient:
         Returns:
            fig, fig3d, loss_val:
                respectively the plotly ``quiver_plot``, plotly ``cone_plot``
-               ad the list of loss function values over the epochs"""
+               adds the list of loss function values over the epochs"""
 
         if not type(xx) == Tensor:
             xx = torch.tensor(xx)
