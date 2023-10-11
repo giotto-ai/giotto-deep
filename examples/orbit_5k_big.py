@@ -108,7 +108,7 @@ def main(args):
             hidden_size=128,
             intermediate_size=128,
         )
-        configs = [{'embed_dim': 128, 'num_heads': 32, 'dropout': 0.1, 'batch_first': True}] * 9
+        config_mha = [{'embed_dim': 128, 'num_heads': 32, 'dropout': 0.1, 'batch_first': True}] * 9
     else:
         # Small model
         wrapped_model = PersformerWrapper(
@@ -120,7 +120,7 @@ def main(args):
             hidden_size=16,
             intermediate_size=16,
         )
-        configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}] * 5
+        config_mha = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}] * 5
 
     # Define the trainer 
 
@@ -140,7 +140,7 @@ def main(args):
                            devices, 
                            len(devices), 
                            fsdp_config=conf_fsdp,
-                           config_mha=configs,
+                           config_mha=config_mha,
                            pipeline_chunks=2)
 
     # train the model
