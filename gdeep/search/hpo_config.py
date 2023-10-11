@@ -53,6 +53,7 @@ class HPOConfig:
     models_hyperparams: Optional[Dict[str, Any]] = None
     lr_scheduler: Optional[Type[_LRScheduler]] = None
     schedulers_params: Optional[Dict[str, Any]] = None
+    regularization_params: Optional[Dict[str, Any]] = None
     profiling: bool = False
     parallel_tpu: bool = False
     keep_training: bool = False
