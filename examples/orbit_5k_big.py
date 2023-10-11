@@ -175,10 +175,10 @@ if __name__ == '__main__':
     parser.add_argument('--layer_cls', action='store_true', default=False,
                             help='Use layer class')
     parser.add_argument('--batch_size', type=int, default=4, metavar='N',
-                        help='input batch size for training (default: 16)')
+                        help='input batch size for training (default: %(default)s)')
     parser.add_argument('--n_epochs', type=int, default=1, metavar='N',
-                        help='Number of epochs to train for (default: 1)')
-    parser.add_argument('--big_model', action='store_true', default=False,
+                        help='Number of epochs to train for (default: %(default)s)')
+    parser.add_argument('--big_model', action='store_true',
                             help='Use layer class')
     args = parser.parse_args()
     main(args)
