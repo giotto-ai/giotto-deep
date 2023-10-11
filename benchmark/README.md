@@ -50,9 +50,9 @@ Execute this step from the root of the project.
 
 ```console
 $ cp benchmark/Dockerfile .
-$ docker builder build -t ${CLUSTER_ZONE}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REGISTRY}/giotto-deep-benchmark:latest .
-$ docker push ${CLUSTER_ZONE}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REGISTRY}/giotto-deep-benchmark:latest
-$ rm Dockerfile
+$ docker builder build -t ${IMAGE_FULLPATH} .
+$ docker push ${IMAGE_FULLPATH}
+$ rm -f Dockerfile
 ```
 
 ## Run deployment on GKE
