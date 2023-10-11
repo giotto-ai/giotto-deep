@@ -140,7 +140,7 @@ class RunResult:
     accuracy: float
 
 
-BATCH_SIZE_VALUES = (2, 4, 8, 16, 32, 64)
+BATCH_SIZE_VALUES = (1, 2, 4, 8, 16, 32, 64)
 # https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors
 # https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html
 # https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
