@@ -103,10 +103,8 @@ class Parallelism:
             Indices of the available GPUs to use for training
         nb_device:
             Actual number of GPUs to use from the ones referenced in devices. Asking for more GPUs than referenced in devices will result in an exception
-        fetch_type: 
-            [FSDP] Prefetcher policy to use. See pytorch's FSDP documentation for more details
-        transformer_layer_class:
-            [FSDP] Class containing the MHA and FF modules (if the model used is a transformer). See pytorch's FSDP documentation for more details
+        config_fsdp:
+            [FSDP] FSDP configuration dictionary. See pytorch's FSDP documentation for more details
         config_mha:
             [pipeline_tool] Multihead Attention layers configuration in the transformer (if the model used is a transformer)
         pipeline_chunks:
@@ -116,7 +114,7 @@ class Parallelism:
                 p_type: ParallelismType,
                 devices: Tuple[int] = None,
                 nb_device: int = 0,
-                fsdp_config: Dict[str, Any] = {},
+                config_fsdp: Dict[str, Any] = {},
                 config_mha: List[Dict[str, Any]] = [],
                 pipeline_chunks: int = 4) -> None:
         self.p_type = p_type
@@ -124,7 +122,7 @@ class Parallelism:
         self.rank = 0
         self.config_mha = config_mha
         self.pipeline_chunks = pipeline_chunks
-        self.fsdp_config = fsdp_config
+        self.config_fsdp = config_fsdp
 
         # TODO?: Give FSDP a default config ?
 
@@ -1116,11 +1114,11 @@ class Trainer:
                 self.device = self.parallel.devices[0]
                 # Setup FSDP
                 print(f'PID={os.getpid()}: sending model to device {self.device}')
-                if not "device_id" in self.parallel.fsdp_config.keys():
-                    self.parallel.fsdp_config.update({"device_id": self.device})
+                if "device_id" not in self.parallel.config_fsdp:
+                    self.parallel.config_fsdp["device_id"] = self.device
                 self.model = FSDP(
                     self.model,
-                    **self.parallel.fsdp_config
+                    **self.parallel.config_fsdp
                 )
                 
 
