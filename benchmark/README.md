@@ -63,10 +63,10 @@ The pod `giotto-deep-benchmark` in `pod-run.yml` uses an [empty dir memory volum
 to increase the *shared memory*.
 
 Generate pod configurations with `genpods.py`.
-Example for running *orbit5k* with no parallelisation, *FSDP ZeRo2*, and *pipeline*, and batch sizes 4 to 32, on nodes with 2 and 4 Nvidia T4:
+Example for running *orbit5k* with no parallelisation, *FSDP SHARD GRAD OP*, and *pipeline*, and batch sizes 4 to 32, on nodes with 2 and 4 Nvidia T4:
 
 ```console
-python genpods.py -i $IMAGE_FULLPATH -b $BUCKET -s $SA_KUBE run -c 2 4 -g t4 -m orbit5k -p none fsdp pipeline -z 2 32
+python genpods.py -i $IMAGE_FULLPATH -b $BUCKET -s $SA_KUBE run -c 2 4 -g t4 -m orbit5k -p none fsdp_shard_grad_op pipeline -z 2 32
 ```
 
 Run the pod on a node with 2 GPUs.

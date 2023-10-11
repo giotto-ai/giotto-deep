@@ -37,7 +37,7 @@ from torch.optim import Adam
 from torch.utils.data import Subset
 from gdeep.visualization import Visualiser
 from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
-from torch.distributed.fsdp import ShardingStrategy
+from gdeep.utility_examples.fsdp import ShardingStrategyEx
 from torch.distributed.fsdp.wrap import always_wrap_policy, transformer_auto_wrap_policy
 
 def main(args):
@@ -132,14 +132,15 @@ def main(args):
 
     devices = list(range(torch.cuda.device_count()))
 
-    conf_fsdp={"sharding_strategy": ShardingStrategy.SHARD_GRAD_OP}
-    wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,})
-    conf_fsdp.update({"auto_wrap_policy": wrap_policy})
+    config_fsdp = {
+        "sharding_strategy": args.sharding.to_ss(),
+        "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,}),
+        }
 
     parallel = Parallelism(args.parallel, 
                            devices, 
                            len(devices), 
-                           fsdp_config=conf_fsdp,
+                           config_fsdp=config_fsdp,
                            config_mha=config_mha,
                            pipeline_chunks=2)
 
@@ -180,5 +181,10 @@ if __name__ == '__main__':
                         help='Number of epochs to train for (default: %(default)s)')
     parser.add_argument('--big_model', action='store_true',
                             help='Use layer class')
+    parser.add_argument('--sharding',
+                        type=ShardingStrategyEx.from_str,
+                        choices=[x for x in ShardingStrategyEx],
+                        default=ShardingStrategyEx.SHARD_GRAD_OP,
+                        help='Sharding strategy (default: %(default)s)')
     args = parser.parse_args()
     main(args)

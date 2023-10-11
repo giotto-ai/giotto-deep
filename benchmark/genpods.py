@@ -61,8 +61,8 @@ def main():
                             help="Model")
     parser_run.add_argument("-p", "--parallel",
                             required=True,
-                            type=benchmark.ParallelismChoices.from_string,
-                            choices=[x for x in benchmark.ParallelismChoices],
+                            type=benchmark.Parallelism.from_string,
+                            choices=[x for x in benchmark.Parallelism],
                             nargs="+",
                             help="Parallelism type(s)")
     parser_run.add_argument("-z", "--batch-size",

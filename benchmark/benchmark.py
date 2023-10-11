@@ -12,14 +12,17 @@ import torch
 import typing
 
 from gdeep.trainer.trainer import ParallelismType
+from gdeep.utility_examples.fsdp import ShardingStrategyEx
 
 sys.path.append("../examples")
 from examples import orbit_5k_big
 
 
-class ParallelismChoices(enum.Enum):
+class Parallelism(enum.Enum):
     none = enum.auto()
-    fsdp = enum.auto()
+    fsdp_full_shard = enum.auto()
+    fsdp_shard_grad_op = enum.auto()
+    fsdp_no_shard = enum.auto()
     pipeline = enum.auto()
 
     def __str__(self):
@@ -28,16 +31,43 @@ class ParallelismChoices(enum.Enum):
     @staticmethod
     def from_string(s: str):
         try:
-            return ParallelismChoices[s]
+            return Parallelism[s]
         except KeyError:
             raise ValueError()
 
+    def to_text(self):
+        if self is Parallelism.none:
+            return "None"
+        elif self is Parallelism.fsdp_full_shard:
+            return "FSDP Full Shard"
+        elif self is Parallelism.fsdp_shard_grad_op:
+            return "FSDP Shard Grad Op"
+        elif self is Parallelism.fsdp_no_shard:
+            return "FSDP No Shard"
+        elif self is Parallelism.pipeline:
+            return "Pipeline"
+        else:
+            return "?"
 
-PARALLEL_MAPPING = {
-    ParallelismChoices.none: ParallelismType._NONE,
-    ParallelismChoices.fsdp: ParallelismType.FSDP,
-    ParallelismChoices.pipeline: ParallelismType.PIPELINE,
-}
+    def to_pt(self) -> ParallelismType:
+        if self is Parallelism.none:
+            return ParallelismType._NONE
+        elif self in (Parallelism.fsdp_full_shard, Parallelism.fsdp_shard_grad_op, Parallelism.fsdp_no_shard):
+            return ParallelismType.FSDP
+        elif self is Parallelism.pipeline:
+            return ParallelismType.PIPELINE
+        else:
+            raise ValueError(f"Unknown {self}")
+
+    def to_ss(self) -> ShardingStrategyEx:
+        if self is Parallelism.fsdp_full_shard:
+            return ShardingStrategyEx.FULL_SHARD
+        elif self is Parallelism.fsdp_shard_grad_op:
+            return ShardingStrategyEx.SHARD_GRAD_OP
+        elif self is Parallelism.fsdp_no_shard:
+            return ShardingStrategyEx.NO_SHARD
+        else:
+            return ShardingStrategyEx.SHARD_GRAD_OP
 
 
 class Models(enum.Enum):
@@ -60,7 +90,7 @@ class RunData:
 
     CSV_FIELDS = ["start_time", "end_time", "run_time", "model", "parallel", "epochs", "batch_size", "loss", "accuracy", "gpu_count", "gpu_model"]
 
-    def __init__(self, start_time: datetime.datetime, end_time: datetime.datetime, model: Models, parallel: ParallelismChoices,
+    def __init__(self, start_time: datetime.datetime, end_time: datetime.datetime, model: Models, parallel: Parallelism,
                  epochs: int, batch_size: int, loss: float, accuracy: float, gpu_count: int, gpu_model: str):
         self.start_time = start_time
         self.end_time = end_time
@@ -80,7 +110,7 @@ class RunData:
             datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S.%f"),
             datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f"),
             Models.from_string(model),
-            ParallelismChoices.from_string(parallel),
+            Parallelism.from_string(parallel),
             int(epochs),
             int(batch_size),
             float(loss),
@@ -194,7 +224,7 @@ def identity(string):
     return string
 
 
-def run_training(model: Models, parallel: ParallelismChoices, batch_size: int, epochs: int, device_name: str, device_count: int, device_model: str) -> RunData:
+def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: int, device_name: str, device_count: int, device_model: str) -> RunData:
 
     args = argparse.ArgumentParser()
     args.register("type", None, identity)
@@ -205,17 +235,19 @@ def run_training(model: Models, parallel: ParallelismChoices, batch_size: int, e
     elif model is Models.orbit5k:
         args.batch_size = batch_size
         args.n_epochs = epochs
-        args.parallel = PARALLEL_MAPPING[parallel]
+        args.parallel = parallel.to_pt()
         args.layer_cls = False
         args.big_model = False
+        args.sharding = parallel.to_ss()
         fn = orbit_5k_big.main
     elif model is Models.orbit5kbig:
         batch_size = 4
         args.batch_size = batch_size
         args.n_epochs = epochs
-        args.parallel = PARALLEL_MAPPING[parallel]
+        args.parallel = parallel.to_pt()
         args.layer_cls = False
         args.big_model = True
+        args.sharding = parallel.to_ss()
         fn = orbit_5k_big.main
 
     sys.stdout.write(f"BENCHMARK RUNNING ON {device_name}... parallelism {parallel} with batch size {batch_size}...\n")
@@ -231,7 +263,7 @@ def run_training(model: Models, parallel: ParallelismChoices, batch_size: int, e
         raise Exception(f"Train process exited with exitcode {process.exitcode}")
     r = rq.get()
 
-    #if model is not Models.none and parallel is ParallelismChoices.pipeline:
+    #if model is not Models.none and parallel is Parallelism.pipeline:
     #    torch.distributed.rpc.shutdown()
 
     return RunData(r.start_time, r.end_time, model, parallel, epochs, batch_size, r.loss, r.accuracy, device_count, device_model)
@@ -265,18 +297,18 @@ def uniq(data: typing.List[RunData]):
 def plot_training(run_data: typing.List[RunData], imgfile: pathlib.Path, dev_name: str):
     plt_data = {}
     for d in run_data:
-        if str(d.parallel) not in plt_data:
-            plt_data[str(d.parallel)] = {}
-        plt_data[str(d.parallel)][d.batch_size] = d.rt_mms()
+        if d.parallel not in plt_data:
+            plt_data[d.parallel] = {}
+        plt_data[d.parallel][d.batch_size] = d.rt_mms()
 
     fig = plt.figure(figsize=(PLOT_IMG_WIDTH, PLOT_IMG_HEIGHT))
     ax = fig.add_subplot(1, 1, 1)
     plots = []
     legends = []
-    for i, (k, v) in enumerate(plt_data.items()):
+    for i, (parallel, v) in enumerate(plt_data.items()):
         p, = ax.plot(v.keys(), v.values(), linestyle="solid", linewidth=1.5, color=PLOT_COLOURS[i], marker=PLOT_MARKERS[0])
         plots.append(p)
-        legends.append(k)
+        legends.append(parallel.to_text())
         i += 1
 
     ax.legend(plots, legends, loc="upper right")
@@ -291,15 +323,15 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
     template = f"plot-{now.strftime('%Y-%m-%d-%H-%M-%S')}"
     data = {}
     for d in run_data:
-        if str(d.model) not in data:
-            data[str(d.model)] = {}
-        if d.gpu_model not in data[str(d.model)]:
-            data[str(d.model)][d.gpu_model] = {}
-        if d.gpu_count not in data[str(d.model)][d.gpu_model]:
-            data[str(d.model)][d.gpu_model][d.gpu_count] = {}
-        if str(d.parallel) not in data[str(d.model)][d.gpu_model][d.gpu_count]:
-            data[str(d.model)][d.gpu_model][d.gpu_count][str(d.parallel)] = {}
-        data[str(d.model)][d.gpu_model][d.gpu_count][str(d.parallel)][d.batch_size] = d.rt_mms()
+        if d.model not in data:
+            data[d.model] = {}
+        if d.gpu_model not in data[d.model]:
+            data[d.model][d.gpu_model] = {}
+        if d.gpu_count not in data[d.model][d.gpu_model]:
+            data[d.model][d.gpu_model][d.gpu_count] = {}
+        if d.parallel not in data[d.model][d.gpu_model][d.gpu_count]:
+            data[d.model][d.gpu_model][d.gpu_count][d.parallel] = {}
+        data[d.model][d.gpu_model][d.gpu_count][d.parallel][d.batch_size] = d.rt_mms()
 
     # Plot parallelism for model/gpu-model/gpu-count
     for model, v_model in data.items():
@@ -314,7 +346,7 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
                                  linestyle=PLOT_LINES[0], linewidth=1.5,
                                  color=PLOT_COLOURS[i], marker=PLOT_MARKERS[0])
                     plots.append(p)
-                    legends.append(parallel)
+                    legends.append(parallel.to_text())
                 ax.legend(plots, legends, loc="upper right")
                 ax.set_title(f"{model} -- Run time per batch size -- {gpu_n} {gpu_model}")
                 ax.set_xlabel("Batch size")
@@ -336,7 +368,7 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
                                  linestyle=PLOT_LINES[j], linewidth=1.5,
                                  color=PLOT_COLOURS[i], marker=PLOT_MARKERS[k])
                     plots.append(p)
-                    legends.append(f"{parallel}, {gpu_n} {gpu_model}")
+                    legends.append(f"{parallel.to_text()}, {gpu_n} {gpu_model}")
         ax.legend(plots, legends, loc="upper right")
         ax.set_title(f"{model} -- Run time per batch size")
         ax.set_xlabel("Batch size")
@@ -428,10 +460,10 @@ def main():
                             choices=[x for x in Models],
                             help="Model to run")
     parser_run.add_argument("-p", "--parallel",
-                            type=ParallelismChoices.from_string,
-                            choices=[x for x in ParallelismChoices],
+                            type=Parallelism.from_string,
+                            choices=[x for x in Parallelism],
                             nargs="+",
-                            default=ParallelismChoices.none,
+                            default=Parallelism.none,
                             help="Parallelism type(s); default is %(default)s")
     parser_run.add_argument("-b", "--batch-size",
                             type=int,
