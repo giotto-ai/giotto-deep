@@ -14,9 +14,8 @@ import torch
 import torch.distributed as dist
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
-    ShardingStrategy,
-    MixedPrecision,
-    BackwardPrefetch
+    FullStateDictConfig,
+    StateDictType
     )
 from torch.distributed.fsdp.wrap import(
     size_based_auto_wrap_policy,
@@ -209,8 +208,10 @@ def parallel_train(rank, args, return_queue):
     if return_queue is not None:
         return_vals = [valloss, valacc]
         if args["return_model"]:
+            save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
             tmpf = tempfile.mkstemp() #Create temporary file
-            torch.save(train_args["model"].state_dict(), tmpf[1]) #Store Trainable parameters in the temporary file
+            with FSDP.state_dict_type(trainer.model, StateDictType.FULL_STATE_DICT, save_policy):
+                torch.save(trainer.model.state_dict(), tmpf[1]) #Store Trainable parameters in the temporary file
             os.close(tmpf[0])
             return_vals.append(tmpf[1]) #Send temporary file path to super instance for recovery
         return_queue.put(return_vals)
