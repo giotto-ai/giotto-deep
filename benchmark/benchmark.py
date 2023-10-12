@@ -208,6 +208,16 @@ PLOT_IMG_HEIGHT = 5
 PLOT_IMG_MARGIN_LEFT = 0.1
 
 
+def gen_plot_lines():
+    for e in PLOT_LINES:
+        yield e
+
+
+def gen_plot_markers():
+    for e in PLOT_MARKERS:
+        yield e
+
+
 def device_name(model: str, count: int) -> str:
     return f"{count} {model}"
 
@@ -362,17 +372,25 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
                 plt.savefig(str(img_dir.joinpath(img_name)))
 
     # Plot parallelism for model/gpu-model/gpu-count
+    linestyles = {}
+    markers = {}
+    gen_lines = gen_plot_lines()
+    gen_markers = gen_plot_markers()
     for model, v_model in data.items():
         fig = plt.figure(figsize=(PLOT_IMG_WIDTH, PLOT_IMG_HEIGHT))
         ax = fig.add_subplot(1, 1, 1)
         plots = []
         legends = []
-        for k, (gpu_model, v_gpu_model) in enumerate(v_model.items()):
-            for j, (gpu_n, v_gpu_n) in enumerate(v_gpu_model.items()):
+        for gpu_model, v_gpu_model in v_model.items():
+            if gpu_model not in linestyles:
+                linestyles[gpu_model] = next(gen_lines)
+            for gpu_n, v_gpu_n in v_gpu_model.items():
+                if gpu_n not in markers:
+                    markers[gpu_n] = next(gen_markers)
                 for parallel, values in v_gpu_n.items():
                     p, = ax.plot(values.keys(), values.values(),
-                                 linestyle=PLOT_LINES[j], linewidth=1.5,
-                                 color=parallel.colour(), marker=PLOT_MARKERS[k])
+                                 linestyle=linestyles[gpu_model], linewidth=1.5,
+                                 color=parallel.colour(), marker=markers[gpu_n])
                     plots.append(p)
                     legends.append(f"{parallel.to_text()}, {gpu_n} {gpu_model}")
         ax.legend(plots, legends, loc="upper right")
