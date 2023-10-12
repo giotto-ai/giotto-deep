@@ -69,6 +69,21 @@ class Parallelism(enum.Enum):
         else:
             return ShardingStrategyEx.SHARD_GRAD_OP
 
+    def colour(self) -> str:
+        # https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors
+        if self is Parallelism.none:
+            return "blue"
+        elif self is Parallelism.fsdp_full_shard:
+            return "darkorange"
+        elif self is Parallelism.fsdp_shard_grad_op:
+            return "green"
+        elif self is Parallelism.fsdp_no_shard:
+            return "magenta"
+        elif self is Parallelism.pipeline:
+            return "red"
+        else:
+            return "black"
+
 
 class Models(enum.Enum):
     none = enum.auto()
@@ -171,17 +186,9 @@ class RunResult:
 
 
 BATCH_SIZE_VALUES = (1, 2, 4, 8, 16, 32, 64)
-# https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors
+
 # https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html
 # https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
-PLOT_COLOURS = [
-    "blue",
-    "green",
-    "red",
-    "black",
-    "darkorange",
-    "magenta",
-]
 PLOT_LINES = [
     "solid",
     "dashed",
@@ -191,10 +198,10 @@ PLOT_LINES = [
 PLOT_MARKERS = [
     "x",
     "+",
-    "1",
-    "2",
-    "3",
-    "4",
+    ".",
+    "*",
+    "H",
+    "s",
 ]
 PLOT_IMG_WIDTH = 10
 PLOT_IMG_HEIGHT = 5
@@ -305,11 +312,10 @@ def plot_training(run_data: typing.List[RunData], imgfile: pathlib.Path, dev_nam
     ax = fig.add_subplot(1, 1, 1)
     plots = []
     legends = []
-    for i, (parallel, v) in enumerate(plt_data.items()):
-        p, = ax.plot(v.keys(), v.values(), linestyle="solid", linewidth=1.5, color=PLOT_COLOURS[i], marker=PLOT_MARKERS[0])
+    for parallel, v in plt_data.items():
+        p, = ax.plot(v.keys(), v.values(), linestyle=PLOT_LINES[0], linewidth=1.5, color=parallel.colour(), marker=PLOT_MARKERS[0])
         plots.append(p)
         legends.append(parallel.to_text())
-        i += 1
 
     ax.legend(plots, legends, loc="upper right")
     ax.set_title(f"{d.model} -- Run time per batch size -- {dev_name}")
@@ -341,10 +347,10 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
                 ax = fig.add_subplot(1, 1, 1)
                 plots = []
                 legends = []
-                for i, (parallel, values) in enumerate(v_gpu_n.items()):
+                for parallel, values in v_gpu_n.items():
                     p, = ax.plot(values.keys(), values.values(),
                                  linestyle=PLOT_LINES[0], linewidth=1.5,
-                                 color=PLOT_COLOURS[i], marker=PLOT_MARKERS[0])
+                                 color=parallel.colour(), marker=PLOT_MARKERS[0])
                     plots.append(p)
                     legends.append(parallel.to_text())
                 ax.legend(plots, legends, loc="upper right")
@@ -363,10 +369,10 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
         legends = []
         for k, (gpu_model, v_gpu_model) in enumerate(v_model.items()):
             for j, (gpu_n, v_gpu_n) in enumerate(v_gpu_model.items()):
-                for i, (parallel, values) in enumerate(v_gpu_n.items()):
+                for parallel, values in v_gpu_n.items():
                     p, = ax.plot(values.keys(), values.values(),
                                  linestyle=PLOT_LINES[j], linewidth=1.5,
-                                 color=PLOT_COLOURS[i], marker=PLOT_MARKERS[k])
+                                 color=parallel.colour(), marker=PLOT_MARKERS[k])
                     plots.append(p)
                     legends.append(f"{parallel.to_text()}, {gpu_n} {gpu_model}")
         ax.legend(plots, legends, loc="upper right")
