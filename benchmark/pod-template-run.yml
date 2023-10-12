@@ -20,7 +20,7 @@ spec:
   containers:
   - name: giotto-deep-benchmark-$model-$gpu_name-$gpu_count
     image: $image
-    args: ["run", "-m", "$model", "-d", "/var/lib/data/", "-p", $parallel$batch_size]
+    args: ["run", "-m", "$model", "-d", "/var/lib/data/$subdir", "-p", $parallel$batch_size]
     resources:
       limits:
         nvidia.com/gpu: $gpu_count

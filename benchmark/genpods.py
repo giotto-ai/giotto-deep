@@ -41,6 +41,9 @@ def main():
     parser.add_argument("-s", "--ksa",
                         required=True,
                         help="Kubernetes Service Account")
+    parser.add_argument("-d", "--dir",
+                        default="",
+                        help="Subdirectory in the bucket to store/read data")
 
     parser_run = subparsers.add_parser("run", help="Generate pods to run benchmarks")
     parser_run.set_defaults(func=main_run)
@@ -84,6 +87,7 @@ def main_run(args):
         "image": args.image,
         "bucket": args.bucket,
         "ksa": args.ksa,
+        "subdir": args.dir,
         "gpu_count": 0,
         "gpu_model": args.gpu_model.fullname(),
         "gpu_name": str(args.gpu_model),
@@ -113,6 +117,7 @@ def main_plot(args):
         "image": args.image,
         "bucket": args.bucket,
         "ksa": args.ksa,
+        "subdir": args.dir,
     }
 
     with open("pod-template-plot.yml", "r") as fp:

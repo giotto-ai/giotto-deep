@@ -16,7 +16,7 @@ spec:
   containers:
   - name: giotto-deep-plot
     image: $image
-    args: ["plot", "-d", "/var/lib/data/"]
+    args: ["plot", "-d", "/var/lib/data/$subdir"]
     volumeMounts:
     - mountPath: "/var/lib/data"
       name: gcs-fuse-csi-ephemeral

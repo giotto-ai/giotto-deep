@@ -423,8 +423,10 @@ def main_run(args):
     filename_template = f"benchmark-{args.model}-{dev_filename}-{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
 
     # Setup result files
-    csvfile = pathlib.Path(args.csvdir).joinpath(f"{filename_template}.csv")
-    pltfile = pathlib.Path(args.csvdir).joinpath(f"{filename_template}.png")
+    dir = pathlib.Path(args.csvdir)
+    dir.mkdir(exist_ok=True)
+    csvfile = dir.joinpath(f"{filename_template}.csv")
+    pltfile = dir.joinpath(f"{filename_template}.png")
     sys.stdout.write(f"BENCHMARK RUNNING ON {dev_name}...\n")
     sys.stdout.flush()
     csvfp = open(csvfile, "w", newline="")
