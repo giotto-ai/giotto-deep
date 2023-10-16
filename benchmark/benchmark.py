@@ -91,6 +91,7 @@ class Models(enum.Enum):
     orbit5k = enum.auto()
     orbit5kbig = enum.auto()
     bert = enum.auto()
+    bertbig = enum.auto()
 
     def __str__(self):
         return self.name
@@ -251,26 +252,25 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
 
     if model is Models.none:
         pass
-    elif model is Models.orbit5k:
+    elif model in (Models.orbit5k, Models.orbit5kbig):
+        if model is Models.orbit5kbig:
+            batch_size = 4
+            args.big_model = True
+        else:
+            args.big_model = False
         args.batch_size = batch_size
         args.n_epochs = epochs
         args.parallel = parallel.to_pt()
-        args.big_model = False
         args.sharding = parallel.to_ss()
         fn = orbit_5k_big.main
-    elif model is Models.orbit5kbig:
-        batch_size = 4
+    elif model in (Models.bert, Models.bertbig):
+        if model is Models.bertbig:
+            args.big_model = True
+        else:
+            args.big_model = False
         args.batch_size = batch_size
         args.n_epochs = epochs
         args.parallel = parallel.to_pt()
-        args.big_model = True
-        args.sharding = parallel.to_ss()
-        fn = orbit_5k_big.main
-    elif model is Models.bert:
-        args.batch_size = batch_size
-        args.n_epochs = epochs
-        args.parallel = parallel.to_pt()
-        args.big_model = False
         args.sharding = parallel.to_ss()
         args.dl = False
         parallel_bert.dl_dataset()
