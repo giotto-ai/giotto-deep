@@ -16,6 +16,7 @@ from gdeep.utility_examples.fsdp import ShardingStrategyEx
 
 sys.path.append("../examples")
 from examples import orbit_5k_big
+from examples import parallel_bert
 
 
 class Parallelism(enum.Enum):
@@ -89,6 +90,7 @@ class Models(enum.Enum):
     none = enum.auto()
     orbit5k = enum.auto()
     orbit5kbig = enum.auto()
+    bert = enum.auto()
 
     def __str__(self):
         return self.name
@@ -264,6 +266,14 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         args.big_model = True
         args.sharding = parallel.to_ss()
         fn = orbit_5k_big.main
+    elif model is Models.bert:
+        args.batch_size = batch_size
+        args.n_epochs = epochs
+        args.parallel = parallel.to_pt()
+        args.big_model = False
+        args.sharding = parallel.to_ss()
+        args.dl = True
+        fn = parallel_bert.main
 
     sys.stdout.write(f"BENCHMARK RUNNING ON {device_name}... parallelism {parallel} with batch size {batch_size}...\n")
     sys.stdout.flush()

@@ -1,41 +1,41 @@
-# Include necessary general imports
 import os
-from typing import Tuple
-from dataclasses import dataclass
-import matplotlib.pyplot as plt
 import argparse
 import functools
-
-# Torch imports
+import pandas as pd
+import pathlib
+import numpy as np
+import urllib.request
+import zipfile
 
 import torch
 import torch.nn as nn
-import pandas as pd
-import numpy as np
-from gdeep.data.datasets import DatasetBuilder, FromArray, DataLoaderBuilder
-
-# Gdeep imports 
-
-
+from torch.optim import Adam
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
 from gdeep.search.hpo import GiottoSummaryWriter
 from gdeep.topology_layers import  persformer_block
-
-from gdeep.trainer.trainer import Trainer, Parallelism, ParallelismType
+from gdeep.data.datasets import FromArray, DataLoaderBuilder
+from gdeep.trainer.trainer import Trainer, Parallelism
+import gdeep.utility_examples.args
 
 from sklearn.model_selection import train_test_split
-from torch.optim import Adam
-from torch.distributed.fsdp import ShardingStrategy
-from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
-
 from transformers import (
-                          BertTokenizer, 
+                          BertTokenizer,
                           BertForSequenceClassification,
-                          AdamW,
-                          BertConfig,
-                          get_linear_schedule_with_warmup)
+                          )
+
+
+def dl_dataset():
+    if not pathlib.Path("cola_public").exists():
+        req = urllib.request.urlretrieve("https://nyu-mll.github.io/CoLA/cola_public_1.1.zip")
+        with zipfile.ZipFile(req[0], "r") as zip_ref:
+            zip_ref.extractall()
+
 
 def main(args):
+    if args.dl:
+        dl_dataset()
+
     n_sentences_to_consider=4000
 
     tmp_path=os.path.join('./cola_public','raw','in_domain_train.tsv')
@@ -53,7 +53,7 @@ def main(args):
     for sent in sentences:
 
         encoded_sent = tokenizer.encode( sent, add_special_tokens = True)
-        
+
         # Add the encoded sentence to the list.
         input_ids.append(encoded_sent)
 
@@ -133,46 +133,45 @@ def main(args):
         return x
 
 
-    input_ids = pad_sequences(input_ids, maxlen=MAX_LEN, dtype="long", 
+    input_ids = pad_sequences(input_ids, maxlen=MAX_LEN, dtype="long",
                             value=0, truncating="post", padding="post")
-    
+
     train_inputs, validation_inputs, train_labels, validation_labels = train_test_split(input_ids, labels, random_state=13, test_size=0.1)
-    
+
     dl_builder = DataLoaderBuilder((FromArray(train_inputs, train_labels), \
                                 FromArray(validation_inputs, validation_labels)))
-    
-    dl_tr, dl_val, _ = dl_builder.build(({"batch_size": args.batch_size}, {"batch_size": args.batch_size}))
-    
-    model = BertForSequenceClassification.from_pretrained(
-        "bert-large-uncased", 
-        num_labels = 2,
-        output_attentions = True, 
-        output_hidden_states = False
-    )if args.big_model else BertForSequenceClassification.from_pretrained(
-        "bert-base-uncased", 
-        num_labels = 2,
-        output_attentions = True, 
-        output_hidden_states = False
-    )
 
-    # Define the trainer 
+    dl_tr, dl_val, _ = dl_builder.build(({"batch_size": args.batch_size}, {"batch_size": args.batch_size}))
+
+    if args.big_model:
+        model = BertForSequenceClassification.from_pretrained(
+            "bert-large-uncased",
+            num_labels = 2,
+            output_attentions = True,
+            output_hidden_states = False
+            )
+    else:
+        model = BertForSequenceClassification.from_pretrained(
+            "bert-base-uncased",
+            num_labels = 2,
+            output_attentions = True,
+            output_hidden_states = False
+            )
+
+    # Define the trainer
 
     writer = GiottoSummaryWriter()
-
-    loss_function =  nn.CrossEntropyLoss()
-
-    trainer = Trainer(model, (dl_tr, dl_val), loss_function, writer) 
-
+    loss_function = nn.CrossEntropyLoss()
+    trainer = Trainer(model, (dl_tr, dl_val), loss_function, writer)
     devices = list(range(torch.cuda.device_count()))
-
-    conf_fsdp={"sharding_strategy": ShardingStrategy.SHARD_GRAD_OP}
-    wrap_policy = functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,})
-    conf_fsdp.update({"auto_wrap_policy": wrap_policy})
-
-    parallel = Parallelism(args.parallel, 
-                           devices, 
-                           len(devices), 
-                           fsdp_config=conf_fsdp,
+    config_fsdp = {
+        "sharding_strategy": args.sharding.to_ss(),
+        "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,}),
+        }
+    parallel = Parallelism(args.parallel,
+                           devices,
+                           len(devices),
+                           config_fsdp=config_fsdp,
                            pipeline_chunks=2)
 
     # train the model
@@ -180,19 +179,13 @@ def main(args):
     return trainer.train(Adam, args.n_epochs, parallel=parallel)
 
 
-
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Giotto FSDP Example')
-    parser.add_argument('--parallel',
-                            type=ParallelismType.from_str,
-                            default=ParallelismType._NONE,
-                            help='Parallelism type to use for training (default=NONE)')
-    parser.add_argument('--batch_size', type=int, default=16, metavar='N',
-                        help='input batch size for training (default: 16)')
-    parser.add_argument('--n_epochs', type=int, default=1, metavar='N',
-                        help='Number of epochs to train for (default: 1)')
-    parser.add_argument('--big_model', action='store_true', default=False,
-                            help='Use big model')
+    parser = argparse.ArgumentParser(description='BERT Example')
+    gdeep.utility_examples.args.add_default_arguments(parser)
+    gdeep.utility_examples.args.add_big_model(parser)
+    parser.add_argument("--dl",
+                        action="store_true",
+                        help="Download dataset if it does not exist already")
     args = parser.parse_args()
     main(args)
