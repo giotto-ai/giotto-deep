@@ -1,44 +1,19 @@
-# Include necessary general imports
-import os
 from typing import Tuple
 from dataclasses import dataclass
-import matplotlib.pyplot as plt
 import argparse
 import functools
 
-# Torch imports
-
 import torch
 import torch.nn as nn
-
-# Gdeep imports 
-
-from gdeep.data import PreprocessingPipeline
-from gdeep.data.datasets import PersistenceDiagramFromFiles
-from gdeep.data.datasets.base_dataloaders import (DataLoaderBuilder,
-                                                  DataLoaderParamsTuples)
-from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import \
-    PersistenceDiagramFromGraphBuilder
-from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
-    OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams)
-from gdeep.data.preprocessors import (
-    FilterPersistenceDiagramByHomologyDimension,
-    FilterPersistenceDiagramByLifetime, NormalizationPersistenceDiagram)
-from gdeep.search.hpo import GiottoSummaryWriter
-from gdeep.topology_layers import Persformer, PersformerConfig, PersformerWrapper, persformer_block
-from gdeep.topology_layers.persformer_config import PoolerType
-from gdeep.trainer.trainer import Trainer, Parallelism, ParallelismType
-from gdeep.search import HyperParameterOptimization
-from gdeep.utility import DEFAULT_GRAPH_DIR, PoolerType
-from gdeep.utility.utils import autoreload_if_notebook
-from gdeep.analysis.interpretability import Interpreter
-from sklearn.model_selection import train_test_split
 from torch.optim import Adam
-from torch.utils.data import Subset
-from gdeep.visualization import Visualiser
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+from gdeep.search.hpo import GiottoSummaryWriter
+from gdeep.topology_layers import PersformerWrapper, persformer_block
+from gdeep.topology_layers.persformer_config import PoolerType
+from gdeep.trainer.trainer import Trainer, Parallelism
 from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
-from gdeep.utility_examples.fsdp import ShardingStrategyEx
-from torch.distributed.fsdp.wrap import always_wrap_policy, transformer_auto_wrap_policy
+import gdeep.utility_examples.args
 
 def main(args):
     # Generate a configuration file with the parameters of the desired dataset
@@ -56,7 +31,7 @@ def main(args):
 
     config_data = Orbit5kConfig()
 
-    # Define the OrbitsGenerator Class with the above parameters    
+    # Define the OrbitsGenerator Class with the above parameters
 
     og = OrbitsGenerator(
         num_orbits_per_class=config_data.num_orbits_per_class,
@@ -80,20 +55,6 @@ def main(args):
         dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
     else:
         dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
-        
-    # Get the orbits point clouds
-
-    point_clouds = og.get_orbits()
-
-    # For each rho value, plot one point cloud
-
-    rho_values = [2.5, 3.5, 4.0, 4.1, 4.3]
-    #fig, ax = plt.subplots(ncols=len(rho_values), figsize = (20,3))
-
-    #for i in range(len(rho_values)):
-    #    x , y = point_clouds[i*config_data.num_orbits_per_class,:,0], point_clouds[i*config_data.num_orbits_per_class,:,1] 
-    #    ax[i].scatter(x, y)
-    #    ax[i].set_title('Example of orbit for rho = ' + str(rho_values[i]))
 
     # Define the model by using a Wrapper for the Persformer model
 
@@ -122,24 +83,19 @@ def main(args):
         )
         config_mha = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}] * 5
 
-    # Define the trainer 
+    # Define the trainer
 
     writer = GiottoSummaryWriter()
-
-    loss_function =  nn.CrossEntropyLoss()
-
-    trainer = Trainer(wrapped_model, [dl_train, dl_train], loss_function, writer) 
-
+    loss_function = nn.CrossEntropyLoss()
+    trainer = Trainer(wrapped_model, [dl_train, dl_train], loss_function, writer)
     devices = list(range(torch.cuda.device_count()))
-
     config_fsdp = {
         "sharding_strategy": args.sharding.to_ss(),
         "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,}),
         }
-
-    parallel = Parallelism(args.parallel, 
-                           devices, 
-                           len(devices), 
+    parallel = Parallelism(args.parallel,
+                           devices,
+                           len(devices),
                            config_fsdp=config_fsdp,
                            config_mha=config_mha,
                            pipeline_chunks=2)
@@ -148,43 +104,10 @@ def main(args):
 
     return trainer.train(Adam, args.n_epochs, parallel=parallel)
 
-    # Initialize the Interpreter class in Saliency mode
-
-    inter = Interpreter(trainer.model, method="Saliency")
-
-    # Get a datum and its corresponding class
-
-    batch = next(iter(dl_train))
-    datum = batch[0][0].reshape(1, *(batch[0][0].shape))
-    class_ = batch[1][0].item()
-
-    # interpret the diagram
-    x, attr = inter.interpret(x=datum, y=class_)
-
-    # visualise the results
-    vs = Visualiser(trainer)
-    vs.plot_attributions_persistence_diagrams(inter)
-
-
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Giotto FSDP Example')
-    parser.add_argument('--parallel',
-                            type=ParallelismType.from_str,
-                            default=ParallelismType._NONE,
-                            help='Parallelism type to use for training (default=NONE)')
-    parser.add_argument('--layer_cls', action='store_true', default=False,
-                            help='Use layer class')
-    parser.add_argument('--batch_size', type=int, default=4, metavar='N',
-                        help='input batch size for training (default: %(default)s)')
-    parser.add_argument('--n_epochs', type=int, default=1, metavar='N',
-                        help='Number of epochs to train for (default: %(default)s)')
-    parser.add_argument('--big_model', action='store_true',
-                            help='Use layer class')
-    parser.add_argument('--sharding',
-                        type=ShardingStrategyEx.from_str,
-                        choices=[x for x in ShardingStrategyEx],
-                        default=ShardingStrategyEx.SHARD_GRAD_OP,
-                        help='Sharding strategy (default: %(default)s)')
+    parser = argparse.ArgumentParser(description="Orbit 5k example")
+    gdeep.utility_examples.args.add_default_arguments(parser)
+    gdeep.utility_examples.args.add_big_model(parser)
     args = parser.parse_args()
     main(args)

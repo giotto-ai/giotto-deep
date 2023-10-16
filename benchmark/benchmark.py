@@ -253,7 +253,6 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         args.batch_size = batch_size
         args.n_epochs = epochs
         args.parallel = parallel.to_pt()
-        args.layer_cls = False
         args.big_model = False
         args.sharding = parallel.to_ss()
         fn = orbit_5k_big.main
@@ -262,7 +261,6 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         args.batch_size = batch_size
         args.n_epochs = epochs
         args.parallel = parallel.to_pt()
-        args.layer_cls = False
         args.big_model = True
         args.sharding = parallel.to_ss()
         fn = orbit_5k_big.main
