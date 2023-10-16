@@ -276,6 +276,7 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         parallel_bert.dl_dataset()
         fn = parallel_bert.main
 
+    sys.stdout.write(f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     sys.stdout.write(f"BENCHMARK RUNNING ON {device_name}... parallelism {parallel} with batch size {batch_size}...\n")
     sys.stdout.flush()
 
