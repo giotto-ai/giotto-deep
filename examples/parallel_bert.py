@@ -33,9 +33,6 @@ def dl_dataset():
 
 
 def main(args):
-    if args.dl:
-        dl_dataset()
-
     n_sentences_to_consider=4000
 
     tmp_path=os.path.join('./cola_public','raw','in_domain_train.tsv')
@@ -188,4 +185,6 @@ if __name__ == '__main__':
                         action="store_true",
                         help="Download dataset if it does not exist already")
     args = parser.parse_args()
+    if args.dl:
+        dl_dataset()
     main(args)

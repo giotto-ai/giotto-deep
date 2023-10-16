@@ -272,7 +272,8 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         args.parallel = parallel.to_pt()
         args.big_model = False
         args.sharding = parallel.to_ss()
-        args.dl = True
+        args.dl = False
+        parallel_bert.dl_dataset()
         fn = parallel_bert.main
 
     sys.stdout.write(f"BENCHMARK RUNNING ON {device_name}... parallelism {parallel} with batch size {batch_size}...\n")
