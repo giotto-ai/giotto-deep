@@ -104,7 +104,6 @@ $ gsutil -m cp -R gs://$BUCKET /path/to/data
 
 Some docs:
 
-- https://learnk8s.io/terraform-gke
 - https://cloud.google.com/kubernetes-engine/docs/how-to/gpus
 - https://cloud.google.com/compute/docs/gpus/gpu-regions-zones
 - https://cloud.google.com/compute/docs/machine-resource
@@ -263,6 +262,57 @@ $ gcloud container node-pools create ${POOL_PREFIX}-a100-8 \
     --enable-autoscaling \
     --machine-type a2-highgpu-8g \
     --accelerator count=8,type=nvidia-tesla-a100,gpu-driver-version=default
+$ gcloud container clusters describe ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}
+$ kubectl get node
+$ xdg-open https://console.cloud.google.com/kubernetes/clusters/details/${CLUSTER_ZONE}/${CLUSTER_NAME}/nodes\?project\=${PROJECT_ID}
+
+-> Create GPU V100 node pool with 2 GPUs
+
+$ gcloud container node-pools create ${POOL_PREFIX}-v100-2 \
+    --cluster ${CLUSTER_NAME} \
+    --workload-metadata GKE_METADATA \
+    --zone ${CLUSTER_ZONE} \
+    --node-locations ${CLUSTER_NODE} \
+    --num-nodes 0 \
+    --min-nodes 0 \
+    --max-nodes 2 \
+    --enable-autoscaling \
+    --machine-type n1-standard-8 \
+    --accelerator count=2,type=nvidia-tesla-v100,gpu-driver-version=default
+$ gcloud container clusters describe ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}
+$ kubectl get node
+$ xdg-open https://console.cloud.google.com/kubernetes/clusters/details/${CLUSTER_ZONE}/${CLUSTER_NAME}/nodes\?project\=${PROJECT_ID}-> Create GPU T4 node pool with 2 GPUs
+
+-> Create GPU V100 node pool with 4 GPUs
+
+$ gcloud container node-pools create ${POOL_PREFIX}-v100-4 \
+    --cluster ${CLUSTER_NAME} \
+    --workload-metadata GKE_METADATA \
+    --zone ${CLUSTER_ZONE} \
+    --node-locations ${CLUSTER_NODE} \
+    --num-nodes 0 \
+    --min-nodes 0 \
+    --max-nodes 2 \
+    --enable-autoscaling \
+    --machine-type n1-standard-8 \
+    --accelerator count=4,type=nvidia-tesla-v100,gpu-driver-version=default
+$ gcloud container clusters describe ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}
+$ kubectl get node
+$ xdg-open https://console.cloud.google.com/kubernetes/clusters/details/${CLUSTER_ZONE}/${CLUSTER_NAME}/nodes\?project\=${PROJECT_ID}-> Create GPU T4 node pool with 2 GPUs
+
+-> Create GPU V100 node pool with 8 GPUs
+
+$ gcloud container node-pools create ${POOL_PREFIX}-v100-8 \
+    --cluster ${CLUSTER_NAME} \
+    --workload-metadata GKE_METADATA \
+    --zone ${CLUSTER_ZONE} \
+    --node-locations ${CLUSTER_NODE} \
+    --num-nodes 0 \
+    --min-nodes 0 \
+    --max-nodes 2 \
+    --enable-autoscaling \
+    --machine-type n1-standard-8 \
+    --accelerator count=8,type=nvidia-tesla-v100,gpu-driver-version=default
 $ gcloud container clusters describe ${CLUSTER_NAME} --zone ${CLUSTER_ZONE}
 $ kubectl get node
 $ xdg-open https://console.cloud.google.com/kubernetes/clusters/details/${CLUSTER_ZONE}/${CLUSTER_NAME}/nodes\?project\=${PROJECT_ID}

@@ -7,6 +7,7 @@ import benchmark
 
 class GPUs(enum.Enum):
     a100 = enum.auto()
+    v100 = enum.auto()
     t4 = enum.auto()
 
     def __str__(self):
@@ -22,6 +23,8 @@ class GPUs(enum.Enum):
     def fullname(self) -> str:
         if self is GPUs.a100:
             return "nvidia-tesla-a100"
+        elif self is GPUs.v100:
+            return "nvidia-tesla-v100"
         elif self is GPUs.t4:
             return "nvidia-tesla-t4"
         else:
