@@ -11,9 +11,9 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+from torch.distributed.fsdp import BackwardPrefetch
 
 from gdeep.search.hpo import GiottoSummaryWriter
-from gdeep.topology_layers import  persformer_block
 from gdeep.data.datasets import FromArray, DataLoaderBuilder
 from gdeep.trainer.trainer import Trainer, Parallelism
 import gdeep.utility_examples.args
@@ -23,6 +23,7 @@ from transformers import (
                           BertTokenizer,
                           BertForSequenceClassification,
                           )
+from transformers.models.bert.modeling_bert import BertLayer
 
 
 def dl_dataset():
@@ -163,7 +164,8 @@ def main(args):
     devices = list(range(torch.cuda.device_count()))
     config_fsdp = {
         "sharding_strategy": args.sharding.to_ss(),
-        "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,}),
+        "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={BertLayer,}),
+        "backward_prefetch": BackwardPrefetch.BACKWARD_PRE
         }
     parallel = Parallelism(args.parallel,
                            devices,
