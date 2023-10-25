@@ -15,7 +15,8 @@ import torch.distributed as dist
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
     FullStateDictConfig,
-    StateDictType
+    StateDictType,
+    ShardingStrategy
     )
 from torch.distributed.fsdp.wrap import(
     size_based_auto_wrap_policy,
@@ -124,7 +125,13 @@ class Parallelism:
         self.pipeline_chunks = pipeline_chunks
         self.config_fsdp = config_fsdp
 
-        # TODO?: Give FSDP a default config ?
+        if p_type == ParallelismType.FSDP and \
+            "sharding_strategy" in config_fsdp.keys() and \
+            config_fsdp["sharding_strategy"] == ShardingStrategy.NO_SHARD and \
+            not "auto_wrap_policy" in config_fsdp.keys():
+            print("WARNING: You seem to be trying to use FSDP with sharding without providing any wrapping policy. \
+                  This will result in the model being unable to be sharded between the GPUs. Only use FSDP without \
+                  wrapping policy with sharding_strategy == ShardingStrategy.NO_SHARD")
 
         if devices is None:
             devices = list(range(torch.cuda.device_count()))
@@ -1114,8 +1121,11 @@ class Trainer:
                 self.device = self.parallel.devices[0]
                 # Setup FSDP
                 print(f'PID={os.getpid()}: sending model to device {self.device}')
-                if "device_id" not in self.parallel.config_fsdp:
+                if "device_id" not in self.parallel.config_fsdp.keys():
                     self.parallel.config_fsdp["device_id"] = self.device
+                else:
+                    print("WARNING: You provided a custom value for \"device_id\" in the FSDP config. This will \
+                          prevent the use of multiple GPUs. Only do this if you know what you are doing")
                 self.model = FSDP(
                     self.model,
                     **self.parallel.config_fsdp
