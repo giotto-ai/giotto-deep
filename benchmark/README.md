@@ -41,6 +41,10 @@ The batch size may be changed up to 32.
 This model defines the batch size maximum based on the number of maximum number of GPUs found.
 It is useless to change manually the batch size. One must keep the default batch size used by the model.
 
+### BERT + BERT big
+
+The batch size may be changed up to 32.
+
 ## Build deployment
 
 The Docker image is built on [nvidia/cuda](https://hub.docker.com/r/nvidia/cuda) `runtime` image.
