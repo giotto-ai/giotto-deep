@@ -3,6 +3,9 @@ kind: Pod
 metadata:
   name: giotto-deep-benchmark-$model-$gpu_name-$gpu_count
   namespace: default
+  labels:
+    env: giotto-deep
+    app: giotto-deep-benchmark
   annotations:
     gke-gcsfuse/volumes: "true"
 spec:
