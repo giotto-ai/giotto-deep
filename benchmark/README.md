@@ -57,6 +57,12 @@ $ rm -f Dockerfile
 
 ## Run deployment on GKE
 
+Some docs:
+
+- https://sysdig.com/blog/kubernetes-limits-requests/
+- https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+
 Execute this step from `benchmark/`.
 
 The pod `giotto-deep-benchmark` in `pod-run.yml` uses an [empty dir memory volume](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)
@@ -98,6 +104,13 @@ $ kubectl apply -f pod-plot.yml
 
 ```console
 $ gsutil -m cp -R gs://$BUCKET /path/to/data
+```
+
+## Monitor resources
+
+```console
+$ kubectl top pod
+$ kubectl top node
 ```
 
 ## Create cluster
