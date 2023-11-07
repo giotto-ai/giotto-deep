@@ -12,7 +12,7 @@ from gdeep.data.datasets import DatasetBuilder, DataLoaderBuilder
 from gdeep.models import FFNet
 from gdeep.visualization import persistence_diagrams_of_activations
 from gdeep.data.preprocessors import ToTensorImage
-from gdeep.trainer import Trainer
+from gdeep.trainer.trainer import Trainer, Parallelism, ParallelismType
 from gdeep.models import ModelExtractor
 from gdeep.analysis.interpretability import Interpreter
 from gdeep.visualization import Visualiser
@@ -32,7 +32,7 @@ else:
 writer = GiottoSummaryWriter()
 
 db = DatasetBuilder(name="CIFAR10")
-ds_tr, ds_val, ds_ts = db.build()
+ds_tr, ds_val, ds_ts = db.build(download=True)
 NUMBER_OF_CLASSES = 10
 
 transformation = ToTensorImage((32, 32))
@@ -85,6 +85,11 @@ loss_fn = nn.CrossEntropyLoss()
 # initilise the trainer class
 pipe = Trainer(model, (dl_tr, dl_ts), loss_fn, writer)
 
+devices = list(range(torch.cuda.device_count()))
+parallel = Parallelism(ParallelismType.PIPELINE,
+                           devices,
+                           len(devices),
+                           pipeline_chunks=2)
 
 if (pipeline_enabling):
     # train the model
@@ -94,8 +99,7 @@ if (pipeline_enabling):
         False,
         {"lr": 0.01},
         {"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},
-        pipeline_train=True,
-        nb_chunks=2
+        parallel=parallel
     )
 
 else:

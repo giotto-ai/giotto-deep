@@ -43,7 +43,8 @@ from gdeep.utility import DEVICE
 from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
-from .pipeline_tool.pipeline_tool import SkippableTracing
+from pipeline_tool.pipeline_config import PipelineConfig
+from pipeline_tool.pipeline_tool import SkippableTracing
 from torch.distributed.pipeline.sync import Pipe 
 
 try:
@@ -1612,13 +1613,21 @@ class Trainer:
 
         input_shape = None
         output_shape = None
+        dtype = None
+
         for input, label in dl_tr:
             input_shape = input.shape
+            dtype = str(label.dtype)
+            dtype = dtype.split('.', 1)[1]
             output_shape = label.shape
             break
         
+        config = PipelineConfig(input_shape=input_shape, 
+                                output_shape=output_shape,
+                                data_type=dtype,
+                                config_mha=config_mha)
         # Generate the piped model
-        trace = SkippableTracing(self.nb_gpus, self.model, input_shape, output_shape, config_mha)
+        trace = SkippableTracing(self.nb_gpus, self.model, config)
         torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
         model_pipe = trace.get_modules()
         model_pipe = Pipe(model_pipe, nb_chunks)
