@@ -132,12 +132,14 @@ if pipeline_enabling:
             {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
             {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
             {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
-    
+    devices = list(range(torch.cuda.device_count()))
+    parallel = Parallelism(ParallelismType.PIPELINE,
+                            devices,
+                            len(devices),
+                            pipeline_chunks=2,
+                            config_mha=configs)
     n_epoch = 1
-
-    parallel = Parallelism(ParallelismType.PIPELINE, config_mha=configs, pipeline_chunks=2)
     
-    #trainer.train(Adam, n_epoch, pipeline_train=True, config_mha=configs, nb_chunks=2)
     trainer.train(Adam, n_epoch, parallel=parallel)
 
 

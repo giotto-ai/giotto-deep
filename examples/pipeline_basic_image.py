@@ -89,7 +89,12 @@ devices = list(range(torch.cuda.device_count()))
 parallel = Parallelism(ParallelismType.PIPELINE,
                            devices,
                            len(devices),
-                           pipeline_chunks=2)
+                           pipeline_chunks=2,
+                           config_mha=[{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
+            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}])
 
 if (pipeline_enabling):
     # train the model
