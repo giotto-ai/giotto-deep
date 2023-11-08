@@ -13,6 +13,7 @@ Welcome to giotto-deep's documentation!
    introduction
    installation
    distributed
+   parallel
    modules/index
 
 References

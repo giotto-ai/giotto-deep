@@ -1,8 +1,11 @@
 .. _FSDP documentation: https://pytorch.org/docs/stable/fsdp.html
 .. _FSDP tutorial: https://pytorch.org/tutorials/intermediate/FSDP_tutorial.html#how-fsdp-works
 .. _Advanced FSDP tutorial: https://pytorch.org/tutorials/intermediate/FSDP_adavnced_tutorial.html
+.. _FSDP wrappers: https://github.com/pytorch/pytorch/blob/main/torch/distributed/fsdp/wrap.py
+.. _Python pickler guidelines: https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
 
 .. _parallel:
+
 #####################
 Parallel training
 #####################
@@ -17,30 +20,44 @@ When multiple GPUs are available, it is possible to use more than one to train t
 Data parallelism: FSDP
 **********************
 
-Data parallelism consists in training multiple copies of the model on partitions of the dataset. For example: one GPU may be responsible for training one copy of the model on one half of the training dataset while another trains another copy on the second half of the dataset. At the end or multiple times during a training epoch, both copies are merged to obtain a new model technically trained on the whole dataset. This method relies on the assumption that the merging of the half-trained models is fast enough and results in good enough improvements to compensate the half-training. The principle is the same for more GPUs but the performance may not improve significantly past a certain point. in giotto-deep, this method is called DDP
+Data parallelism consists in training multiple copies of the model on partitions of the dataset. For example: one GPU may be responsible for training one copy of the model on one half of the training dataset while another trains another copy on the second half of the dataset. At the end or multiple times during a training epoch, both copies are merged to obtain a new model technically trained on the whole dataset. This method relies on the assumption that the merging of the half-trained models is fast enough and results in good enough improvements to compensate the half-training. The principle is the same for more GPUs but the performance may not improve significantly past a certain point. This method is called Distributed Data Parallelism (DDP)
 
-A more complex method consists in sharding the model to distribute it across multiple GPUs. During the training, one GPU can request the shard it needs from the GPU responsible for this shard, do its calculations and then discard the shard. Once the gradients for this shard is calculated in the backward pass, the shard is retrieved again, calculations are done and the updated shard is sent back to the responsible GPU (as explained in the `FSDP tutorial`_). More communication between the GPUs is required as a result but this approach results in lower peak memory use. This algorithm is called ZERO and exists in 2 variants in FSDP: ZERO2 (SHARD_GRAD_OP) doesn't discard the shard after the forward pass and thus saves time in communication but requires more memory, ZERO3 (FULL_SHARD) discards the shard everytime after it is done with its calculations and thus requires more communication but less memory. In itself, using one of those 2 algorithms may not result in better training time but the freed memory can be used to increase the batch size (which usually results in faster epochs) or increase the size of the model
+A more complex method consists in sharding the model to distribute it across multiple GPUs. During the training, one GPU can request the shard it needs from the GPU responsible for this shard, do its calculations and then discard the shard. Once the gradients for this shard is calculated in the backward pass, the shard is retrieved again, calculations are done and the updated shard is sent back to the responsible GPU (as explained in the `FSDP tutorial`_). More communication between the GPUs is required as a result but this approach results in lower peak memory use. This algorithm is called ZERO and exists in 2 variants in pytorch's FSDP feature: ZERO2 (SHARD_GRAD_OP) doesn't discard the shard after the forward pass and thus saves time in communication but requires more memory, ZERO3 (FULL_SHARD) discards the shard everytime after it is done with its calculations and thus requires more communication but less memory. In itself, using one of those 2 algorithms may not result in better training time but the freed memory can be used to increase the batch size (which usually results in faster epochs) or increase the size of the model
 
 Some optimisations allow those algorithms to increase in performance even more:
 * Mixed precision: Converts the weights, gradients or the transmitted data to a lower precision to speed up calculation (potentially using the hardware support of the GPU) or transmission of data between the GPUs
 * Backward prefetch: Allows shards to be recovered in different ways to optimise memory usage or performance
 * ...
-
 More optimisations are discussed in the `Advanced FSDP tutorial`_ 
 
 The Data parallelism algorithms and optimisations to use are very dependant on the model and training method but can sensibly improve the training time when chosen and configured correctly. 
 
-Those algorithms are implemented into giotto-deep using pytorch's FSDP tool The implementation's architecture is explained in the diagram below. 
+===============================
+Implementation into giotto-deep
+===============================
+
+Those algorithms are implemented into giotto-deep using pytorch's FSDP tool. The implementation's architecture is explained in the diagram below. 
 
 .. image:: _img/giotto_trainer_fsdp.png
 
-What the diagram shows is that for each device used for the training, giotto-deep's Trainer will create a new process that executes a subinstance of Trainer. The members of the base instance (model, dataloaders,...) are deepcopied into the subinstances so each subinstance may works on its members without affecting the other processes. The training occurs on each process on its dedicated device. Once the training is complete, the model is retrieved by the subprocess with rank 0 and stored in a temporary file where it is then recovered by the base instance to update the model.
+What the diagram shows is that for each device used for the training, giotto-deep's Trainer will create a new process that executes a subinstance of Trainer. The members of the base instance (model, dataloaders,...) are deepcopied into the subinstances so each subinstance may work on its members without affecting the other processes. The training occurs on each process on its dedicated device using the part of the dataloader assigned to it thanks to a sampler. Once the training is complete, the partially trained models are "aggregated" to form a new model technically trained on the whole dataset. The model is then retrieved by the subprocess with rank 0 and stored in a temporary file where it is recovered by the base instance to update the model.
 
-This architecture was selected because it required the least amount of changes to the pre-existing Trainer class of giotto-deep. However, it comes with a few limitations. The examples of "native" FSDP (FSDP not used in a library) show the model and datasets/dataloaders being instanced in each subprocess. However, due to giotto-deep's API, this wasn't possible as the Trainer class expects to be given instances of the model and dataloaders. In order to use FSDP within giotto-deep without some major changes to the API and pre-existing implementation, we had to deepcopy and send the model and dataloaders to each subinstance of Trainer. This means that the dataloaders and models HAVE TO be serialisable using pytorch's pickler. Currently, some features of Pytorch (ex:Map_style_dataset) and giotto-deep (ex:TransformingDataset) aren't serialisable and thus cannot be used as is when trying to train a model with FSDP through giotto-deep. 
+This architecture was selected because it was the best compromise between the amount of changes that needed to be made to the API and inner workings of giotto-deep, the amount of changes necessary in the user's code and the flexibility in FSDP's confguration. Less changes would have been required to the Trainer had we chosen to simply make it compatible with torchrun (pytorch utility script to launch a python script in multiple processes) but some adaptations still would have been necessary not to break necessary features and this puts more work in the hands of the user. A simpler Trainer API to support parallelisation is possible but it comes at the expense of configurability which plays a crucial role in the performance of FSDP
+
+However, the implementation choices made come with a few limitations:
+
+* Most examples of "native" FSDP (FSDP not used in a library) that can be found online show the model and dataset being instanced in each subprocess. This allows each subprocess to possess an independant instance of the model and dataloader. However, due to giotto-deep's API which expects to be given already instanced model and dataset, this wasn't possible. 
+* In order to use FSDP within giotto-deep nonetheless, we had to deepcopy and send the received instances of the model and dataloaders to each subprocess. This means that the dataloaders and models MUST be serialisable using pytorch's pickler (`Python pickler guidelines`_). 
+* Currently, some features of Pytorch (ex:Map_style_dataset) and giotto-deep (ex:TransformingDataset) aren't serialisable and thus cannot be used as is when trying to train a model with FSDP through giotto-deep. 
+
+===============================
+Using FSDP with giotto-deep
+===============================
 
 To use one of those algorithms, import and instantiate the `Parallelism` class with the following informations:
 
 * p_type: The algorithm to use, defined in the `ParallelismType` enum
+
     * `PIPELINE`
     * `FSDP`
 * devices: List of the GPUs available on the machine. The list can be generated using `list(range(torch.cuda.device_count()))`. If no list is provided, the class will look for the devices itself
@@ -50,6 +67,7 @@ To use one of those algorithms, import and instantiate the `Parallelism` class w
 The instance can then be given to the `parallel` argument of the `train` function
 
 .. code-block::
+
     # FSDP not used for training
     valloss, valacc = train.train(SGD, 
                                   args.n_epochs, 
@@ -82,10 +100,43 @@ FSDP in giotto-deep works with profiling and cross-validation but not with paral
     As FSDP uses multiprocessing, it is necessary to use the idiom `if __name__ == __main__:` for the main code. This also implies that the model and datasets should be serialisable (which is not the case of 'to_map_style_dataset' datasets for example)
 
 .. warning::
-    Using FSDP without a wrapper will behave as if FSDP weren't used at all
+    When using FSDP with a sharding strategy that isn't `NO_SHARD` (DDP), always provide a wrapper found in `FSDP wrappers`_ or an appropriate Callable. Wrappers are Callables that take a module and return a boolean to indicate if this module should be sharded based on some rule. Not using any wrapper when trying to shard will behave as if no parallelism is used at all
 
 .. note::
-    When using FSDP, the batch size given to the dataloader is used by each GPU. For example, using a batch size of 4 with 2 GPUs effectively corresponds to using a batch size of 8 without FSDP
+    When using FSDP, the batch size given to the dataloader is used by each GPU. For example, using a batch size of 4 with FSDP and 2 GPUs effectively corresponds to using a batch size of 8 without FSDP
+
+.. note::
+    FSDP's ability to accelerate the training of a model depends on the model and FSDP's configuration. Giotto-deep provides a working (although with some caveats) implementation but some modifications to the model as well as some trial and error with the configuration may be needed in order to fully profit off its capabilities
+
+=========================
+Compatibility adaptations
+=========================
+
+Due to some constraints posed by giotto-deep's API, some models aren't compatible as is with giotto-deep and/or its FSDP implementation. Two such examples are
+* Huggingface's T5 model: giotto-deep expects the model to take what comes out of the dataset as is (if a simple tensor is given) or in order (if a list of tensor is given) but this model can do different things depending on which parameters are fed in its forward method. This implies that the received list of tensor may be given to the first, third and sixth parameter of the forward method (for example). Giotto-deep doesn't allow such "argument juggling". Moreover, giotto-deep expects the loss of a given prediction to be calculated by giotto-deep itself using a provided loss_fn function. T5, however, provides the loss for the current prediction as a member of the dictionnary returned by the forward method. 
+* Giotto-deep's QATransformer model: This model heavily relies on some features that aren't serializable. However, our implementation of FSDP into giotto-deep relies on serialisation due to giotto-deep's Trainer API that requires the provided datasets and model to be already instanced. FSDP, on the other hand, needs to do its work on different instances of the dataset and model, so a lot of examples show each process instantiating their own copy of the model and dataset. In our implementation, we decided to deepcopy the Trainer's parameters and send them to each process to make sure each process has an independant copy of what it needs but this requires the used features and classes to be serializable and a lot of them aren't in this example
+
+However, in order to provide more example models for FSDP, attempts were made to adapt giotto-deep or even pytorch to respect those constraints. Each modification made for those models are listed here (as well as their result) in the hope that they may provide some insight into what needs to be done going forward for the development of giotto-deep.
+
+* T5 
+    * **Trainer's ``__init__``**: Allow for an optionnal loss_fn. The absence of loss function serves as condition in the rest of the code to detect that we are training the T5 model
+    * **Method ``_send_to_device``**: When given a list of tensors without loss_fn, send tensors 0, 1 and 2 to ``input_ids``, ``attention_mask`` and ``labels`` respectively
+    * **Method ``_inner_train_loop``**: After ``_send_to_device`` when training T5, ``pred`` is a dict which contains ``logits`` and ``loss`` which must be stored in ``pred`` and ``loss`` respectively for the rest of the computation to work
+    * **Bypass model return and validation**: T5 training is only used for benchmarking and thus do not require the model to be returned or validated
+    * Result: trainable model but accuracy results are off and recovering the state_dict to store the model once trained blocks the program ad eternam. Only usable for benchmarking, to prove that FSDP's implementation inside giotto-deep is functionnal
+* QATransformer
+    * **Make ``_MapStyleDataset`` picklable**: Torchtext provides a ``to_map_style_dataset`` function that transforms an iterable dataset into a map dataset (see pytorch's documentation for more info on the different dataset types). However, the ``_MapStyleDataset`` class it uses is defined inside the function which makes it unpicklable. Simply moving the class definition out of the function fixes the problem
+    * **Make ``TransformingDataset`` picklable**: Setting up serialisation for this class requires ``__getstate__`` and ``__setstate__`` methods to be defined
+    * **Make question_answering.py's classes and functions picklable**: Make sure all classes and functions used in the file are declared at the root of the file to make them picklable
+    * Result: Model not functionnal due to FSDP generating sparse tensors for unknown reasons. Sparse tensors do not implement ``backward`` which results in an error
+
+==============
+Known problems
+==============
+
+* Using FSPD with ``FULL_SHARD`` sharding strategy trains without problems but renders the program idle ad eternam once the trained model is returned using ``state_dict`` (trainer.py: ``parallel_train``). To minimize the risks of problems, only use ``SHARD_GRAD_OP`` or ``NO_SHARD`` sharding strategies. 
+* With some models, FSDP generates sparse tensors which don't implement ``backward`` and thus raise errors
+
 
 ***********************************
 Pipeline parallelism: pipeline-tool
