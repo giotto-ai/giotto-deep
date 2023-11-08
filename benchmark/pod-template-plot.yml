@@ -3,6 +3,9 @@ kind: Pod
 metadata:
   name: giotto-deep-plot
   namespace: default
+  labels:
+    env: giotto-deep
+    app: giotto-deep-plot
   annotations:
     gke-gcsfuse/volumes: "true"
 spec:

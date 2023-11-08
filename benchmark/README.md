@@ -41,6 +41,10 @@ The batch size may be changed up to 32.
 This model defines the batch size maximum based on the number of maximum number of GPUs found.
 It is useless to change manually the batch size. One must keep the default batch size used by the model.
 
+### BERT + BERT big
+
+The batch size may be changed up to 32.
+
 ## Build deployment
 
 The Docker image is built on [nvidia/cuda](https://hub.docker.com/r/nvidia/cuda) `runtime` image.
@@ -56,6 +60,12 @@ $ rm -f Dockerfile
 ```
 
 ## Run deployment on GKE
+
+Some docs:
+
+- https://sysdig.com/blog/kubernetes-limits-requests/
+- https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 
 Execute this step from `benchmark/`.
 
@@ -98,6 +108,13 @@ $ kubectl apply -f pod-plot.yml
 
 ```console
 $ gsutil -m cp -R gs://$BUCKET /path/to/data
+```
+
+## Monitor resources
+
+```console
+$ kubectl top pod
+$ kubectl top node
 ```
 
 ## Create cluster

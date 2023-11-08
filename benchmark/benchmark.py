@@ -15,7 +15,7 @@ from gdeep.trainer.trainer import ParallelismType
 from gdeep.utility_examples.fsdp import ShardingStrategyEx
 
 sys.path.append("../examples")
-from examples import orbit_5k_big
+from examples import parallel_orbit_5k
 from examples import parallel_bert
 
 
@@ -262,7 +262,7 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         args.n_epochs = epochs
         args.parallel = parallel.to_pt()
         args.sharding = parallel.to_ss()
-        fn = orbit_5k_big.main
+        fn = parallel_orbit_5k.main
     elif model in (Models.bert, Models.bertbig):
         if model is Models.bertbig:
             args.big_model = True
