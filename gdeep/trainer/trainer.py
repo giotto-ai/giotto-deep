@@ -904,7 +904,7 @@ class Trainer:
 
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
-        if len(self.dataloaders) == 3:  # type: ignore
+        if len(self.dataloaders) >= 2:  # type: ignore
             try:
                 val_idx = self.dataloaders[1].sampler.indices  # type: ignore
             except AttributeError:
