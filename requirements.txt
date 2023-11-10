@@ -44,3 +44,4 @@ jsonpickle
 typing_extensions; python_version == '3.7'
 gudhi
 pre-commit
+pipeline-tool
