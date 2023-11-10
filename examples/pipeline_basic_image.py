@@ -83,7 +83,7 @@ model = Net()
 loss_fn = nn.CrossEntropyLoss()
 
 # initilise the trainer class
-pipe = Trainer(model, (dl_tr, dl_ts), loss_fn, writer)
+pipe = Trainer(model, (dl_tr, ), loss_fn, writer)
 
 devices = list(range(torch.cuda.device_count()))
 parallel = Parallelism(ParallelismType.PIPELINE,

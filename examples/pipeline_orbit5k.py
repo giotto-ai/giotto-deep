@@ -124,7 +124,7 @@ writer = GiottoSummaryWriter()
 
 loss_function =  nn.CrossEntropyLoss()
 
-trainer = Trainer(wrapped_model, [dl_train, dl_train], loss_function, writer) 
+trainer = Trainer(wrapped_model, [dl_train, ], loss_function, writer) 
 
 if pipeline_enabling:
     configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
