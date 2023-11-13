@@ -14,6 +14,7 @@ from gdeep.data.datasets import DatasetBuilder, DataLoaderBuilder
 from gdeep.data.preprocessors import ToTensorImage
 from gdeep.search import HyperParameterOptimization, GiottoSummaryWriter
 from gdeep.models import FFNet
+from gdeep.trainer.regularizer import TihonovRegularizer
 
 from gdeep.utility.custom_types import Tensor
 
@@ -252,3 +253,41 @@ def test_hpo_collate():
 
     # starting the gridsearch
     search.start([SGD, Adam], 1, False, optimizers_params, dataloaders_params)
+
+
+def test_regularizer_optimization():
+    """
+    Test to verify the regularizer is passed to the model when one is provided
+    """
+    # define the model
+    model = Model2()
+
+    # initialise loss
+    loss_fn = nn.CrossEntropyLoss()
+
+    # initialise pipeline class
+    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+
+    # initialise gridsearch
+    search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)
+
+    # dictionaries of hyperparameters
+    optimizers_params = {"lr": [0.001, 0.01]}
+    dataloaders_params = {"batch_size": [32, 64, 16]}
+    models_hyperparams = {"n_nodes": ["200"]}
+    regularization_params = {
+        "regularizer": [TihonovRegularizer],
+        "lamda": [0.05, 0.5, 0.01],
+        "p": [1],
+    }
+    # starting the gridsearch
+    search.start(
+        [SGD, Adam],
+        2,
+        False,
+        optimizers_params,
+        dataloaders_params,
+        models_hyperparams,
+        regularization_params=regularization_params,
+    )
+    search.pipe.regularizer

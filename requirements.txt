@@ -1,13 +1,13 @@
 huggingface_hub>=0.16.4,<0.18
 protobuf<=4.21.12,>=4.21.1
 urllib3<2.0
-giotto-tda
+giotto-tda>=0.6.0
 numpy<=1.23.3
 pandas
 plotly
 matplotlib<=3.6.3
 matplotlib_venn
-scikit-learn
+scikit-learn==1.1.1
 torch==1.13.1
 spacy
 scipy
@@ -32,7 +32,7 @@ optuna
 sphinx_rtd_theme
 giotto-ph
 tqdm
-Pillow
+Pillow<=9.5.0
 h5py
 mysql-connector-python
 dotmap

@@ -4,7 +4,17 @@ import time
 from functools import wraps
 import warnings
 import gdeep.utility.multiprocessing as gmp
-from typing import Tuple, Optional, Callable, Any, Dict, List, Type, Union
+from typing import (
+    Tuple,
+    Optional,
+    Callable,
+    Any,
+    Dict,
+    List,
+    Type,
+    Union,
+    TYPE_CHECKING,
+)
 import tempfile
 
 import torch.nn.functional as f
@@ -40,12 +50,17 @@ from ..utility.optimization import MissingClosureError
 from gdeep.models import ModelExtractor
 from gdeep.utility import _inner_refactor_scalars
 from gdeep.utility import DEVICE
+
+
+from gdeep.trainer.regularizer import Regularizer
+#if TYPE_CHECKING:
+#    from gdeep.trainer.regularizer import Regularizer
 from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
 from pipeline_tool.pipeline_config import PipelineConfig
 from pipeline_tool.pipeline_tool import SkippableTracing
-from torch.distributed.pipeline.sync import Pipe 
+from torch.distributed.pipeline.sync import Pipe
 
 try:
     import torch_xla.core.xla_model as xm  # type: ignore
@@ -137,13 +152,13 @@ class Parallelism:
         if devices is None:
             devices = list(range(torch.cuda.device_count()))
         self.devices = [torch.device('cuda', x) for x in devices] # Convert device indices into torch devices
-        
+
         # Verify proper use of devices
         if self.world_size > len(self.devices):
             raise ValueError("Cannot use more devices than those referenced in devices")
         if self.world_size < 1:
             self.world_size = len(self.devices)
-    
+
 
 def setup_env():
     """Setup the environment necessary for parallel training"""
@@ -165,7 +180,7 @@ def parallel_train(rank, args, return_queue):
     Args:
         rank:
             Index of the process used to execute this function
-        args: 
+        args:
             Parameters to pass to the Trainer class
         return_queue:
             Multiprocessing queue to use to send return values back
@@ -250,6 +265,8 @@ class Trainer:
             info at https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
         print_every:
             The number of training steps performed between each information printout
+        regularizer:
+            a gdeep regularizer
 
     Examples::
 
@@ -293,6 +310,7 @@ class Trainer:
     registered_hook: Optional[
         Callable[[int, Optimizer, ModelExtractor, Optional[SummaryWriter]], Any]
     ] = None
+    regularizer: Optional[Regularizer] = None
 
     def __init__(
         self,
@@ -303,6 +321,7 @@ class Trainer:
         training_metric: Optional[Callable[[Tensor, Tensor], float]] = None,
         k_fold_class: Optional[BaseCrossValidator] = None,
         print_every: int = 1,
+        regularizer: Optional["Regularizer"] = None,
     ) -> None:
         self.print_every = print_every if print_every > 0 else 1
         self.model = model
@@ -332,9 +351,14 @@ class Trainer:
         self.best_not_last: bool = False
         # profiler
         self.prof: Any = None
+        self.regularizer = regularizer
+        # self.train_loss_fn = loss_fn
+        # if self.regularizer:
+        # def tmploss(X,y):
+        #    return loss_fn(X,y) + self.regularizer.regularization_penalty(self.model)
+        # self.train_loss_fn = tmploss
         #device
         self.device = DEVICE
-
         if not k_fold_class:
             self.k_fold_class = KFold(5, shuffle=True)
         else:
@@ -431,7 +455,7 @@ class Trainer:
         """
         new_x: List[Tensor] = []
 
-        if self.parallel.p_type == ParallelismType.PIPELINE: 
+        if self.parallel.p_type == ParallelismType.PIPELINE:
             x = x.to(0)
             y = y.to(self.nb_gpus -1)
             prediction = self.model(x).local_value()
@@ -476,7 +500,10 @@ class Trainer:
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
-            loss = self.loss_fn(pred, y)
+            loss = self.loss_fn(pred,y)
+            if self.regularizer is not None:
+                penalty = self.regularizer.regularization_penalty(self.model)
+                loss += penalty
             ddp_loss[0] += loss.item()
             ddp_loss[1] += len(X)
             # Save to tensorboard
@@ -817,7 +844,7 @@ class Trainer:
                 Only a positive number will be taken into account
             writer_tag:
                 the tensorboard writer tag
-            parallel: 
+            parallel:
                 The type of parallel training algorithm to use. If None, the default basic training will be used, else, the algorithm selected in the p_type member of the Parallelism object will be used. The Parallelism object must also contain a list of usable GPU indices as well as the number of those GPUs to actually use for the training
 
         Returns:
@@ -834,7 +861,7 @@ class Trainer:
 
         if parallel is None:
             parallel = Parallelism(ParallelismType._NONE)
-        self.parallel = parallel 
+        self.parallel = parallel
         self.nb_gpus = self.parallel.world_size
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
@@ -1131,7 +1158,7 @@ class Trainer:
                     self.model,
                     **self.parallel.config_fsdp
                 )
-                
+
 
             self._init_optimizer_and_scheduler(
                 keep_training,
@@ -1192,7 +1219,7 @@ class Trainer:
             self.pipeline_train = False
             self.model.to(DEVICE)
 
-        
+
 
         # put the mean of the cross_val
         return valloss, valacc
@@ -1606,7 +1633,7 @@ class Trainer:
             "prefetch_factor": original_dataloader.prefetch_factor,
             "persistent_workers": original_dataloader.persistent_workers,
         }
-    
+
     def _pipelined_model(self, nb_chunks, config_mha, dl_tr):
 
         setup_env()
@@ -1621,8 +1648,8 @@ class Trainer:
             dtype = dtype.split('.', 1)[1]
             output_shape = label.shape
             break
-        
-        config = PipelineConfig(input_shape=input_shape, 
+
+        config = PipelineConfig(input_shape=input_shape,
                                 output_shape=output_shape,
                                 data_type=dtype,
                                 config_mha=config_mha)
