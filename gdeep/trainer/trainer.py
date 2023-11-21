@@ -185,7 +185,6 @@ def parallel_train(rank, args, return_queue):
         return_queue:
             Multiprocessing queue to use to send return values back
     """
-    print(f'from parallel_train {rank}: {os.getpid()}')
     train_args = copy.deepcopy(args) #Deepcopy arguments so they can be used independantly from those in other processes
     train_args["parallel"].p_type = ParallelismType._DP #Signal that this is a subinstance of Trainer
     train_args["parallel"].devices = [args["parallel"].devices[rank]] #Use the device corresponding to the process
@@ -203,8 +202,6 @@ def parallel_train(rank, args, return_queue):
             train_args["k_fold_class"],
             train_args["print_every"],
     )
-
-    print(f'From parallel_train {rank}: device= {train_args["parallel"].devices[0]}')
 
     # Train
     valloss, valacc = trainer.train(
