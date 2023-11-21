@@ -1,8 +1,0 @@
-Framework;Model;Number of GPUs;Number of Chunks;Alloc 1;Alloc 2
-API Torch;CNN;1;0;[747];[625];
-Pipeline;CNN;1;2;[844];[698];
-Pipeline;CNN;1;4;[824];[677];
-Pipeline;CNN;1;8;[824];[677];
-Pipeline;CNN;2;2;[706, 537];[582, 514];
-Pipeline;CNN;2;4;[688, 538];[564, 514];
-Pipeline;CNN;2;8;[688, 538];[564, 514];
