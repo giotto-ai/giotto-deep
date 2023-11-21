@@ -18,7 +18,6 @@ from typing import (
 import tempfile
 
 import torch.nn.functional as f
-import torch.cuda.nccl as nccl
 from torch.optim import Optimizer
 import torch
 import torch.distributed as dist
@@ -28,11 +27,6 @@ from torch.distributed.fsdp import (
     StateDictType,
     ShardingStrategy
     )
-from torch.distributed.fsdp.wrap import(
-    size_based_auto_wrap_policy,
-    transformer_auto_wrap_policy
-)
-import functools
 from optuna.trial._base import BaseTrial
 import numpy as np
 from tqdm import tqdm
