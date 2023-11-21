@@ -847,7 +847,7 @@ class Trainer:
         """
 
         if parallel_tpu and parallel is not None:
-            print(f"Parallel TPU and parallel training cannot be enable at the same time. Choose only one of them.")
+            print(f"Parallel TPU and parallel training cannot be enabled at the same time. Choose only one of them.")
             exit()
 
         if parallel is None:
