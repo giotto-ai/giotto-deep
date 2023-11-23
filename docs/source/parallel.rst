@@ -139,5 +139,97 @@ Known problems
 
 
 ***********************************
-Pipeline parallelism: pipeline-tool
+Benchmarks
 ***********************************
+
+Benchmarks were run on several GPUs to verify the functionality of the parallelisation.
+
+The GPUs used are:
+
+- 2x `Nvidia GeForce RTX 3090 <https://www.nvidia.com/en-eu/geforce/graphics-cards/30-series/rtx-3090-3090ti/>`__ on a local machine
+  with NVIDIA-SMI 525.147.05, Driver Version: 525.147.05, CUDA Version: 12.0
+- 2-4x `Nvidia Tesla T4 <https://www.nvidia.com/en-us/data-center/tesla-t4/>`__ on `Google Kubernetes Engine <https://cloud.google.com/kubernetes-engine/docs/how-to/gpus>`__
+  with a Docker image based on `nvidia/cuda:12.2.0-runtime-ubuntu22.04 <https://hub.docker.com/r/nvidia/cuda/tags?page=1&name=12.2.0-runtime-ubuntu22.04>`__
+- 2-8x `Nvidia V100 <https://www.nvidia.com/en-us/data-center/v100/>`__ on `Google Kubernetes Engine <https://cloud.google.com/kubernetes-engine/docs/how-to/gpus>`__
+  with a Docker image based on `nvidia/cuda:12.2.0-runtime-ubuntu22.04 <https://hub.docker.com/r/nvidia/cuda/tags?page=1&name=12.2.0-runtime-ubuntu22.04>`__
+
+The benchmark tools are available within this repository in folder :file:`benchmark/`.
+
+The figures presented in this chapter contain legends. Here are some help to understand these legends:
+
+- *None*: the model was run on one GPU (without parallelisation)
+- *FSDP Shard Grad Op*: the model was run on multiple GPUs using FSDP Shard Grad Op
+- *FSDP No Shard*: the model was run on multiple GPUs using FSDP No Shard
+- *Pipeline*: the model was run on multiple GPUs using the `pipeline tools <https://github.com/giotto-ai/pipeline-tools/>`__
+
+The batch sizes are 2, 4, 8, 16, and 32. Each model was trained on 3 epochs.
+
+===============================
+Orbit5k
+===============================
+
+For model orbit5k, the benchmark tools exploit the example :file:`examples/parallel_orbit_5k.py`.
+
+On first figure, 3 distinct behaviours come out.
+The line on the top, drawn by the pipeline execution, is the slowest execution. This is expected as the pipeline was designed to increase the total amount of memory used by the model instead of running the model faster.
+The line in the middle, drawn by the non-parallel execution, shows the time required to train the model on one GPU.
+The line at the bottom, drawn by the two FSDP executions, show that sharding the model on two GPUs reduces the execution time.
+
+.. _benchmark-orbit5-2v100:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-orbit5k-tesla-v100-sxm2-16gb-2.png
+
+   Orbit5k --- 2x V100
+
+On the second image, the behaviour is the same for the pipeline and non-parallel executions.
+The FSDP executions differ, however. And the execution with FSDP Shard Grad Op tends to join the non-parallel line.
+This behaviour simply shows that, depending on the model and on the GPUs (available memory), different results are possible.
+
+.. _benchmark-orbit5-2rtx3090:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-orbit5k-nvidia-geforce-rtx-3090-2.png
+
+   Orbit5k --- 2x GeForce RTX 3090
+
+The third figure shows the difference between the non-parallel execution and the FSDP executions on 8 GPUs.
+
+.. _benchmark-orbit5-8v100:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-orbit5k-tesla-v100-sxm2-16gb-8.png
+
+   Orbit5k --- 8x V100
+
+===============================
+BERT
+===============================
+
+For model BERT, the benchmark tools exploit the example :file:`examples/parallel_bert.py`.
+
+
+The first, second, and third figures present the execution of the BERT model on two GPUs, on V100, on T4 and on RTX 3090.
+These three figures show again that the results of a model may depend on the GPU model used.
+
+.. _benchmark-bert-2v100:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-bert-tesla-v100-sxm2-16gb-2.png
+
+    BERT --- 2x V100
+
+.. _benchmark-bert-2t4:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-bert-tesla-t4-2.png
+
+    BERT --- 2x Tesla T4
+
+.. _benchmark-bert-2rtx3090:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-bert-nvidia-geforce-rtx-3090-2.png
+
+   BERT --- 2x GeForce RTX 3090
+
+The next two figure present the execution of BERT on 4x Tesla T4 and BERT Big on 2x Tesla T4.
+Each time showing an improvement of the execution time when using parallelisation.
+
+.. _benchmark-bert-4t4:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-bert-tesla-t4-4.png
+
+    BERT --- 4x Tesla T4
+
+.. _benchmark-bertbig-2t4:
+.. figure:: _img_parallel/plot-2023-11-23-12-16-58-bertbig-tesla-t4-2.png
+
+    BERT Big --- 2x Tesla T4
