@@ -172,7 +172,7 @@ Orbit5k
 
 For model orbit5k, the benchmark tools exploit the example :file:`examples/parallel_orbit_5k.py`.
 
-On first figure, 3 distinct behaviours come out.
+On :numref:`benchmark-orbit5-2v100`, 3 distinct behaviours come out.
 The line on the top, drawn by the pipeline execution, is the slowest execution. This is expected as the pipeline was designed to increase the total amount of memory used by the model instead of running the model faster.
 The line in the middle, drawn by the non-parallel execution, shows the time required to train the model on one GPU.
 The line at the bottom, drawn by the two FSDP executions, show that sharding the model on two GPUs reduces the execution time.
@@ -182,7 +182,7 @@ The line at the bottom, drawn by the two FSDP executions, show that sharding the
 
    Orbit5k --- 2x V100
 
-On the second image, the behaviour is the same for the pipeline and non-parallel executions.
+On :numref:`benchmark-orbit5-2rtx3090`, the behaviour is the same for the pipeline and non-parallel executions.
 The FSDP executions differ, however. And the execution with FSDP Shard Grad Op tends to join the non-parallel line.
 This behaviour simply shows that, depending on the model and on the GPUs (available memory), different results are possible.
 
@@ -191,7 +191,7 @@ This behaviour simply shows that, depending on the model and on the GPUs (availa
 
    Orbit5k --- 2x GeForce RTX 3090
 
-The third figure shows the difference between the non-parallel execution and the FSDP executions on 8 GPUs.
+:numref:`benchmark-orbit5-8v100` shows the difference between the non-parallel execution and the FSDP executions on 8 GPUs.
 
 .. _benchmark-orbit5-8v100:
 .. figure:: _img/plot-2023-11-23-12-16-58-orbit5k-tesla-v100-sxm2-16gb-8.png
@@ -205,7 +205,7 @@ BERT
 For model BERT, the benchmark tools exploit the example :file:`examples/parallel_bert.py`.
 
 
-The first, second, and third figures present the execution of the BERT model on two GPUs, on V100, on T4 and on RTX 3090.
+:numref:`benchmark-bert-2v100`, :numref:`benchmark-bert-2t4`, and :numref:`benchmark-bert-2rtx3090` present the execution of the BERT model on two GPUs, on V100, on T4 and on RTX 3090.
 These three figures show again that the results of a model may depend on the GPU model used.
 
 .. _benchmark-bert-2v100:
@@ -223,7 +223,7 @@ These three figures show again that the results of a model may depend on the GPU
 
    BERT --- 2x GeForce RTX 3090
 
-The next two figure present the execution of BERT on 4x Tesla T4 and BERT Big on 2x Tesla T4.
+:numref:`benchmark-bert-4t4` and :numref:`benchmark-bertbig-2t4` present the execution of BERT on 4x Tesla T4 and BERT Big on 2x Tesla T4.
 Each time showing an improvement of the execution time when using parallelisation.
 
 .. _benchmark-bert-4t4:
