@@ -3,6 +3,8 @@
 .. _Advanced FSDP tutorial: https://pytorch.org/tutorials/intermediate/FSDP_adavnced_tutorial.html
 .. _FSDP wrappers: https://github.com/pytorch/pytorch/blob/main/torch/distributed/fsdp/wrap.py
 .. _Python pickler guidelines: https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
+.. _Data Parallelism: https://lightning.ai/courses/deep-learning-fundamentals/9.0-overview-techniques-for-speeding-up-model-training/unit-9.3-deep-dive-into-data-parallelism/
+.. _ZeRO: https://arxiv.org/abs/1910.02054
 
 .. _parallel:
 
@@ -14,7 +16,7 @@ Parallel training
 Introduction
 ************
 
-When multiple GPUs are available, it is possible to use more than one to train the same model. Currently, two methods of multi-GPU training are available in giotto-deep and provide different benefits: Data parallelism and Pipeline parallelism
+When multiple GPUs are available, it is possible to use more than one to train the same model. Currently, two methods of multi-GPU training are available in giotto-deep and provide different benefits: `Data parallelism`_ and Pipeline parallelism
 
 **********************
 Data parallelism: FSDP
@@ -22,7 +24,7 @@ Data parallelism: FSDP
 
 Data parallelism consists in training multiple copies of the model on partitions of the dataset. For example: one GPU may be responsible for training one copy of the model on one half of the training dataset while another trains another copy on the second half of the dataset. At the end or multiple times during a training epoch, both copies are merged to obtain a new model technically trained on the whole dataset. This method relies on the assumption that the merging of the half-trained models is fast enough and results in good enough improvements to compensate the half-training. The principle is the same for more GPUs but the performance may not improve significantly past a certain point. This method is called Distributed Data Parallelism (DDP)
 
-A more complex method consists in sharding the model to distribute it across multiple GPUs. During the training, one GPU can request the shard it needs from the GPU responsible for this shard, do its calculations and then discard the shard. Once the gradients for this shard is calculated in the backward pass, the shard is retrieved again, calculations are done and the updated shard is sent back to the responsible GPU (as explained in the `FSDP tutorial`_). More communication between the GPUs is required as a result but this approach results in lower peak memory use. This algorithm is called ZERO and exists in 2 variants in pytorch's FSDP feature: ZERO2 (SHARD_GRAD_OP) doesn't discard the shard after the forward pass and thus saves time in communication but requires more memory, ZERO3 (FULL_SHARD) discards the shard everytime after it is done with its calculations and thus requires more communication but less memory. In itself, using one of those 2 algorithms may not result in better training time but the freed memory can be used to increase the batch size (which usually results in faster epochs) or increase the size of the model
+A more complex method consists in sharding the model to distribute it across multiple GPUs. During the training, one GPU can request the shard it needs from the GPU responsible for this shard, do its calculations and then discard the shard. Once the gradients for this shard is calculated in the backward pass, the shard is retrieved again, calculations are done and the updated shard is sent back to the responsible GPU (as explained in the `FSDP tutorial`_). More communication between the GPUs is required as a result but this approach results in lower peak memory use. This algorithm is called `ZeRO`_ and exists in 2 variants in pytorch's FSDP feature: ZERO2 (SHARD_GRAD_OP) doesn't discard the shard after the forward pass and thus saves time in communication but requires more memory, ZERO3 (FULL_SHARD) discards the shard everytime after it is done with its calculations and thus requires more communication but less memory. In itself, using one of those 2 algorithms may not result in better training time but the freed memory can be used to increase the batch size (which usually results in faster epochs) or increase the size of the model
 
 Some optimisations allow those algorithms to increase in performance even more:
 * Mixed precision: Converts the weights, gradients or the transmitted data to a lower precision to speed up calculation (potentially using the hardware support of the GPU) or transmission of data between the GPUs
@@ -40,7 +42,7 @@ Those algorithms are implemented into giotto-deep using pytorch's FSDP tool. The
 
 .. image:: _img/giotto_trainer_fsdp.png
 
-What the diagram shows is that for each device used for the training, giotto-deep's Trainer will create a new process that executes a subinstance of Trainer. The members of the base instance (model, dataloaders,...) are deepcopied into the subinstances so each subinstance may work on its members without affecting the other processes. The training occurs on each process on its dedicated device using the part of the dataloader assigned to it thanks to a sampler. Once the training is complete, the partially trained models are "aggregated" to form a new model technically trained on the whole dataset. The model is then retrieved by the subprocess with rank 0 and stored in a temporary file where it is recovered by the base instance to update the model.
+What the diagram shows is that for each device used for the training, giotto-deep's Trainer will create a new process that executes a subinstance of Trainer. The members of the base instance (model, dataloaders,...) are deepcopied into the subinstances so each subinstance may work on its members without affecting the other processes. Contrary to a classic copy (sometimes called shallow copy) that only copies the references present in the object being copied, deep copies copy the memory content of the object into new memory. This process is more complex as it is recursive (referenced objects must be deepcopied too) but allow for truly independant copies that do not risk being invalidated by changes made to the original object. The training occurs on each process on its dedicated device using the part of the dataloader assigned to it thanks to a sampler. Once the training is complete, the partially trained models are "aggregated" to form a new model technically trained on the whole dataset. The model is then retrieved by the subprocess with rank 0 and stored in a temporary file where it is recovered by the base instance to update the model.
 
 This architecture was selected because it was the best compromise between the amount of changes that needed to be made to the API and inner workings of giotto-deep, the amount of changes necessary in the user's code and the flexibility in FSDP's confguration. Less changes would have been required to the Trainer had we chosen to simply make it compatible with torchrun (pytorch utility script to launch a python script in multiple processes) but some adaptations still would have been necessary not to break necessary features and this puts more work in the hands of the user. A simpler Trainer API to support parallelisation is possible but it comes at the expense of configurability which plays a crucial role in the performance of FSDP
 
@@ -139,5 +141,97 @@ Known problems
 
 
 ***********************************
-Pipeline parallelism: pipeline-tool
+Benchmarks
 ***********************************
+
+Benchmarks were run on several GPUs to verify the functionality of the parallelisation.
+
+The GPUs used are:
+
+- 2x `Nvidia GeForce RTX 3090 <https://www.nvidia.com/en-eu/geforce/graphics-cards/30-series/rtx-3090-3090ti/>`__ on a local machine
+  with NVIDIA-SMI 525.147.05, Driver Version: 525.147.05, CUDA Version: 12.0
+- 2-4x `Nvidia Tesla T4 <https://www.nvidia.com/en-us/data-center/tesla-t4/>`__ on `Google Kubernetes Engine <https://cloud.google.com/kubernetes-engine/docs/how-to/gpus>`__
+  with a Docker image based on `nvidia/cuda:12.2.0-runtime-ubuntu22.04 <https://hub.docker.com/r/nvidia/cuda/tags?page=1&name=12.2.0-runtime-ubuntu22.04>`__
+- 2-8x `Nvidia V100 <https://www.nvidia.com/en-us/data-center/v100/>`__ on `Google Kubernetes Engine <https://cloud.google.com/kubernetes-engine/docs/how-to/gpus>`__
+  with a Docker image based on `nvidia/cuda:12.2.0-runtime-ubuntu22.04 <https://hub.docker.com/r/nvidia/cuda/tags?page=1&name=12.2.0-runtime-ubuntu22.04>`__
+
+The benchmark tools are available within this repository in folder :file:`benchmark/`.
+
+The figures presented in this chapter contain legends. Here are some help to understand these legends:
+
+- *None*: the model was run on one GPU (without parallelisation)
+- *FSDP Shard Grad Op*: the model was run on multiple GPUs using FSDP Shard Grad Op
+- *FSDP No Shard*: the model was run on multiple GPUs using FSDP No Shard
+- *Pipeline*: the model was run on multiple GPUs using the `pipeline tools <https://github.com/giotto-ai/pipeline-tools/>`__
+
+The batch sizes are 2, 4, 8, 16, and 32. Each model was trained on 3 epochs.
+
+===============================
+Orbit5k
+===============================
+
+For model orbit5k, the benchmark tools exploit the example :file:`examples/parallel_orbit_5k.py`.
+
+On first figure, 3 distinct behaviours come out.
+The line on the top, drawn by the pipeline execution, is the slowest execution. This is expected as the pipeline was designed to increase the total amount of memory used by the model instead of running the model faster.
+The line in the middle, drawn by the non-parallel execution, shows the time required to train the model on one GPU.
+The line at the bottom, drawn by the two FSDP executions, show that sharding the model on two GPUs reduces the execution time.
+
+.. _benchmark-orbit5-2v100:
+.. figure:: _img/plot-2023-11-23-12-16-58-orbit5k-tesla-v100-sxm2-16gb-2.png
+
+   Orbit5k --- 2x V100
+
+On the second image, the behaviour is the same for the pipeline and non-parallel executions.
+The FSDP executions differ, however. And the execution with FSDP Shard Grad Op tends to join the non-parallel line.
+This behaviour simply shows that, depending on the model and on the GPUs (available memory), different results are possible.
+
+.. _benchmark-orbit5-2rtx3090:
+.. figure:: _img/plot-2023-11-23-12-16-58-orbit5k-nvidia-geforce-rtx-3090-2.png
+
+   Orbit5k --- 2x GeForce RTX 3090
+
+The third figure shows the difference between the non-parallel execution and the FSDP executions on 8 GPUs.
+
+.. _benchmark-orbit5-8v100:
+.. figure:: _img/plot-2023-11-23-12-16-58-orbit5k-tesla-v100-sxm2-16gb-8.png
+
+   Orbit5k --- 8x V100
+
+===============================
+BERT
+===============================
+
+For model BERT, the benchmark tools exploit the example :file:`examples/parallel_bert.py`.
+
+
+The first, second, and third figures present the execution of the BERT model on two GPUs, on V100, on T4 and on RTX 3090.
+These three figures show again that the results of a model may depend on the GPU model used.
+
+.. _benchmark-bert-2v100:
+.. figure:: _img/plot-2023-11-23-12-16-58-bert-tesla-v100-sxm2-16gb-2.png
+
+    BERT --- 2x V100
+
+.. _benchmark-bert-2t4:
+.. figure:: _img/plot-2023-11-23-12-16-58-bert-tesla-t4-2.png
+
+    BERT --- 2x Tesla T4
+
+.. _benchmark-bert-2rtx3090:
+.. figure:: _img/plot-2023-11-23-12-16-58-bert-nvidia-geforce-rtx-3090-2.png
+
+   BERT --- 2x GeForce RTX 3090
+
+The next two figure present the execution of BERT on 4x Tesla T4 and BERT Big on 2x Tesla T4.
+Each time showing an improvement of the execution time when using parallelisation.
+
+.. _benchmark-bert-4t4:
+.. figure:: _img/plot-2023-11-23-12-16-58-bert-tesla-t4-4.png
+
+    BERT --- 4x Tesla T4
+
+.. _benchmark-bertbig-2t4:
+.. figure:: _img/plot-2023-11-23-12-16-58-bertbig-tesla-t4-2.png
+
+    BERT Big --- 2x Tesla T4
