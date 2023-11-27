@@ -69,7 +69,7 @@ def test_trainer_from_array():
     # tb writer
     writer = GiottoSummaryWriter()
     # pipeline
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_tr], loss_fn, writer)  # type: ignore
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
 
@@ -86,7 +86,7 @@ def test_trainer_collate():
     # tb writer
     writer = GiottoSummaryWriter()
     # pipeline
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_tr], loss_fn, writer)  # type: ignore
     # then one needs to train the model using the pipeline!
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
 
@@ -134,7 +134,7 @@ def test_regularization_pipeline():
     # pipeline
     reg = TihonovRegularizer(random.random(), p=random.randint(1, 10))
     # pipeline
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer, regularizer=reg)
+    pipe = Trainer(model, [dl_tr], loss_fn, writer, regularizer=reg)
     pipe.train(SGD, 2, True, {"lr": 0.001}, n_accumulated_grads=2)
 
 
