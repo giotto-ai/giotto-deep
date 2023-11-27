@@ -711,7 +711,6 @@ class Trainer:
         if  cross_validation:
             active *= k_folds
 
-        print(f'from _init_profiler: pid = {os.getpid()}, profiling = {profiling}')
         if profiling:
             try:
                 self.prof = torch.profiler.profile(  # type: ignore
@@ -862,7 +861,6 @@ class Trainer:
 
         # train initialisation
         dl_tr = self.dataloaders[0]
-
         if optimizers_param is None:
             optimizers_param = {"lr": 0.001}
 
@@ -968,7 +966,6 @@ class Trainer:
         if cross_validation:
             mean_val_loss = []
             mean_val_acc = []
-            print("Recovering targets...")
             try:
                 data_idx = self.dataloaders[0].sampler.indices  # type: ignore
                 labels_for_split = [
@@ -980,7 +977,6 @@ class Trainer:
                     self.dataloaders[0].dataset[i][-1] for i in data_idx
                 ]
 
-            print("Done")
             for fold, (tr_idx, val_idx) in enumerate(
                 self.k_fold_class.split(data_idx, labels_for_split)
             ):
@@ -1150,7 +1146,6 @@ class Trainer:
                     **self.parallel.config_fsdp
                 )
 
-
             self._init_optimizer_and_scheduler(
                 keep_training,
                 cross_validation,
@@ -1163,7 +1158,6 @@ class Trainer:
             if self.parallel.p_type == ParallelismType.PIPELINE:
                     self._pipelined_model(self.parallel.pipeline_chunks, self.parallel.config_mha, dl_tr)
 
-            print(f'from train: PID={os.getpid()}, self.device={self.device}')
             if not parallel_tpu:
                 valloss, valacc = self._training_loops(
                     n_epochs,
@@ -1209,8 +1203,6 @@ class Trainer:
             self.model_saved = None
             self.pipeline_train = False
             self.model.to(DEVICE)
-
-
 
         # put the mean of the cross_val
         return valloss, valacc
@@ -1557,7 +1549,6 @@ class Trainer:
         correct = 0.0
         confusion_matrix = np.zeros((num_class, num_class))  # type: ignore
         self.model.eval()
-
         with torch.no_grad():
             for batch, (X, y) in tqdm(enumerate(dl)):
                 pred, X, y = self._send_to_device(X, y)
