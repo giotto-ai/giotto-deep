@@ -445,11 +445,11 @@ class Trainer:
 
         """
         new_x: List[Tensor] = []
+
         if self.parallel.p_type == ParallelismType.PIPELINE:
             x = x.to(0)
             y = y.to(self.nb_gpus -1)
             prediction = self.model(x).local_value()
-            
         else:
             if isinstance(x, tuple) or isinstance(x, list):
                 for xi in x:
@@ -461,7 +461,6 @@ class Trainer:
             else:
                 x = x.to(self.device)
                 prediction = self.model(x)
-                
                 if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
                     prediction = prediction.logits  # unwrapper for HuggingFace BERT model
             y = y.to(self.device)
@@ -477,6 +476,7 @@ class Trainer:
     ) -> Tuple[float, float]:
         """Private method to run the loop
         over the batches for the optimisation"""
+
         if self.prof is not None:
             self.prof.start()
         metric_list = []
@@ -487,7 +487,7 @@ class Trainer:
                 loss2 = self.loss_fn(self.model(X), y)
                 loss2.backward()
                 return loss2
-           
+
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
@@ -593,6 +593,7 @@ class Trainer:
         class_label: List[Tensor] = []
         class_probs: List[List[Tensor]] = []
         self.model.eval()
+
         pred_list, epoch_loss, epoch_metric = self._inner_loop(  # type: ignore
             dl=dl_val,  # type: ignore
             class_probs=class_probs,  # type: ignore
@@ -683,7 +684,6 @@ class Trainer:
         ddp_loss = torch.zeros(3).to(self.device)
         with torch.no_grad():
             for X, y in dl:
-                
                 pred, X, y = self._send_to_device(X, y)
                 pred_list.append(pred)
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
