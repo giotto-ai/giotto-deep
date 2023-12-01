@@ -688,13 +688,13 @@ class Trainer:
                 pred_list.append(pred)
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
-                loss += self.loss_fn(pred, y).item()
+                loss = self.loss_fn(pred, y).item()
                 ddp_loss[0] += loss
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
                 class_label.append(y)
                 pred = pred.argmax(dim=1, keepdim=True)
-                ddp_loss[1] = pred.eq(y.view_as(pred)).sum().item()
+                ddp_loss[1] += loss
                 ddp_loss[2] += len(X)
         if self.parallel.p_type == ParallelismType._DP:
             dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
