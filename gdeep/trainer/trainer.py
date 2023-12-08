@@ -995,7 +995,7 @@ class Trainer:
                     scheduler_params,
                 )
 
-                if self.parallel.p_type == ParallelismType.PIPELINE:
+                if self.parallel.p_type == ParallelismType.PIPELINE and not os.name == 'nt':
                     self._pipelined_model(self.parallel.pipeline_chunks, self.parallel.config_mha, dl_tr)
 
                 # re-initialise data loaders
@@ -1155,7 +1155,7 @@ class Trainer:
                 scheduler_params,
             )
 
-            if self.parallel.p_type == ParallelismType.PIPELINE:
+            if self.parallel.p_type == ParallelismType.PIPELINE and not os.name == 'nt':
                     self._pipelined_model(self.parallel.pipeline_chunks, self.parallel.config_mha, dl_tr)
 
             if not parallel_tpu:
