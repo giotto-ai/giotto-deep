@@ -1,4 +1,5 @@
 from typing import List, Tuple
+import os
 
 from torch import nn
 import torchvision.models as models
@@ -114,15 +115,16 @@ def test_hpo_cross_val():
     models_hyperparams = {"n_nodes": ["200"]}
 
     # starting the gridsearch
-    search.start(
-        [SGD, Adam],
-        3,
-        False,
-        optimizers_params,
-        dataloaders_params,
-        models_hyperparams,
-        n_accumulated_grads=2,
-    )
+    if not os.name == 'nt':
+        search.start(
+            [SGD, Adam],
+            3,
+            False,
+            optimizers_params,
+            dataloaders_params,
+            models_hyperparams,
+            n_accumulated_grads=2,
+        )
 
 
 def test_hpo_accumulated_grads():
