@@ -157,7 +157,7 @@ def setup_env():
     """Setup the environment necessary for parallel training"""
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
-    from torch.distributed.pipeline.sync import Pipe
+
 
 def setup_fsdp(rank, world_size):
     setup_env()
@@ -165,9 +165,11 @@ def setup_fsdp(rank, world_size):
     # initialize the process group
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
+
 def cleanup_fsdp():
     """Cleanup the parallel training environment"""
     dist.destroy_process_group()
+
 
 def parallel_train(rank, args, return_queue):
     """Creates, configures and uses a sub instance of the Trainer class to train a model using parallel training
@@ -1638,7 +1640,12 @@ class Trainer:
         trace = SkippableTracing(self.nb_gpus, self.model, config)
         torch.distributed.rpc.init_rpc('worker', rank=0, world_size=1)
         model_pipe = trace.get_modules()
-        model_pipe = Pipe(model_pipe, nb_chunks)
+        try:
+            from torch.distributed.pipeline.sync import Pipe
+            model_pipe = Pipe(model_pipe, nb_chunks)
+        except ImportError:
+            print("Windows does not support distributed computing")
+            pass
 
         # Get weights from the model and set them in the piped model
         self.saved_weights = {}
