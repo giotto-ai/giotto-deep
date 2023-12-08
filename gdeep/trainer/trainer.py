@@ -54,7 +54,6 @@ from .metrics import accuracy
 from gdeep.utility.custom_types import Tensor
 from pipeline_tool.pipeline_config import PipelineConfig
 from pipeline_tool.pipeline_tool import SkippableTracing
-from torch.distributed.pipeline.sync import Pipe
 
 try:
     import torch_xla.core.xla_model as xm  # type: ignore
@@ -158,6 +157,7 @@ def setup_env():
     """Setup the environment necessary for parallel training"""
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
+    from torch.distributed.pipeline.sync import Pipe
 
 def setup_fsdp(rank, world_size):
     setup_env()
@@ -1617,7 +1617,6 @@ class Trainer:
         }
 
     def _pipelined_model(self, nb_chunks, config_mha, dl_tr):
-
         setup_env()
 
         input_shape = None
