@@ -26,7 +26,7 @@ from transformers import (
 from transformers.models.bert.modeling_bert import BertLayer
 
 
-def dl_dataset():
+def download_dataset():
     if not pathlib.Path("cola_public").exists():
         req = urllib.request.urlretrieve("https://nyu-mll.github.io/CoLA/cola_public_1.1.zip")
         with zipfile.ZipFile(req[0], "r") as zip_ref:
@@ -183,10 +183,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BERT Example')
     gdeep.utility_examples.args.add_default_arguments(parser)
     gdeep.utility_examples.args.add_big_model(parser)
-    parser.add_argument("--dl",
+    parser.add_argument("--download",
                         action="store_true",
                         help="Download dataset if it does not exist already")
     args = parser.parse_args()
-    if args.dl:
-        dl_dataset()
+    if args.download:
+        download_dataset()
     main(args)

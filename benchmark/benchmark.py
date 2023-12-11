@@ -272,8 +272,8 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         args.n_epochs = epochs
         args.parallel = parallel.to_pt()
         args.sharding = parallel.to_ss()
-        args.dl = False
-        parallel_bert.dl_dataset()
+        args.download = False
+        parallel_bert.download_dataset()
         fn = parallel_bert.main
 
     sys.stdout.write(f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
