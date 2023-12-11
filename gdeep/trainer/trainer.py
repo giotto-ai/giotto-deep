@@ -710,7 +710,7 @@ class Trainer:
         """initialise the profler for profiling"""
         # profiling
         active: int = 2
-        if  cross_validation:
+        if cross_validation:
             active *= k_folds
 
         if profiling:
