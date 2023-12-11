@@ -690,7 +690,7 @@ class Trainer:
                 pred_list.append(pred)
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
-                loss = self.loss_fn(pred, y).item()
+                loss += self.loss_fn(pred, y).item()
                 ddp_loss[0] += loss
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
