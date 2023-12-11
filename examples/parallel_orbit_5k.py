@@ -25,7 +25,7 @@ def main(args):
         test_percentage: float = 0.0
         num_jobs: int = 8
         dynamical_system: str = "classical_convention"
-        homology_dimensions: Tuple[int, int] = (0, 1)  # type: ignore
+        homology_dimensions: Tuple[int, int] = (0, 1)
         dtype: str = "float32"
         arbitrary_precision: bool = False
 
