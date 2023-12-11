@@ -163,7 +163,7 @@ def main(args):
     trainer = Trainer(model, (dl_tr, dl_val), loss_function, writer)
     devices = list(range(torch.cuda.device_count()))
     config_fsdp = {
-        "sharding_strategy": args.sharding.to_ss(),
+        "sharding_strategy": args.sharding.to_sharding_strategy(),
         "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={BertLayer,}),
         "backward_prefetch": BackwardPrefetch.BACKWARD_PRE
         }

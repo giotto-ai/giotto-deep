@@ -50,7 +50,7 @@ class Parallelism(enum.Enum):
         else:
             return "?"
 
-    def to_pt(self) -> ParallelismType:
+    def to_parallelism_type(self) -> ParallelismType:
         if self is Parallelism.none:
             return ParallelismType._NONE
         elif self in (Parallelism.fsdp_full_shard, Parallelism.fsdp_shard_grad_op, Parallelism.fsdp_no_shard):
@@ -60,7 +60,7 @@ class Parallelism(enum.Enum):
         else:
             raise ValueError(f"Unknown {self}")
 
-    def to_ss(self) -> ShardingStrategyEx:
+    def to_sharding_strategy(self) -> ShardingStrategyEx:
         if self is Parallelism.fsdp_full_shard:
             return ShardingStrategyEx.FULL_SHARD
         elif self is Parallelism.fsdp_shard_grad_op:
@@ -260,8 +260,8 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
             args.big_model = False
         args.batch_size = batch_size
         args.n_epochs = epochs
-        args.parallel = parallel.to_pt()
-        args.sharding = parallel.to_ss()
+        args.parallel = parallel.to_parallelism_type()
+        args.sharding = parallel.to_sharding_strategy()
         fn = parallel_orbit_5k.main
     elif model in (Models.bert, Models.bertbig):
         if model is Models.bertbig:
@@ -270,8 +270,8 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
             args.big_model = False
         args.batch_size = batch_size
         args.n_epochs = epochs
-        args.parallel = parallel.to_pt()
-        args.sharding = parallel.to_ss()
+        args.parallel = parallel.to_parallelism_type()
+        args.sharding = parallel.to_sharding_strategy()
         args.download = False
         parallel_bert.download_dataset()
         fn = parallel_bert.main

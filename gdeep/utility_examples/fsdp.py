@@ -16,7 +16,7 @@ class ShardingStrategyEx(enum.Enum):
         except KeyError:
             raise ValueError(f"Unknown {s}")
 
-    def to_ss(self) -> ShardingStrategy:
+    def to_sharding_strategy(self) -> ShardingStrategy:
         if self is ShardingStrategyEx.FULL_SHARD:
             return ShardingStrategy.FULL_SHARD
         elif self is ShardingStrategyEx.SHARD_GRAD_OP:

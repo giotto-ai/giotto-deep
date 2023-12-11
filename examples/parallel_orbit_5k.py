@@ -90,7 +90,7 @@ def main(args):
     trainer = Trainer(wrapped_model, [dl_train, dl_train], loss_function, writer)
     devices = list(range(torch.cuda.device_count()))
     config_fsdp = {
-        "sharding_strategy": args.sharding.to_ss(),
+        "sharding_strategy": args.sharding.to_sharding_strategy(),
         "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,}),
         }
     parallel = Parallelism(args.parallel,
