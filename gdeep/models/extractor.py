@@ -36,7 +36,7 @@ class ModelExtractor:
     """
 
     def __init__(
-        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor], pipeline_train = False
+        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor], pipeline_train: bool = False
     ) -> None:
         # self.model = model
         if not pipeline_train:
