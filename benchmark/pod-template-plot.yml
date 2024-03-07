@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: giotto-deep-plot
+  namespace: default
+  labels:
+    env: giotto-deep
+    app: giotto-deep-plot
+  annotations:
+    gke-gcsfuse/volumes: "true"
+spec:
+  terminationGracePeriodSeconds: 60
+  volumes:
+  - name: gcs-fuse-csi-ephemeral
+    csi:
+      driver: gcsfuse.csi.storage.gke.io
+      volumeAttributes:
+        bucketName: $bucket
+  containers:
+  - name: giotto-deep-plot
+    image: $image
+    args: ["plot", "-d", "/var/lib/data/$subdir"]
+    volumeMounts:
+    - mountPath: "/var/lib/data"
+      name: gcs-fuse-csi-ephemeral
+    imagePullPolicy: Always
+  serviceAccountName: $ksa
+  restartPolicy: Never

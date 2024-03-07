@@ -100,6 +100,7 @@ def save_model_and_optimizer(
                 .replace("(", "")
                 .replace(":", "")
                 .replace(")", "")
+                .replace(" ", "")
                 + "-"
                 + trial_id
                 + ".pth",

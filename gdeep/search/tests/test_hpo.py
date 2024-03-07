@@ -73,7 +73,7 @@ def test_hpo_failure():
     # initialise pipeline class
     pipe = Trainer(
         model,
-        [dl_tr, None],  # type: ignore
+        [dl_tr],  # type: ignore
         loss_fn,
         writer,
         k_fold_class=StratifiedKFold(2, shuffle=True),
@@ -96,7 +96,7 @@ def test_hpo_cross_val():
     # initialise pipeline class
     pipe = Trainer(
         model,
-        [dl_tr, None],  # type: ignore
+        [dl_tr],  # type: ignore
         loss_fn,
         writer,
         k_fold_class=StratifiedKFold(2, shuffle=True),
@@ -133,7 +133,7 @@ def test_hpo_accumulated_grads():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_tr], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "accuracy", 2, best_not_last=True)
@@ -166,7 +166,7 @@ def test_hpo_loss():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_tr], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)
@@ -190,7 +190,7 @@ def test_hpo_string_parameters():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_tr], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2)
@@ -243,7 +243,7 @@ def test_hpo_collate():
     # loss function
     loss_fn = nn.CrossEntropyLoss()
     # pipeline
-    pipe = Trainer(model, [dl_train, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_train], loss_fn, writer)  # type: ignore
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)
 
@@ -266,7 +266,7 @@ def test_regularizer_optimization():
     loss_fn = nn.CrossEntropyLoss()
 
     # initialise pipeline class
-    pipe = Trainer(model, [dl_tr, None], loss_fn, writer)  # type: ignore
+    pipe = Trainer(model, [dl_tr], loss_fn, writer)  # type: ignore
 
     # initialise gridsearch
     search = HyperParameterOptimization(pipe, "loss", 2, best_not_last=True)

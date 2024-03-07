@@ -7,6 +7,12 @@ from .regularizer import TihonovRegularizer
 from .regularizer import TopologicalRegularizerData
 
 
-__all__ = ["Trainer", "accuracy", "TrainerConfig",
-           "Regularizer", "TopologicalRegularizer",
-           "TihonovRegularizer", "TopologicalRegularizerData"]
+__all__ = [
+    "Trainer",
+    "accuracy",
+    "TrainerConfig",
+    "Regularizer",
+    "TopologicalRegularizer",
+    "TihonovRegularizer",
+    "TopologicalRegularizerData",
+]

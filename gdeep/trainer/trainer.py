@@ -3,6 +3,7 @@ import copy
 import time
 from functools import wraps
 import warnings
+import gdeep.utility.multiprocessing as gmp
 from typing import (
     Tuple,
     Optional,
@@ -14,21 +15,30 @@ from typing import (
     Union,
     TYPE_CHECKING,
 )
+import tempfile
 
 import torch.nn.functional as f
 from torch.optim import Optimizer
 import torch
+import torch.distributed as dist
+from torch.distributed.fsdp import (
+    FullyShardedDataParallel as FSDP,
+    FullStateDictConfig,
+    StateDictType,
+    ShardingStrategy,
+)
 from optuna.trial._base import BaseTrial
 import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection._split import BaseCrossValidator
 from sklearn.model_selection import KFold, train_test_split
-from torch.utils.data.sampler import SubsetRandomSampler
+from gdeep.utility.sampler import GiottoSampler
 from torch.utils.data import DataLoader
 import optuna
 from datetime import datetime
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.optim.lr_scheduler import _LRScheduler  # noqa
+from enum import Enum, auto
 
 from ..utility.optimization import MissingClosureError
 from gdeep.models import ModelExtractor
@@ -37,11 +47,14 @@ from gdeep.utility import DEVICE
 
 
 from gdeep.trainer.regularizer import Regularizer
-#if TYPE_CHECKING:
+
+# if TYPE_CHECKING:
 #    from gdeep.trainer.regularizer import Regularizer
 from .metrics import accuracy
 
 from gdeep.utility.custom_types import Tensor
+from pipeline_tool.pipeline_config import PipelineConfig
+from pipeline_tool.pipeline_tool import SkippableTracing
 
 try:
     import torch_xla.core.xla_model as xm  # type: ignore
@@ -78,6 +91,175 @@ def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
     return wrapper
 
 
+class ParallelismType(Enum):
+    """Type of multi-GPU parallelism to use for training"""
+
+    _NONE = auto()
+    _DP = auto()
+    FSDP = auto()
+    PIPELINE = auto()
+
+    def from_str(string):
+        if string.upper() == "FSDP":
+            return ParallelismType.FSDP
+        elif string.upper() == "PIPELINE":
+            return ParallelismType.PIPELINE
+        else:
+            return ParallelismType._NONE
+
+
+class Parallelism:
+    """Stores the necessary informations to perform parallel training using the Trainer class. Some attributes are only used for FSDP (p_type = DDP, FSDP_ZERO2, FSDP_ZERO3) or pipeline_tool (p_type = PIPELINE) and are indicated as such in their description. No indication means they are used by both tools
+    Args:
+        p_type:
+            Type of parallelism training algorithm to use
+        devices:
+            Indices of the available GPUs to use for training
+        nb_device:
+            Actual number of GPUs to use from the ones referenced in devices. Asking for more GPUs than referenced in devices will result in an exception
+        config_fsdp:
+            [FSDP] FSDP configuration dictionary. See pytorch's FSDP documentation for more details
+        config_mha:
+            [pipeline_tool] Multihead Attention layers configuration in the transformer (if the model used is a transformer)
+        pipeline_chunks:
+            [pipeline_tool] Number of chunks to split the model into for pipelining
+    """
+
+    def __init__(
+        self,
+        p_type: ParallelismType,
+        devices: Tuple[int] = None,
+        nb_device: int = 0,
+        config_fsdp: Dict[str, Any] = {},
+        config_mha: List[Dict[str, Any]] = [],
+        pipeline_chunks: int = 4,
+    ) -> None:
+        self.p_type = p_type
+        self.world_size = nb_device
+        self.rank = 0
+        self.config_mha = config_mha
+        self.pipeline_chunks = pipeline_chunks
+        self.config_fsdp = config_fsdp
+
+        if (
+            p_type == ParallelismType.FSDP
+            and "sharding_strategy" in config_fsdp.keys()
+            and config_fsdp["sharding_strategy"] == ShardingStrategy.NO_SHARD
+            and not "auto_wrap_policy" in config_fsdp.keys()
+        ):
+            print(
+                "WARNING: You seem to be trying to use FSDP with sharding without providing any wrapping policy. \
+                  This will result in the model being unable to be sharded between the GPUs. Only use FSDP without \
+                  wrapping policy with sharding_strategy == ShardingStrategy.NO_SHARD"
+            )
+
+        if devices is None:
+            devices = list(range(torch.cuda.device_count()))
+        self.devices = [
+            torch.device("cuda", x) for x in devices
+        ]  # Convert device indices into torch devices
+
+        # Verify proper use of devices
+        if self.world_size > len(self.devices):
+            raise ValueError("Cannot use more devices than those referenced in devices")
+        if self.world_size < 1:
+            self.world_size = len(self.devices)
+
+
+def setup_env():
+    """Setup the environment necessary for parallel training with RPC"""
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
+
+
+def setup_fsdp(rank, world_size):
+    setup_env()
+
+    # initialize the process group
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+
+def cleanup_fsdp():
+    """Cleanup the parallel training environment"""
+    dist.destroy_process_group()
+
+
+def parallel_train(rank, args, return_queue):
+    """Creates, configures and uses a sub instance of the Trainer class to train a model using parallel training
+    Args:
+        rank:
+            Index of the process used to execute this function
+        args:
+            Parameters to pass to the Trainer class
+        return_queue:
+            Multiprocessing queue to use to send return values back
+    """
+    train_args = copy.deepcopy(
+        args
+    )  # Deepcopy arguments so they can be used independantly from those in other processes
+    train_args[
+        "parallel"
+    ].p_type = ParallelismType._DP  # Signal that this is a subinstance of Trainer
+    train_args["parallel"].devices = [
+        args["parallel"].devices[rank]
+    ]  # Use the device corresponding to the process
+    train_args["parallel"].rank = rank  # Memorise rank (for in-class log filtering)
+    setup_fsdp(rank, len(args["parallel"].devices))  # Setup environment
+    torch.cuda.set_device(
+        rank
+    )  # Inform pytorch of the device that will be used by this process
+
+    # Create Trainer subinstance
+    trainer = Trainer(
+        train_args["model"],
+        train_args["dataloaders"],
+        train_args["loss_fn"],
+        train_args["writer"](),
+        train_args["training_metric"],
+        train_args["k_fold_class"],
+        train_args["print_every"],
+    )
+
+    # Train
+    valloss, valacc = trainer.train(
+        train_args["optimizer"],
+        train_args["n_epochs"],
+        train_args["cross_validation"],
+        train_args["optimizers_param"],
+        train_args["dataloaders_param"],
+        train_args["lr_scheduler"],
+        train_args["scheduler_params"],
+        train_args["optuna_params"],
+        train_args["profiling"],
+        train_args["parallel_tpu"],
+        train_args["keep_training"],
+        train_args["store_grad_layer_hist"],
+        train_args["n_accumulated_grads"],
+        train_args["writer_tag"],
+        train_args["parallel"],
+    )
+
+    # if rank = 0, send valloss, valacc, and model parameters (if requested) to super instance
+    if return_queue is not None:
+        return_vals = [valloss, valacc]
+        if args["return_model"]:
+            save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+            tmpf = tempfile.mkstemp()  # Create temporary file
+            with FSDP.state_dict_type(
+                trainer.model, StateDictType.FULL_STATE_DICT, save_policy
+            ):
+                torch.save(
+                    trainer.model.state_dict(), tmpf[1]
+                )  # Store Trainable parameters in the temporary file
+            os.close(tmpf[0])
+            return_vals.append(
+                tmpf[1]
+            )  # Send temporary file path to super instance for recovery
+        return_queue.put(return_vals)
+
+    cleanup_fsdp()
+
+
 class Trainer:
     """This is the generic class that allows
     the user to benchmark models over architectures
@@ -88,8 +270,7 @@ class Trainer:
         model :
             standard torch model
         dataloaders (list of utils.DataLoader):
-            list of standard torch DataLoaders, e.g.
-            `[dl_tr, dl_val, dl_ts]`
+            list of standard torch DataLoaders, e.g. `[dl_tr, dl_val, dl_ts]`. The list may contain 1, 2 or 3 dataloaders. In the case where 1 datalaoder is given, it will be automatically split into a training (80%) and a validation (20%) dataloader. When 3 dataloaders are given, the third dataloader is never used
         loss_fn :
             loss function to average over batches
         writer :
@@ -196,6 +377,8 @@ class Trainer:
         # def tmploss(X,y):
         #    return loss_fn(X,y) + self.regularizer.regularization_penalty(self.model)
         # self.train_loss_fn = tmploss
+        # device
+        self.device = DEVICE
         if not k_fold_class:
             self.k_fold_class = KFold(5, shuffle=True)
         else:
@@ -204,14 +387,16 @@ class Trainer:
     def _set_initial_model(self) -> None:
         """This private method is used to set
         the initial_model"""
-        self.initial_model = copy.deepcopy(self.model)
+        if self.parallel.p_type != ParallelismType._DP:
+            self.initial_model = copy.deepcopy(self.model)
 
     def _reset_model(self) -> None:
         """Private method to reset the initial model weights.
         This function is essential for the cross-validation
         procedure.
         """
-        self.model = copy.deepcopy(self.initial_model)
+        if self.parallel.p_type != ParallelismType._DP:
+            self.model = copy.deepcopy(self.initial_model)
 
     def _optimisation_step(
         self,
@@ -226,7 +411,7 @@ class Trainer:
         if self.n_accumulated_grads < 2:  # usual case for stochastic gradient descent
             self.optimizer.zero_grad()
             loss.backward()
-            if DEVICE.type == "xla":
+            if self.device.type == "xla":
                 xm.optimizer_step(
                     self.optimizer, barrier=True
                 )  # Note: Cloud TPU-specific code!
@@ -242,7 +427,7 @@ class Trainer:
             if (
                 batch + 1
             ) % self.n_accumulated_grads == 0:  # do the optimization step only after the accumulations
-                if DEVICE.type == "xla":
+                if self.device.type == "xla":
                     xm.optimizer_step(
                         self.optimizer, barrier=True
                     )  # Note: Cloud TPU-specific code!
@@ -255,26 +440,27 @@ class Trainer:
                     except (MissingClosureError,):
                         self.optimizer.step(closure)  # type: ignore
                 self.optimizer.zero_grad()
+        epoch_loss += loss.item()
         if batch % self.print_every == 0:
-            epoch_loss += loss.item()
-            print(
-                f"Batch training loss:  {epoch_loss / (batch + 1)}",
-                f" \tBatch training {self.training_metric.__name__}: ",
-                batch_metric,
-                " \t[",
-                batch + 1,
-                "/",
-                steps,
-                "]                     ",
-                end="\r",
-            )
+            if self.parallel.rank == 0:
+                print(
+                    f"Batch training loss:  {epoch_loss / (batch + 1)}",
+                    f" \tBatch training {self.training_metric.__name__}: ",
+                    batch_metric,
+                    " \t[",
+                    batch + 1,
+                    "/",
+                    steps,
+                    "]                     ",
+                    end="\r",
+                )
         return epoch_loss
 
     def _send_to_device(
         self, x: Union[Tensor, List[Tensor]], y: Tensor
     ) -> Tuple[Tensor, Union[Tensor, List[Tensor]], Tensor]:
         """use this private method to send the
-        ``x`` and ``y`` to the ``DEVICE``.
+        ``x`` and ``y`` to the ``self.device``.
 
         Args:
             x:
@@ -288,19 +474,33 @@ class Trainer:
 
         """
         new_x: List[Tensor] = []
-        if isinstance(x, tuple) or isinstance(x, list):
-            for xi in x:
-                new_x.append(xi.to(DEVICE))
-            x = new_x
-            prediction = self.model(*x)
-            if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
-                prediction = prediction.logits  # unwrapper for HuggingFace BERT model
+
+        if self.parallel.p_type == ParallelismType.PIPELINE:
+            x = x.to(0)
+            y = y.to(self.nb_gpus - 1)
+            prediction = self.model(x).local_value()
         else:
-            x = x.to(DEVICE)
-            prediction = self.model(x)
-            if hasattr(prediction, "logits"):  # unwrapper for HuggingFace BERT model
-                prediction = prediction.logits  # unwrapper for HuggingFace BERT model
-        y = y.to(DEVICE)
+            if isinstance(x, tuple) or isinstance(x, list):
+                for xi in x:
+                    new_x.append(xi.to(self.device))
+                x = new_x
+                prediction = self.model(*x)
+                if hasattr(
+                    prediction, "logits"
+                ):  # unwrapper for HuggingFace BERT model
+                    prediction = (
+                        prediction.logits
+                    )  # unwrapper for HuggingFace BERT model
+            else:
+                x = x.to(self.device)
+                prediction = self.model(x)
+                if hasattr(
+                    prediction, "logits"
+                ):  # unwrapper for HuggingFace BERT model
+                    prediction = (
+                        prediction.logits
+                    )  # unwrapper for HuggingFace BERT model
+            y = y.to(self.device)
 
         return prediction, x, y
 
@@ -318,6 +518,7 @@ class Trainer:
             self.prof.start()
         metric_list = []
         epoch_loss = 0.0
+        ddp_loss = torch.zeros(2).to(self.device)
         for batch, (X, y) in enumerate(dl_tr):
 
             def closure() -> Tensor:
@@ -328,11 +529,12 @@ class Trainer:
             pred, X, y = self._send_to_device(X, y)
             batch_metric = self.training_metric(pred, y)
             metric_list.append(batch_metric)
-            loss = self.loss_fn(pred,y)
+            loss = self.loss_fn(pred, y)
             if self.regularizer is not None:
                 penalty = self.regularizer.regularization_penalty(self.model)
                 loss += penalty
-                
+            ddp_loss[0] += loss.item()
+            ddp_loss[1] += len(X)
             # Save to tensorboard
             try:
                 self.writer.add_scalar(  # type: ignore
@@ -364,7 +566,8 @@ class Trainer:
 
             if self.prof is not None:
                 self.prof.step()
-
+        if self.parallel.p_type == ParallelismType._DP:
+            dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
         if self.prof is not None:
             self.prof.stop()
 
@@ -381,7 +584,10 @@ class Trainer:
         """private method to run a single training
         loop
         """
-        self.model = self.model.to(DEVICE)
+        if (
+            self.parallel.p_type == ParallelismType._NONE
+        ):  # Once setup, FSDP handles the model's device
+            self.model = self.model.to(self.device)
         self.model.train()
         try:
             length: int = len(dl_tr.sampler.indices)  # type: ignore
@@ -418,7 +624,10 @@ class Trainer:
         """private method to run a single validation
         loop
         """
-        self.model = self.model.to(DEVICE)
+        if (
+            self.parallel.p_type == ParallelismType._NONE
+        ):  # FSDP handles the model's device
+            self.model = self.model.to(self.device)
         try:
             size = len(dl_val.sampler.indices)  # type: ignore
         except AttributeError:
@@ -514,6 +723,7 @@ class Trainer:
         pred_list = []
         batch_metric_list = []
         loss = 0.0
+        ddp_loss = torch.zeros(3).to(self.device)
         with torch.no_grad():
             for X, y in dl:
                 pred, X, y = self._send_to_device(X, y)
@@ -521,9 +731,15 @@ class Trainer:
                 class_probs_batch = [f.softmax(el, dim=0) for el in pred]
                 class_probs.append(class_probs_batch)
                 loss += self.loss_fn(pred, y).item()
+                ddp_loss[0] += loss
                 batch_metric = self.training_metric(pred, y)
                 batch_metric_list.append(batch_metric)
                 class_label.append(y)
+                pred = pred.argmax(dim=1, keepdim=True)
+                ddp_loss[1] += loss
+                ddp_loss[2] += len(X)
+        if self.parallel.p_type == ParallelismType._DP:
+            dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
         epoch_metric = sum(batch_metric_list) / len(batch_metric_list)
         epoch_loss = loss / len(batch_metric_list)
         return pred_list, epoch_loss, epoch_metric
@@ -533,11 +749,9 @@ class Trainer:
     ) -> None:
         """initialise the profler for profiling"""
         # profiling
-        active: int = 10
-        if not cross_validation:
-            active = n_epochs - 2
-        else:
-            active = k_folds * (n_epochs - 2)
+        active: int = 2
+        if cross_validation:
+            active *= k_folds
 
         if profiling:
             try:
@@ -547,7 +761,7 @@ class Trainer:
                         torch.profiler.ProfilerActivity.CUDA,  # type: ignore
                     ],
                     schedule=torch.profiler.schedule(  # type: ignore
-                        wait=1, warmup=1, active=active, repeat=1
+                        wait=1, warmup=3, active=active, repeat=2
                     ),
                     on_trace_ready=torch.profiler.tensorboard_trace_handler(  # type: ignore
                         os.path.join(
@@ -557,14 +771,14 @@ class Trainer:
                                 self.model.__class__.__name__ + str(datetime.today())
                             ).replace(":", "-"),
                         ),
-                        worker_name="worker",
+                        # worker_name="worker",
                     ),
                     record_shapes=True,
-                    profile_memory=True
-                    # with_stack=True
+                    profile_memory=True,
+                    with_stack=True,
                 )
-            except AssertionError:
-                pass
+            except AssertionError as e:
+                print(f"PID({os.getpid()}) Error: {e}")
 
     def _init_optimizer_and_scheduler(
         self,
@@ -616,6 +830,7 @@ class Trainer:
         store_grad_layer_hist: bool = False,
         n_accumulated_grads: int = 0,
         writer_tag: str = "",
+        parallel: Optional[Parallelism] = None,
     ) -> Tuple[float, float]:
         """Function to run all the training cycles.
 
@@ -629,7 +844,7 @@ class Trainer:
             dataloaders_param:
                 dictionary of the dataloaders
                 parameters, e.g. `{'batch_size': 32}`. If ``None``, then
-                the parameters of the training and validation
+                the parameters of the validation (if any) or training
                 dataloaders will be used.
             optimizers_param:
                 dictionary of the optimizers
@@ -661,6 +876,8 @@ class Trainer:
                 Only a positive number will be taken into account
             writer_tag:
                 the tensorboard writer tag
+            parallel:
+                The type of parallel training algorithm to use. If None, the default basic training will be used, else, the algorithm selected in the p_type member of the Parallelism object will be used. The Parallelism object must also contain a list of usable GPU indices as well as the number of those GPUs to actually use for the training
 
         Returns:
             (float, float):
@@ -669,6 +886,17 @@ class Trainer:
                 is ignored. On the other hand, if there `cross_validation = False`
                 then the test loss and accuracy is returned.
         """
+
+        if parallel_tpu and parallel is not None:
+            print(
+                f"Parallel TPU and parallel training cannot be enabled at the same time. Choose only one of them."
+            )
+            exit()
+
+        if parallel is None:
+            parallel = Parallelism(ParallelismType._NONE)
+        self.parallel = parallel
+        self.nb_gpus = self.parallel.world_size
         self.n_accumulated_grads = n_accumulated_grads
         self.store_grad_layer_hist = store_grad_layer_hist
         # to start the training from where we left
@@ -682,7 +910,7 @@ class Trainer:
 
         # dataloaders_param initialisation
         if dataloaders_param is None:
-            if self.dataloaders[1] is not None:
+            if len(self.dataloaders) > 1:
                 dataloaders_param_val = Trainer.copy_dataloader_params(
                     self.dataloaders[1]
                 )
@@ -727,9 +955,16 @@ class Trainer:
         except KeyError:
             pass
 
+        if self.parallel.p_type == ParallelismType._NONE:
+            world_size = 1
+            rank = 0
+        else:
+            world_size = self.parallel.world_size
+            rank = self.parallel.rank
+
         # validation being the 20% in the case of 2
         # dataloders without crossvalidation
-        if len(self.dataloaders) == 3:  # type: ignore
+        if len(self.dataloaders) >= 2:  # type: ignore
             try:
                 val_idx = self.dataloaders[1].sampler.indices  # type: ignore
             except AttributeError:
@@ -739,7 +974,7 @@ class Trainer:
                 self.dataloaders[1].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
-                sampler=SubsetRandomSampler(val_idx),
+                sampler=GiottoSampler(val_idx, world_size=world_size, rank=rank),
             )
             try:
                 tr_idx = self.dataloaders[0].sampler.indices  # type: ignore
@@ -750,7 +985,7 @@ class Trainer:
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
-                sampler=SubsetRandomSampler(tr_idx),
+                sampler=GiottoSampler(tr_idx, world_size=world_size, rank=rank),
             )
         else:
             try:
@@ -763,13 +998,13 @@ class Trainer:
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_val,
-                sampler=SubsetRandomSampler(val_idx),
+                sampler=GiottoSampler(val_idx, world_size=world_size, rank=rank),
             )
             dl_tr = torch.utils.data.DataLoader(  # type: ignore
                 self.dataloaders[0].dataset,
                 # pin_memory=True,
                 **dataloaders_param_tr,
-                sampler=SubsetRandomSampler(tr_idx),
+                sampler=GiottoSampler(tr_idx, world_size=world_size, rank=rank),
             )
 
         if cross_validation:
@@ -804,6 +1039,14 @@ class Trainer:
                     scheduler_params,
                 )
 
+                if (
+                    self.parallel.p_type == ParallelismType.PIPELINE
+                    and not os.name == "nt"
+                ):
+                    self._pipelined_model(
+                        self.parallel.pipeline_chunks, self.parallel.config_mha, dl_tr
+                    )
+
                 # re-initialise data loaders
                 if len(self.dataloaders) == 3:
                     warnings.warn(
@@ -813,18 +1056,56 @@ class Trainer:
                     self.dataloaders[0].dataset,
                     # pin_memory=True,
                     **dataloaders_param_tr,
-                    sampler=SubsetRandomSampler(tr_idx),
+                    sampler=GiottoSampler(tr_idx),
                 )
                 dl_val = torch.utils.data.DataLoader(  # type: ignore
                     self.dataloaders[0].dataset,
                     # pin_memory=True,
                     **dataloaders_param_val,
-                    sampler=SubsetRandomSampler(val_idx),
+                    sampler=GiottoSampler(val_idx),
                 )
+
                 # print n-th fold
                 print("\n\n********** Fold ", fold + 1, "**************")
+
+                if (
+                    self.parallel.p_type == ParallelismType.FSDP
+                ):  # Must only get there with parallelism type != _DP
+                    child_args = {
+                        "model": self.model,
+                        "dataloaders": self.dataloaders,
+                        "loss_fn": self.loss_fn,
+                        "writer": type(self.writer),
+                        "training_metric": self.training_metric,
+                        "k_fold_class": self.k_fold_class,
+                        "print_every": self.print_every,
+                        "parallel": self.parallel,
+                        "optimizer": optimizer,
+                        "n_epochs": n_epochs,
+                        "cross_validation": False,
+                        "optimizers_param": optimizers_param,
+                        "dataloaders_param": dataloaders_param,
+                        "lr_scheduler": lr_scheduler,
+                        "scheduler_params": scheduler_params,
+                        "optuna_params": optuna_params,
+                        "profiling": profiling,
+                        "parallel_tpu": parallel_tpu,
+                        "keep_training": keep_training,
+                        "store_grad_layer_hist": store_grad_layer_hist,
+                        "n_accumulated_grads": n_accumulated_grads,
+                        "writer_tag": writer_tag,
+                        "return_model": False,
+                    }
+
+                    return_vals = gmp.spawn(
+                        parallel_train,
+                        args=(child_args,),
+                        nprocs=self.parallel.world_size,
+                    )
+                    valloss, valacc = return_vals[0], return_vals[1]
+
                 # the training and validation loop
-                if parallel_tpu == False:
+                elif parallel_tpu == False:
                     valloss, valacc = self._training_loops(
                         n_epochs,
                         dl_tr,
@@ -874,6 +1155,53 @@ class Trainer:
                 valacc = torch.mean(torch.tensor(mean_val_acc)).item()
 
         else:
+            if self.parallel.p_type == ParallelismType.FSDP:
+                child_args = {
+                    "model": self.model,
+                    "dataloaders": self.dataloaders,
+                    "loss_fn": self.loss_fn,
+                    "writer": type(self.writer),
+                    "training_metric": self.training_metric,
+                    "k_fold_class": self.k_fold_class,
+                    "print_every": self.print_every,
+                    "parallel": self.parallel,
+                    "optimizer": optimizer,
+                    "n_epochs": n_epochs,
+                    "cross_validation": cross_validation,
+                    "optimizers_param": optimizers_param,
+                    "dataloaders_param": dataloaders_param,
+                    "lr_scheduler": lr_scheduler,
+                    "scheduler_params": scheduler_params,
+                    "optuna_params": optuna_params,
+                    "profiling": profiling,
+                    "parallel_tpu": parallel_tpu,
+                    "keep_training": keep_training,
+                    "store_grad_layer_hist": store_grad_layer_hist,
+                    "n_accumulated_grads": n_accumulated_grads,
+                    "writer_tag": writer_tag,
+                    "return_model": True,
+                }
+
+                return_vals = gmp.spawn(
+                    parallel_train, args=(child_args,), nprocs=self.parallel.world_size
+                )
+                self.model.load_state_dict(torch.load(return_vals[2]))
+                os.remove(return_vals[2])
+                self.check_has_trained = True
+                return return_vals[0], return_vals[1]
+            elif self.parallel.p_type == ParallelismType._DP:
+                self.device = self.parallel.devices[0]
+                # Setup FSDP
+                print(f"PID={os.getpid()}: sending model to device {self.device}")
+                if "device_id" not in self.parallel.config_fsdp.keys():
+                    self.parallel.config_fsdp["device_id"] = self.device
+                else:
+                    print(
+                        'WARNING: You provided a custom value for "device_id" in the FSDP config. This will \
+                          prevent the use of multiple GPUs. Only do this if you know what you are doing'
+                    )
+                self.model = FSDP(self.model, **self.parallel.config_fsdp)
+
             self._init_optimizer_and_scheduler(
                 keep_training,
                 cross_validation,
@@ -882,6 +1210,11 @@ class Trainer:
                 lr_scheduler,
                 scheduler_params,
             )
+
+            if self.parallel.p_type == ParallelismType.PIPELINE and not os.name == "nt":
+                self._pipelined_model(
+                    self.parallel.pipeline_chunks, self.parallel.config_mha, dl_tr
+                )
 
             if not parallel_tpu:
                 valloss, valacc = self._training_loops(
@@ -916,6 +1249,20 @@ class Trainer:
             pass
         # check for training
         self.check_has_trained = True
+
+        if self.parallel.p_type == ParallelismType.PIPELINE:
+            trained_weights = {}
+            for (_, value_src), (key, _) in zip(
+                self.model.state_dict().items(), self.model_saved.state_dict().items()
+            ):
+                trained_weights[key] = value_src
+            # Load the new weights on the base model
+            self.model_saved.load_state_dict(trained_weights)
+            # Set the model back for next steps
+            self.model = self.model_saved
+            self.model_saved = None
+            self.pipeline_train = False
+            self.model.to(DEVICE)
 
         # put the mean of the cross_val
         return valloss, valacc
@@ -971,7 +1318,8 @@ class Trainer:
             self.val_epoch = t
             self.train_epoch = t
             self._train_loop(dl_tr, writer_tag)
-            me = ModelExtractor(self.model, self.loss_fn)
+            pipeline_train = self.parallel.p_type == ParallelismType.PIPELINE
+            me = ModelExtractor(self.model, self.loss_fn, pipeline_train)
             if self.store_grad_layer_hist:
                 try:
                     lista = me.get_layers_param()
@@ -1251,6 +1599,9 @@ class Trainer:
             (float, float, 2darray):
                 the accuracy, loss and confusion matrix.
         """
+        self.model.to(
+            self.device
+        )  # Send model to device in case it wasn't trained on it previously. WARNING: model does not fit on GPU -> OOM
         if dl is None:
             dl = self.dataloaders[0]
         class_probs: List[List[Tensor]] = []
@@ -1326,3 +1677,47 @@ class Trainer:
             "prefetch_factor": original_dataloader.prefetch_factor,
             "persistent_workers": original_dataloader.persistent_workers,
         }
+
+    def _pipelined_model(self, nb_chunks, config_mha, dl_tr):
+        setup_env()
+
+        input_shape = None
+        output_shape = None
+        dtype = None
+
+        for input, label in dl_tr:
+            input_shape = input.shape
+            dtype = str(label.dtype)
+            dtype = dtype.split(".", 1)[1]
+            output_shape = label.shape
+            break
+
+        config = PipelineConfig(
+            input_shape=input_shape,
+            output_shape=output_shape,
+            data_type=dtype,
+            config_mha=config_mha,
+        )
+        # Generate the piped model
+        trace = SkippableTracing(self.nb_gpus, self.model, config)
+        torch.distributed.rpc.init_rpc("worker", rank=0, world_size=1)
+        model_pipe = trace.get_modules()
+        try:
+            from torch.distributed.pipeline.sync import Pipe
+
+            model_pipe = Pipe(model_pipe, nb_chunks)
+        except ImportError:
+            print("Windows does not support distributed computing")
+            pass
+
+        # Get weights from the model and set them in the piped model
+        self.saved_weights = {}
+        for (_, value_src), (key, _) in zip(
+            self.model.state_dict().items(), model_pipe.state_dict().items()
+        ):
+            self.saved_weights[key] = value_src
+        model_pipe.load_state_dict(self.saved_weights)
+
+        # Save the base model. We only use the piped model for training
+        self.model_saved = self.model
+        self.model = model_pipe

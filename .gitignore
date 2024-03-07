@@ -29,7 +29,6 @@ examples/*.json
 examples/*.html
 
 # Image/Video files
-*.png
 *.mp4
 
 # Data files

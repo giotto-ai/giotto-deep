@@ -23,7 +23,7 @@ class TorchvisionDatasetBuilder(object):
         self.dataset_name = dataset_name
 
     def __call__(self, **kwargs):  # type: ignore
-        if 'root' not in kwargs:
+        if "root" not in kwargs:
             kwargs = dict(root=DEFAULT_DOWNLOAD_DIR, **kwargs)
         return datasets.__getattribute__(self.dataset_name)(  # type: ignore
             **kwargs  # type: ignore
@@ -38,7 +38,7 @@ class TorchtextDatasetBuilder(object):
         self.dataset_name = dataset_name
 
     def __call__(self, **kwargs):  # type: ignore
-        if 'root' not in kwargs:
+        if "root" not in kwargs:
             kwargs = dict(root=DEFAULT_DOWNLOAD_DIR, **kwargs)
         return textdatasets.__getattribute__(self.dataset_name)(  # type: ignore
             **kwargs  # type: ignore

@@ -1,4 +1,4 @@
-#from gdeep.trainer import Trainer
+# from gdeep.trainer import Trainer
 import os
 import copy
 import time
@@ -71,7 +71,7 @@ def _local_homology_preprocess(
         n_neighbors=n_neighbors, homology_dimensions=homology_dimensions
     )
     mod_pe = make_pipeline(
-        PersistenceEntropy(), FunctionTransformer(func=lambda X: 2 ** X)
+        PersistenceEntropy(), FunctionTransformer(func=lambda X: 2**X)
     )
     pipe = make_pipeline(kn_lh, mod_pe)
     loc_dim_features = pipe.fit_transform(X)
@@ -281,13 +281,13 @@ def _compute_critical_points(
     the complexity of the decision boundary:
     These are the ones that are active at the db: so born before it and die after it.
     Recall f: X -> [0,1], maps data to class 1 probability (class 0 probability)
-    
+
     In that case the decision boundary: f^{-1}(1/2)
-    
+
     We can simplify the boundary either by pushing the homology generator above it (delay its birth)
     or pushing the annihilator below it (expedite its death). We should do whichever is more economical,
     i.e., closer to the cutoff (1/2). Next we do just that.
-    
+
     In the following code variable name containing 'rel_inds' is used to refer to indices with relative to
     the critical points. (i.e. rel_inds = 0 is the first critical pair)
     'inds' without this qualifier are indices with respect to the coordinates (inds = 0: first vertex of coords)

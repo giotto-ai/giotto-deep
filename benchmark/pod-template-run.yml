@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: giotto-deep-benchmark-$model-$gpu_name-$gpu_count
+  namespace: default
+  labels:
+    env: giotto-deep
+    app: giotto-deep-benchmark
+  annotations:
+    gke-gcsfuse/volumes: "true"
+spec:
+  terminationGracePeriodSeconds: 60
+  volumes:
+  - name: gcs-fuse-csi-ephemeral
+    csi:
+      driver: gcsfuse.csi.storage.gke.io
+      volumeAttributes:
+        bucketName: $bucket
+  - name: shared-memory
+    emptyDir:
+      medium: Memory
+      sizeLimit: 16Gi
+  containers:
+  - name: giotto-deep-benchmark-$model-$gpu_name-$gpu_count
+    image: $image
+    args: ["run", "-m", "$model", "-d", "/var/lib/data/$subdir", "-p", $parallel$batch_size]
+    resources:
+      limits:
+        nvidia.com/gpu: $gpu_count
+    volumeMounts:
+    - mountPath: "/var/lib/data"
+      name: gcs-fuse-csi-ephemeral
+    - mountPath: /dev/shm
+      name: shared-memory
+    imagePullPolicy: Always
+  serviceAccountName: $ksa
+  restartPolicy: Never
+  nodeSelector:
+    cloud.google.com/gke-accelerator: $gpu_model

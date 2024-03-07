@@ -87,7 +87,7 @@ ds_tr, ds_val, _ = db.build()
 
 dl_tr, dl_ts, _ = DataLoaderBuilder([ds_tr, ds_val]).build([{"batch_size": 48}, {"batch_size": 32}])  # type: ignore
 
-temp_dict = {"name": "double_tori", "dataloaders": [dl_tr, dl_ts]}  # type: ignore
+temp_dict = {"name": "double_tori", "dataloaders": [dl_tr]}  # type: ignore
 
 dataloaders_dicts.append(temp_dict)
 
