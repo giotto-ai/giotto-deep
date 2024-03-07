@@ -4,7 +4,6 @@
 *.pyd
 **/__pycache__
 
-*data*
 # Setuptools distribution folder.
 /dist/
 
