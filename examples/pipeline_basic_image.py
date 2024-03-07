@@ -19,8 +19,8 @@ from gdeep.visualization import Visualiser
 from gdeep.search import GiottoSummaryWriter
 import argparse
 
-parser = argparse.ArgumentParser(description='Pipeline enabling')
-parser.add_argument('--pipeline', default=False, action='store_true')
+parser = argparse.ArgumentParser(description="Pipeline enabling")
+parser.add_argument("--pipeline", default=False, action="store_true")
 args = parser.parse_args()
 pipeline_enabling = args.pipeline
 
@@ -58,6 +58,7 @@ dl_tr, dl_val, dl_ts = DataLoaderBuilder(
     )
 )
 
+
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
@@ -71,11 +72,12 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1) # flatten all dimensions except batch
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+
 
 model = Net()
 
@@ -83,15 +85,14 @@ model = Net()
 loss_fn = nn.CrossEntropyLoss()
 
 # initilise the trainer class
-pipe = Trainer(model, (dl_tr, ), loss_fn, writer)
+pipe = Trainer(model, (dl_tr,), loss_fn, writer)
 
 devices = list(range(torch.cuda.device_count()))
-parallel = Parallelism(ParallelismType.PIPELINE,
-                           devices,
-                           len(devices),
-                           pipeline_chunks=2)
+parallel = Parallelism(
+    ParallelismType.PIPELINE, devices, len(devices), pipeline_chunks=2
+)
 
-if (pipeline_enabling):
+if pipeline_enabling:
     # train the model
     pipe.train(
         SGD,
@@ -99,7 +100,7 @@ if (pipeline_enabling):
         False,
         {"lr": 0.01},
         {"batch_size": 32, "sampler": SubsetRandomSampler(train_indices)},
-        parallel=parallel
+        parallel=parallel,
     )
 
 else:

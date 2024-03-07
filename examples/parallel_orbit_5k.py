@@ -15,10 +15,11 @@ from gdeep.trainer.trainer import Trainer, Parallelism
 from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
 import gdeep.utility_examples.args
 
+
 def main(args):
     # Generate a configuration file with the parameters of the desired dataset
     @dataclass
-    class Orbit5kConfig():
+    class Orbit5kConfig:
         batch_size_train: int = args.batch_size
         num_orbits_per_class: int = 1000
         validation_percentage: float = 0.0
@@ -46,7 +47,9 @@ def main(args):
     # Define the data loader
 
     dataloaders_dicts = DataLoaderKwargs(
-        train_kwargs={"batch_size": config_data.batch_size_train,},
+        train_kwargs={
+            "batch_size": config_data.batch_size_train,
+        },
         val_kwargs={"batch_size": 4},
         test_kwargs={"batch_size": 3},
     )
@@ -63,25 +66,29 @@ def main(args):
         wrapped_model = PersformerWrapper(
             num_attention_layers=8,
             num_attention_heads=32,
-            input_size= 2 + 2,
+            input_size=2 + 2,
             output_size=5,
             pooler_type=PoolerType.ATTENTION,
             hidden_size=128,
             intermediate_size=128,
         )
-        config_mha = [{'embed_dim': 128, 'num_heads': 32, 'dropout': 0.1, 'batch_first': True}] * 9
+        config_mha = [
+            {"embed_dim": 128, "num_heads": 32, "dropout": 0.1, "batch_first": True}
+        ] * 9
     else:
         # Small model
         wrapped_model = PersformerWrapper(
             num_attention_layers=2,
             num_attention_heads=8,
-            input_size= 2 + 2,
+            input_size=2 + 2,
             output_size=5,
             pooler_type=PoolerType.ATTENTION,
             hidden_size=16,
             intermediate_size=16,
         )
-        config_mha = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}] * 5
+        config_mha = [
+            {"embed_dim": 16, "num_heads": 8, "dropout": 0.1, "batch_first": True}
+        ] * 5
 
     # Define the trainer
 
@@ -91,20 +98,28 @@ def main(args):
     devices = list(range(torch.cuda.device_count()))
     config_fsdp = {
         "sharding_strategy": args.sharding.to_sharding_strategy(),
-        "auto_wrap_policy": functools.partial(transformer_auto_wrap_policy, transformer_layer_cls={persformer_block.PersformerBlock,}),
-        }
-    parallel = Parallelism(args.parallel,
-                           devices,
-                           len(devices),
-                           config_fsdp=config_fsdp,
-                           config_mha=config_mha,
-                           pipeline_chunks=2)
+        "auto_wrap_policy": functools.partial(
+            transformer_auto_wrap_policy,
+            transformer_layer_cls={
+                persformer_block.PersformerBlock,
+            },
+        ),
+    }
+    parallel = Parallelism(
+        args.parallel,
+        devices,
+        len(devices),
+        config_fsdp=config_fsdp,
+        config_mha=config_mha,
+        pipeline_chunks=2,
+    )
 
     # train the model
 
     return trainer.train(Adam, args.n_epochs, parallel=parallel)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Orbit 5k example")
     gdeep.utility_examples.args.add_default_arguments(parser)

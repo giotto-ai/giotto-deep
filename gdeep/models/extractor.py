@@ -1,14 +1,16 @@
-from typing import List, Dict, Callable, Tuple, Union
 from copy import copy
+from typing import Callable, Dict, List, Tuple, Union
 
 import torch
 
-from ..analysis.decision_boundary import GradientFlowDecisionBoundaryCalculator
-from ..analysis.decision_boundary import UniformlySampledPoint
-from . import SaveLayerOutput
 from gdeep.utility import DEVICE
-
 from gdeep.utility.custom_types import Tensor
+
+from ..analysis.decision_boundary import (
+    GradientFlowDecisionBoundaryCalculator,
+    UniformlySampledPoint,
+)
+from . import SaveLayerOutput
 
 
 class ModelExtractor:
@@ -36,7 +38,10 @@ class ModelExtractor:
     """
 
     def __init__(
-        self, model: torch.nn.Module, loss_fn: Callable[[Tensor, Tensor], Tensor], pipeline_train: bool = False
+        self,
+        model: torch.nn.Module,
+        loss_fn: Callable[[Tensor, Tensor], Tensor],
+        pipeline_train: bool = False,
     ) -> None:
         # self.model = model
         if not pipeline_train:

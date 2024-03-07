@@ -92,7 +92,8 @@ def test_trainer_collate():
 
     # evaluation
     assert len(pipe.evaluate_classification(2)) == 3
-    
+
+
 def test_regularizer_params_get_populated():
     """
     Test to Verify that the regularizer parameters get assigned

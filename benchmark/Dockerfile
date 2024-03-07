@@ -1,8 +1,6 @@
 FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
-RUN ln -snf /usr/share/zoneinfo/Europe/Zurich /etc/localtime && \
-    echo Europe/Zurich > /etc/timezone && \
-    echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
     apt-get update && \
     apt-get install -y \
         python3 python3-pip \
@@ -16,10 +14,10 @@ COPY ./requirements.txt giotto-deep/
 RUN cd giotto-deep && \
     pip3 install --no-cache-dir --disable-pip-version-check -r requirements.txt
 
-COPY ./benchmark/requirements.txt giotto-deep/requirements2.txt
+COPY ./benchmark/requirements.txt giotto-deep/requirements.txt
 
 RUN cd giotto-deep && \
-    pip3 install --no-cache-dir --disable-pip-version-check -r requirements2.txt
+    pip3 install --no-cache-dir --disable-pip-version-check -r requirements.txt
 
 COPY ./setup.py giotto-deep/
 COPY ./setup.cfg giotto-deep/

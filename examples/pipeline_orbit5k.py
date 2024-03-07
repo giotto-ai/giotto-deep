@@ -9,19 +9,26 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-# Gdeep imports 
+# Gdeep imports
 
 from gdeep.data import PreprocessingPipeline
 from gdeep.data.datasets import PersistenceDiagramFromFiles
-from gdeep.data.datasets.base_dataloaders import (DataLoaderBuilder,
-                                                  DataLoaderParamsTuples)
-from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import \
-    PersistenceDiagramFromGraphBuilder
+from gdeep.data.datasets.base_dataloaders import (
+    DataLoaderBuilder,
+    DataLoaderParamsTuples,
+)
+from gdeep.data.datasets.persistence_diagrams_from_graphs_builder import (
+    PersistenceDiagramFromGraphBuilder,
+)
 from gdeep.data.persistence_diagrams.one_hot_persistence_diagram import (
-    OneHotEncodedPersistenceDiagram, collate_fn_persistence_diagrams)
+    OneHotEncodedPersistenceDiagram,
+    collate_fn_persistence_diagrams,
+)
 from gdeep.data.preprocessors import (
     FilterPersistenceDiagramByHomologyDimension,
-    FilterPersistenceDiagramByLifetime, NormalizationPersistenceDiagram)
+    FilterPersistenceDiagramByLifetime,
+    NormalizationPersistenceDiagram,
+)
 from gdeep.search.hpo import GiottoSummaryWriter
 from gdeep.topology_layers import Persformer, PersformerConfig, PersformerWrapper
 from gdeep.topology_layers.persformer_config import PoolerType
@@ -38,8 +45,8 @@ from gdeep.data.datasets import OrbitsGenerator, DataLoaderKwargs
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Pipeline enabling')
-parser.add_argument('--pipeline', default=False, action='store_true')
+parser = argparse.ArgumentParser(description="Pipeline enabling")
+parser.add_argument("--pipeline", default=False, action="store_true")
 args = parser.parse_args()
 pipeline_enabling = args.pipeline
 
@@ -52,7 +59,7 @@ else:
 
 # Generate a configuration file with the parameters of the desired dataset
 @dataclass
-class Orbit5kConfig():
+class Orbit5kConfig:
     batch_size_train: int = 4
     num_orbits_per_class: int = 32
     validation_percentage: float = 0.0
@@ -63,9 +70,10 @@ class Orbit5kConfig():
     dtype: str = "float32"
     arbitrary_precision: bool = False
 
+
 config_data = Orbit5kConfig()
 
-# Define the OrbitsGenerator Class with the above parameters    
+# Define the OrbitsGenerator Class with the above parameters
 
 og = OrbitsGenerator(
     num_orbits_per_class=config_data.num_orbits_per_class,
@@ -81,7 +89,9 @@ og = OrbitsGenerator(
 # Define the data loader
 
 dataloaders_dicts = DataLoaderKwargs(
-    train_kwargs={"batch_size": config_data.batch_size_train,},
+    train_kwargs={
+        "batch_size": config_data.batch_size_train,
+    },
     val_kwargs={"batch_size": 4},
     test_kwargs={"batch_size": 3},
 )
@@ -90,7 +100,7 @@ if len(config_data.homology_dimensions) == 0:
     dl_train, _, _ = og.get_dataloader_orbits(dataloaders_dicts)
 else:
     dl_train, _, _ = og.get_dataloader_persistence_diagrams(dataloaders_dicts)
-    
+
 
 # Get the orbits point clouds
 
@@ -99,47 +109,61 @@ point_clouds = og.get_orbits()
 # For each rho value, plot one point cloud
 
 rho_values = [2.5, 3.5, 4.0, 4.1, 4.3]
-fig, ax = plt.subplots(ncols=len(rho_values), figsize = (20,3))
+fig, ax = plt.subplots(ncols=len(rho_values), figsize=(20, 3))
 
 for i in range(len(rho_values)):
-    x , y = point_clouds[i*config_data.num_orbits_per_class,:,0], point_clouds[i*config_data.num_orbits_per_class,:,1] 
+    x, y = (
+        point_clouds[i * config_data.num_orbits_per_class, :, 0],
+        point_clouds[i * config_data.num_orbits_per_class, :, 1],
+    )
     ax[i].scatter(x, y)
-    ax[i].set_title('Example of orbit for rho = ' + str(rho_values[i]))
+    ax[i].set_title("Example of orbit for rho = " + str(rho_values[i]))
 
 # Define the model by using a Wrapper for the Persformer model
 
 wrapped_model = PersformerWrapper(
     num_attention_layers=2,
     num_attention_heads=8,
-    input_size= 2 + 2,
+    input_size=2 + 2,
     output_size=5,
     pooler_type=PoolerType.ATTENTION,
     hidden_size=16,
     intermediate_size=16,
 )
 
-# Define the trainer 
+# Define the trainer
 
 writer = GiottoSummaryWriter()
 
-loss_function =  nn.CrossEntropyLoss()
+loss_function = nn.CrossEntropyLoss()
 
-trainer = Trainer(wrapped_model, [dl_train, ], loss_function, writer) 
+trainer = Trainer(
+    wrapped_model,
+    [
+        dl_train,
+    ],
+    loss_function,
+    writer,
+)
 
 if pipeline_enabling:
-    configs = [{'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True},
-            {'embed_dim': 16, 'num_heads': 8, 'dropout': 0.1, 'batch_first': True}]
+    configs = [
+        {"embed_dim": 16, "num_heads": 8, "dropout": 0.1, "batch_first": True},
+        {"embed_dim": 16, "num_heads": 8, "dropout": 0.1, "batch_first": True},
+        {"embed_dim": 16, "num_heads": 8, "dropout": 0.1, "batch_first": True},
+        {"embed_dim": 16, "num_heads": 8, "dropout": 0.1, "batch_first": True},
+        {"embed_dim": 16, "num_heads": 8, "dropout": 0.1, "batch_first": True},
+    ]
     devices = list(range(torch.cuda.device_count()))
-    parallel = Parallelism(ParallelismType.PIPELINE,
-                            devices,
-                            len(devices),
-                            pipeline_chunks=2,
-                            config_mha=configs)
+    parallel = Parallelism(
+        ParallelismType.PIPELINE,
+        devices,
+        len(devices),
+        pipeline_chunks=2,
+        config_mha=configs,
+    )
     n_epoch = 1
-    
+
     trainer.train(Adam, n_epoch, parallel=parallel)
 
 

@@ -1,6 +1,7 @@
 import enum
 from torch.distributed.fsdp import ShardingStrategy
 
+
 class ShardingStrategyEx(enum.Enum):
     FULL_SHARD = enum.auto()
     SHARD_GRAD_OP = enum.auto()

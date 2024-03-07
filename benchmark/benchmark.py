@@ -4,19 +4,19 @@ import dataclasses
 import datetime
 import enum
 import math
-import matplotlib.pyplot as plt
 import multiprocessing as pmp
 import pathlib
 import sys
-import torch
 import typing
+
+import matplotlib.pyplot as plt
+import torch
 
 from gdeep.trainer.trainer import ParallelismType
 from gdeep.utility_examples.fsdp import ShardingStrategyEx
 
 sys.path.append("../examples")
-from examples import parallel_orbit_5k
-from examples import parallel_bert
+from examples import parallel_bert, parallel_orbit_5k
 
 
 class Parallelism(enum.Enum):
@@ -53,7 +53,11 @@ class Parallelism(enum.Enum):
     def to_parallelism_type(self) -> ParallelismType:
         if self is Parallelism.none:
             return ParallelismType._NONE
-        elif self in (Parallelism.fsdp_full_shard, Parallelism.fsdp_shard_grad_op, Parallelism.fsdp_no_shard):
+        elif self in (
+            Parallelism.fsdp_full_shard,
+            Parallelism.fsdp_shard_grad_op,
+            Parallelism.fsdp_no_shard,
+        ):
             return ParallelismType.FSDP
         elif self is Parallelism.pipeline:
             return ParallelismType.PIPELINE
@@ -105,11 +109,33 @@ class Models(enum.Enum):
 
 
 class RunData:
+    CSV_FIELDS = [
+        "start_time",
+        "end_time",
+        "run_time",
+        "model",
+        "parallel",
+        "epochs",
+        "batch_size",
+        "loss",
+        "accuracy",
+        "gpu_count",
+        "gpu_model",
+    ]
 
-    CSV_FIELDS = ["start_time", "end_time", "run_time", "model", "parallel", "epochs", "batch_size", "loss", "accuracy", "gpu_count", "gpu_model"]
-
-    def __init__(self, start_time: datetime.datetime, end_time: datetime.datetime, model: Models, parallel: Parallelism,
-                 epochs: int, batch_size: int, loss: float, accuracy: float, gpu_count: int, gpu_model: str):
+    def __init__(
+        self,
+        start_time: datetime.datetime,
+        end_time: datetime.datetime,
+        model: Models,
+        parallel: Parallelism,
+        epochs: int,
+        batch_size: int,
+        loss: float,
+        accuracy: float,
+        gpu_count: int,
+        gpu_model: str,
+    ):
         self.start_time = start_time
         self.end_time = end_time
         self.run_time = end_time - start_time
@@ -123,7 +149,19 @@ class RunData:
         self.gpu_model = gpu_model
 
     @classmethod
-    def load(cls, start_time: str, end_time: str, model: str, parallel: str, epochs: str, batch_size: str, loss: str, accuracy: str, gpu_count: str, gpu_model: str):
+    def load(
+        cls,
+        start_time: str,
+        end_time: str,
+        model: str,
+        parallel: str,
+        epochs: str,
+        batch_size: str,
+        loss: str,
+        accuracy: str,
+        gpu_count: str,
+        gpu_model: str,
+    ):
         return cls(
             datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S.%f"),
             datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f"),
@@ -168,13 +206,15 @@ class RunData:
         )
 
     def same(self, o: "RunData") -> bool:
-        return all([
-            self.model == o.model,
-            self.parallel == o.parallel,
-            self.batch_size == o.batch_size,
-            self.gpu_count == o.gpu_count,
-            self.gpu_model == o.gpu_model,
-        ])
+        return all(
+            [
+                self.model == o.model,
+                self.parallel == o.parallel,
+                self.batch_size == o.batch_size,
+                self.gpu_count == o.gpu_count,
+                self.gpu_model == o.gpu_model,
+            ]
+        )
 
     def gt(self, o: "RunData") -> bool:
         return self.end_time > o.end_time
@@ -244,8 +284,15 @@ def identity(string):
     return string
 
 
-def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: int, device_name: str, device_count: int, device_model: str) -> RunData:
-
+def run_training(
+    model: Models,
+    parallel: Parallelism,
+    batch_size: int,
+    epochs: int,
+    device_name: str,
+    device_count: int,
+    device_model: str,
+) -> RunData:
     args = argparse.ArgumentParser()
     args.register("type", None, identity)
     fn = nofn
@@ -276,12 +323,16 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         parallel_bert.download_dataset()
         fn = parallel_bert.main
 
-    sys.stdout.write(f"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
-    sys.stdout.write(f"BENCHMARK RUNNING ON {device_name}... parallelism {parallel} with batch size {batch_size}...\n")
+    sys.stdout.write(
+        "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+    )
+    sys.stdout.write(
+        f"BENCHMARK RUNNING ON {device_name}... parallelism {parallel} with batch size {batch_size}...\n"
+    )
     sys.stdout.flush()
 
     # Spawn a new python interpreter to ensure a nice release of resources
-    mp = pmp.get_context('spawn')
+    mp = pmp.get_context("spawn")
     rq = mp.SimpleQueue()
     process = mp.Process(target=wrap, args=(fn, args, rq), daemon=False)
     process.start()
@@ -290,19 +341,35 @@ def run_training(model: Models, parallel: Parallelism, batch_size: int, epochs: 
         raise Exception(f"Train process exited with exitcode {process.exitcode}")
     r = rq.get()
 
-    #if model is not Models.none and parallel is Parallelism.pipeline:
+    # if model is not Models.none and parallel is Parallelism.pipeline:
     #    torch.distributed.rpc.shutdown()
 
-    return RunData(r.start_time, r.end_time, model, parallel, epochs, batch_size, r.loss, r.accuracy, device_count, device_model)
+    return RunData(
+        r.start_time,
+        r.end_time,
+        model,
+        parallel,
+        epochs,
+        batch_size,
+        r.loss,
+        r.accuracy,
+        device_count,
+        device_model,
+    )
 
 
 def uniq(data: typing.List[RunData]):
+    """Keep the most recent elements of each class.
+
+    Some elements of the list may be of the same class but of different generation
+    time, e.g. some benchmark runs that were restarted.
+    """
     data2 = []
     idx = 0
     # parse every element in the list (unless those removed during the process)
     while idx < len(data):
         jdx = idx + 1
-        keep = data[idx] # set current data as kept
+        keep = data[idx]  # set current data as kept
         # parse every further element in the list (unless those removed during the process)
         while jdx < len(data):
             # if the currently kept element and the current element are of the same "class" ...
@@ -333,7 +400,14 @@ def plot_training(run_data: typing.List[RunData], imgfile: pathlib.Path, dev_nam
     plots = []
     legends = []
     for parallel, v in plt_data.items():
-        p, = ax.plot(v.keys(), v.values(), linestyle=PLOT_LINES[0], linewidth=1.5, color=parallel.colour(), marker=PLOT_MARKERS[0])
+        (p,) = ax.plot(
+            v.keys(),
+            v.values(),
+            linestyle=PLOT_LINES[0],
+            linewidth=1.5,
+            color=parallel.colour(),
+            marker=PLOT_MARKERS[0],
+        )
         plots.append(p)
         legends.append(parallel.to_text())
 
@@ -345,7 +419,11 @@ def plot_training(run_data: typing.List[RunData], imgfile: pathlib.Path, dev_nam
     plt.savefig(str(imgfile))
 
 
-def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetime.datetime):
+def plot_csv(
+    run_data: typing.List[RunData],
+    img_dir: pathlib.Path,
+    now: datetime.datetime,
+):
     template = f"plot-{now.strftime('%Y-%m-%d-%H-%M-%S')}"
     data = {}
     for d in run_data:
@@ -368,17 +446,26 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
                 plots = []
                 legends = []
                 for parallel, values in v_gpu_n.items():
-                    p, = ax.plot(values.keys(), values.values(),
-                                 linestyle=PLOT_LINES[0], linewidth=1.5,
-                                 color=parallel.colour(), marker=PLOT_MARKERS[0])
+                    (p,) = ax.plot(
+                        values.keys(),
+                        values.values(),
+                        linestyle=PLOT_LINES[0],
+                        linewidth=1.5,
+                        color=parallel.colour(),
+                        marker=PLOT_MARKERS[0],
+                    )
                     plots.append(p)
                     legends.append(parallel.to_text())
                 ax.legend(plots, legends, loc="upper right")
-                ax.set_title(f"{model} -- Run time per batch size -- {gpu_n} {gpu_model}")
+                ax.set_title(
+                    f"{model} -- Run time per batch size -- {gpu_n} {gpu_model}"
+                )
                 ax.set_xlabel("Batch size")
                 ax.set_ylabel("Run time [s]")
                 fig.subplots_adjust(left=PLOT_IMG_MARGIN_LEFT)
-                img_name = template + f"-{model}-{device_filename(gpu_model, gpu_n)}.png"
+                img_name = (
+                    template + f"-{model}-{device_filename(gpu_model, gpu_n)}.png"
+                )
                 plt.savefig(str(img_dir.joinpath(img_name)))
 
     # Plot parallelism for model/gpu-model/gpu-count
@@ -398,9 +485,14 @@ def plot_csv(run_data: typing.List[RunData], img_dir: pathlib.Path, now: datetim
                 if gpu_n not in markers:
                     markers[gpu_n] = next(gen_markers)
                 for parallel, values in v_gpu_n.items():
-                    p, = ax.plot(values.keys(), values.values(),
-                                 linestyle=linestyles[gpu_model], linewidth=1.5,
-                                 color=parallel.colour(), marker=markers[gpu_n])
+                    (p,) = ax.plot(
+                        values.keys(),
+                        values.values(),
+                        linestyle=linestyles[gpu_model],
+                        linewidth=1.5,
+                        color=parallel.colour(),
+                        marker=markers[gpu_n],
+                    )
                     plots.append(p)
                     legends.append(f"{parallel.to_text()}, {gpu_n} {gpu_model}")
         ax.legend(plots, legends, loc="upper right")
@@ -426,7 +518,20 @@ def main_plot(args):
                 if skip:
                     skip = False
                 else:
-                    data.append(RunData.load(row[0], row[1], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]))
+                    data.append(
+                        RunData.load(
+                            row[0],
+                            row[1],
+                            row[3],
+                            row[4],
+                            row[5],
+                            row[6],
+                            row[7],
+                            row[8],
+                            row[9],
+                            row[10],
+                        )
+                    )
     data = uniq(data)
     plot_csv(data, pathlib.Path(csvfile).parent, datetime.datetime.now())
 
@@ -437,11 +542,9 @@ def main_run(args):
     if use_cuda:
         dev_count = torch.cuda.device_count()
         dev_model = torch.cuda.get_device_name(0)
-        #dev_details = f"{device_name}, mem {torch.cuda.get_device_properties(0).total_memory/1e9:3.1f} GB, CUDNN {torch.backends.cudnn.version()}"
     else:
         dev_count = 0
         dev_model = "cpu"
-        #dev_details = ""
     dev_name = device_name(dev_model, dev_count)
     dev_filename = device_filename(dev_model, dev_count)
 
@@ -457,29 +560,37 @@ def main_run(args):
     pltfile = dir.joinpath(f"{filename_template}.png")
     sys.stdout.write(f"BENCHMARK RUNNING ON {dev_name}...\n")
     sys.stdout.flush()
-    csvfp = open(csvfile, "w", newline="")
-    csvw = RunData.write_header(csvfp)
+    with open(csvfile, "w", newline="") as csvfp:
+        csvw = RunData.write_header(csvfp)
 
-    # Run trainings
-    data = []
-    for parallel in args.parallel:
-        for exp_batch_size in range(min_exp_batch_size, max_exp_batch_size+1):
-            try:
-                run_data = run_training(args.model, parallel, int(math.pow(2, exp_batch_size)), args.n_epochs, dev_name, dev_count, dev_model)
-                run_data.write_row(csvw)
-                data.append(run_data)
-            except Exception as e:
-                sys.stdout.write(f"BENCHMARK RUN FAILED: {e}\n")
-                sys.stdout.flush()
-
-    csvfp.close()
+        # Run trainings
+        data = []
+        for parallel in args.parallel:
+            for exp_batch_size in range(min_exp_batch_size, max_exp_batch_size + 1):
+                try:
+                    run_data = run_training(
+                        args.model,
+                        parallel,
+                        int(math.pow(2, exp_batch_size)),
+                        args.n_epochs,
+                        dev_name,
+                        dev_count,
+                        dev_model,
+                    )
+                    run_data.write_row(csvw)
+                    data.append(run_data)
+                except Exception as e:
+                    sys.stdout.write(f"BENCHMARK RUN FAILED: {e}\n")
+                    sys.stdout.flush()
 
     # Plot trainings data
     if len(data):
         plot_training(data, pltfile, dev_name)
 
     # End of script
-    sys.stdout.write(f"BENCHMARK DONE.\nLOG FILE IS {csvfile}\nPLOT FILE IS {pltfile}\n")
+    sys.stdout.write(
+        f"BENCHMARK DONE.\nLOG FILE IS {csvfile}\nPLOT FILE IS {pltfile}\n"
+    )
     sys.stdout.flush()
 
 
@@ -490,41 +601,55 @@ def main():
 
     parser_run = subparsers.add_parser("run", help="Run a benchmark")
     parser_run.set_defaults(func=main_run)
-    parser_run.add_argument("-m", "--model",
-                            required=True,
-                            type=Models.from_string,
-                            choices=[x for x in Models],
-                            help="Model to run")
-    parser_run.add_argument("-p", "--parallel",
-                            type=Parallelism.from_string,
-                            choices=[x for x in Parallelism],
-                            nargs="+",
-                            default=Parallelism.none,
-                            help="Parallelism type(s); default is %(default)s")
-    parser_run.add_argument("-b", "--batch-size",
-                            type=int,
-                            nargs=2,
-                            choices=BATCH_SIZE_VALUES,
-                            default=(4, 4),
-                            metavar=("MINVAL", "MAXVAL"),
-                            help=f"Batch size range; possible values are {BATCH_SIZE_VALUES}; default is %(default)s")
-    parser_run.add_argument("-n", "--n-epochs",
-                            type=int,
-                            default=3,
-                            metavar="N",
-                            help="Number of epochs; default is %(default)s")
-    parser_run.add_argument("-d", "--csvdir",
-                            required=True,
-                            help="CSV files directory")
+    parser_run.add_argument(
+        "-m",
+        "--model",
+        required=True,
+        type=Models.from_string,
+        choices=[x for x in Models],
+        help="Model to run",
+    )
+    parser_run.add_argument(
+        "-p",
+        "--parallel",
+        type=Parallelism.from_string,
+        choices=[x for x in Parallelism],
+        nargs="+",
+        default=Parallelism.none,
+        help="Parallelism type(s); default is %(default)s",
+    )
+    parser_run.add_argument(
+        "-b",
+        "--batch-size",
+        type=int,
+        nargs=2,
+        choices=BATCH_SIZE_VALUES,
+        default=(4, 4),
+        metavar=("MINVAL", "MAXVAL"),
+        help=f"Batch size range; possible values are {BATCH_SIZE_VALUES}; default is %(default)s",
+    )
+    parser_run.add_argument(
+        "-n",
+        "--n-epochs",
+        type=int,
+        default=3,
+        metavar="N",
+        help="Number of epochs; default is %(default)s",
+    )
+    parser_run.add_argument("-d", "--csvdir", required=True, help="CSV files directory")
 
     parser_plot = subparsers.add_parser("plot", help="Plot benchmark results")
     parser_plot.set_defaults(func=main_plot)
     grp1 = parser_plot.add_mutually_exclusive_group(required=True)
-    grp1.add_argument("-d", "--csvdir",
-                             help="CSV files directory; use all files in the directory")
-    grp1.add_argument("-f", "--files",
-                             nargs="*",
-                             help="CSV files to plot; use these specific files; require full path")
+    grp1.add_argument(
+        "-d", "--csvdir", help="CSV files directory; use all files in the directory"
+    )
+    grp1.add_argument(
+        "-f",
+        "--files",
+        nargs="*",
+        help="CSV files to plot; use these specific files; require full path",
+    )
 
     args = parser.parse_args()
     args.func(args)

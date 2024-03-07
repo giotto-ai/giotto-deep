@@ -18,7 +18,7 @@ class GPUs(enum.Enum):
         try:
             return GPUs[s]
         except KeyError:
-            raise ValueError()
+            raise ValueError(f"Unknown GPU {s}")
 
     def fullname(self) -> str:
         if self is GPUs.a100:
@@ -35,50 +35,56 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
-    parser.add_argument("-i", "--image",
-                        required=True,
-                        help="Container image")
-    parser.add_argument("-b", "--bucket",
-                        required=True,
-                        help="Storage bucket")
-    parser.add_argument("-s", "--ksa",
-                        required=True,
-                        help="Kubernetes Service Account")
-    parser.add_argument("-d", "--dir",
-                        default="",
-                        help="Subdirectory in the bucket to store/read data")
+    parser.add_argument("-i", "--image", required=True, help="Container image")
+    parser.add_argument("-b", "--bucket", required=True, help="Storage bucket")
+    parser.add_argument("-s", "--ksa", required=True, help="Kubernetes Service Account")
+    parser.add_argument(
+        "-d", "--dir", default="", help="Subdirectory in the bucket to store/read data"
+    )
 
     parser_run = subparsers.add_parser("run", help="Generate pods to run benchmarks")
     parser_run.set_defaults(func=main_run)
-    parser_run.add_argument("-c", "--gpu-count",
-                            required=True,
-                            type=int,
-                            nargs="*",
-                            help="GPU count")
-    parser_run.add_argument("-g", "--gpu-model",
-                            required=True,
-                            type=GPUs.from_string,
-                            choices=[x for x in GPUs],
-                            help="GPU model")
-    parser_run.add_argument("-m", "--model",
-                            required=True,
-                            type=benchmark.Models.from_string,
-                            choices=[x for x in benchmark.Models],
-                            help="Model")
-    parser_run.add_argument("-p", "--parallel",
-                            required=True,
-                            type=benchmark.Parallelism.from_string,
-                            choices=[x for x in benchmark.Parallelism],
-                            nargs="+",
-                            help="Parallelism type(s)")
-    parser_run.add_argument("-z", "--batch-size",
-                            type=int,
-                            nargs=2,
-                            choices=benchmark.BATCH_SIZE_VALUES,
-                            metavar=("MINVAL", "MAXVAL"),
-                            help=f"Batch size range; possible values are {benchmark.BATCH_SIZE_VALUES}")
+    parser_run.add_argument(
+        "-c", "--gpu-count", required=True, type=int, nargs="*", help="GPU count"
+    )
+    parser_run.add_argument(
+        "-g",
+        "--gpu-model",
+        required=True,
+        type=GPUs.from_string,
+        choices=[x for x in GPUs],
+        help="GPU model",
+    )
+    parser_run.add_argument(
+        "-m",
+        "--model",
+        required=True,
+        type=benchmark.Models.from_string,
+        choices=[x for x in benchmark.Models],
+        help="Model",
+    )
+    parser_run.add_argument(
+        "-p",
+        "--parallel",
+        required=True,
+        type=benchmark.Parallelism.from_string,
+        choices=[x for x in benchmark.Parallelism],
+        nargs="+",
+        help="Parallelism type(s)",
+    )
+    parser_run.add_argument(
+        "-z",
+        "--batch-size",
+        type=int,
+        nargs=2,
+        choices=benchmark.BATCH_SIZE_VALUES,
+        metavar=("MINVAL", "MAXVAL"),
+        help=f"Batch size range; possible values are {benchmark.BATCH_SIZE_VALUES}",
+    )
 
-    parser_plot = subparsers.add_parser("plot", help="Generate pods to plot benchmarks results")
+    parser_plot = subparsers.add_parser(
+        "plot", help="Generate pods to plot benchmarks results"
+    )
     parser_plot.set_defaults(func=main_plot)
 
     args = parser.parse_args()
@@ -126,10 +132,11 @@ def main_plot(args):
     with open("pod-template-plot.yml", "r") as fp:
         ymlt = string.Template(fp.read())
     ymlv = ymlt.substitute(values)
-    filename = f"plot.yml"
+    filename = "plot.yml"
     with open(filename, "w") as fp:
         fp.write(ymlv)
     print(f"kubectl apply -f {filename}")
+
 
 if __name__ == "__main__":
     main()
