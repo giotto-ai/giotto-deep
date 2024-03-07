@@ -167,7 +167,7 @@ class Parallelism:
 
 
 def setup_env():
-    """Setup the environment necessary for parallel training"""
+    """Setup the environment necessary for parallel training with RPC"""
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "12355"
 
