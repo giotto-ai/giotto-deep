@@ -1,159 +1,178 @@
-from gdeep.data.datasets import DatasetCloud, dataset_cloud
-
-import hashlib
-import logging
 import os
-from os import remove, environ
-from os.path import join, exists
-from shutil import rmtree
-
-import numpy as np  # type: ignore
+import tempfile
+import shutil
+from pathlib import Path
+import pytest
 import torch
+import yaml
+from zenodo_client.struct import Metadata
+from gdeep.data.datasets.cloud.dataset_cloud import DatasetCloud
+from gdeep.data.datasets.cloud.dataset_uploader import DatasetUploader
+from gdeep.data.datasets.cloud.utils import get_config_path, get_dataset_list
 
-from gdeep.utility.utils import get_checksum
+def test_dataset_upload_and_download():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create test data and metadata
+        data_tensor = torch.randn(10, 5)
+        labels_tensor = torch.randint(0, 2, (10,))
+        metadata = Metadata(title="Test Dataset", description="A test dataset for unit testing")
 
-LOGGER = logging.getLogger(__name__)
+        # Save data and metadata to temporary files
+        data_path = Path(temp_dir) / "data.pt"
+        labels_path = Path(temp_dir) / "labels.pt"
+        metadata_path = Path(temp_dir) / "metadata.yaml"
+        torch.save(data_tensor, data_path)
+        torch.save(labels_tensor, labels_path)
+        with open(metadata_path, "w") as f:
+            yaml.dump(dict(metadata), f)
+
+        # Upload the dataset
+        dataset_name = "test_dataset"
+        file_paths = [str(data_path), str(labels_path), str(metadata_path)]
+        uploader = DatasetUploader(sandbox=True)
+        uploader.upload(dataset_name, metadata, file_paths)
+
+        try:
+            # Check if the dataset is added to the list of datasets
+            assert dataset_name in get_dataset_list()
+
+            # Check if the dataset config file is created
+            config_path = get_config_path(dataset_name)
+            assert config_path.exists()
+
+            # Download the dataset
+            download_dir = Path(temp_dir) / "download"
+            dataset = DatasetCloud(dataset_name, root_download_directory=str(download_dir))
+            dataset.download()
+
+            # Check if the downloaded files exist
+            downloaded_data_path = download_dir / dataset_name / "data.pt"
+            downloaded_labels_path = download_dir / dataset_name / "labels.pt"
+            assert downloaded_data_path.exists()
+            assert downloaded_labels_path.exists()
+
+            # Check if the downloaded data matches the original data
+            downloaded_data = torch.load(downloaded_data_path)
+            downloaded_labels = torch.load(downloaded_labels_path)
+            assert torch.allclose(downloaded_data, data_tensor)
+            assert torch.allclose(downloaded_labels, labels_tensor)
+
+        finally:
+            # Clean up the uploaded dataset
+            uploader.remove(dataset_name)
+            assert not config_path.exists()
+            assert dataset_name not in get_dataset_list()
+
+def test_dataset_update():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create test data and metadata
+        data_tensor = torch.randn(10, 5)
+        labels_tensor = torch.randint(0, 2, (10,))
+        metadata = Metadata(title="Test Dataset", description="A test dataset for unit testing")
+
+        # Save data and metadata to temporary files
+        data_path = Path(temp_dir) / "data.pt"
+        labels_path = Path(temp_dir) / "labels.pt"
+        metadata_path = Path(temp_dir) / "metadata.yaml"
+        torch.save(data_tensor, data_path)
+        torch.save(labels_tensor, labels_path)
+        with open(metadata_path, "w") as f:
+            yaml.dump(dict(metadata), f)
+
+        # Upload the dataset
+        dataset_name = "test_dataset"
+        file_paths = [str(data_path), str(labels_path), str(metadata_path)]
+        uploader = DatasetUploader(sandbox=True)
+        uploader.upload(dataset_name, metadata, file_paths)
+
+        try:
+            # Update the dataset with new files
+            updated_data_tensor = torch.randn(20, 5)
+            updated_labels_tensor = torch.randint(0, 2, (20,))
+            updated_data_path = Path(temp_dir) / "updated_data.pt"
+            updated_labels_path = Path(temp_dir) / "updated_labels.pt"
+            torch.save(updated_data_tensor, updated_data_path)
+            torch.save(updated_labels_tensor, updated_labels_path)
+            updated_file_paths = [str(updated_data_path), str(updated_labels_path)]
+            uploader.update(dataset_name, updated_file_paths)
+
+            # Download the updated dataset
+            download_dir = Path(temp_dir) / "download"
+            dataset = DatasetCloud(dataset_name, root_download_directory=str(download_dir))
+            dataset.download()
+
+            # Check if the downloaded files exist
+            downloaded_data_path = download_dir / dataset_name / "updated_data.pt"
+            downloaded_labels_path = download_dir / dataset_name / "updated_labels.pt"
+            assert downloaded_data_path.exists()
+            assert downloaded_labels_path.exists()
+
+            # Check if the downloaded data matches the updated data
+            downloaded_data = torch.load(downloaded_data_path)
+            downloaded_labels = torch.load(downloaded_labels_path)
+            assert torch.allclose(downloaded_data, updated_data_tensor)
+            assert torch.allclose(downloaded_labels, updated_labels_tensor)
+
+        finally:
+            # Clean up the uploaded dataset
+            uploader.remove(dataset_name)
+
+def test_dataset_remove():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create test data and metadata
+        data_tensor = torch.randn(10, 5)
+        labels_tensor = torch.randint(0, 2, (10,))
+        metadata = Metadata(title="Test Dataset", description="A test dataset for unit testing")
+
+        # Save data and metadata to temporary files
+        data_path = Path(temp_dir) / "data.pt"
+        labels_path = Path(temp_dir) / "labels.pt"
+        metadata_path = Path(temp_dir) / "metadata.yaml"
+        torch.save(data_tensor, data_path)
+        torch.save(labels_tensor, labels_path)
+        with open(metadata_path, "w") as f:
+            yaml.dump(dict(metadata), f)
+
+        # Upload the dataset
+        dataset_name = "test_dataset"
+        file_paths = [str(data_path), str(labels_path), str(metadata_path)]
+        uploader = DatasetUploader(sandbox=True)
+        uploader.upload(dataset_name, metadata, file_paths)
+
+        # Remove the dataset
+        uploader.remove(dataset_name)
+
+        # Check if the dataset is removed from the list of datasets
+        assert dataset_name not in get_dataset_list()
+
+        # Check if the dataset config file is removed
+        config_path = get_config_path(dataset_name)
+        assert not config_path.exists()
 
 
-# Test public access for downloading datasets
-def test_public_access():
-    # Download a small dataset from Google Cloud Storage
-    dataset = "SmallDataset"
-    download_directory = join("examples", "data", "DatasetCloud", "Tmp")
+def test_all_datasets_valid():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        download_dir = Path(temp_dir) / "download"
 
-    # Remove download directory recursively if it exists
-    if exists(download_directory):
-        rmtree(download_directory)
+        # Get the list of all datasets in DATASET_CLOUD_CONFIGS_DIR
+        dataset_list = get_dataset_list()
 
-    # Create download directory
-    os.makedirs(download_directory, exist_ok=False)
+        # Download each dataset and check for errors
+        for dataset_name in dataset_list:
+            dataset = DatasetCloud(dataset_name, root_download_directory=str(download_dir))
 
-    dataset_cloud = DatasetCloud(
-        dataset, download_directory=download_directory, use_public_access=True
-    )
-    dataset_cloud.download()
+            try:
+                dataset.download()
 
-    # Check if the downloaded files (metadata.json, data.json, labels.json)
-    # are correct
-    checksums = {
-        "data.pt": "2ef68a718e29134cbcbf46c9592f6168",
-        "labels.pt": "d71992425033c6bf449d175db146a423",
-    }
+                # Check if the downloaded files exist
+                downloaded_files = list(Path(download_dir / dataset_name).glob("*"))
+                dataset_files = dataset.config["files"]
+                assert len(downloaded_files) == len(dataset_files), \
+                    f"Number of files do not match for dataset: {dataset_name}"
 
-    for file in checksums.keys():
-        assert (
-            get_checksum(join(download_directory, dataset, file)) == checksums[file]
-        ), "File {} is corrupted.".format(file)
-    # Recursively remove download directory
-    rmtree(download_directory)
+            except Exception as e:
+                pytest.fail(f"Error occurred while downloading dataset: {dataset_name}\n{str(e)}")
 
-
-def test_get_dataset_list():
-    # Download directory will not be used as well ass the dataset
-    # It's only used for initialization of the DatasetCloud object
-    download_directory = ""
-    dataset_cloud = DatasetCloud(
-        "SmallDataset", download_directory=download_directory, use_public_access=True
-    )
-    dataset_list = dataset_cloud.get_existing_datasets()
-    assert len(dataset_list) > 0, "Dataset list is empty."
-    assert "SmallDataset" in dataset_list, "Dataset list does not contain the dataset."
-
-    # Test if the list does not contain duplicates
-    assert len(dataset_list) == len(
-        set(dataset_list)
-    ), "Dataset list contains duplicates."
-
-
-if "GOOGLE_APPLICATION_CREDENTIALS" in dict(environ):
-
-    def test_update_dataset_list():
-        # Create DatasetCloud object
-        dataset_cloud = DatasetCloud("", use_public_access=False)
-        # Update the dataset list
-        dataset_cloud._update_dataset_list()
-
-    def test_upload_and_download():
-        for data_format in ["pytorch_tensor", "numpy_array"]:
-            download_directory = join("examples", "data", "DatasetCloud")
-            # Generate a dataset
-            # You don't have to do that if you already have a pickled dataset
-            size_dataset = 100
-            input_dim = 5
-            num_labels = 2
-
-            if data_format == "pytorch_tensor":
-                data = torch.rand(size_dataset, input_dim)
-                labels = torch.randint(0, num_labels, (size_dataset,)).long()
-
-                # pickle data and labels
-                data_filename = "tmp_data.pt"
-                labels_filename = "tmp_labels.pt"
-                torch.save(data, data_filename)
-                torch.save(labels, labels_filename)
-            elif data_format == "numpy_array":
-                data = np.random.rand(size_dataset, input_dim)  # type: ignore
-                labels = np.random.randint(
-                    0, num_labels, (size_dataset,), dtype=np.long
-                )
-
-                # pickle data and labels
-                data_filename = "tmp_data.npy"
-                labels_filename = "tmp_labels.npy"
-                np.save(data_filename, data)
-                np.save(labels_filename, labels)
-            else:
-                raise ValueError(f"Unknown data format: {data_format}")
-
-            ## Upload dataset to Cloud
-            dataset_name = "TmpSmallDataset"
-            dataset_cloud = DatasetCloud(
-                dataset_name,
-                download_directory=download_directory,
-                use_public_access=False,
-            )
-
-            # Specify the metadata of the dataset
-            dataset_cloud._add_metadata(
-                name=dataset_name,
-                size_dataset=size_dataset,
-                input_size=(input_dim,),
-                num_labels=num_labels,
-                data_type="tabular",
-                data_format=data_format,
-            )
-
-            # upload dataset to Cloud
-            dataset_cloud._upload(data_filename, labels_filename)
-
-            # download dataset from Cloud to ´example/data/DataCloud/SmallDataset/´
-            dataset_cloud.download()
-
-            # remove created blob
-            dataset_cloud._data_cloud.delete_blobs(dataset_name)
-
-            # check whether downloaded dataset is the same as the original dataset
-            if data_format == "pytorch_tensor":
-                downloaded_files = ["data.pt", "labels.pt", "metadata.json"]
-            elif data_format == "numpy_array":
-                downloaded_files = ["data.npy", "labels.npy", "metadata.json"]
-            else:
-                raise ValueError(f"Unknown data format: {data_format}")
-            for file in downloaded_files:
-                hash_original = get_checksum("tmp_" + file)
-                path_downloaded_file = join(download_directory, dataset_name, file)
-                hash_downloaded = get_checksum(path_downloaded_file)
-                assert (
-                    hash_original == hash_downloaded
-                ), "Original and downloaded files do not match."
-
-            # remove the labels and data files
-            remove(data_filename)
-            remove(labels_filename)
-
-            # remove the downloaded dataset
-            rmtree(join(download_directory, dataset_name))
-
-            # remove the metadata file
-            # will get deleted automatically when dataset_cloud is out of scope.
-            del dataset_cloud
+            finally:
+                # Clean up the downloaded dataset
+                shutil.rmtree(download_dir / dataset_name)

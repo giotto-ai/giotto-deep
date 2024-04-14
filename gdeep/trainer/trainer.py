@@ -54,7 +54,7 @@ try:
         pass
     print("Using TPU!")
 except ModuleNotFoundError:
-    print("No TPUs...")
+    pass
 
 
 def _add_data_to_tb(func: Callable[[Any], Any]) -> Callable[[Any], Any]:

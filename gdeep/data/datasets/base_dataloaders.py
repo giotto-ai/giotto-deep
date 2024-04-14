@@ -26,7 +26,7 @@ from tqdm import tqdm
 from torch.utils.data import Sampler
 
 from .build_datasets import get_dataset
-from .dataset_cloud import DatasetCloud
+from .cloud.dataset_cloud import DatasetCloud
 from ..transforming_dataset import TransformingDataset
 
 

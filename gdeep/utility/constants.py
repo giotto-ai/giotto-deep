@@ -13,10 +13,7 @@ DEFAULT_DATA_DIR = os.path.join(ROOT_DIR, "examples", "data")
 # Define the default dataset download directory
 DEFAULT_DOWNLOAD_DIR = os.path.join(ROOT_DIR, "examples", "data", "DatasetCloud")
 
-# Define the default dataset bucket on Google Cloud Storage where the datasets
-# are stored
-DATASET_BUCKET_NAME = "adversarial_attack"
-
+DATASET_CLOUD_CONFIGS_DIR = os.path.join(ROOT_DIR, "configs", "dataset_cloud")
 
 # Define the default dataset download directory where the graph
 # datasets from the PyG (PyTorch Geometric) library are stored

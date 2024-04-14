@@ -8,10 +8,10 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from .dataset_form_array import FromArray
+from ..dataset_form_array import FromArray
 from .dataset_cloud import DatasetCloud
-from .base_dataloaders import DataLoaderBuilder
-from .base_dataloaders import AbstractDataLoaderBuilder
+from ..base_dataloaders import DataLoaderBuilder
+from ..base_dataloaders import AbstractDataLoaderBuilder
 
 from gdeep.utility.custom_types import Tensor
 
@@ -161,7 +161,7 @@ class DlBuilderFromDataCloud(AbstractDataLoaderBuilder):
             )
             dataset_cloud = DatasetCloud(
                 self.dataset_name,
-                download_directory=self.download_directory,
+                root_download_directory=self.download_directory,
                 path_to_credentials=path_to_credentials,
                 use_public_access=use_public_access,
             )
